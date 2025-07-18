@@ -1,0 +1,41 @@
+from fastapi import APIRouter
+
+from repos.v1.products import CreateProduct, UpdateProduct, ProductInDb
+from responses.v1 import ListResponse
+
+from .products_controller import products_controller
+
+
+products_router = APIRouter(tags=["productsV1"])
+
+
+@products_router.post("")
+async def create_product_endpoint(body: CreateProduct) -> ProductInDb:
+    return await products_controller.create_product(body)
+
+
+@products_router.get("")
+async def get_all_products_endpoint() -> ListResponse[ProductInDb]:
+    return await products_controller.get_all_products()
+
+
+@products_router.get("/{product_id}")
+async def get_product_by_id_endpoint(product_id: str) -> ProductInDb:
+    return await products_controller.get_product_by_id(product_id)
+
+
+@products_router.get("/sku/{sku}")
+async def get_product_by_sku_endpoint(sku: str) -> ProductInDb:
+    return await products_controller.get_product_by_sku(sku)
+
+
+@products_router.patch("/{product_id}")
+async def update_product_by_id_endpoint(
+    product_id: str, body: UpdateProduct
+) -> ProductInDb:
+    return await products_controller.update_product_by_id(product_id, body)
+
+
+@products_router.delete("/{product_id}")
+async def delete_product_by_id_endpoint(product_id: str) -> ProductInDb:
+    return await products_controller.delete_product_by_id(product_id)

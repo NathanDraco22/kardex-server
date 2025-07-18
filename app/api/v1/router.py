@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 
-from .examples.examples_router import examples_router
+from .products.products_router import products_router
 
 router_v1 = APIRouter(tags=["apiV1"])
 
-router_v1.include_router(examples_router, prefix="/examples")
+
+router_v1.include_router(products_router, prefix="/products")
