@@ -1,0 +1,73 @@
+from fastapi import HTTPException, status
+
+from responses.v1 import ListResponse
+
+from repos.v1.products import (
+    CreateProduct,
+    UpdateProduct,
+    ProductInDb,
+    ProductsRepository,
+    ProductsDataSource,
+)
+
+
+class ProductsController:
+    def __init__(self, products_repo: ProductsRepository) -> None:
+        self.products_repo = products_repo
+
+    async def create_product(self, body: CreateProduct) -> ProductInDb:
+        return await self.products_repo.create_product(body)
+
+    async def get_all_products(self) -> ListResponse[ProductInDb]:
+        products = await self.products_repo.get_all_products()
+        return ListResponse(
+            count=len(products),
+            data=products,
+        )
+
+    async def get_product_by_sku(self, sku: str) -> ProductInDb:
+        product = await self.products_repo.get_product_by_sku(sku)
+        if product is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Product not found",
+            )
+        return product
+
+    async def get_product_by_id(self, product_id: str) -> ProductInDb:
+        product = await self.products_repo.get_product_by_id(product_id)
+        if product is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Product not found",
+            )
+        return product
+
+    async def update_product_by_id(
+        self, product_id: str, body: UpdateProduct
+    ) -> ProductInDb:
+        updated_product = await self.products_repo.update_product_by_id(
+            product_id, body
+        )
+        if updated_product is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Product not found",
+            )
+        return updated_product
+
+    async def delete_product_by_id(self, product_id: str) -> ProductInDb:
+        deleted_product = await self.products_repo.delete_product_by_id(product_id)
+        if deleted_product is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Product not found",
+            )
+        return deleted_product
+
+
+products_controller = ProductsController(
+    products_repo=ProductsRepository(
+        products_ds=ProductsDataSource(),
+    ),
+)
