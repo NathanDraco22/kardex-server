@@ -37,3 +37,18 @@ class MongoService:
                 IndexModel([("sku", ASCENDING)], unique=True),
             ]
         )
+
+        movements_col = self.get_collection("Movements")
+
+        await movements_col.create_indexes(
+            [
+                IndexModel([("id", ASCENDING)]),
+                IndexModel(
+                    [
+                        ("product_id", ASCENDING),
+                        ("branch_id", ASCENDING),
+                        ("created_at", DESCENDING),
+                    ],
+                ),
+            ]
+        )
