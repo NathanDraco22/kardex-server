@@ -19,4 +19,4 @@ class UpdateBranch(BaseModel):
 class BranchInDb(BaseBranch):
     id: str
     created_at: int
-    updated_at: int
+    updated_at: int | None = None
