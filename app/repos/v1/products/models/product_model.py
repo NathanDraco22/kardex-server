@@ -19,7 +19,6 @@ class UpdateProduct(BaseModel):
 
 class ProductInDb(BaseProduct):
     id: str
-    branches: list[str] = []
     created_at: int
     updated_at: int | None = None
 

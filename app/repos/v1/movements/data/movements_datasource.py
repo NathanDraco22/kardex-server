@@ -18,6 +18,15 @@ class MovementsDataSource:
         collection = MovementsCollection()
         return await collection.fetch_all_movements()
 
+    async def get_movements_by_product_and_branch(
+        self, product_id: str, branch_id: str, start_date: int, end_date: int
+    ) -> list[dict[str, Any]]:
+        collection = MovementsCollection()
+        res = await collection.fetch_movements_by_product_and_branch(
+            product_id, branch_id, start_date, end_date
+        )
+        return res
+
     async def get_movement_by_id(self, movement_id: str) -> dict[str, Any] | None:
         collection = MovementsCollection()
         return await collection.fetch_movement_by_id(movement_id)

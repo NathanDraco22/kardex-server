@@ -8,9 +8,14 @@ from .movements_controller import movements_controller
 movements_router = APIRouter(tags=["movementsV1"])
 
 
-@movements_router.post("")
-async def create_movement_endpoint(body: CreateMovement) -> MovementInDb:
-    return await movements_controller.create_movement(body)
+@movements_router.post("/entry")
+async def create_entry_movement_endpoint(body: CreateMovement) -> MovementInDb:
+    return await movements_controller.create_entry_movement(body)
+
+
+@movements_router.post("/exit")
+async def create_exit_movement_endpoint(body: CreateMovement) -> MovementInDb:
+    return await movements_controller.create_exit_movement(body)
 
 
 @movements_router.get("")

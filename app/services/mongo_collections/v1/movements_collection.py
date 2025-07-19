@@ -34,6 +34,33 @@ class MovementsCollection:
         result = await collection.find_one({"id": movement_id})
         return result
 
+    async def fetch_movements_by_product_and_branch(
+        self,
+        product_id: str,
+        branch_id: str,
+        start_date: int,
+        end_date: int,
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "product_id": product_id,
+                        "branch_id": branch_id,
+                        "created_at": {"$gte": start_date, "$lte": end_date},
+                    }
+                },
+                {"$sort": {"created_at": -1}},
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def update_movement_by_id(
         self,
         movement_id: str,

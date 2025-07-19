@@ -56,15 +56,6 @@ class ProductsController:
             )
         return updated_product
 
-    async def delete_product_by_id(self, product_id: str) -> ProductInDb:
-        deleted_product = await self.products_repo.delete_product_by_id(product_id)
-        if deleted_product is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Product not found",
-            )
-        return deleted_product
-
 
 products_controller = ProductsController(
     products_repo=ProductsRepository(

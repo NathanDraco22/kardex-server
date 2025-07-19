@@ -24,6 +24,15 @@ class MovementsRepository:
         models = [MovementInDb.model_validate(result) for result in results]
         return models
 
+    async def get_movements_by_product_and_branch(
+        self, product_id: str, branch_id: str, start_date: int, end_date: int
+    ) -> list[MovementInDb]:
+        results = await self.movements_ds.get_movements_by_product_and_branch(
+            product_id, branch_id, start_date, end_date
+        )
+        models = [MovementInDb.model_validate(result) for result in results]
+        return models
+
     async def get_movement_by_id(self, movement_id: str) -> MovementInDb | None:
         result = await self.movements_ds.get_movement_by_id(movement_id)
 

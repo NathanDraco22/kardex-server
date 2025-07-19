@@ -34,8 +34,3 @@ async def update_product_by_id_endpoint(
     product_id: str, body: UpdateProduct
 ) -> ProductInDb:
     return await products_controller.update_product_by_id(product_id, body)
-
-
-@products_router.delete("/{product_id}")
-async def delete_product_by_id_endpoint(product_id: str) -> ProductInDb:
-    return await products_controller.delete_product_by_id(product_id)

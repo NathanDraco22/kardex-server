@@ -9,6 +9,7 @@ class MovementType(StrEnum):
 
 class ReferenceDocumentType(StrEnum):
     ENTRY = "entry"
+    PURCHASE = "purchase"
     EXIT = "exit"
     SALE = "sale"
 
