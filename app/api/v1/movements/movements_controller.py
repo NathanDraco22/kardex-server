@@ -1,9 +1,13 @@
 from fastapi import HTTPException, status
 
+
 from responses.v1 import ListResponse
+
+from core.kardex import ProcessEntry, ProcessExit
 
 from repos.v1.products import ProductsRepository, ProductsDataSource
 from repos.v1.branches import BranchesRepository, BranchesDataSource
+from repos.v1.branch_stocks import BranchStocksRepository, BranchStocksDataSource
 
 from repos.v1.movements import (
     CreateMovement,
@@ -19,86 +23,32 @@ class MovementsController:
         movements_repo: MovementsRepository,
         products_repo: ProductsRepository,
         branches_repo: BranchesRepository,
+        branches_stocks_repo: BranchStocksRepository,
     ) -> None:
         self.movements_repo = movements_repo
         self.products_repo = products_repo
         self.branches_repo = branches_repo
+        self.branches_stocks_repo = branches_stocks_repo
 
     async def create_exit_movement(self, body: CreateMovement) -> MovementInDb:
-        product = await self.products_repo.get_product_by_id(body.product_id)
-        if product is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Product not found",
-            )
+        process_exit = ProcessExit(
+            branch_stocks_repo=self.branches_stocks_repo,
+            products_repo=self.products_repo,
+            branches_repo=self.branches_repo,
+            movements_repo=self.movements_repo,
+        )
 
-        branch = await self.branches_repo.get_branch_by_id(body.branch_id)
-        if branch is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Branch not found",
-            )
-
-        if body.type != "out":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Movement type must be out",
-            )
-
-        if body.quantity >= 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Quantity must be less than 0",
-            )
-
-        if body.reference_document_type not in ["exit", "sale"]:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Reference document type must be exit or sale",
-            )
-
-        return await self.movements_repo.create_movement(body)
+        return await process_exit.process_exit(body)
 
     async def create_entry_movement(self, body: CreateMovement) -> MovementInDb:
-        product = await self.products_repo.get_product_by_id(body.product_id)
-        if product is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Product not found",
-            )
+        process_entry = ProcessEntry(
+            branch_stocks_repo=self.branches_stocks_repo,
+            products_repo=self.products_repo,
+            branches_repo=self.branches_repo,
+            movements_repo=self.movements_repo,
+        )
 
-        branch = await self.branches_repo.get_branch_by_id(body.branch_id)
-        if branch is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Branch not found",
-            )
-
-        if body.type != "in":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Movement type must be entry",
-            )
-
-        if body.quantity <= 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Quantity must be greater than 0",
-            )
-
-        if body.cost_at_moment <= 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cost at moment must be greater than 0",
-            )
-
-        if body.reference_document_type not in ["entry", "purchase"]:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Reference document type must be entry or purchase",
-            )
-
-        return await self.movements_repo.create_movement(body)
+        return await process_entry.process_entry(body)
 
     async def get_all_movements(self) -> ListResponse[MovementInDb]:
         movements = await self.movements_repo.get_all_movements()
@@ -123,5 +73,8 @@ movements_controller = MovementsController(
     ),
     branches_repo=BranchesRepository(
         branches_ds=BranchesDataSource(),
+    ),
+    branches_stocks_repo=BranchStocksRepository(
+        branch_stocks_ds=BranchStocksDataSource(),
     ),
 )
