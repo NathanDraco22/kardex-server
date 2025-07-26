@@ -20,4 +20,4 @@ dev = [
 ]
 
 [tool.uv.sources]
-onion = { path = "onion-cli" }
+onion = { git = "https://github.com/NathanDraco22/onion-cli.git" }

@@ -2,9 +2,8 @@ import os
 from typing import Literal, Any
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
-from pymongo import IndexModel, ASCENDING, DESCENDING
 
-DatabaseName = Literal["KardexDb"]
+DatabaseName = Literal["LedgerDB"]
 
 
 class MongoService:
@@ -23,32 +22,10 @@ class MongoService:
     def get_collection(
         self,
         collection_name: str,
-        database_name: DatabaseName = "KardexDb",
+        database_name: DatabaseName = "LedgerDB",
     ) -> AsyncIOMotorCollection[dict[str, Any]]:
         db = self.client.get_database(database_name)
         return db.get_collection(collection_name)
 
     async def create_indexes(self):
-        product_col = self.get_collection("Products")
-
-        await product_col.create_indexes(
-            [
-                IndexModel([("id", ASCENDING)], unique=True),
-                IndexModel([("sku", ASCENDING)], unique=True),
-            ]
-        )
-
-        movements_col = self.get_collection("Movements")
-
-        await movements_col.create_indexes(
-            [
-                IndexModel([("id", ASCENDING)]),
-                IndexModel(
-                    [
-                        ("product_id", ASCENDING),
-                        ("branch_id", ASCENDING),
-                        ("created_at", DESCENDING),
-                    ],
-                ),
-            ]
-        )
+        pass
