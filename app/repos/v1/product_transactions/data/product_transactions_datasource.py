@@ -9,7 +9,9 @@ class ProductTransactionsDataSource:
             cls.instance = super(cls, cls).__new__(cls)
         return cls.instance
 
-    async def create_product_transaction(self, product_transaction: dict[str, Any]) -> dict[str, Any]:
+    async def create_product_transaction(
+        self, product_transaction: dict[str, Any]
+    ) -> dict[str, Any]:
         collection = ProductTransactionsCollection()
         await collection.create_product_transaction(product_transaction)
         return product_transaction
@@ -18,7 +20,9 @@ class ProductTransactionsDataSource:
         collection = ProductTransactionsCollection()
         return await collection.fetch_all_product_transactions()
 
-    async def get_product_transaction_by_id(self, product_transaction_id: str) -> dict[str, Any] | None:
+    async def get_product_transaction_by_id(
+        self, product_transaction_id: str
+    ) -> dict[str, Any] | None:
         collection = ProductTransactionsCollection()
         return await collection.fetch_product_transaction_by_id(product_transaction_id)
 
@@ -26,8 +30,6 @@ class ProductTransactionsDataSource:
         self, product_transaction_id: str, product_transaction: dict[str, Any]
     ) -> dict[str, Any] | None:
         collection = ProductTransactionsCollection()
-        return await collection.update_product_transaction_by_id(product_transaction_id, product_transaction)
-
-    async def delete_product_transaction_by_id(self, product_transaction_id: str) -> dict[str, Any] | None:
-        collection = ProductTransactionsCollection()
-        return await collection.delete_product_transaction_by_id(product_transaction_id)
+        return await collection.update_product_transaction_by_id(
+            product_transaction_id, product_transaction
+        )

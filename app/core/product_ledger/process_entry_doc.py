@@ -1,5 +1,7 @@
-from app.repos.v1.entry_docs.models.entry_doc_model import CreateEntryDoc
-from repos.v1.product_accounts import ProductAccountInDb
+from repos.v1.entry_docs.models.entry_doc_model import CreateEntryDoc
+from repos.v1.product_accounts import (
+    ProductAccountInDb,
+)
 from repos.v1.product_transactions import ProductTransactionInDb
 from repos.v1.entry_docs import (
     EntryDocInDb,
@@ -50,11 +52,6 @@ async def process_entry_doc(
                     entry_item.cost,
                     session=session,
                 )
-
-                if result is None:
-                    raise Exception(
-                        "process entry doc failed: Product account not found"
-                    )
 
                 updated_product_account = ProductAccountInDb.model_validate(result)
 

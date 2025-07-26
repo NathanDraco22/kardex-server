@@ -11,6 +11,5 @@ class BaseProductAccount(BaseModel):
 
 
 class ProductAccountInDb(BaseProductAccount):
-    id: str
-    created_at: datetime
-    updated_at: datetime | None = None
+    createdAt: datetime
+    updatedAt: datetime | None = None

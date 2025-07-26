@@ -12,7 +12,6 @@ class ProductsRepository:
         new_product = ProductInDb(
             id=UuidTool.generate_uuid(),
             createdAt=TimeTools.get_now_utc(),
-            updatedAt=TimeTools.get_now_utc(),
             **create_product.model_dump(),
         )
 
