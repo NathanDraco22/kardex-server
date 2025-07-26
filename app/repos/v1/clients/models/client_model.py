@@ -17,4 +17,4 @@ class UpdateClient(BaseModel):
 class ClientInDb(BaseClient):
     id: str
     createdAt: datetime
-    updatedAt: datetime
+    updatedAt: datetime | None = None
