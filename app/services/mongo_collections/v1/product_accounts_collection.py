@@ -31,6 +31,12 @@ class ProductAccountsCollection:
         )
         return result
 
+    async def create_new_product_account_with_session(
+        self, product_account: dict, session: Any
+    ) -> None:
+        collection = self.__collection
+        await collection.insert_one(product_account, session=session)
+
     async def substract_product_account_data(
         self,
         product_id: str,
@@ -42,8 +48,8 @@ class ProductAccountsCollection:
         updated_at = datetime.now()
         result = await collection.find_one_and_update(
             {
-                "product_id": product_id,
-                "branch_id": branch_id,
+                "productId": product_id,
+                "branchId": branch_id,
                 "currentStock": {"$gte": abs(substract_to_current_stock)},
             },
             {
@@ -67,47 +73,88 @@ class ProductAccountsCollection:
         add_to_current_stock: int,
         last_cost: int,
         session: Any,
-    ) -> dict[str, Any] | None:
+    ) -> dict[str, Any]:
         collection = self.__collection
         update_at = datetime.now()
+
         result = await collection.find_one_and_update(
             {
-                "product_id": product_id,
-                "branch_id": branch_id,
+                "productId": product_id,
+                "branchId": branch_id,
             },
             [
                 {
                     "$set": {
+                        # Usamos $ifNull para manejar el caso de un documento nuevo
                         "currentStock": {
-                            "$add": ["$currentStock", add_to_current_stock]
+                            "$add": [
+                                {"$ifNull": ["$currentStock", 0]},
+                                add_to_current_stock,
+                            ]
                         },
                         "lastCost": last_cost,
                         "averageCost": {
-                            "$divide": [
-                                {
-                                    "$add": [
+                            # Tu cálculo con $round y $convert ya es robusto
+                            # Solo necesita $ifNull para el caso de la creación
+                            "$convert": {
+                                "input": {
+                                    "$round": [
                                         {
-                                            "$multiply": [
-                                                "$currentStock",
-                                                "$averageCost",
+                                            "$divide": [
+                                                {
+                                                    "$add": [
+                                                        {
+                                                            "$multiply": [
+                                                                {
+                                                                    "$ifNull": [
+                                                                        "$currentStock",
+                                                                        0,
+                                                                    ]
+                                                                },
+                                                                {
+                                                                    "$ifNull": [
+                                                                        "$averageCost",
+                                                                        0,
+                                                                    ]
+                                                                },
+                                                            ]
+                                                        },
+                                                        {
+                                                            "$multiply": [
+                                                                add_to_current_stock,
+                                                                last_cost,
+                                                            ]
+                                                        },
+                                                    ]
+                                                },
+                                                {
+                                                    "$add": [
+                                                        {
+                                                            "$ifNull": [
+                                                                "$currentStock",
+                                                                0,
+                                                            ]
+                                                        },
+                                                        add_to_current_stock,
+                                                    ]
+                                                },
                                             ]
                                         },
-                                        {
-                                            "$multiply": [
-                                                add_to_current_stock,
-                                                last_cost,
-                                            ]
-                                        },
+                                        0,
                                     ]
                                 },
-                                {"$add": ["$currentStock", add_to_current_stock]},
-                            ]
+                                "to": "long",
+                            }
                         },
                         "updatedAt": update_at,
+                        "createdAt": {"$ifNull": ["$createdAt", update_at]},
                     }
                 }
             ],
+            # AÑADIMOS UPSERT=TRUE
+            upsert=True,
             session=session,
+            return_document=ReturnDocument.AFTER,
         )
 
         return result

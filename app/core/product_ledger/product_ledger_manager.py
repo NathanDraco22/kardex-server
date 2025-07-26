@@ -18,8 +18,13 @@ from repos.v1.exit_docs import (
 from pymongo.errors import OperationFailure
 
 from repos.v1.branches import BranchesRepository, BranchesDataSource
-from repos.v1.product_accounts import ProductAccountInDb
+from repos.v1.product_accounts import (
+    ProductAccountsRepository,
+    ProductAccountInDb,
+    ProductAccountsDataSource,
+)
 from repos.v1.products import ProductsRepository, ProductsDataSource
+
 
 from .process_entry_doc import process_entry_doc
 from .process_exit_doc import process_exit_doc, InsufficientBalanceError
@@ -32,7 +37,9 @@ class ProductLedgerManager:
         self.branches_repo = BranchesRepository(
             branches_ds=BranchesDataSource(),
         )
-
+        self.product_accounts_repo = ProductAccountsRepository(
+            product_accounts_ds=ProductAccountsDataSource(),
+        )
         self.products_repo = ProductsRepository(
             products_ds=ProductsDataSource(),
         )
