@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.responses.v1.list_response import ListResponse
+from responses.v1.list_response import ListResponse
 from repos.v1.suppliers import CreateSupplier, UpdateSupplier, SupplierInDb
 
 from .suppliers_controller import suppliers_controller
