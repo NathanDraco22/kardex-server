@@ -2,10 +2,13 @@ from fastapi import HTTPException, status
 
 from repos.v1.branches import (
     CreateBranch,
+    UpdateBranch,
     BranchInDb,
     BranchesRepository,
     BranchesDataSource,
 )
+
+from responses.v1 import ListResponse
 
 
 class BranchesController:
@@ -15,9 +18,12 @@ class BranchesController:
     async def create_branch(self, body: CreateBranch) -> BranchInDb:
         return await self.branches_repo.create_branch(body)
 
-    async def get_all_branches(self) -> list[BranchInDb]:
+    async def get_all_branches(self) -> ListResponse[BranchInDb]:
         branches = await self.branches_repo.get_all_branches()
-        return branches
+        return ListResponse(
+            count=len(branches),
+            data=branches,
+        )
 
     async def get_branch_by_id(self, branch_id: str) -> BranchInDb:
         branch = await self.branches_repo.get_branch_by_id(branch_id)
@@ -27,6 +33,26 @@ class BranchesController:
                 detail="Branch not found",
             )
         return branch
+
+    async def update_branch_by_id(
+        self, branch_id: str, body: UpdateBranch
+    ) -> BranchInDb:
+        updated_branch = await self.branches_repo.update_branch_by_id(branch_id, body)
+        if updated_branch is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Branch not found",
+            )
+        return updated_branch
+
+    async def delete_branch_by_id(self, branch_id: str) -> BranchInDb:
+        deleted_branch = await self.branches_repo.delete_branch_by_id(branch_id)
+        if deleted_branch is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Branch not found",
+            )
+        return deleted_branch
 
 
 branches_controller = BranchesController(

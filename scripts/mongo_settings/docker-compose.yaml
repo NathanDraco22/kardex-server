@@ -1,0 +1,12 @@
+services:
+  mongo-rs:
+    image: mongo:latest
+    container_name: mongo-replica-set
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+
+volumes:
+  mongo-data:
