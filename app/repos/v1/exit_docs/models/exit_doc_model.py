@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 class ExitItem(BaseModel):
     productId: str
+    cost: int | None = None
     quantity: int = Field(..., lt=0)
 
 
