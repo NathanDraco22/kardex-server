@@ -32,6 +32,11 @@ class ClientsRepository:
 
         return ClientInDb.model_validate(result)
 
+    async def search_client_by_text(self, text_query: str) -> list[ClientInDb]:
+        results = await self.clients_ds.search_client_by_text(text_query)
+        models = [ClientInDb.model_validate(result) for result in results]
+        return models
+
     async def update_client_by_id(
         self, client_id: str, client: UpdateClient
     ) -> ClientInDb | None:

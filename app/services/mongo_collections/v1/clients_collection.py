@@ -3,6 +3,8 @@ from typing import Any
 from pymongo import ReturnDocument
 from services import MongoService
 
+from pymongo import IndexModel
+
 
 class ClientsCollection:
     collection_name = "Clients"
@@ -34,6 +36,23 @@ class ClientsCollection:
         result = await collection.find_one({"id": client_id})
         return result
 
+    async def search_client_by_text(self, text_query: str) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        query = {
+            "$text": {
+                "$search": text_query,
+                "$caseSensitive": False,
+                "$diacriticSensitive": False,
+            }
+        }
+        cursor = collection.find(query).limit(10)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def update_client_by_id(
         self,
         client_id: str,
@@ -48,3 +67,21 @@ class ClientsCollection:
         )
 
         return result
+
+    async def create_indexes(self):
+        collection = self.__collection
+        await collection.create_indexes(
+            [
+                IndexModel(
+                    [("id", 1)],
+                    unique=True,
+                ),
+                IndexModel(
+                    [
+                        ("name", "text"),
+                        ("phone", "text"),
+                        ("cardId", "text"),
+                    ],
+                ),
+            ]
+        )

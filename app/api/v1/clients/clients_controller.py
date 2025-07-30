@@ -34,6 +34,13 @@ class ClientsController:
             )
         return client
 
+    async def search_client_by_text(self, text_query: str) -> ListResponse[ClientInDb]:
+        clients = await self.clients_repo.search_client_by_text(text_query)
+        return ListResponse(
+            data=clients,
+            count=len(clients),
+        )
+
     async def update_client_by_id(
         self, client_id: str, body: UpdateClient
     ) -> ClientInDb:

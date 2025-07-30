@@ -24,6 +24,11 @@ async def get_client_by_id(client_id: str) -> ClientInDb:
     return await clients_controller.get_client_by_id(client_id)
 
 
+@clients_router.get("/search/{text_query}")
+async def search_client_by_text(text_query: str) -> ListResponse[ClientInDb]:
+    return await clients_controller.search_client_by_text(text_query)
+
+
 @clients_router.patch("/{client_id}")
 async def update_client_by_id(client_id: str, body: UpdateClient) -> ClientInDb:
     return await clients_controller.update_client_by_id(client_id, body)
