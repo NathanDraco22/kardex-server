@@ -1,0 +1,29 @@
+
+{
+  "name": "Tienda1",
+  "description": "",
+  "id": "57a20dcf-63a7-40d6-b22f-68e0b5e6c770",
+  "createdAt": "2025-07-26T20:10:39.635410Z",
+  "updatedAt": null
+}
+
+{
+  "name": "Leche Canela",
+  "id": "04f2cf93-a836-44c3-a3ab-c340625dc13a",
+  "createdAt": "2025-07-26T20:12:15.949929Z",
+  "updatedAt": null
+}
+
+{
+  "name": "Cuajada Seca",
+  "id": "7591c9e2-7aec-498a-a53e-8a55a13acc86",
+  "createdAt": "2025-07-26T20:11:53.897421Z",
+  "updatedAt": null
+}
+
+{
+  "name": "Queso Rallado",
+  "id": "b1f4f0ed-94d7-49ca-9f72-767dbe11287c",
+  "createdAt": "2025-07-26T20:11:27.071118Z",
+  "updatedAt": null
+}
