@@ -4,6 +4,9 @@ from pydantic import BaseModel
 
 class BaseClient(BaseModel):
     name: str
+    cardId: str
+    phone: str
+    isActive: bool
 
 
 class CreateClient(BaseClient):
@@ -12,6 +15,9 @@ class CreateClient(BaseClient):
 
 class UpdateClient(BaseModel):
     name: str | None = None
+    cardId: str | None = None
+    phone: str | None = None
+    isActive: bool | None = None
 
 
 class ClientInDb(BaseClient):
