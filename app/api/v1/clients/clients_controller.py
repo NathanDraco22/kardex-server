@@ -52,6 +52,15 @@ class ClientsController:
             )
         return updated_client
 
+    async def delete_client_by_id(self, client_id: str) -> ClientInDb:
+        deleted_client = await self.clients_repo.delete_client_by_id(client_id)
+        if deleted_client is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Client not found",
+            )
+        return deleted_client
+
 
 clients_controller = ClientsController(
     clients_repo=ClientsRepository(

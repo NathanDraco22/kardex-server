@@ -32,3 +32,8 @@ async def search_client_by_text(text_query: str) -> ListResponse[ClientInDb]:
 @clients_router.patch("/{client_id}")
 async def update_client_by_id(client_id: str, body: UpdateClient) -> ClientInDb:
     return await clients_controller.update_client_by_id(client_id, body)
+
+
+@clients_router.delete("/{client_id}")
+async def delete_client_by_id(client_id: str) -> ClientInDb:
+    return await clients_controller.delete_client_by_id(client_id)

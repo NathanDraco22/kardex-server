@@ -24,7 +24,7 @@ class ClientsCollection:
 
     async def fetch_all_clients(self) -> list[dict[str, Any]]:
         collection = self.__collection
-        cursor = collection.find()
+        cursor = collection.find({"isDeleted": False})
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -33,7 +33,7 @@ class ClientsCollection:
 
     async def fetch_client_by_id(self, client_id: str) -> dict[str, Any] | None:
         collection = self.__collection
-        result = await collection.find_one({"id": client_id})
+        result = await collection.find_one({"id": client_id, "isDeleted": False})
         return result
 
     async def search_client_by_text(self, text_query: str) -> list[dict[str, Any]]:
@@ -44,7 +44,8 @@ class ClientsCollection:
                 "$search": text_query,
                 "$caseSensitive": False,
                 "$diacriticSensitive": False,
-            }
+            },
+            "isDeleted": False,
         }
         cursor = collection.find(query).limit(10)
 
@@ -73,7 +74,10 @@ class ClientsCollection:
         await collection.create_indexes(
             [
                 IndexModel(
-                    [("id", 1)],
+                    [
+                        ("id", 1),
+                        ("isDeleted", 1),
+                    ],
                     unique=True,
                 ),
                 IndexModel(
