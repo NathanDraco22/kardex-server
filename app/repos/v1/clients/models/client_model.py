@@ -22,5 +22,6 @@ class UpdateClient(BaseModel):
 
 class ClientInDb(BaseClient):
     id: str
+    isDeleted: bool = False
     createdAt: datetime
     updatedAt: datetime | None = None
