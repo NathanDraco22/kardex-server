@@ -3,6 +3,8 @@ from typing import Any
 from pymongo import ReturnDocument
 from services import MongoService
 
+from pymongo import IndexModel
+
 
 class SuppliersCollection:
     collection_name = "Suppliers"
@@ -34,6 +36,24 @@ class SuppliersCollection:
         result = await collection.find_one({"id": supplier_id})
         return result
 
+    async def search_supplier_by_text(self, text_query: str) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        query = {
+            "$text": {
+                "$search": text_query,
+                "$caseSensitive": False,
+                "$diacriticSensitive": False,
+            },
+            "isDeleted": False,
+        }
+        cursor = collection.find(query).limit(10)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def update_supplier_by_id(
         self,
         supplier_id: str,
@@ -49,7 +69,20 @@ class SuppliersCollection:
 
         return result
 
-    async def delete_supplier_by_id(self, supplier_id: str) -> dict[str, Any] | None:
+    async def create_indexes(self):
         collection = self.__collection
-        result = await collection.find_one_and_delete({"id": supplier_id})
-        return result
+        await collection.create_indexes(
+            [
+                IndexModel(
+                    [
+                        ("id", 1),
+                    ],
+                    unique=True,
+                ),
+                IndexModel(
+                    [
+                        ("name", "text"),
+                    ],
+                ),
+            ]
+        )

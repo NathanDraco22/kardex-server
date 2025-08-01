@@ -83,8 +83,6 @@ class ClientsCollection:
                 IndexModel(
                     [
                         ("name", "text"),
-                        ("phone", "text"),
-                        ("cardId", "text"),
                     ],
                 ),
             ]

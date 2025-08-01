@@ -4,9 +4,9 @@ from pydantic import BaseModel
 
 class BaseClient(BaseModel):
     name: str
-    cardId: str
-    phone: str
-    isActive: bool
+    cardId: str | None = None
+    phone: str | None = None
+    isActive: bool = True
 
 
 class CreateClient(BaseClient):

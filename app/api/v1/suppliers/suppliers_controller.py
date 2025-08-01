@@ -34,6 +34,15 @@ class SuppliersController:
             )
         return supplier
 
+    async def search_supplier_by_text(
+        self, text_query: str
+    ) -> ListResponse[SupplierInDb]:
+        suppliers = await self.suppliers_repo.search_supplier_by_text(text_query)
+        return ListResponse(
+            data=suppliers,
+            count=len(suppliers),
+        )
+
     async def update_supplier_by_id(
         self, supplier_id: str, body: UpdateSupplier
     ) -> SupplierInDb:
