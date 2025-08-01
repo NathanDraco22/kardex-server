@@ -31,6 +31,11 @@ class SuppliersRepository:
 
         return SupplierInDb.model_validate(result)
 
+    async def search_supplier_by_text(self, text_query: str) -> list[SupplierInDb]:
+        results = await self.suppliers_ds.search_supplier_by_text(text_query)
+        models = [SupplierInDb.model_validate(result) for result in results]
+        return models
+
     async def update_supplier_by_id(
         self, supplier_id: str, supplier: UpdateSupplier
     ) -> SupplierInDb | None:
@@ -47,7 +52,9 @@ class SuppliersRepository:
         return SupplierInDb.model_validate(result)
 
     async def delete_supplier_by_id(self, supplier_id: str) -> SupplierInDb | None:
-        result = await self.suppliers_ds.delete_supplier_by_id(supplier_id)
+        result = await self.suppliers_ds.update_supplier_by_id(
+            supplier_id, {"isDeleted": True}
+        )
 
         if result is None:
             return None
