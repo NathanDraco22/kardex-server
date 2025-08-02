@@ -24,7 +24,7 @@ class SuppliersCollection:
 
     async def fetch_all_suppliers(self) -> list[dict[str, Any]]:
         collection = self.__collection
-        cursor = collection.find()
+        cursor = collection.find({"isDeleted": False})
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -33,7 +33,7 @@ class SuppliersCollection:
 
     async def fetch_supplier_by_id(self, supplier_id: str) -> dict[str, Any] | None:
         collection = self.__collection
-        result = await collection.find_one({"id": supplier_id})
+        result = await collection.find_one({"id": supplier_id, "isDeleted": False})
         return result
 
     async def search_supplier_by_text(self, text_query: str) -> list[dict[str, Any]]:
