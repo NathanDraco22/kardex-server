@@ -1,5 +1,5 @@
 from services import MongoService
-from services.mongo_collections.v1.mongo_indexes import create_indexes
+from services.mongo_indexes import create_indexes
 
 
 async def init_services() -> None:
