@@ -4,7 +4,6 @@ from pydantic import BaseModel
 
 class BaseUnit(BaseModel):
     name: str
-    symbol: str
     pass
 
 
@@ -14,7 +13,6 @@ class CreateUnit(BaseUnit):
 
 class UpdateUnit(BaseModel):
     name: str | None = None
-    symbol: str | None = None
     pass
 
 
