@@ -1,6 +1,6 @@
 from typing import Any
 
-from pymongo import ReturnDocument
+from pymongo import ReturnDocument, IndexModel
 from services import MongoService
 
 
@@ -29,7 +29,9 @@ class ProductPricesCollection:
 
         return result
 
-    async def fetch_product_price_by_id(self, product_price_id: str) -> dict[str, Any] | None:
+    async def fetch_product_price_by_id(
+        self, product_price_id: str
+    ) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one({"id": product_price_id})
         return result
@@ -49,7 +51,18 @@ class ProductPricesCollection:
 
         return result
 
-    async def delete_product_price_by_id(self, product_price_id: str) -> dict[str, Any] | None:
+    async def delete_product_price_by_id(
+        self, product_price_id: str
+    ) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one_and_delete({"id": product_price_id})
         return result
+
+    async def create_indexes(self):
+        collection = self.__collection
+        await collection.create_indexes(
+            [
+                IndexModel([("id", 1)], unique=True),
+                IndexModel([("name", 1)], unique=True),
+            ]
+        )

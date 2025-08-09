@@ -64,5 +64,6 @@ class ProductCategoriesCollection:
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),
+                IndexModel([("name", 1)], unique=True),
             ]
         )

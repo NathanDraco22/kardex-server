@@ -22,7 +22,7 @@ class ProductsCollection:
 
     async def fetch_all_products(self) -> list[dict[str, Any]]:
         collection = self.__collection
-        cursor = collection.find()
+        cursor = collection.find({"isDeleted": False})
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -31,7 +31,7 @@ class ProductsCollection:
 
     async def fetch_product_by_id(self, product_id: str) -> dict[str, Any] | None:
         collection = self.__collection
-        result = await collection.find_one({"id": product_id})
+        result = await collection.find_one({"id": product_id, "isDeleted": False})
         return result
 
     async def fetch_product_by_ids(
@@ -39,6 +39,24 @@ class ProductsCollection:
     ) -> list[dict[str, Any]]:
         collection = self.__collection
         cursor = collection.find({"id": {"$in": product_ids}})
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
+    async def search_product_by_text(self, text_query: str) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        query = {
+            "$text": {
+                "$search": text_query,
+                "$caseSensitive": False,
+                "$diacriticSensitive": False,
+            },
+            "isDeleted": False,
+        }
+        cursor = collection.find(query).limit(10)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -70,5 +88,15 @@ class ProductsCollection:
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),
+                IndexModel(
+                    [
+                        ("name", "text"),
+                        ("code", "text"),
+                        ("brandName", "text"),
+                        ("unitName", "text"),
+                        ("categoryName", "text"),
+                        ("tags", "text"),
+                    ]
+                ),
             ]
         )

@@ -34,6 +34,15 @@ class ProductsController:
             )
         return product
 
+    async def search_product_by_text(
+        self, text_query: str
+    ) -> ListResponse[ProductInDb]:
+        products = await self.products_repo.search_product_by_text(text_query)
+        return ListResponse(
+            data=products,
+            count=len(products),
+        )
+
     async def update_product_by_id(
         self, product_id: str, body: UpdateProduct
     ) -> ProductInDb:
