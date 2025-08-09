@@ -8,7 +8,7 @@ class BaseProduct(BaseModel):
     code: str | None = None
     brandName: str
     unitName: str
-    categoryName: str
+    categoryName: str | None = None
     tags: list[str]
     isActive: bool = True
 
