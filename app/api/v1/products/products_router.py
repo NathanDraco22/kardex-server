@@ -25,6 +25,11 @@ async def get_product_by_id(product_id: str) -> ProductInDb:
     return await products_controller.get_product_by_id(product_id)
 
 
+@products_router.get("/search/{text_query}")
+async def search_product_by_text(text_query: str) -> ListResponse[ProductInDb]:
+    return await products_controller.search_product_by_text(text_query)
+
+
 @products_router.patch("/{product_id}")
 async def update_product_by_id(product_id: str, body: UpdateProduct) -> ProductInDb:
     return await products_controller.update_product_by_id(product_id, body)

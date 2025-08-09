@@ -22,6 +22,10 @@ class ProductsDataSource:
         collection = ProductsCollection()
         return await collection.fetch_product_by_id(product_id)
 
+    async def search_product_by_text(self, text_query: str) -> list[dict[str, Any]]:
+        collection = ProductsCollection()
+        return await collection.search_product_by_text(text_query)
+
     async def get_product_by_ids(self, product_ids: list[str]) -> list[dict[str, Any]]:
         collection = ProductsCollection()
         return await collection.fetch_product_by_ids(product_ids)
