@@ -1,5 +1,10 @@
 from .data.products_datasource import ProductsDataSource
-from .models.product_model import CreateProduct, UpdateProduct, ProductInDb
+from .models.product_model import (
+    CreateProduct,
+    UpdateProduct,
+    ProductInDb,
+    ProductInDbWithAccounts,
+)
 
 from tools import UuidTool, TimeTools
 
@@ -22,6 +27,17 @@ class ProductsRepository:
     async def get_all_products(self) -> list[ProductInDb]:
         results = await self.products_ds.get_all_products()
         models = [ProductInDb.model_validate(result) for result in results]
+        return models
+
+    async def get_all_products_with_accounts(
+        self, branch_id: str, page: int, limit: int
+    ) -> list[ProductInDbWithAccounts]:
+        results = await self.products_ds.get_all_products_with_accounts(
+            branch_id,
+            page,
+            limit,
+        )
+        models = [ProductInDbWithAccounts.model_validate(result) for result in results]
         return models
 
     async def get_product_by_id(self, product_id: str) -> ProductInDb | None:

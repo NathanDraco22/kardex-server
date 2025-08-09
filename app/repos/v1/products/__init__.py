@@ -1,5 +1,10 @@
 from .data.products_datasource import ProductsDataSource
-from .models.product_model import CreateProduct, UpdateProduct, ProductInDb
+from .models.product_model import (
+    CreateProduct,
+    UpdateProduct,
+    ProductInDb,
+    ProductInDbWithAccounts,
+)
 from .products_repository import ProductsRepository
 
 __all__ = [
@@ -7,5 +12,6 @@ __all__ = [
     "CreateProduct",
     "UpdateProduct",
     "ProductInDb",
+    "ProductInDbWithAccounts",
     "ProductsRepository",
 ]
