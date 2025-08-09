@@ -63,6 +63,46 @@ class ProductsCollection:
 
         return result
 
+    async def fetch_all_products_with_accounts(
+        self, branch_id: str, page: int, limit: int
+    ):
+        collection = self.__collection
+
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {"isDeleted": False},
+                },
+                {
+                    "$lookup": {
+                        "from": "ProductAccounts",
+                        "localField": "id",
+                        "foreignField": "productId",
+                        "as": "account",
+                    }
+                },
+                {
+                    "$unwind": "$account",
+                },
+                {
+                    "$match": {"account.branchId": branch_id},
+                },
+                {
+                    "$sort": {"name": 1},
+                },
+                {
+                    "$skip": (page - 1) * limit,
+                },
+                {
+                    "$limit": limit,
+                },
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+
+        return result
+
     async def update_product_by_id(
         self,
         product_id: str,
@@ -88,6 +128,7 @@ class ProductsCollection:
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),
+                IndexModel([("name", 1)]),
                 IndexModel(
                     [
                         ("name", "text"),
