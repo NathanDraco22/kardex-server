@@ -137,7 +137,15 @@ class ProductsCollection:
                         ("unitName", "text"),
                         ("categoryName", "text"),
                         ("tags", "text"),
-                    ]
+                    ],
+                    weights={
+                        "name": 10,
+                        "code": 3,
+                        "brandName": 5,
+                        "unitName": 5,
+                        "categoryName": 3,
+                        "tags": 10,
+                    },
                 ),
             ]
         )

@@ -1,3 +1,4 @@
+from repos.v1.product_accounts import ProductAccountInDb
 from datetime import datetime
 from pydantic import BaseModel
 
@@ -31,3 +32,11 @@ class ProductInDb(BaseProduct):
     isDeleted: bool = False
     createdAt: datetime
     updatedAt: datetime | None = None
+
+
+class ProductInDbWithAccounts(BaseProduct):
+    id: str
+    isDeleted: bool = False
+    createdAt: datetime
+    updatedAt: datetime | None = None
+    accounts: list[ProductAccountInDb]
