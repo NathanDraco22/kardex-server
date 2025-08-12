@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from pymongo import ReturnDocument
@@ -39,15 +40,17 @@ class ClientsCollection:
     async def search_client_by_text(self, text_query: str) -> list[dict[str, Any]]:
         collection = self.__collection
 
+        safe_query = re.escape(text_query)
+
         query = {
-            "$text": {
-                "$search": text_query,
-                "$caseSensitive": False,
-                "$diacriticSensitive": False,
+            "name": {
+                "$regex": safe_query,
+                "$options": "i",  # 'i' para case-insensitive
             },
             "isDeleted": False,
         }
-        cursor = collection.find(query).limit(10)
+
+        cursor = collection.find(query).limit(7)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
