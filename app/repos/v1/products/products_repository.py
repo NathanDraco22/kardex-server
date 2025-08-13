@@ -6,7 +6,7 @@ from .models.product_model import (
     ProductInDbWithAccounts,
 )
 
-from tools import UuidTool, TimeTools
+from tools import UuidTool, TimeTools, generate_prefixes
 
 
 class ProductsRepository:
@@ -20,7 +20,10 @@ class ProductsRepository:
             **create_product.model_dump(),
         )
 
-        result = await self.products_ds.create_product(new_product.model_dump())
+        new_product_data = new_product.model_dump()
+        new_product_data["searchPrefixes"] = generate_prefixes(new_product_data["name"])
+
+        result = await self.products_ds.create_product(new_product_data)
 
         return ProductInDb.model_validate(result)
 
@@ -64,6 +67,8 @@ class ProductsRepository:
         updated_data = product.model_dump(exclude_unset=True)
 
         updated_data["updatedAt"] = TimeTools.get_now_utc()
+
+        updated_data["searchPrefixes"] = generate_prefixes(updated_data["name"])
 
         result = await self.products_ds.update_product_by_id(product_id, updated_data)
 
