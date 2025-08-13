@@ -56,7 +56,14 @@ class ProductsCollection:
             },
             "isDeleted": False,
         }
-        cursor = collection.find(query).limit(10)
+
+        projection = {"score": {"$meta": "textScore"}}
+
+        cursor = (
+            collection.find(query, projection)
+            .sort([("score", {"$meta": "textScore"})])
+            .limit(7)
+        )
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -137,6 +144,7 @@ class ProductsCollection:
                         ("unitName", "text"),
                         ("categoryName", "text"),
                         ("tags", "text"),
+                        ("searchPrefixes", "text"),
                     ],
                     weights={
                         "name": 10,
