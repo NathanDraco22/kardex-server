@@ -9,7 +9,7 @@ class ExitItem(BaseModel):
 
 
 class BaseExitDoc(BaseModel):
-    providerId: str
+    supplierId: str
     docNumber: str
     docDate: datetime
     branchId: str
@@ -18,10 +18,6 @@ class BaseExitDoc(BaseModel):
 
 
 class CreateExitDoc(BaseExitDoc):
-    pass
-
-
-class UpdateExitDoc(BaseModel):
     pass
 
 

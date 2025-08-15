@@ -1,4 +1,4 @@
-def generate_prefixes(text: str, min_size: int = 3, max_size: int = 10) -> list[str]:
+def generate_prefixes(text: str, min_size: int = 2, max_size: int = 10) -> list[str]:
     prefixes = set()
     text = text.lower()
     for word in text.split():

@@ -2,6 +2,8 @@ from typing import Any
 
 from services import MongoService
 
+from pymongo import IndexModel
+
 
 class ExitDocsCollection:
     collection_name = "ExitDocs"
@@ -48,3 +50,33 @@ class ExitDocsCollection:
         )
 
         return exit_doc
+
+    async def create_index(self):
+        collection = self.__collection
+
+        await collection.create_indexes(
+            [
+                IndexModel(
+                    [
+                        ("docNumber", 1),
+                        ("supplierId", 1),
+                    ],
+                    unique=True,
+                ),
+                IndexModel(
+                    [
+                        ("branchId", 1),
+                    ]
+                ),
+                IndexModel(
+                    [
+                        ("createdAt", -1),
+                    ]
+                ),
+                IndexModel(
+                    [
+                        ("docDate", -1),
+                    ]
+                ),
+            ]
+        )

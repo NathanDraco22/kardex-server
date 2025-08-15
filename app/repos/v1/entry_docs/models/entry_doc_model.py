@@ -9,7 +9,7 @@ class EntryItem(BaseModel):
 
 
 class BaseEntryDoc(BaseModel):
-    providerId: str
+    supplierId: str
     docNumber: str
     docDate: datetime
     branchId: str
