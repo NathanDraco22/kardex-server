@@ -1,6 +1,7 @@
 from typing import Any
 
 from services import MongoService
+from pymongo import IndexModel
 
 
 class EntryDocsCollection:
@@ -48,3 +49,33 @@ class EntryDocsCollection:
         collection = self.__collection
         await collection.insert_one(entry_doc_data, session=session)
         return entry_doc_data
+
+    async def create_index(self):
+        collection = self.__collection
+
+        await collection.create_indexes(
+            [
+                IndexModel(
+                    [
+                        ("docNumber", 1),
+                        ("supplierId", 1),
+                    ],
+                    unique=True,
+                ),
+                IndexModel(
+                    [
+                        ("branchId", 1),
+                    ],
+                ),
+                IndexModel(
+                    [
+                        ("createdAt", -1),
+                    ],
+                ),
+                IndexModel(
+                    [
+                        ("docDate", -1),
+                    ],
+                ),
+            ]
+        )

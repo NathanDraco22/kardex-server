@@ -147,12 +147,13 @@ class ProductsCollection:
                         ("searchPrefixes", "text"),
                     ],
                     weights={
-                        "name": 10,
+                        "name": 7,
                         "code": 3,
-                        "brandName": 5,
+                        "brandName": 10,
                         "unitName": 5,
                         "categoryName": 3,
-                        "tags": 10,
+                        "searchPrefixes": 5,
+                        "tags": 7,
                     },
                 ),
             ]
