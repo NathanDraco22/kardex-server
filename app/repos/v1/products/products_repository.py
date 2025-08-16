@@ -43,6 +43,13 @@ class ProductsRepository:
         models = [ProductInDbWithAccounts.model_validate(result) for result in results]
         return models
 
+    async def get_paginated_products(
+        self, offset: int, limit: int
+    ) -> list[ProductInDb]:
+        results = await self.products_ds.get_paginated_products(offset, limit)
+        models = [ProductInDb.model_validate(result) for result in results]
+        return models
+
     async def get_product_by_id(self, product_id: str) -> ProductInDb | None:
         result = await self.products_ds.get_product_by_id(product_id)
 

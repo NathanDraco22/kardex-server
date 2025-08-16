@@ -1,9 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
 
 from repos.v1.products import CreateProduct, UpdateProduct, ProductInDb
 
 from responses.v1 import ListResponse
 
+from .query_params import ProductQueruyParams
 from .products_controller import products_controller
 
 
@@ -18,6 +20,13 @@ async def create_product(body: CreateProduct) -> ProductInDb:
 @products_router.get("")
 async def get_all_products() -> ListResponse[ProductInDb]:
     return await products_controller.get_all_products()
+
+
+@products_router.get("/paginated")
+async def get_paginated_products(
+    query_params: ProductQueruyParams = Depends(),
+) -> ListResponse[ProductInDb]:
+    return await products_controller.get_paginated_products(**query_params.model_dump())
 
 
 @products_router.get("/{product_id}")

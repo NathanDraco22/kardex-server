@@ -25,6 +25,15 @@ class ProductsController:
             count=len(products),
         )
 
+    async def get_paginated_products(
+        self, offset: int, limit: int
+    ) -> ListResponse[ProductInDb]:
+        products = await self.products_repo.get_paginated_products(offset, limit)
+        return ListResponse(
+            data=products,
+            count=len(products),
+        )
+
     async def get_product_by_id(self, product_id: str) -> ProductInDb:
         product = await self.products_repo.get_product_by_id(product_id)
         if product is None:

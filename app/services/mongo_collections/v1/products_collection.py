@@ -29,6 +29,19 @@ class ProductsCollection:
 
         return result
 
+    async def fetch_paginated_products(
+        self, offset: int, limit: int
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        cursor = collection.find({"isDeleted": False})
+        cursor = cursor.sort("name", 1).skip(offset).limit(limit)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def fetch_product_by_id(self, product_id: str) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one({"id": product_id, "isDeleted": False})

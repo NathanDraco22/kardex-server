@@ -29,6 +29,17 @@ class EntryDocsCollection:
 
         return result
 
+    async def fetch_paginated_entry_docs(
+        self, offset: int, limit: int, branch_id: str
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+        cursor = collection.find({"branchId": branch_id})
+        cursor = cursor.sort("docDate", -1).skip(offset).limit(limit)
+
+        result = await cursor.to_list(length=None)
+
+        return result
+
     async def fetch_entry_doc_by_id(self, entry_doc_id: str) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one({"id": entry_doc_id})
@@ -65,16 +76,12 @@ class EntryDocsCollection:
                 IndexModel(
                     [
                         ("branchId", 1),
+                        ("docDate", -1),
                     ],
                 ),
                 IndexModel(
                     [
                         ("createdAt", -1),
-                    ],
-                ),
-                IndexModel(
-                    [
-                        ("docDate", -1),
                     ],
                 ),
             ]

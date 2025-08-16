@@ -11,6 +11,16 @@ class ExitDocsRepository:
         models = [ExitDocInDb.model_validate(result) for result in results]
         return models
 
+    async def get_paginated_exit_docs(
+        self, offset: int, page_size: int, branch_id: str
+    ) -> list[ExitDocInDb]:
+        results = await self.exit_docs_ds.get_paginated_exit_docs(
+            offset, page_size, branch_id
+        )
+        models = [ExitDocInDb.model_validate(result) for result in results]
+
+        return models
+
     async def get_exit_doc_by_id(self, exit_doc_id: str) -> ExitDocInDb | None:
         result = await self.exit_docs_ds.get_exit_doc_by_id(exit_doc_id)
 

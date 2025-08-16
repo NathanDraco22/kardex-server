@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from responses.v1.list_response import ListResponse
 from core.product_ledger.product_ledger_manager import ProductLedgerManager
 from repos.v1.exit_docs import (
     CreateExitDoc,
@@ -24,6 +25,14 @@ class ExitDocsController:
     async def get_all_exit_docs(self) -> list[ExitDocInDb]:
         exit_docs = await self.exit_docs_repo.get_all_exit_docs()
         return exit_docs
+
+    async def get_paginated_exit_docs(
+        self, offset: int, page_size: int, branch_id: str
+    ) -> ListResponse[ExitDocInDb]:
+        exit_docs = await self.exit_docs_repo.get_paginated_exit_docs(
+            offset, page_size, branch_id
+        )
+        return ListResponse(count=len(exit_docs), data=exit_docs)
 
     async def get_exit_doc_by_id(self, exit_doc_id: str) -> ExitDocInDb:
         exit_doc = await self.exit_docs_repo.get_exit_doc_by_id(exit_doc_id)
