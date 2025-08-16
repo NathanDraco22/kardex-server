@@ -18,6 +18,12 @@ class EntryDocsDataSource:
         collection = EntryDocsCollection()
         return await collection.fetch_all_entry_docs()
 
+    async def get_paginated_entry_docs(
+        self, offset: int, limit: int, branch_id: str
+    ) -> list[dict[str, Any]]:
+        collection = EntryDocsCollection()
+        return await collection.fetch_paginated_entry_docs(offset, limit, branch_id)
+
     async def get_entry_doc_by_id(self, entry_doc_id: str) -> dict[str, Any] | None:
         collection = EntryDocsCollection()
         return await collection.fetch_entry_doc_by_id(entry_doc_id)

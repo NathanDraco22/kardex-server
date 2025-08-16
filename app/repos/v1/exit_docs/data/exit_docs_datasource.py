@@ -18,6 +18,15 @@ class ExitDocsDataSource:
         collection = ExitDocsCollection()
         return await collection.fetch_all_exit_docs()
 
+    async def get_paginated_exit_docs(
+        self,
+        offset: int,
+        limit: int,
+        branch_id: str,
+    ) -> list[dict[str, Any]]:
+        collection = ExitDocsCollection()
+        return await collection.fetch_paginated_exit_docs(offset, limit, branch_id)
+
     async def get_exit_doc_by_id(self, exit_doc_id: str) -> dict[str, Any] | None:
         collection = ExitDocsCollection()
         return await collection.fetch_exit_doc_by_id(exit_doc_id)

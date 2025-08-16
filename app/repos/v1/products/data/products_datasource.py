@@ -18,6 +18,12 @@ class ProductsDataSource:
         collection = ProductsCollection()
         return await collection.fetch_all_products()
 
+    async def get_paginated_products(
+        self, offset: int, limit: int
+    ) -> list[dict[str, Any]]:
+        collection = ProductsCollection()
+        return await collection.fetch_paginated_products(offset, limit)
+
     async def get_all_products_with_accounts(
         self,
         branch_id: str,

@@ -30,6 +30,18 @@ class ExitDocsCollection:
 
         return result
 
+    async def fetch_paginated_exit_docs(
+        self, offset: int, limit: int, branch_id: str
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+        cursor = collection.find({"branchId": branch_id})
+        cursor = cursor.sort("docDate", -1).skip(offset).limit(limit)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def fetch_exit_doc_by_id(self, exit_doc_id: str) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one({"id": exit_doc_id})
@@ -66,6 +78,7 @@ class ExitDocsCollection:
                 IndexModel(
                     [
                         ("branchId", 1),
+                        ("docDate", -1),
                     ]
                 ),
                 IndexModel(

@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 
+from responses.v1.list_response import ListResponse
 from core.product_ledger.product_ledger_manager import ProductLedgerManager
 
 from repos.v1.entry_docs import (
@@ -26,6 +27,17 @@ class EntryDocsController:
     async def get_all_entry_docs(self) -> list[EntryDocInDb]:
         entry_docs = await self.entry_docs_repo.get_all_entry_docs()
         return entry_docs
+
+    async def get_paginated_entry_docs(
+        self, offset: int, limit: int, branch_id: str
+    ) -> ListResponse[EntryDocInDb]:
+        entry_docs = await self.entry_docs_repo.get_paginated_entry_docs(
+            offset, limit, branch_id
+        )
+        return ListResponse(
+            count=len(entry_docs),
+            data=entry_docs,
+        )
 
     async def get_entry_doc_by_id(self, entry_doc_id: str) -> EntryDocInDb:
         entry_doc = await self.entry_docs_repo.get_entry_doc_by_id(entry_doc_id)
