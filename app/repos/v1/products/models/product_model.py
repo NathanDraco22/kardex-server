@@ -21,6 +21,7 @@ class CreateProduct(BaseProduct):
 class UpdateProduct(BaseModel):
     name: str | None = None
     description: str | None = None
+    brandName: str | None = None
     unitName: str | None = None
     categoryName: str | None = None
     tags: list[str] | None = None
