@@ -3,6 +3,10 @@ from typing import Any
 from services import MongoService
 from pymongo import IndexModel
 
+from .aggregations.entry_docs_agregations import (
+    read_agreggation_entry_docs_with_supplier,
+)
+
 
 class EntryDocsCollection:
     collection_name = "EntryDocs"
@@ -81,8 +85,31 @@ class EntryDocsCollection:
                 ),
                 IndexModel(
                     [
+                        ("branchId", 1),
+                        ("supplierId", 1),
+                        ("docDate", -1),
+                    ]
+                ),
+                IndexModel(
+                    [
                         ("createdAt", -1),
                     ],
                 ),
             ]
         )
+
+    async def fetch_entry_docs_with_supplier(
+        self, branch_id: str, supplier_id: str, offset: int, limit: int
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        pipeline = read_agreggation_entry_docs_with_supplier(
+            branch_id,
+            supplier_id,
+            offset,
+            limit,
+        )
+
+        cursor = collection.aggregate(pipeline)
+
+        return await cursor.to_list(length=None)

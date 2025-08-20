@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from .branches.branches_router import branches_router
 from .clients.clients_router import clients_router
 from .entry_docs.entry_docs_router import entry_docs_router
+from .entry_histories.entry_histories_router import entry_histories_router
 from .exit_docs.exit_docs_router import exit_docs_router
 from .product_accounts.product_accounts_router import product_accounts_router
 from .product_categories.product_categories_router import product_categories_router
@@ -16,6 +17,7 @@ router_v1 = APIRouter(tags=["apiV1"])
 router_v1.include_router(branches_router, prefix="/branches")
 router_v1.include_router(clients_router, prefix='/clients')
 router_v1.include_router(entry_docs_router, prefix="/entry-docs")
+router_v1.include_router(entry_histories_router, prefix='/entry-histories')
 router_v1.include_router(exit_docs_router, prefix="/exit-docs")
 router_v1.include_router(product_accounts_router, prefix='/product-accounts')
 router_v1.include_router(product_categories_router, prefix='/product-categories')
