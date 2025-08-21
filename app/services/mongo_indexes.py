@@ -4,6 +4,8 @@ from services.mongo_collections.v1 import (
     SuppliersCollection,
     ProductCategoriesCollection,
     ProductPricesCollection,
+    EntryDocsCollection,
+    ExitDocsCollection,
 )
 
 
@@ -22,3 +24,9 @@ async def create_indexes():
 
     collection = ProductPricesCollection()
     await collection.create_indexes()
+
+    collection = EntryDocsCollection()
+    await collection.create_index()
+
+    collection = ExitDocsCollection()
+    await collection.create_index()
