@@ -7,7 +7,7 @@ class EntryHistoriesRepository:
         self.entry_histories_ds = entry_histories_ds
 
     async def get_entry_history(
-        self, branch_id: str, supplier_id: str, offset: int, limit: int
+        self, branch_id: str, supplier_id: str | None, offset: int, limit: int
     ) -> list[EntryHistoryInDb]:
         entry_histories_data = await self.entry_histories_ds.get_entry_history(
             branch_id,

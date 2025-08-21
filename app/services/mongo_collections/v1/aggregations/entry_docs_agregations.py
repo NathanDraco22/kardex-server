@@ -3,17 +3,21 @@ from typing import Any
 
 def read_agreggation_entry_docs_with_supplier(
     branch_id: str,
-    supplier_id: str,
+    supplier_id: str | None,
     offset: int,
     limit: int,
 ) -> list[dict[str, Any]]:
-    return [
-        {
-            "$match": {
-                "branchId": branch_id,
-                "supplierId": supplier_id,
-            },
+    match_pipeline = {
+        "$match": {
+            "branchId": branch_id,
         },
+    }
+
+    if supplier_id:
+        match_pipeline["$match"]["supplierId"] = supplier_id
+
+    return [
+        match_pipeline,
         {
             "$sort": {
                 "docDate": -1,

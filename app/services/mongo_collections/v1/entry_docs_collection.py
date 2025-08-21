@@ -99,7 +99,7 @@ class EntryDocsCollection:
         )
 
     async def fetch_entry_docs_with_supplier(
-        self, branch_id: str, supplier_id: str, offset: int, limit: int
+        self, branch_id: str, supplier_id: str | None, offset: int, limit: int
     ) -> list[dict[str, Any]]:
         collection = self.__collection
 

@@ -12,7 +12,7 @@ class EntryHistoriesController:
         self.entry_histories_repo = entry_histories_repo
 
     async def get_entry_history(
-        self, branch_id: str, supplier_id: str, offset: int, limit: int
+        self, branch_id: str, supplier_id: str | None, offset: int, limit: int
     ) -> ListResponse[EntryHistoryInDb]:
         entry_histories = await self.entry_histories_repo.get_entry_history(
             branch_id, supplier_id, offset, limit
