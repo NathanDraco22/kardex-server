@@ -4,6 +4,10 @@ from services import MongoService
 
 from pymongo import IndexModel
 
+from .aggregations.exit_docs_agregations import (
+    read_agreggation_exit_docs_with_client,
+)
+
 
 class ExitDocsCollection:
     collection_name = "ExitDocs"
@@ -71,13 +75,20 @@ class ExitDocsCollection:
                 IndexModel(
                     [
                         ("docNumber", 1),
-                        ("supplierId", 1),
+                        ("clientId", 1),
                     ],
                     unique=True,
                 ),
                 IndexModel(
                     [
                         ("branchId", 1),
+                        ("docDate", -1),
+                    ]
+                ),
+                IndexModel(
+                    [
+                        ("branchId", 1),
+                        ("clientId", 1),
                         ("docDate", -1),
                     ]
                 ),
@@ -93,3 +104,19 @@ class ExitDocsCollection:
                 ),
             ]
         )
+
+    async def fetch_exit_docs_with_client(
+        self, branch_id: str, client_id: str | None, offset: int, limit: int
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        pipeline = read_agreggation_exit_docs_with_client(
+            branch_id,
+            client_id,
+            offset,
+            limit,
+        )
+
+        cursor = collection.aggregate(pipeline)
+
+        return await cursor.to_list(length=None)
