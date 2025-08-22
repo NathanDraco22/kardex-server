@@ -1,5 +1,6 @@
 from .data.entry_histories_datasource import EntryHistoriesDataSource
 from .models.entry_history_model import EntryHistoryInDb
+from .params.get_entry_history_params import GetEntryHistoryParams
 
 
 class EntryHistoriesRepository:
@@ -7,13 +8,10 @@ class EntryHistoriesRepository:
         self.entry_histories_ds = entry_histories_ds
 
     async def get_entry_history(
-        self, branch_id: str, supplier_id: str | None, offset: int, limit: int
+        self, params: GetEntryHistoryParams
     ) -> list[EntryHistoryInDb]:
         entry_histories_data = await self.entry_histories_ds.get_entry_history(
-            branch_id,
-            supplier_id,
-            offset,
-            limit,
+            **params.to_dict()
         )
 
         entry_histories = [

@@ -13,4 +13,4 @@ exit_histories_router = APIRouter(tags=["exit_historiesV1"])
 async def get_exit_history(
     query_params: ExitHistoryQueryParams = Depends(),
 ) -> ListResponse[ExitHistoryInDb]:
-    return await exit_histories_controller.get_exit_history(**query_params.model_dump())
+    return await exit_histories_controller.get_exit_history(query_params)

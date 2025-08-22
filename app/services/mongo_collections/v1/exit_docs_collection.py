@@ -1,5 +1,5 @@
 from typing import Any
-
+from datetime import datetime
 from services import MongoService
 
 from pymongo import IndexModel
@@ -106,7 +106,13 @@ class ExitDocsCollection:
         )
 
     async def fetch_exit_docs_with_client(
-        self, branch_id: str, client_id: str | None, offset: int, limit: int
+        self,
+        branch_id: str,
+        client_id: str | None,
+        offset: int,
+        limit: int,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> list[dict[str, Any]]:
         collection = self.__collection
 
@@ -115,6 +121,8 @@ class ExitDocsCollection:
             client_id,
             offset,
             limit,
+            start_date,
+            end_date,
         )
 
         cursor = collection.aggregate(pipeline)
