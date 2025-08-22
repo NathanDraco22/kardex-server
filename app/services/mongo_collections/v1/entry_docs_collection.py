@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any
 
 from services import MongoService
@@ -99,7 +100,13 @@ class EntryDocsCollection:
         )
 
     async def fetch_entry_docs_with_supplier(
-        self, branch_id: str, supplier_id: str | None, offset: int, limit: int
+        self,
+        branch_id: str,
+        supplier_id: str | None,
+        offset: int,
+        limit: int,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> list[dict[str, Any]]:
         collection = self.__collection
 
@@ -108,6 +115,8 @@ class EntryDocsCollection:
             supplier_id,
             offset,
             limit,
+            start_date,
+            end_date,
         )
 
         cursor = collection.aggregate(pipeline)

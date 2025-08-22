@@ -13,6 +13,4 @@ entry_histories_router = APIRouter(tags=["entry_historiesV1"])
 async def get_entry_histories(
     query_params: EntryHistoryQueryParams = Depends(),
 ) -> ListResponse[EntryHistoryInDb]:
-    return await entry_histories_controller.get_entry_history(
-        **query_params.model_dump()
-    )
+    return await entry_histories_controller.get_entry_history(query_params)
