@@ -22,17 +22,17 @@ class EntryHistoriesController:
         start_date: datetime | None = None
         end_date: datetime | None = None
 
-        if query_params.start_date and query_params.end_date:
-            start_date = datetime.combine(query_params.start_date, time.min)
-            end_date = datetime.combine(query_params.end_date, time.max)
+        if query_params.startDate and query_params.endDate:
+            start_date = datetime.combine(query_params.startDate, time.min)
+            end_date = datetime.combine(query_params.endDate, time.max)
 
             if start_date > end_date:
                 start_date = None
                 end_date = None
 
         entry_domain_params = GetEntryHistoryParams(
-            branch_id=query_params.branch_id,
-            supplier_id=query_params.supplier_id,
+            branch_id=query_params.branchId,
+            supplier_id=query_params.supplierId,
             offset=query_params.offset,
             limit=query_params.limit,
             start_date=start_date,
