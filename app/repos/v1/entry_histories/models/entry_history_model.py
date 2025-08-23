@@ -6,6 +6,12 @@ class Supplier(BaseModel):
     name: str
 
 
+class EntryItem(BaseModel):
+    productId: str
+    cost: int
+    quantity: int
+
+
 class BaseEntryHistory(BaseModel):
     supplierId: str
     supplier: Supplier
@@ -13,6 +19,7 @@ class BaseEntryHistory(BaseModel):
     docDate: datetime
     branchId: str
     description: str = ""
+    items: list[EntryItem]
 
 
 class EntryHistoryInDb(BaseEntryHistory):
