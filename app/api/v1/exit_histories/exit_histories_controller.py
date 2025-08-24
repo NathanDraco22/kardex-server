@@ -22,17 +22,17 @@ class ExitHistoriesController:
         start_date: datetime | None = None
         end_date: datetime | None = None
 
-        if params.start_date and params.end_date:
-            start_date = datetime.combine(params.start_date, time.min)
-            end_date = datetime.combine(params.end_date, time.max)
+        if params.startDate and params.endDate:
+            start_date = datetime.combine(params.startDate, time.min)
+            end_date = datetime.combine(params.endDate, time.max)
 
             if start_date > end_date:
                 start_date = None
                 end_date = None
 
         domain_params = GetExitHistoryParams(
-            branch_id=params.branch_id,
-            client_id=params.client_id,
+            branch_id=params.branchId,
+            client_id=params.clientId,
             offset=params.offset,
             limit=params.limit,
             start_date=start_date,
