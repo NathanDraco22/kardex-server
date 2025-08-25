@@ -13,7 +13,6 @@ class BaseProductAccount(BaseModel):
     currentStock: int
     averageCost: int
     lastCost: int
-    prices: list[PriceObject] = []
 
 
 class ProductAccountInDb(BaseProductAccount):
