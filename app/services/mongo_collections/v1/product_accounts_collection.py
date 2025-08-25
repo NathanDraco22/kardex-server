@@ -1,7 +1,8 @@
+from typing import AsyncGenerator
 from typing import Any
 from datetime import datetime
 
-from pymongo import ReturnDocument
+from pymongo import ReturnDocument, IndexModel
 
 from services import MongoService
 
@@ -85,7 +86,6 @@ class ProductAccountsCollection:
             [
                 {
                     "$set": {
-                        # Usamos $ifNull para manejar el caso de un documento nuevo
                         "currentStock": {
                             "$add": [
                                 {"$ifNull": ["$currentStock", 0]},
@@ -94,8 +94,6 @@ class ProductAccountsCollection:
                         },
                         "lastCost": last_cost,
                         "averageCost": {
-                            # Tu cálculo con $round y $convert ya es robusto
-                            # Solo necesita $ifNull para el caso de la creación
                             "$convert": {
                                 "input": {
                                     "$round": [
@@ -151,10 +149,54 @@ class ProductAccountsCollection:
                     }
                 }
             ],
-            # AÑADIMOS UPSERT=TRUE
             upsert=True,
             session=session,
             return_document=ReturnDocument.AFTER,
         )
 
         return result
+
+    async def create_index(self):
+        collection = self.__collection
+        await collection.create_indexes(
+            [
+                IndexModel(
+                    [
+                        ("branchId", 1),
+                    ]
+                ),
+                IndexModel(
+                    [
+                        ("branchId", 1),
+                        ("productId", 1),
+                    ]
+                ),
+            ]
+        )
+
+    async def get_all_product_accounts_with_product(
+        self, branch_id: str
+    ) -> AsyncGenerator[dict[str, Any], None]:
+        collection = self.__collection
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "branchId": branch_id,
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "Products",
+                        "localField": "productId",
+                        "foreignField": "id",
+                        "as": "product",
+                    }
+                },
+                {"$unwind": "$product"},
+                {"$sort": {"product.name": 1}},
+            ]
+        )
+
+        async for product_account in cursor:
+            yield product_account
