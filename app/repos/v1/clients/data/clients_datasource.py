@@ -1,6 +1,6 @@
 from typing import Any
 from typing_extensions import Self
-from services.mongo_collections.v1 import ClientsCollection
+from services.mongo_collections.v1 import ClientsCollection, ClientAccountsCollection
 
 
 class ClientsDataSource:
@@ -11,7 +11,16 @@ class ClientsDataSource:
 
     async def create_client(self, client: dict[str, Any]) -> dict[str, Any]:
         collection = ClientsCollection()
+        client_accounts_collection = ClientAccountsCollection()
         await collection.create_client(client)
+
+        account_data = {
+            "clientId": client["id"],
+            "balance": 0,
+            "createdAt": client["createdAt"],
+        }
+
+        await client_accounts_collection.create_client_account(account_data)
         return client
 
     async def get_all_clients(self) -> list[dict[str, Any]]:
