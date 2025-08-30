@@ -14,6 +14,7 @@ from .product_categories.product_categories_router import product_categories_rou
 from .product_prices.product_prices_router import product_prices_router
 from .products.products_router import products_router
 from .receipts.receipts_router import receipts_router
+from .sales.sales_router import sales_router
 from .suppliers.suppliers_router import suppliers_router
 from .units.units_router import units_router
 
@@ -33,5 +34,7 @@ router_v1.include_router(product_categories_router, prefix="/product-categories"
 router_v1.include_router(product_prices_router, prefix="/product-prices")
 router_v1.include_router(products_router, prefix="/products")
 router_v1.include_router(receipts_router, prefix="/receipts")
+router_v1.include_router(sales_router, prefix='/sales')
 router_v1.include_router(suppliers_router, prefix="/suppliers")
 router_v1.include_router(units_router, prefix="/units")
+

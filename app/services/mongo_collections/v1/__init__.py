@@ -12,6 +12,7 @@ from .product_prices_collection import ProductPricesCollection
 from .product_transactions_collection import ProductTransactionsCollection
 from .products_collection import ProductsCollection
 from .receipts_collection import ReceiptsCollection
+from .sales_collection import SalesCollection
 from .suppliers_collection import SuppliersCollection
 from .transactions_collection import TransactionsCollection
 from .units_collection import UnitsCollection
@@ -31,6 +32,7 @@ __all__ = [
     "ProductTransactionsCollection",
     "ProductsCollection",
     "ReceiptsCollection",
+    "SalesCollection",
     "SuppliersCollection",
     "TransactionsCollection",
     "UnitsCollection",

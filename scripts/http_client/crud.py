@@ -197,6 +197,55 @@ async def create_cash_invoice():
         assert response.status_code == 200
 
 
+async def create_sale():
+    json_data = {
+        "branchId": "bd1a7de5-8bfc-4ec9-8f5a-6f1ecb9f11a7",
+        "saleItems": [
+            {
+                "product": {
+                    "id": "f3d87beb-08a1-4fdb-9959-597273fcfb89",
+                    "name": "Dolo Neurobion XR",
+                    "unitName": "Tableta",
+                    "brandName": "MERCK",
+                    "code": "1",
+                    "categoryName": "AINES",
+                    "tags": [""],
+                },
+                "quantity": 5,
+                "bonQuantity": 0,
+                "cost": 3453,
+                "price": 4000,
+                "priceName": "precio1",
+                "discount": 0,
+            },
+            {
+                "product": {
+                    "id": "a32b7f3d-a262-40af-8ead-19c92b57bf0f",
+                    "name": "Cebion 500mg",
+                    "unitName": "Tableta",
+                    "brandName": "MERCK",
+                    "code": "4",
+                    "categoryName": None,
+                    "tags": [""],
+                },
+                "quantity": 10,
+                "bonQuantity": 0,
+                "cost": 502,
+                "price": 600,
+                "priceName": "precio1",
+                "discount": 0,
+            },
+        ],
+        "description": "",
+        "totalCost": 22285,
+        "total": 26000,
+    }
+
+    async with AsyncClient() as client:
+        response = await client.post(f"{URL}/sales", json=json_data)
+        assert response.status_code == 200
+
+
 async def main():
     # await create_branch()
     # await create_account()
@@ -205,7 +254,8 @@ async def main():
     # await create_entry_batch()
     # await create_exit_batch()
 
-    await create_cash_invoice()
+    # await create_cash_invoice()
+    await create_sale()
     pass
 
 
