@@ -143,13 +143,70 @@ async def create_exit_batch():
         assert response.status_code == 200
 
 
+async def create_cash_invoice():
+    json_data = {
+        "branchId": "bd1a7de5-8bfc-4ec9-8f5a-6f1ecb9f11a7",
+        "clientId": "73e04def-991f-4038-96a0-61b1757acf7b",
+        "docNumber": "3",
+        "saleItems": [
+            {
+                "product": {
+                    "id": "f3d87beb-08a1-4fdb-9959-597273fcfb89",
+                    "name": "Dolo Neurobion XR",
+                    "unitName": "Tableta",
+                    "brandName": "MERCK",
+                    "code": "1",
+                    "categoryName": "AINES",
+                    "tags": [""],
+                },
+                "quantity": 5,
+                "bonQuantity": 0,
+                "cost": 3453,
+                "price": 4000,
+                "priceName": "precio1",
+                "discount": 0,
+            },
+            {
+                "product": {
+                    "id": "a32b7f3d-a262-40af-8ead-19c92b57bf0f",
+                    "name": "Cebion 500mg",
+                    "unitName": "Tableta",
+                    "brandName": "MERCK",
+                    "code": "4",
+                    "categoryName": None,
+                    "tags": [""],
+                },
+                "quantity": 10,
+                "bonQuantity": 0,
+                "cost": 502,
+                "price": 600,
+                "priceName": "precio1",
+                "discount": 0,
+            },
+        ],
+        "description": "",
+        "amountPaid": 0,
+        "status": "OPEN",
+        "paymentType": "CREDIT",
+        "totalCost": 22285,
+        "total": 26000,
+    }
+
+    async with AsyncClient() as client:
+        response = await client.post(f"{URL}/invoices", json=json_data)
+        assert response.status_code == 200
+
+
 async def main():
-    await create_branch()
-    await create_account()
-    await create_entries()
-    await create_exits()
-    await create_entry_batch()
-    await create_exit_batch()
+    # await create_branch()
+    # await create_account()
+    # await create_entries()
+    # await create_exits()
+    # await create_entry_batch()
+    # await create_exit_batch()
+
+    # await create_cash_invoice()
+    pass
 
 
 asyncio.run(main())
