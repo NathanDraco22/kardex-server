@@ -55,7 +55,7 @@ class ProductAccountsCollection:
             },
             {
                 "$inc": {
-                    "currentStock": substract_to_current_stock,
+                    "currentStock": -abs(substract_to_current_stock),
                 },
                 "$set": {
                     "updatedAt": updated_at,
