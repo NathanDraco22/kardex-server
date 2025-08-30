@@ -147,7 +147,7 @@ async def create_cash_invoice():
     json_data = {
         "branchId": "bd1a7de5-8bfc-4ec9-8f5a-6f1ecb9f11a7",
         "clientId": "73e04def-991f-4038-96a0-61b1757acf7b",
-        "docNumber": "3",
+        "docNumber": "4",
         "saleItems": [
             {
                 "product": {
@@ -205,7 +205,7 @@ async def main():
     # await create_entry_batch()
     # await create_exit_batch()
 
-    # await create_cash_invoice()
+    await create_cash_invoice()
     pass
 
 

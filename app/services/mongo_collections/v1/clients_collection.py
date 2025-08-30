@@ -1,5 +1,6 @@
 import re
 from typing import Any
+from datetime import datetime
 
 from pymongo import ReturnDocument
 from services import MongoService
@@ -90,3 +91,35 @@ class ClientsCollection:
                 ),
             ]
         )
+
+    async def add_to_client_balance(
+        self, client_id: str, amount: int, session: Any
+    ) -> dict[str, Any]:
+        collection = self.__collection
+        updated_at = datetime.now()
+
+        result = await collection.find_one_and_update(
+            {"id": client_id},
+            {"$inc": {"balance": amount}, "$set": {"updatedAt": updated_at}},
+            upsert=True,
+            session=session,
+            return_document=ReturnDocument.AFTER,
+        )
+
+        return result
+
+    async def substract_from_client_balance(
+        self, client_id: str, amount: int, session: Any
+    ) -> dict[str, Any]:
+        collection = self.__collection
+        updated_at = datetime.now()
+
+        result = await collection.find_one_and_update(
+            {"id": client_id},
+            {"$inc": {"balance": -amount}, "$set": {"updatedAt": updated_at}},
+            upsert=True,
+            session=session,
+            return_document=ReturnDocument.AFTER,
+        )
+
+        return result
