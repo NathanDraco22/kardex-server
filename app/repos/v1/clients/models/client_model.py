@@ -6,6 +6,9 @@ class BaseClient(BaseModel):
     name: str
     cardId: str | None = None
     phone: str | None = None
+    balance: int = 0
+    creditLimit: int = 0
+    isCreditActive: bool = False
     isActive: bool = True
 
 

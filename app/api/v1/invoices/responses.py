@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 from repos.v1.invoices import InvoiceInDb
-from repos.v1.client_accounts import ClientAccountInDb
+from repos.v1.clients import ClientInDb
 
 
 class InvoiceResponse(BaseModel):
     invoice: InvoiceInDb
-    clientAccount: ClientAccountInDb
+    clientAccount: ClientInDb

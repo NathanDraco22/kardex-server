@@ -5,7 +5,7 @@ from repos.v1.product_transactions import ProductTransactionInDb
 
 
 from repos.v1.client_transactions import ClientTransactionInDb
-from repos.v1.client_accounts import ClientAccountInDb
+from repos.v1.clients import ClientInDb
 
 from services import MongoService
 
@@ -13,7 +13,7 @@ from services.mongo_collections.v1 import (
     InvoicesCollection,
     ProductTransactionsCollection,
     ProductAccountsCollection,
-    ClientAccountsCollection,
+    ClientsCollection,
     ClientTransactionsCollection,
 )
 
@@ -24,14 +24,14 @@ class InsufficientBalanceError(Exception):
 
 async def process_invoice(
     create_invoice: CreateInvoice,
-) -> tuple[InvoiceInDb, ClientAccountInDb]:
+) -> tuple[InvoiceInDb, ClientInDb]:
     mongo_client = MongoService().client
 
     prd_transaction_col = ProductTransactionsCollection()
     prd_account_col = ProductAccountsCollection()
 
     client_transaction_col = ClientTransactionsCollection()
-    client_account_col = ClientAccountsCollection()
+    client_account_col = ClientsCollection()
 
     invoice_col = InvoicesCollection()
 
@@ -112,7 +112,7 @@ async def process_invoice(
                 session=session,
             )
 
-            client_account_data = await client_account_col.add_to_client_account(
+            client_account_data = await client_account_col.add_to_client_balance(
                 create_invoice.clientId,
                 new_invoice_in_db.total,
                 session=session,
@@ -142,13 +142,13 @@ async def process_invoice(
                 )
 
                 client_account_data = (
-                    await client_account_col.substract_from_client_account(
+                    await client_account_col.substract_from_client_balance(
                         create_invoice.clientId,
                         new_invoice_in_db.total,
                         session=session,
                     )
                 )
 
-            client_account = ClientAccountInDb.model_validate(client_account_data)
+            client_account = ClientInDb.model_validate(client_account_data)
 
             return new_invoice_in_db, client_account

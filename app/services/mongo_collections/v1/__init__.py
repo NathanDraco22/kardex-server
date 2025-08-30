@@ -1,7 +1,6 @@
 from .account_balances_collection import AccountBalancesCollection
 from .accounts_collection import AccountsCollection
 from .branches_collection import BranchesCollection
-from .client_accounts_collection import ClientAccountsCollection
 from .client_transactions_collection import ClientTransactionsCollection
 from .clients_collection import ClientsCollection
 from .entry_docs_collection import EntryDocsCollection
@@ -21,7 +20,6 @@ __all__ = [
     "AccountBalancesCollection",
     "AccountsCollection",
     "BranchesCollection",
-    "ClientAccountsCollection",
     "ClientTransactionsCollection",
     "ClientsCollection",
     "EntryDocsCollection",

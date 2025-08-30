@@ -10,7 +10,7 @@ from repos.v1.invoices import (
 
 from pymongo.errors import OperationFailure
 
-from repos.v1.client_accounts import ClientAccountInDb
+from repos.v1.clients import ClientInDb
 from repos.v1.branches import BranchesRepository, BranchesDataSource
 from repos.v1.products import ProductsRepository, ProductsDataSource
 
@@ -25,7 +25,7 @@ class InvoiceRegister:
 
     async def regis_invoice(
         self, create_invoice: CreateInvoice
-    ) -> tuple[InvoiceInDb, ClientAccountInDb]:
+    ) -> tuple[InvoiceInDb, ClientInDb]:
         invoice = await self.invoices_repo.get_invoice_by_doc_number(
             create_invoice.docNumber
         )
