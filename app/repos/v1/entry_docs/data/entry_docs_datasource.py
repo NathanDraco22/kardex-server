@@ -33,3 +33,12 @@ class EntryDocsDataSource:
     ) -> dict[str, Any] | None:
         collection = EntryDocsCollection()
         return await collection.fetch_entry_doc_by_doc_number(doc_number)
+
+    async def get_entry_doc_by_doc_number_and_supplier(
+        self, supplier_id: str, doc_number: str
+    ) -> dict[str, Any] | None:
+        collection = EntryDocsCollection()
+        return await collection.fetch_entry_doc_by_doc_number_and_supplier(
+            supplier_id,
+            doc_number,
+        )

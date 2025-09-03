@@ -1,4 +1,3 @@
-from ast import Index
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel

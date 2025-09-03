@@ -2,11 +2,6 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
-class PriceObject(BaseModel):
-    name: str
-    price: int
-
-
 class BaseProductAccount(BaseModel):
     productId: str
     branchId: str

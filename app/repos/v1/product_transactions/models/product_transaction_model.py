@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel
 
-TransactionType = Literal["ENTRY", "EXIT", "SALE"]
+TransactionType = Literal["ENTRY", "EXIT", "SALE", "INVOICE"]
 
 
 class BaseProductTransaction(BaseModel):

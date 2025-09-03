@@ -28,9 +28,41 @@ class ProductAccountsCollection:
     ) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one(
-            {"product_id": product_id, "branch_id": branch_id}
+            {"productId": product_id, "branchId": branch_id}
         )
         return result
+
+    async def get_product_account_with_product_data(
+        self, product_id: str, branch_id: str
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "productId": product_id,
+                        "branchId": branch_id,
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "Products",
+                        "localField": "productId",
+                        "foreignField": "id",
+                        "as": "product",
+                    }
+                },
+                {"$unwind": "$product"},
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+
+        if result:
+            result = result[0]
+
+        return None
 
     async def create_new_product_account_with_session(
         self, product_account: dict, session: Any

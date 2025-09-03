@@ -21,6 +21,8 @@ class UpdateClient(BaseModel):
     cardId: str | None = None
     phone: str | None = None
     isActive: bool | None = None
+    isCreditActive: bool | None = None
+    creditLimit: int | None = None
 
 
 class ClientInDb(BaseClient):

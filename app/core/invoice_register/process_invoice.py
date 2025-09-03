@@ -66,7 +66,7 @@ async def process_invoice(
                 new_transaction = ProductTransactionInDb(
                     id=UuidTool.generate_uuid(),
                     documentId=new_invoice_doc_id,
-                    type="SALE",
+                    type="INVOICE",
                     productId=invoice_item.product.id,
                     branchId=create_invoice.branchId,
                     quantity=total_to_substract,

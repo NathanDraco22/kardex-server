@@ -6,6 +6,10 @@ from services.mongo_collections.v1 import (
     ProductPricesCollection,
     EntryDocsCollection,
     ExitDocsCollection,
+    ProductAccountsCollection,
+    ProductSaleProfilesCollection,
+    ProductTransactionsCollection,
+    InvoicesCollection,
 )
 
 
@@ -30,3 +34,15 @@ async def create_indexes():
 
     collection = ExitDocsCollection()
     await collection.create_index()
+
+    collection = ProductAccountsCollection()
+    await collection.create_index()
+
+    collection = ProductSaleProfilesCollection()
+    await collection.create_index()
+
+    collection = ProductTransactionsCollection()
+    await collection.create_index()
+
+    collection = InvoicesCollection()
+    await collection.create_indexes()

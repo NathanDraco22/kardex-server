@@ -1,6 +1,6 @@
 from typing import Any
 
-from pymongo import ReturnDocument
+from pymongo import ReturnDocument, IndexModel
 from services import MongoService
 
 
@@ -50,6 +50,31 @@ class ProductTransactionsCollection:
         )
 
         return result
+
+    async def create_index(self):
+        collection = self.__collection
+        await collection.create_indexes(
+            [
+                IndexModel(
+                    [
+                        ("id", 1),
+                    ],
+                    unique=True,
+                ),
+                IndexModel(
+                    [
+                        ("branchId", 1),
+                        ("productId", 1),
+                        ("type", 1),
+                    ]
+                ),
+                IndexModel(
+                    [
+                        ("createdAt", -1),
+                    ],
+                ),
+            ]
+        )
 
     async def create_product_transaction_with_session(
         self, product_transaction: dict, session: Any

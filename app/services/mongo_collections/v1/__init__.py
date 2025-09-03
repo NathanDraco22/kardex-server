@@ -9,6 +9,7 @@ from .invoices_collection import InvoicesCollection
 from .product_accounts_collection import ProductAccountsCollection
 from .product_categories_collection import ProductCategoriesCollection
 from .product_prices_collection import ProductPricesCollection
+from .product_sale_profiles_collection import ProductSaleProfilesCollection
 from .product_transactions_collection import ProductTransactionsCollection
 from .products_collection import ProductsCollection
 from .receipts_collection import ReceiptsCollection
@@ -29,6 +30,7 @@ __all__ = [
     "ProductAccountsCollection",
     "ProductCategoriesCollection",
     "ProductPricesCollection",
+    "ProductSaleProfilesCollection",
     "ProductTransactionsCollection",
     "ProductsCollection",
     "ReceiptsCollection",

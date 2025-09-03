@@ -3,6 +3,7 @@ from repos.v1.product_accounts import (
     ProductAccountInDb,
 )
 from repos.v1.product_transactions import ProductTransactionInDb
+from repos.v1.product_sale_profiles import CreateProductSaleProfile
 from repos.v1.entry_docs import (
     EntryDocInDb,
 )
@@ -14,6 +15,7 @@ from services.mongo_collections.v1 import (
     EntryDocsCollection,
     ProductTransactionsCollection,
     ProductAccountsCollection,
+    ProductSaleProfilesCollection,
 )
 
 
@@ -23,6 +25,7 @@ async def process_entry_doc(
     mongo_client = MongoService().client
     prd_transaction_col = ProductTransactionsCollection()
     product_account_col = ProductAccountsCollection()
+    product_prof = ProductSaleProfilesCollection()
 
     entry_items = entry_doc.items
 
@@ -56,6 +59,20 @@ async def process_entry_doc(
                 updated_product_account = ProductAccountInDb.model_validate(result)
 
                 updated_product_accounts.append(updated_product_account)
+
+                sale_profile = CreateProductSaleProfile(
+                    branchId=updated_product_account.branchId,
+                    productId=updated_product_account.productId,
+                    salePrice=0,
+                )
+                await (
+                    product_prof.create_product_sale_profile_if_not_exist_with_session(
+                        sale_profile.branchId,
+                        sale_profile.productId,
+                        sale_profile.model_dump(),
+                        session=session,
+                    )
+                )
 
                 new_transaction = ProductTransactionInDb(
                     id=UuidTool.generate_uuid(),
