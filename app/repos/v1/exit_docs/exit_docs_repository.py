@@ -36,3 +36,16 @@ class ExitDocsRepository:
             return None
 
         return ExitDocInDb.model_validate(result)
+
+    async def get_exit_doc_by_doc_number_and_client(
+        self, client_id: str, doc_number: str
+    ) -> ExitDocInDb | None:
+        result = await self.exit_docs_ds.get_exit_doc_by_doc_number_and_client(
+            client_id,
+            doc_number,
+        )
+
+        if result is None:
+            return None
+
+        return ExitDocInDb.model_validate(result)

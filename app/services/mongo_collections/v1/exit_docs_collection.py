@@ -58,6 +58,20 @@ class ExitDocsCollection:
         result = await collection.find_one({"docNumber": doc_number})
         return result
 
+    async def fetch_exit_doc_by_doc_number_and_client(
+        self,
+        client_id: str,
+        doc_number: str,
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+        result = await collection.find_one(
+            {
+                "docNumber": doc_number,
+                "clientId": client_id,
+            }
+        )
+        return result
+
     async def create_exit_doc_with_session(self, exit_doc: dict, session: Any) -> dict:
         collection = self.__collection
         await collection.insert_one(

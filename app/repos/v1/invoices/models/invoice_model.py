@@ -22,8 +22,9 @@ class SaleItem(BaseModel):
     bonQuantity: int = 0
     cost: int
     price: int
-    priceName: str
+    subTotal: int
     discount: int = 0
+    total: int
 
 
 class BaseInvoice(BaseModel):

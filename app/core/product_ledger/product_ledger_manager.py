@@ -47,7 +47,8 @@ class ProductLedgerManager:
     async def regis_entry_doc(
         self, create_entry_doc: CreateEntryDoc
     ) -> tuple[EntryDocInDb, list[ProductAccountInDb]]:
-        entry_doc = await self.entry_docs_repo.get_entry_doc_by_doc_number(
+        entry_doc = await self.entry_docs_repo.get_entry_doc_by_doc_number_and_supplier(
+            supplier_id=create_entry_doc.supplierId,
             doc_number=create_entry_doc.docNumber,
         )
 
@@ -89,8 +90,8 @@ class ProductLedgerManager:
     async def regis_exit_doc(
         self, create_exit_doc: CreateExitDoc
     ) -> tuple[ExitDocInDb, list[ProductAccountInDb]]:
-        exit_doc = await self.exit_docs_repo.get_exit_doc_by_doc_number(
-            doc_number=create_exit_doc.docNumber
+        exit_doc = await self.exit_docs_repo.get_exit_doc_by_doc_number_and_client(
+            client_id=create_exit_doc.clientId, doc_number=create_exit_doc.docNumber
         )
 
         if exit_doc is not None:

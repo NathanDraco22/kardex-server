@@ -50,6 +50,18 @@ class EntryDocsCollection:
         result = await collection.find_one({"id": entry_doc_id})
         return result
 
+    async def fetch_entry_doc_by_doc_number_and_supplier(
+        self, supplier_id: str, doc_number: str
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+        result = await collection.find_one(
+            {
+                "supplierId": supplier_id,
+                "docNumber": doc_number,
+            },
+        )
+        return result
+
     async def fetch_entry_doc_by_doc_number(
         self, doc_number: str
     ) -> dict[str, Any] | None:

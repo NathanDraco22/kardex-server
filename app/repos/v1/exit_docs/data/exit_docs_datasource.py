@@ -36,3 +36,12 @@ class ExitDocsDataSource:
     ) -> dict[str, Any] | None:
         collection = ExitDocsCollection()
         return await collection.fetch_exit_doc_by_doc_number(doc_number)
+
+    async def get_exit_doc_by_doc_number_and_client(
+        self, client_id: str, doc_number: str
+    ) -> dict[str, Any] | None:
+        collection = ExitDocsCollection()
+        return await collection.fetch_exit_doc_by_doc_number_and_client(
+            client_id,
+            doc_number,
+        )

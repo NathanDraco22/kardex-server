@@ -35,3 +35,15 @@ class EntryDocsRepository:
             return None
 
         return EntryDocInDb.model_validate(result)
+
+    async def get_entry_doc_by_doc_number_and_supplier(
+        self, supplier_id: str, doc_number: str
+    ) -> EntryDocInDb | None:
+        result = await self.entry_docs_ds.get_entry_doc_by_doc_number_and_supplier(
+            supplier_id, doc_number
+        )
+
+        if result is None:
+            return None
+
+        return EntryDocInDb.model_validate(result)
