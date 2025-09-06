@@ -30,12 +30,12 @@ class ProductSaleProfilesRepository:
         branch_id: str,
         product_sale_profile: UpdateProductSaleProfile,
     ) -> ProductSaleProfileInDb | None:
-        udpate_profile_data = product_sale_profile.model_dump(exclude_unset=True)
+        update_profile_data = product_sale_profile.model_dump(exclude_unset=True)
 
-        udpate_profile_data["updatedAt"] = TimeTools.get_now_utc()
+        update_profile_data["updatedAt"] = TimeTools.get_now_utc()
 
         result = await self.product_sale_profiles_ds.update_product_sale_profile_by_id(
-            product_id, branch_id, udpate_profile_data
+            product_id, branch_id, update_profile_data
         )
 
         if result is None:

@@ -1,4 +1,5 @@
 from repos.v1.product_accounts import ProductAccountInDb
+from repos.v1.product_sale_profiles import ProductSaleProfileInDb
 from datetime import datetime
 from pydantic import BaseModel
 
@@ -41,3 +42,12 @@ class ProductInDbWithAccounts(BaseProduct):
     createdAt: datetime
     updatedAt: datetime | None = None
     accounts: list[ProductAccountInDb]
+
+
+class ProductInDbInBranch(BaseProduct):
+    id: str
+    isDeleted: bool = False
+    createdAt: datetime
+    updatedAt: datetime | None = None
+    account: ProductAccountInDb
+    saleProfile: ProductSaleProfileInDb
