@@ -4,6 +4,7 @@ from .models.product_model import (
     UpdateProduct,
     ProductInDb,
     ProductInDbWithAccounts,
+    ProductInDbInBranch,
 )
 
 from tools import UuidTool, TimeTools, generate_prefixes
@@ -67,6 +68,15 @@ class ProductsRepository:
         result = await self.products_ds.get_product_by_ids(product_ids)
 
         return [ProductInDb.model_validate(product) for product in result]
+
+    async def search_product_in_branch(
+        self,
+        branch_id: str,
+        text_query: str,
+    ) -> list[ProductInDbInBranch]:
+        results = await self.products_ds.search_product_in_branch(branch_id, text_query)
+        models = [ProductInDbInBranch.model_validate(result) for result in results]
+        return models
 
     async def update_product_by_id(
         self, product_id: str, product: UpdateProduct

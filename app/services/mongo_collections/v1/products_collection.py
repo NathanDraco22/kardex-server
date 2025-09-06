@@ -83,6 +83,78 @@ class ProductsCollection:
 
         return result
 
+    async def searchProductInBranch(
+        self,
+        branch_id: str,
+        text_query: str,
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "$and": [
+                            {
+                                "$text": {
+                                    "$search": text_query,
+                                    "$caseSensitive": False,
+                                    "$diacriticSensitive": False,
+                                },
+                            },
+                            {"isDeleted": False},
+                        ]
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "ProductAccounts",
+                        "localField": "id",
+                        "foreignField": "productId",
+                        "as": "account",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "branchId": branch_id,
+                                }
+                            }
+                        ],
+                    }
+                },
+                {
+                    "$unwind": "$account",
+                },
+                {
+                    "$lookup": {
+                        "from": "ProductSaleProfiles",
+                        "localField": "id",
+                        "foreignField": "productId",
+                        "as": "saleProfile",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "branchId": branch_id,
+                                }
+                            }
+                        ],
+                    }
+                },
+                {
+                    "$unwind": "$saleProfile",
+                },
+                {
+                    "$sort": {"name": 1},
+                },
+                {
+                    "$limit": 7,
+                },
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def fetch_all_products_with_accounts(
         self, branch_id: str, page: int, limit: int
     ):

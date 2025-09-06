@@ -6,6 +6,7 @@ from repos.v1.products import (
     CreateProduct,
     UpdateProduct,
     ProductInDb,
+    ProductInDbInBranch,
     ProductsRepository,
     ProductsDataSource,
 )
@@ -47,6 +48,19 @@ class ProductsController:
         self, text_query: str
     ) -> ListResponse[ProductInDb]:
         products = await self.products_repo.search_product_by_text(text_query)
+        return ListResponse(
+            data=products,
+            count=len(products),
+        )
+
+    async def search_product_in_branch(
+        self,
+        branch_id: str,
+        text_query: str,
+    ) -> ListResponse[ProductInDbInBranch]:
+        products = await self.products_repo.search_product_in_branch(
+            branch_id, text_query
+        )
         return ListResponse(
             data=products,
             count=len(products),

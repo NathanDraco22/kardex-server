@@ -4,6 +4,7 @@ from .models.product_model import (
     UpdateProduct,
     ProductInDb,
     ProductInDbWithAccounts,
+    ProductInDbInBranch,
 )
 from .products_repository import ProductsRepository
 
@@ -13,5 +14,6 @@ __all__ = [
     "UpdateProduct",
     "ProductInDb",
     "ProductInDbWithAccounts",
+    "ProductInDbInBranch",
     "ProductsRepository",
 ]

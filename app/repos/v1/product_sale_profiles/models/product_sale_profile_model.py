@@ -44,12 +44,10 @@ class UpdateProductSaleProfile(BaseModel):
 
 
 class ProductSaleProfileInDb(BaseProductSaleProfile):
-    created_at: datetime
-    updated_at: datetime | None = None
+    updatedAt: datetime | None = None
 
 
 class ProductSaleProfileInDbWithProduct(BaseProductSaleProfile):
-    created_at: datetime
     updated_at: datetime | None = None
     product: InventoryProduct
     account: ProductAccount
