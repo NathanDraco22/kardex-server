@@ -2,7 +2,7 @@ from typing import Literal
 from datetime import datetime
 from pydantic import BaseModel
 
-InvoiceStatus = Literal["OPEN", "PAID"]
+InvoiceStatus = Literal["OPEN", "PAID", "PARTIALLY_PAID", "CANCELLED"]
 PaymentType = Literal["CASH", "CREDIT"]
 
 
@@ -30,7 +30,7 @@ class SaleItem(BaseModel):
 class BaseInvoice(BaseModel):
     branchId: str
     clientId: str
-    docNumber: str
+    docNumber: str = ""
     saleItems: list[SaleItem]
     description: str = ""
     amountPaid: int = 0
@@ -45,6 +45,8 @@ class CreateInvoice(BaseInvoice):
 
 
 class UpdateInvoice(BaseModel):
+    ammountPaid: int | None = None
+    status: InvoiceStatus | None = None
     pass
 
 

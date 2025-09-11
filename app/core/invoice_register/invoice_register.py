@@ -10,6 +10,8 @@ from repos.v1.invoices import (
 
 from pymongo.errors import OperationFailure
 
+from core.counter_manager.counter_manager import CounterManager
+
 from repos.v1.clients import ClientInDb
 from repos.v1.branches import BranchesRepository, BranchesDataSource
 from repos.v1.products import ProductsRepository, ProductsDataSource
@@ -26,6 +28,9 @@ class InvoiceRegister:
     async def regis_invoice(
         self, create_invoice: CreateInvoice
     ) -> tuple[InvoiceInDb, ClientInDb]:
+        if len(create_invoice.docNumber) == 0:
+            create_invoice.docNumber = await CounterManager().next_invoice_number()
+
         invoice = await self.invoices_repo.get_invoice_by_doc_number(
             create_invoice.docNumber
         )

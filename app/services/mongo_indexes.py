@@ -1,5 +1,6 @@
 from services.mongo_collections.v1 import (
     ProductsCollection,
+    CountersCollection,
     ClientsCollection,
     SuppliersCollection,
     ProductCategoriesCollection,
@@ -14,6 +15,9 @@ from services.mongo_collections.v1 import (
 
 
 async def create_indexes():
+    collection = CountersCollection()
+    await collection.create_indexes()
+
     collection = ProductsCollection()
     await collection.create_indexes()
 
