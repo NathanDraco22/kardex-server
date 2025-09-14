@@ -2,8 +2,8 @@ from typing import Literal
 from datetime import datetime
 from pydantic import BaseModel
 
-InvoiceStatus = Literal["OPEN", "PAID", "PARTIALLY_PAID", "CANCELLED"]
-PaymentType = Literal["CASH", "CREDIT"]
+InvoiceStatus = Literal["open", "paid", "partially_paid", "cancelled"]
+PaymentType = Literal["cash", "credit"]
 
 
 class ProductItem(BaseModel):
@@ -24,6 +24,7 @@ class SaleItem(BaseModel):
     price: int
     subTotal: int
     discount: int = 0
+    iva: int = 0
     total: int
 
 
