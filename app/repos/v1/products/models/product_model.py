@@ -12,6 +12,7 @@ class BaseProduct(BaseModel):
     unitName: str
     categoryName: str | None = None
     tags: list[str]
+    hasIva: bool = False
     isActive: bool = True
 
 
