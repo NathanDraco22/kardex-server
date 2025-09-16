@@ -1,14 +1,13 @@
 from typing import Literal
 from pydantic import BaseModel
-
+from datetime import datetime
 
 PaymentMethod = Literal[
-    "CASH",
-    "TRANSFER",
-    "CREDIT_CARD",
-    "DEBIT_CARD",
-    "CHECK",
-    "OTHER",
+    "cash",
+    "transfer",
+    "card",
+    "check",
+    "other",
 ]
 
 
@@ -20,9 +19,10 @@ class AppliedInvoice(BaseModel):
 class BaseReceipt(BaseModel):
     branchId: str
     clientId: str
-    docNumber: str
+    docNumber: str = ""
     appliedInvoices: list[AppliedInvoice]
     paymentMethod: PaymentMethod
+    bankReference: str = ""
     total: int
 
 
@@ -36,5 +36,5 @@ class UpdateReceipt(BaseModel):
 
 class ReceiptInDb(BaseReceipt):
     id: str
-    created_at: str
-    updated_at: str
+    createdAt: datetime
+    updatedAt: datetime | None = None

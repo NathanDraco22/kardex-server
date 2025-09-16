@@ -1,5 +1,4 @@
 from typing import Any
-
 from pymongo import ReturnDocument, IndexModel
 from services import MongoService
 
@@ -25,6 +24,38 @@ class InvoicesCollection:
         cursor = collection.find()
 
         result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
+    async def fetch_all_invoices_by(
+        self,
+        client_id: str,
+        offset: int,
+        limit: int,
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+        cursor = collection.find({"clientId": client_id})
+
+        cursor = cursor.sort("createdAt", -1).skip(offset).limit(limit)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
+    async def fetch_pending_to_paid_invoices(
+        self, client_id: str
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+        cursor = collection.find(
+            {
+                "clientId": client_id,
+                "status": {"$ne": "paid"},
+            }
+        )
+
+        result = await cursor.sort("createdAt", -1).to_list(length=None)
         await cursor.close()
 
         return result
@@ -73,11 +104,49 @@ class InvoicesCollection:
     async def add_to_amount_paid(self, invoice_id: str, amount_paid: int, session: Any):
         collection = self.__collection
 
+        pipeline = [
+            {
+                "$set": {
+                    "amountPaid": {
+                        "$add": ["$amountPaid", amount_paid],
+                    },
+                },
+            },
+            {
+                "$set": {
+                    "status": {
+                        "$cond": {
+                            "if": {"$gte": ["$amountPaid", "$total"]},
+                            "then": "paid",
+                            "else": "partially_paid",
+                        }
+                    }
+                }
+            },
+        ]
+
         result = await collection.find_one_and_update(
             {"id": invoice_id},
-            {"$inc": {"amountPaid": amount_paid}},
+            pipeline,
             return_document=ReturnDocument.AFTER,
             session=session,
+        )
+
+        return result
+
+    async def update_invoice_by_id_with_session(
+        self,
+        invoice_id: str,
+        invoice: dict,
+        session: Any,
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+
+        result = await collection.find_one_and_update(
+            {"id": invoice_id},
+            {"$set": invoice},
+            session=session,
+            return_document=ReturnDocument.AFTER,
         )
 
         return result
@@ -87,6 +156,7 @@ class InvoicesCollection:
         await collection.create_indexes(
             [
                 IndexModel([("docNumber", 1)], unique=True),
+                IndexModel([("clientId", 1), ("status", 1)]),
                 IndexModel([("id", 1)], unique=True),
                 IndexModel([("createdAt", -1)]),
             ]

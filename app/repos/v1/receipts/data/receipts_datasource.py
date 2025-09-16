@@ -22,6 +22,10 @@ class ReceiptsDataSource:
         collection = ReceiptsCollection()
         return await collection.fetch_receipt_by_id(receipt_id)
 
+    async def get_receipt_by_doc_number(self, docNumber: str) -> dict[str, Any] | None:
+        collection = ReceiptsCollection()
+        return await collection.fetch_receipt_by_doc_number(docNumber)
+
     async def update_receipt_by_id(
         self, receipt_id: str, receipt: dict[str, Any]
     ) -> dict[str, Any] | None:

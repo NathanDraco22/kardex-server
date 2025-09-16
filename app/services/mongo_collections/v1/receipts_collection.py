@@ -34,6 +34,13 @@ class ReceiptsCollection:
         result = await collection.find_one({"id": receipt_id})
         return result
 
+    async def fetch_receipt_by_doc_number(
+        self, docNumber: str
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+        result = await collection.find_one({"docNumber": docNumber})
+        return result
+
     async def update_receipt_by_id(
         self,
         receipt_id: str,
@@ -53,3 +60,12 @@ class ReceiptsCollection:
         collection = self.__collection
         result = await collection.find_one_and_delete({"id": receipt_id})
         return result
+
+    async def create_receipt_with_session(
+        self,
+        receipt: dict,
+        session: Any,
+    ) -> dict[str, Any]:
+        collection = self.__collection
+        await collection.insert_one(receipt, session=session)
+        return receipt

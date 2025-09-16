@@ -22,6 +22,21 @@ class InvoicesDataSource:
         collection = InvoicesCollection()
         return await collection.fetch_invoice_by_id(invoice_id)
 
+    async def get_invoice_by(
+        self,
+        client_id: str,
+        offset: int,
+        limit: int,
+    ) -> list[dict[str, Any]]:
+        collection = InvoicesCollection()
+        return await collection.fetch_all_invoices_by(client_id, offset, limit)
+
+    async def get_pending_to_paid_invoices(
+        self, client_id: str
+    ) -> list[dict[str, Any]]:
+        collection = InvoicesCollection()
+        return await collection.fetch_pending_to_paid_invoices(client_id)
+
     async def get_invoice_by_doc_number(self, doc_number: str):
         collection = InvoicesCollection()
         return await collection.fetch_invoice_by_doc_number(doc_number)
