@@ -5,6 +5,7 @@ from repos.v1.invoices import CreateInvoice, UpdateInvoice, InvoiceInDb
 from .invoices_controller import invoices_controller
 from .responses import InvoiceResponse
 
+from responses.v1 import ListResponse
 
 invoices_router = APIRouter(tags=["invoicesV1"])
 
@@ -15,13 +16,31 @@ async def create_invoice(body: CreateInvoice) -> InvoiceResponse:
 
 
 @invoices_router.get("")
-async def get_all_invoices() -> list[InvoiceInDb]:
+async def get_all_invoices() -> ListResponse[InvoiceInDb]:
     return await invoices_controller.get_all_invoices()
 
 
 @invoices_router.get("/{invoice_id}")
 async def get_invoice_by_id(invoice_id: str) -> InvoiceInDb:
     return await invoices_controller.get_invoice_by_id(invoice_id)
+
+
+@invoices_router.get("/client/{client_id}")
+async def get_invoice_by(
+    client_id: str,
+    offset: int = 0,
+    limit: int = 25,
+) -> ListResponse[InvoiceInDb]:
+    return await invoices_controller.get_invoice_by(
+        client_id,
+        offset,
+        limit,
+    )
+
+
+@invoices_router.get("/pending/{client_id}")
+async def get_pending_to_paid_invoices(client_id: str) -> ListResponse[InvoiceInDb]:
+    return await invoices_controller.get_pending_to_paid_invoices(client_id)
 
 
 @invoices_router.patch("/{invoice_id}")

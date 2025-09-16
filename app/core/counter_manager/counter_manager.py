@@ -13,3 +13,7 @@ class CounterManager:
     async def next_invoice_number(self) -> str:
         res = await self.counters_repository.increment_counter("invoiceNumber")
         return str(res.value)
+
+    async def next_receipt_number(self) -> str:
+        res = await self.counters_repository.increment_counter("receiptNumber")
+        return str(res.value)

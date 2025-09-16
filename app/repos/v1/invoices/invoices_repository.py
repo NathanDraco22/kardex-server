@@ -27,6 +27,18 @@ class InvoicesRepository:
 
         return InvoiceInDb.model_validate(result)
 
+    async def get_invoice_by(
+        self, client_id: str, offset: int, limit: int
+    ) -> list[InvoiceInDb]:
+        results = await self.invoices_ds.get_invoice_by(client_id, offset, limit)
+        models = [InvoiceInDb.model_validate(result) for result in results]
+        return models
+
+    async def get_pending_to_paid_invoices(self, client_id: str) -> list[InvoiceInDb]:
+        results = await self.invoices_ds.get_pending_to_paid_invoices(client_id)
+        models = [InvoiceInDb.model_validate(result) for result in results]
+        return models
+
     async def update_invoice_by_id(
         self, invoice_id: str, invoice: UpdateInvoice
     ) -> InvoiceInDb | None:
