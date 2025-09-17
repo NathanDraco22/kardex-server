@@ -3,7 +3,6 @@ from repos.v1.invoices import CreateInvoice, InvoiceInDb
 from repos.v1.product_accounts import ProductAccountInDb
 from repos.v1.product_transactions import ProductTransactionInDb
 
-
 from repos.v1.client_transactions import ClientTransactionInDb
 from repos.v1.clients import ClientInDb
 
@@ -15,6 +14,7 @@ from services.mongo_collections.v1 import (
     ProductAccountsCollection,
     ClientsCollection,
     ClientTransactionsCollection,
+    OrdersCollection,
 )
 
 
@@ -35,6 +35,8 @@ async def process_invoice(
 
     invoice_col = InvoicesCollection()
 
+    order_col = OrdersCollection()
+
     invoice_items = create_invoice.saleItems
 
     async with await mongo_client.start_session() as session:
@@ -46,16 +48,28 @@ async def process_invoice(
             created_transactions: list[ProductTransactionInDb] = []
 
             for _, invoice_item in enumerate(invoice_items):
-                total_to_substract = invoice_item.quantity + invoice_item.bonQuantity
-                result = await prd_account_col.substract_product_account_data(
-                    invoice_item.product.id,
-                    create_invoice.branchId,
-                    total_to_substract,
-                    session=session,
+                total_to_dispatch = abs(
+                    invoice_item.quantity + invoice_item.bonQuantity
                 )
+                if create_invoice.orderNumber:
+                    result = await prd_account_col.dispatch_promise_stock(
+                        invoice_item.product.id,
+                        create_invoice.branchId,
+                        total_to_dispatch,
+                        session=session,
+                    )
+                else:
+                    result = await prd_account_col.dispatch_direct_stock(
+                        invoice_item.product.id,
+                        create_invoice.branchId,
+                        total_to_dispatch,
+                        session=session,
+                    )
 
                 if result is None:
-                    raise InsufficientBalanceError()
+                    raise InsufficientBalanceError(
+                        f"Stock insuficiente para {invoice_item.product.id}"
+                    )
 
                 updated_product_account = ProductAccountInDb.model_validate(result)
 
@@ -69,7 +83,7 @@ async def process_invoice(
                     type="INVOICE",
                     productId=invoice_item.product.id,
                     branchId=create_invoice.branchId,
-                    quantity=total_to_substract,
+                    quantity=-total_to_dispatch,
                     averageCost=updated_product_account.averageCost,
                     createdAt=TimeTools.get_now_utc(),
                 )
@@ -150,5 +164,12 @@ async def process_invoice(
                 )
 
             client_account = ClientInDb.model_validate(client_account_data)
+
+            if new_invoice_in_db.orderNumber:
+                await order_col.update_order_status_by_doc_number(
+                    doc_number=new_invoice_in_db.orderNumber,
+                    status="completed",
+                    session=session,
+                )
 
             return new_invoice_in_db, client_account

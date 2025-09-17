@@ -99,6 +99,60 @@ class ProductAccountsCollection:
 
         return result
 
+    async def add_to_promise_stock(
+        self, product_id: str, branch_id: str, quantity: int, session: Any
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+        updated_at = datetime.now()
+        result = await collection.find_one_and_update(
+            {
+                "productId": product_id,
+                "branchId": branch_id,
+            },
+            {
+                "$inc": {
+                    "promiseStock": quantity,
+                },
+                "$set": {
+                    "updatedAt": updated_at,
+                },
+            },
+            session=session,
+            return_document=ReturnDocument.AFTER,
+        )
+
+        return result
+
+    async def substract_from_promise_stock(
+        self, product_id: str, branch_id: str, quantity: int, session: Any
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+        updated_at = datetime.now()
+        result = await collection.find_one_and_update(
+            {
+                "productId": product_id,
+                "branchId": branch_id,
+                "$expr": {
+                    "$gte": [
+                        {"$subtract": ["$currentStock", "$promiseStock"]},
+                        quantity,
+                    ]
+                },
+            },
+            {
+                "$inc": {
+                    "promiseStock": -abs(quantity),
+                },
+                "$set": {
+                    "updatedAt": updated_at,
+                },
+            },
+            session=session,
+            return_document=ReturnDocument.AFTER,
+        )
+
+        return result
+
     async def update_product_account_balance_data(
         self,
         product_id: str,
@@ -178,8 +232,9 @@ class ProductAccountsCollection:
                         },
                         "updatedAt": update_at,
                         "createdAt": {"$ifNull": ["$createdAt", update_at]},
+                        "promiseStock": {"$ifNull": ["$promiseStock", 0]},
                     }
-                }
+                },
             ],
             upsert=True,
             session=session,
@@ -232,3 +287,56 @@ class ProductAccountsCollection:
 
         async for product_account in cursor:
             yield product_account
+
+    async def dispatch_promise_stock(
+        self,
+        product_id: str,
+        branch_id: str,
+        quantity_dispatched: int,
+        session: Any,
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+        return await collection.find_one_and_update(
+            {
+                "productId": product_id,
+                "branchId": branch_id,
+                "promiseStock": {"$gte": quantity_dispatched},
+            },
+            {
+                "$inc": {
+                    "promiseStock": -quantity_dispatched,
+                    "currentStock": -quantity_dispatched,
+                },
+                "$set": {"updatedAt": datetime.now()},
+            },
+            session=session,
+            return_document=ReturnDocument.AFTER,
+        )
+
+    async def dispatch_direct_stock(
+        self, product_id: str, branch_id: str, quantity_to_dispatch: int, session: Any
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+        return await collection.find_one_and_update(
+            {
+                "productId": product_id,
+                "branchId": branch_id,
+                "$expr": {
+                    "$gte": [
+                        {
+                            "$subtract": [
+                                "$currentStock",
+                                "$promiseStock",
+                            ],
+                        },
+                        quantity_to_dispatch,
+                    ]
+                },
+            },
+            {
+                "$inc": {"currentStock": -quantity_to_dispatch},
+                "$set": {"updatedAt": datetime.now()},
+            },
+            session=session,
+            return_document=ReturnDocument.AFTER,
+        )

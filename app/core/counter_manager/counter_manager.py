@@ -17,3 +17,7 @@ class CounterManager:
     async def next_receipt_number(self) -> str:
         res = await self.counters_repository.increment_counter("receiptNumber")
         return str(res.value)
+
+    async def next_order_number(self) -> str:
+        res = await self.counters_repository.increment_counter("orderNumber")
+        return str(res.value)
