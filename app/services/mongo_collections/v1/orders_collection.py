@@ -1,0 +1,128 @@
+from datetime import datetime
+from typing import Any
+
+from pymongo import ReturnDocument, IndexModel
+from services import MongoService
+
+
+class OrdersCollection:
+    collection_name = "Orders"
+
+    def __new__(cls):
+        if not hasattr(cls, "instance"):
+            cls.instance = super(cls, cls).__new__(cls)
+        return cls.instance
+
+    def __init__(self):
+        mongo_service = MongoService()
+        self.__collection = mongo_service.get_collection(self.collection_name)
+
+    async def create_order(self, order: dict) -> None:
+        collection = self.__collection
+        await collection.insert_one(order)
+
+    async def create_order_with_session(self, order: dict, session: Any) -> dict:
+        collection = self.__collection
+        await collection.insert_one(order, session=session)
+        return order
+
+    async def fetch_paginated_orders(
+        self,
+        skip: int,
+        limit: int,
+        cliend_id: str | None,
+        branch_id: str | None,
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        query = {}
+
+        if branch_id:
+            query["branchId"] = branch_id
+
+        if cliend_id:
+            query["clientId"] = cliend_id
+
+        cursor = collection.find(query).sort("createdAt", -1).skip(skip).limit(limit)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
+    async def fetch_order_by_id(self, order_id: str) -> dict[str, Any] | None:
+        collection = self.__collection
+        result = await collection.find_one({"id": order_id})
+        return result
+
+    async def fetch_order_by_doc_number(self, doc_number: str) -> dict[str, Any] | None:
+        collection = self.__collection
+        result = await collection.find_one({"docNumber": doc_number})
+        return result
+
+    async def update_order_by_id(
+        self,
+        order_id: str,
+        order: dict,
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+
+        result = await collection.find_one_and_update(
+            {"id": order_id},
+            {"$set": order},
+            return_document=ReturnDocument.AFTER,
+        )
+
+        return result
+
+    async def update_order_status_by_doc_number(
+        self,
+        doc_number: str,
+        status: str,
+        session: Any,
+    ) -> None:
+        collection = self.__collection
+
+        await collection.update_one(
+            {"docNumber": doc_number},
+            {
+                "$set": {
+                    "status": status,
+                    "updatedAt": datetime.now(),
+                },
+            },
+            session=session,
+        )
+
+    async def delete_order_by_id(self, order_id: str) -> dict[str, Any] | None:
+        collection = self.__collection
+        result = await collection.find_one_and_delete({"id": order_id})
+        return result
+
+    async def update_order_status(
+        self,
+        order_id: str,
+        status: str,
+        session: Any,
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+        return await collection.find_one_and_update(
+            {"id": order_id},
+            {"$set": {"status": status, "updatedAt": datetime.now()}},
+            session=session,
+            return_document=ReturnDocument.AFTER,
+        )
+
+    async def create_indexes(self):
+        collection = self.__collection
+        await collection.create_indexes(
+            [
+                IndexModel([("id", 1)], unique=True),
+                IndexModel([("docNumber", 1)], unique=True),
+                IndexModel([("clientId", 1), ("status", 1), ("createdAt", -1)]),
+                IndexModel(
+                    [("branchId", 1), ("clientId", 1), ("status", 1), ("createdAt", -1)]
+                ),
+                IndexModel([("status", 1), ("createdAt", -1)]),
+            ]
+        )

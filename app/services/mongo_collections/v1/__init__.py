@@ -7,6 +7,7 @@ from .counters_collection import CountersCollection
 from .entry_docs_collection import EntryDocsCollection
 from .exit_docs_collection import ExitDocsCollection
 from .invoices_collection import InvoicesCollection
+from .orders_collection import OrdersCollection
 from .product_accounts_collection import ProductAccountsCollection
 from .product_categories_collection import ProductCategoriesCollection
 from .product_prices_collection import ProductPricesCollection
@@ -29,6 +30,7 @@ __all__ = [
     "EntryDocsCollection",
     "ExitDocsCollection",
     "InvoicesCollection",
+    "OrdersCollection",
     "ProductAccountsCollection",
     "ProductCategoriesCollection",
     "ProductPricesCollection",

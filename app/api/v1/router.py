@@ -9,6 +9,7 @@ from .exit_docs.exit_docs_router import exit_docs_router
 from .exit_histories.exit_histories_router import exit_histories_router
 from .inventories.inventories_router import inventories_router
 from .invoices.invoices_router import invoices_router
+from .orders.orders_router import orders_router
 from .product_accounts.product_accounts_router import product_accounts_router
 from .product_categories.product_categories_router import product_categories_router
 from .product_prices.product_prices_router import product_prices_router
@@ -30,6 +31,7 @@ router_v1.include_router(exit_docs_router, prefix="/exit-docs")
 router_v1.include_router(exit_histories_router, prefix="/exit-histories")
 router_v1.include_router(inventories_router, prefix="/inventories")
 router_v1.include_router(invoices_router, prefix="/invoices")
+router_v1.include_router(orders_router, prefix='/orders')
 router_v1.include_router(product_accounts_router, prefix="/product-accounts")
 router_v1.include_router(product_categories_router, prefix="/product-categories")
 router_v1.include_router(product_prices_router, prefix="/product-prices")
