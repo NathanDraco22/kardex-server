@@ -25,7 +25,9 @@ class OrdersController:
         res, _ = await self.order_register.regis_order(body)
         return res
 
-    async def convert_order_to_invoice(self, order_id: str) -> InvoiceInDb:
+    async def convert_order_to_invoice(
+        self, order_id: str
+    ) -> tuple[InvoiceInDb, OrderInDb]:
         order = await self.orders_repo.get_order_by_id(order_id)
 
         if order is None:
@@ -54,7 +56,15 @@ class OrdersController:
         )
 
         res, _ = await self.invoice_register.regis_invoice(create_invoice)
-        return res
+        order = await self.orders_repo.get_order_by_id(order_id)
+
+        if order is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Order not found",
+            )
+
+        return res, order
 
     async def get_paginated_orders(
         self,
