@@ -15,6 +15,12 @@ async def create_order(body: CreateOrder) -> OrderInDb:
     return await orders_controller.create_order(body)
 
 
+@orders_router.post("/make-invoice/{order_id}")
+async def convert_order_to_invoice(order_id: str) -> OrderInDb:
+    _, order = await orders_controller.convert_order_to_invoice(order_id)
+    return order
+
+
 @orders_router.get("")
 async def get_paginated_orders(
     skip: int,
@@ -40,6 +46,6 @@ async def update_order_by_id(order_id: str, body: UpdateOrder) -> OrderInDb:
     return await orders_controller.update_order_by_id(order_id, body)
 
 
-@orders_router.patch("cancel/{order_id}")
+@orders_router.patch("/cancel/{order_id}")
 async def cancel_order_by_id(order_id: str) -> OrderInDb:
     return await orders_controller.cancel_order_by_id(order_id)
