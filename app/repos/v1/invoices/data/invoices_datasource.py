@@ -14,9 +14,9 @@ class InvoicesDataSource:
         await collection.create_invoice(invoice)
         return invoice
 
-    async def get_all_invoices(self) -> list[dict[str, Any]]:
+    async def get_all_invoices(self, **kargs) -> list[dict[str, Any]]:
         collection = InvoicesCollection()
-        return await collection.fetch_all_invoices()
+        return await collection.fetch_all_invoices(**kargs)
 
     async def get_invoice_by_id(self, invoice_id: str) -> dict[str, Any] | None:
         collection = InvoicesCollection()

@@ -11,7 +11,7 @@ class BranchesRepository:
     async def create_branch(self, create_branch: CreateBranch) -> BranchInDb:
         new_branch = BranchInDb(
             id=UuidTool.generate_uuid(),
-            createdAt=TimeTools.get_now_utc(),
+            createdAt=TimeTools.get_now_in_milliseconds(),
             **create_branch.model_dump(),
         )
 
@@ -37,7 +37,7 @@ class BranchesRepository:
     ) -> BranchInDb | None:
         update_branch_data = branch.model_dump(exclude_unset=True)
 
-        update_branch_data["updatedAt"] = TimeTools.get_now_utc()
+        update_branch_data["updatedAt"] = TimeTools.get_now_in_milliseconds()
 
         result = await self.branches_ds.update_branch_by_id(
             branch_id, update_branch_data

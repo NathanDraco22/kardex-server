@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Any
 
 
@@ -7,8 +6,8 @@ def read_agreggation_entry_docs_with_supplier(
     supplier_id: str | None,
     offset: int,
     limit: int,
-    start_date: datetime | None = None,
-    end_date: datetime | None = None,
+    start_date: int | None = None,
+    end_date: int | None = None,
 ) -> list[dict[str, Any]]:
     match_pipeline: dict[str, Any] = {
         "branchId": branch_id,

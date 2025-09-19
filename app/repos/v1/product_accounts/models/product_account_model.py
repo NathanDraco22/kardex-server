@@ -1,4 +1,3 @@
-from datetime import datetime
 from pydantic import BaseModel
 
 
@@ -12,5 +11,5 @@ class BaseProductAccount(BaseModel):
 
 
 class ProductAccountInDb(BaseProductAccount):
-    createdAt: datetime
-    updatedAt: datetime | None = None
+    createdAt: int
+    updatedAt: int | None = None

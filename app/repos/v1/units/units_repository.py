@@ -11,7 +11,7 @@ class UnitsRepository:
     async def create_unit(self, create_unit: CreateUnit) -> UnitInDb:
         new_unit = UnitInDb(
             id=UuidTool.generate_uuid(),
-            createdAt=TimeTools.get_now_utc(),
+            createdAt=TimeTools.get_now_in_milliseconds(),
             **create_unit.model_dump(),
         )
 
@@ -37,7 +37,7 @@ class UnitsRepository:
     ) -> UnitInDb | None:
         update_unit_data = unit.model_dump(exclude_unset=True)
 
-        update_unit_data["updatedAt"] = TimeTools.get_now_utc()
+        update_unit_data["updatedAt"] = TimeTools.get_now_in_milliseconds()
 
         result = await self.units_ds.update_unit_by_id(unit_id, update_unit_data)
 

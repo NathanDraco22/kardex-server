@@ -1,4 +1,3 @@
-from datetime import datetime
 from pydantic import BaseModel
 
 
@@ -25,5 +24,5 @@ class UpdateSupplier(BaseModel):
 class SupplierInDb(BaseSupplier):
     id: str
     isDeleted: bool = False
-    createdAt: datetime
-    updatedAt: datetime | None = None
+    createdAt: int
+    updatedAt: int | None = None

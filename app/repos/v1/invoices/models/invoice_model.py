@@ -1,5 +1,5 @@
 from typing import Literal
-from datetime import datetime
+
 from pydantic import BaseModel
 
 from repos.v1.common.models.sale_item import SaleItem, PaymentType
@@ -19,6 +19,7 @@ class BaseInvoice(BaseModel):
     paymentType: PaymentType
     totalCost: int
     total: int
+    paidAt: int | None = None
 
 
 class CreateInvoice(BaseInvoice):
@@ -33,5 +34,5 @@ class UpdateInvoice(BaseModel):
 
 class InvoiceInDb(BaseInvoice):
     id: str
-    createdAt: datetime
-    updatedAt: datetime | None = None
+    createdAt: int
+    updatedAt: int | None = None

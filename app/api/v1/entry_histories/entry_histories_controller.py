@@ -1,5 +1,3 @@
-from datetime import datetime, time
-
 from repos.v1.entry_histories import (
     EntryHistoryInDb,
     EntryHistoriesRepository,
@@ -19,24 +17,13 @@ class EntryHistoriesController:
     async def get_entry_history(
         self, query_params: EntryHistoryQueryParams
     ) -> ListResponse[EntryHistoryInDb]:
-        start_date: datetime | None = None
-        end_date: datetime | None = None
-
-        if query_params.startDate and query_params.endDate:
-            start_date = datetime.combine(query_params.startDate, time.min)
-            end_date = datetime.combine(query_params.endDate, time.max)
-
-            if start_date > end_date:
-                start_date = None
-                end_date = None
-
         entry_domain_params = GetEntryHistoryParams(
             branch_id=query_params.branchId,
             supplier_id=query_params.supplierId,
             offset=query_params.offset,
             limit=query_params.limit,
-            start_date=start_date,
-            end_date=end_date,
+            start_date=query_params.startDate,
+            end_date=query_params.endDate,
         )
 
         entry_histories = await self.entry_histories_repo.get_entry_history(

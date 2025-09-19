@@ -1,4 +1,3 @@
-from datetime import datetime
 from pydantic import BaseModel, Field
 
 
@@ -11,7 +10,7 @@ class ExitItem(BaseModel):
 class BaseExitDoc(BaseModel):
     clientId: str
     docNumber: str
-    docDate: datetime
+    docDate: int
     branchId: str
     description: str = ""
     items: list[ExitItem]
@@ -23,4 +22,4 @@ class CreateExitDoc(BaseExitDoc):
 
 class ExitDocInDb(BaseExitDoc):
     id: str
-    createdAt: datetime
+    createdAt: int

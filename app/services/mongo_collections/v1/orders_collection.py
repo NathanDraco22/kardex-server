@@ -1,8 +1,9 @@
-from datetime import datetime
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel
 from services import MongoService
+
+from tools import TimeTools
 
 
 class OrdersCollection:
@@ -88,7 +89,7 @@ class OrdersCollection:
             {
                 "$set": {
                     "status": status,
-                    "updatedAt": datetime.now(),
+                    "updatedAt": TimeTools.get_now_in_milliseconds(),
                 },
             },
             session=session,
@@ -108,7 +109,12 @@ class OrdersCollection:
         collection = self.__collection
         return await collection.find_one_and_update(
             {"id": order_id},
-            {"$set": {"status": status, "updatedAt": datetime.now()}},
+            {
+                "$set": {
+                    "status": status,
+                    "updatedAt": TimeTools.get_now_in_milliseconds(),
+                },
+            },
             session=session,
             return_document=ReturnDocument.AFTER,
         )

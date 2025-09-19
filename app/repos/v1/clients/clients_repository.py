@@ -11,7 +11,7 @@ class ClientsRepository:
     async def create_client(self, create_client: CreateClient) -> ClientInDb:
         new_client_in_db = ClientInDb(
             id=UuidTool.generate_uuid(),
-            createdAt=TimeTools.get_now_utc(),
+            createdAt=TimeTools.get_now_in_milliseconds(),
             **create_client.model_dump(),
         )
 
@@ -42,7 +42,7 @@ class ClientsRepository:
     ) -> ClientInDb | None:
         updated_client_data = client.model_dump(exclude_unset=True)
 
-        updated_client_data["updatedAt"] = TimeTools.get_now_utc()
+        updated_client_data["updatedAt"] = TimeTools.get_now_in_milliseconds()
 
         result = await self.clients_ds.update_client_by_id(
             client_id, updated_client_data

@@ -1,4 +1,3 @@
-from datetime import datetime
 from pydantic import BaseModel
 
 
@@ -17,5 +16,5 @@ class UpdateProductPrice(BaseModel):
 
 class ProductPriceInDb(BaseProductPrice):
     id: str
-    createdAt: datetime
-    updatedAt: datetime | None = None
+    createdAt: int
+    updatedAt: int | None = None

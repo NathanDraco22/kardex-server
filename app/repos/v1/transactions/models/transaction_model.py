@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Literal, Union, Annotated
 from pydantic import BaseModel, Field
 
@@ -25,7 +24,7 @@ class CreateEntryTransaction(BaseTransaction):
 class TransactionInDb(BaseTransaction):
     id: str
     type: TransactionType
-    createdAt: datetime
+    createdAt: int
 
 
 class BatchEntryItem(BaseModel):

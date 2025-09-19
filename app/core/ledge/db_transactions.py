@@ -29,7 +29,7 @@ async def process_account_entry_transaction(
                 entry.accountId,
                 entry.branchId,
                 entry.quantity,
-                updated_at=TimeTools.get_now_utc(),
+                updated_at=TimeTools.get_now_in_milliseconds(),
                 session=session,
             )
 
@@ -37,7 +37,7 @@ async def process_account_entry_transaction(
 
             new_transaction = TransactionInDb(
                 id=UuidTool.generate_uuid(),
-                createdAt=TimeTools.get_now_utc(),
+                createdAt=TimeTools.get_now_in_milliseconds(),
                 **entry_data,
             )
 
@@ -69,7 +69,7 @@ async def process_account_exit_transaction(
                 exit.accountId,
                 exit.branchId,
                 exit.quantity,
-                updated_at=TimeTools.get_now_utc(),
+                updated_at=TimeTools.get_now_in_milliseconds(),
                 session=session,
             )
 
@@ -80,7 +80,7 @@ async def process_account_exit_transaction(
 
             new_transaction = TransactionInDb(
                 id=UuidTool.generate_uuid(),
-                createdAt=TimeTools.get_now_utc(),
+                createdAt=TimeTools.get_now_in_milliseconds(),
                 **exit_data,
             )
 
@@ -113,7 +113,7 @@ async def process_batch_account_entry_transaction(
                     entry_item.accountId,
                     batch_entry_transaction.branchId,
                     entry_item.quantity,
-                    updated_at=TimeTools.get_now_utc(),
+                    updated_at=TimeTools.get_now_in_milliseconds(),
                     session=session,
                 )
 
@@ -131,7 +131,7 @@ async def process_batch_account_entry_transaction(
 
                 new_transaction = TransactionInDb(
                     id=UuidTool.generate_uuid(),
-                    createdAt=TimeTools.get_now_utc(),
+                    createdAt=TimeTools.get_now_in_milliseconds(),
                     **entry_data,
                 )
 
@@ -167,7 +167,7 @@ async def process_batch_account_exit_transaction(
                         exit_item.accountId,
                         batch_exit_transaction.branchId,
                         exit_item.quantity,
-                        updated_at=TimeTools.get_now_utc(),
+                        updated_at=TimeTools.get_now_in_milliseconds(),
                         session=session,
                     )
                 )
@@ -189,7 +189,7 @@ async def process_batch_account_exit_transaction(
 
                 transaction = TransactionInDb(
                     id=UuidTool.generate_uuid(),
-                    createdAt=TimeTools.get_now_utc(),
+                    createdAt=TimeTools.get_now_in_milliseconds(),
                     **exit_data,
                 )
 

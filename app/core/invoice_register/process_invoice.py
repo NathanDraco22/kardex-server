@@ -80,19 +80,19 @@ async def process_invoice(
                 new_transaction = ProductTransactionInDb(
                     id=UuidTool.generate_uuid(),
                     documentId=new_invoice_doc_id,
-                    type="INVOICE",
+                    type="invoice",
                     productId=invoice_item.product.id,
                     branchId=create_invoice.branchId,
                     quantity=-total_to_dispatch,
                     averageCost=updated_product_account.averageCost,
-                    createdAt=TimeTools.get_now_utc(),
+                    createdAt=TimeTools.get_now_in_milliseconds(),
                 )
 
                 created_transactions.append(new_transaction)
 
             new_invoice_date = create_invoice.model_dump()
             new_invoice_date["id"] = new_invoice_doc_id
-            new_invoice_date["createdAt"] = TimeTools.get_now_utc()
+            new_invoice_date["createdAt"] = TimeTools.get_now_in_milliseconds()
 
             insert_result = await invoice_col.create_invoice_with_session(
                 new_invoice_date,
@@ -115,8 +115,8 @@ async def process_invoice(
                 clientId=create_invoice.clientId,
                 documentId=new_invoice_in_db.id,
                 amount=new_invoice_in_db.total,
-                type="DEBIT",
-                createdAt=TimeTools.get_now_utc(),
+                type="debit",
+                createdAt=TimeTools.get_now_in_milliseconds(),
             )
 
             new_client_transaction_data = new_client_transaction.model_dump()
@@ -132,7 +132,7 @@ async def process_invoice(
                 session=session,
             )
 
-            if new_invoice_in_db.paymentType == "CASH":
+            if new_invoice_in_db.paymentType == "cash":
                 await invoice_col.add_to_amount_paid(
                     new_invoice_in_db.id,
                     new_invoice_in_db.total,
@@ -144,8 +144,8 @@ async def process_invoice(
                     clientId=create_invoice.clientId,
                     documentId=new_invoice_in_db.id,
                     amount=new_invoice_in_db.total,
-                    type="CREDIT",
-                    createdAt=TimeTools.get_now_utc(),
+                    type="credit",
+                    createdAt=TimeTools.get_now_in_milliseconds(),
                 )
 
                 new_client_transaction_data = new_client_transaction.model_dump()

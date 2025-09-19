@@ -17,7 +17,7 @@ class ProductCategoriesRepository:
     ) -> ProductCategoryInDb:
         new_product_category = ProductCategoryInDb(
             id=UuidTool.generate_uuid(),
-            createdAt=TimeTools.get_now_utc(),
+            createdAt=TimeTools.get_now_in_milliseconds(),
             **create_product_category.model_dump(),
         )
 

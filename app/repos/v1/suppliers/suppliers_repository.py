@@ -10,7 +10,7 @@ class SuppliersRepository:
     async def create_supplier(self, create_supplier: CreateSupplier) -> SupplierInDb:
         new_supplier_in_db = SupplierInDb(
             id=UuidTool.generate_uuid(),
-            createdAt=TimeTools.get_now_utc(),
+            createdAt=TimeTools.get_now_in_milliseconds(),
             **create_supplier.model_dump(),
         )
 
@@ -40,7 +40,7 @@ class SuppliersRepository:
         self, supplier_id: str, supplier: UpdateSupplier
     ) -> SupplierInDb | None:
         updated_supplier_data = supplier.model_dump()
-        updated_supplier_data["updatedAt"] = TimeTools.get_now_utc()
+        updated_supplier_data["updatedAt"] = TimeTools.get_now_in_milliseconds()
 
         result = await self.suppliers_ds.update_supplier_by_id(
             supplier_id, updated_supplier_data

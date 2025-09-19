@@ -34,7 +34,7 @@ async def process_entry_doc(
             new_entry_data = entry_doc.model_dump()
 
             new_entry_data["id"] = UuidTool.generate_uuid()
-            new_entry_data["createdAt"] = TimeTools.get_now_utc()
+            new_entry_data["createdAt"] = TimeTools.get_now_in_milliseconds()
 
             insert_result = await EntryDocsCollection().create_entry_doc_with_session(
                 new_entry_data,
@@ -82,7 +82,7 @@ async def process_entry_doc(
                     branchId=entry_doc.branchId,
                     quantity=entry_item.quantity,
                     averageCost=updated_product_account.averageCost,
-                    createdAt=TimeTools.get_now_utc(),
+                    createdAt=TimeTools.get_now_in_milliseconds(),
                 )
 
                 created_transactions.append(new_transaction)

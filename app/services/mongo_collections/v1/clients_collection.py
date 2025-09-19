@@ -1,11 +1,12 @@
 import re
 from typing import Any
-from datetime import datetime
 
 from pymongo import ReturnDocument
 from services import MongoService
 
 from pymongo import IndexModel
+
+from tools import TimeTools
 
 
 class ClientsCollection:
@@ -96,7 +97,7 @@ class ClientsCollection:
         self, client_id: str, amount: int, session: Any
     ) -> dict[str, Any]:
         collection = self.__collection
-        updated_at = datetime.now()
+        updated_at = TimeTools.get_now_in_milliseconds()
 
         result = await collection.find_one_and_update(
             {"id": client_id},
@@ -112,11 +113,18 @@ class ClientsCollection:
         self, client_id: str, amount: int, session: Any
     ) -> dict[str, Any]:
         collection = self.__collection
-        updated_at = datetime.now()
+        updated_at = TimeTools.get_now_in_milliseconds()
 
         result = await collection.find_one_and_update(
             {"id": client_id},
-            {"$inc": {"balance": -amount}, "$set": {"updatedAt": updated_at}},
+            {
+                "$inc": {
+                    "balance": -abs(amount),
+                },
+                "$set": {
+                    "updatedAt": updated_at,
+                },
+            },
             upsert=True,
             session=session,
             return_document=ReturnDocument.AFTER,

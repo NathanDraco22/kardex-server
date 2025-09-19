@@ -45,7 +45,7 @@ async def process_order(
 
             new_order_data = create_order.model_dump()
             new_order_data["id"] = UuidTool.generate_uuid()
-            new_order_data["createdAt"] = TimeTools.get_now_utc()
+            new_order_data["createdAt"] = TimeTools.get_now_in_milliseconds()
 
             insert_result = await order_col.create_order_with_session(
                 new_order_data,

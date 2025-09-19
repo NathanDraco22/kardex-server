@@ -12,7 +12,7 @@ class TransactionsRepository:
     ) -> TransactionInDb:
         new_transaction = TransactionInDb(
             id=UuidTool.generate_uuid(),
-            createdAt=TimeTools.get_now_utc(),
+            createdAt=TimeTools.get_now_in_milliseconds(),
             **create_transaction.model_dump(),
         )
 

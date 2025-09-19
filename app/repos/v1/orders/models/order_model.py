@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Literal
 from repos.v1.common.models import SaleItem, PaymentType
 from pydantic import BaseModel
@@ -35,5 +34,5 @@ class UpdateOrder(BaseModel):
 
 class OrderInDb(BaseOrder):
     id: str
-    createdAt: datetime
-    updatedAt: datetime | None = None
+    createdAt: int
+    updatedAt: int | None = None

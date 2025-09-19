@@ -9,10 +9,11 @@ from repos.v1.invoices import (
     InvoicesRepository,
     InvoicesDataSource,
 )
+from responses.v1 import ListResponse
+
 
 from .responses import InvoiceResponse
-
-from responses.v1 import ListResponse
+from .query_params import InvoiceQueryParams
 
 
 class InvoicesController:
@@ -27,8 +28,11 @@ class InvoicesController:
             clientAccount=client_account,
         )
 
-    async def get_all_invoices(self) -> ListResponse[InvoiceInDb]:
-        invoices = await self.invoices_repo.get_all_invoices()
+    async def get_all_invoices(
+        self, query_params: InvoiceQueryParams
+    ) -> ListResponse[InvoiceInDb]:
+        kargs = query_params.model_dump()
+        invoices = await self.invoices_repo.get_all_invoices(**kargs)
         return ListResponse(count=len(invoices), data=invoices)
 
     async def get_invoice_by_id(self, invoice_id: str) -> InvoiceInDb:

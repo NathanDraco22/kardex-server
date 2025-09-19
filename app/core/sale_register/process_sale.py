@@ -58,13 +58,13 @@ async def process_sale(
                     branchId=create_sale.branchId,
                     quantity=total_to_substract,
                     averageCost=sale_item.cost,
-                    createdAt=TimeTools.get_now_utc(),
+                    createdAt=TimeTools.get_now_in_milliseconds(),
                 )
                 created_transactions.append(new_transaction)
 
             new_sale_data = create_sale.model_dump()
             new_sale_data["id"] = new_sale_id
-            new_sale_data["createdAt"] = TimeTools.get_now_utc()
+            new_sale_data["createdAt"] = TimeTools.get_now_in_milliseconds()
 
             insert_result = await sale_col.create_sale_with_session(
                 new_sale_data,
