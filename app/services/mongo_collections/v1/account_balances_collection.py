@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Any
 
 from pymongo import ReturnDocument
@@ -60,7 +59,7 @@ class AccountBalancesCollection:
         account_id: str,
         branch_id: str,
         quantity: int,
-        updated_at: datetime,
+        updated_at: int,
         session: Any,
     ) -> dict[str, Any]:
         collection = self.__collection
@@ -90,7 +89,7 @@ class AccountBalancesCollection:
         account_id: str,
         branch_id: str,
         quantity: int,
-        updated_at: datetime,
+        updated_at: int,
         session: Any,
     ) -> dict[str, Any] | None:
         collection = self.__collection

@@ -57,14 +57,14 @@ async def process_exit_doc(
                     branchId=create_exit_doc.branchId,
                     quantity=exit_item.quantity,
                     averageCost=updated_product_account.averageCost,
-                    createdAt=TimeTools.get_now_utc(),
+                    createdAt=TimeTools.get_now_in_milliseconds(),
                 )
 
                 created_transactions.append(new_transaction)
 
             new_exit_data = create_exit_doc.model_dump()
             new_exit_data["id"] = new_exit_doc_generated_id
-            new_exit_data["createdAt"] = TimeTools.get_now_utc()
+            new_exit_data["createdAt"] = TimeTools.get_now_in_milliseconds()
 
             insert_result = await ExitDocsCollection().create_exit_doc_with_session(
                 new_exit_data,

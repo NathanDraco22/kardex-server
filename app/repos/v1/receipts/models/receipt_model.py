@@ -1,6 +1,5 @@
 from typing import Literal
 from pydantic import BaseModel
-from datetime import datetime
 
 PaymentMethod = Literal[
     "cash",
@@ -36,5 +35,5 @@ class UpdateReceipt(BaseModel):
 
 class ReceiptInDb(BaseReceipt):
     id: str
-    createdAt: datetime
-    updatedAt: datetime | None = None
+    createdAt: int
+    updatedAt: int | None = None

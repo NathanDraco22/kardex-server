@@ -6,8 +6,8 @@ class InvoicesRepository:
     def __init__(self, invoices_ds: InvoicesDataSource):
         self.invoices_ds = invoices_ds
 
-    async def get_all_invoices(self) -> list[InvoiceInDb]:
-        results = await self.invoices_ds.get_all_invoices()
+    async def get_all_invoices(self, **kargs) -> list[InvoiceInDb]:
+        results = await self.invoices_ds.get_all_invoices(**kargs)
         models = [InvoiceInDb.model_validate(result) for result in results]
         return models
 

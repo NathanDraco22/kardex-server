@@ -2,6 +2,8 @@ from typing import Any
 from pymongo import ReturnDocument, IndexModel
 from services import MongoService
 
+from tools import TimeTools
+
 
 class InvoicesCollection:
     collection_name = "Invoices"
@@ -19,9 +21,24 @@ class InvoicesCollection:
         collection = self.__collection
         await collection.insert_one(invoice)
 
-    async def fetch_all_invoices(self) -> list[dict[str, Any]]:
+    async def fetch_all_invoices(self, **kargs) -> list[dict[str, Any]]:
         collection = self.__collection
-        cursor = collection.find()
+
+        query = {
+            "clientId": kargs.get("clientId"),
+            "branchId": kargs.get("branchId"),
+            "status": kargs.get("status"),
+        }
+
+        if kargs.get("startDate") and kargs.get("endDate"):
+            query["createdAt"] = {
+                "$gte": kargs.get("startDate"),
+                "$lte": kargs.get("endDate"),
+            }
+
+        query = {k: v for k, v in query.items() if v is not None}
+
+        cursor = collection.find(query)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -120,7 +137,14 @@ class InvoicesCollection:
                             "then": "paid",
                             "else": "partially_paid",
                         }
-                    }
+                    },
+                    "paidAt": {
+                        "$cond": {
+                            "if": {"$gte": ["$amountPaid", "$total"]},
+                            "then": TimeTools.get_now_in_milliseconds(),
+                            "else": None,
+                        }
+                    },
                 }
             },
         ]

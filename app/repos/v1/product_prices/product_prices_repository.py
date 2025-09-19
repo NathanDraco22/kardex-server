@@ -17,7 +17,7 @@ class ProductPricesRepository:
     ) -> ProductPriceInDb:
         new_product_price = ProductPriceInDb(
             id=UuidTool.generate_uuid(),
-            createdAt=TimeTools.get_now_utc(),
+            createdAt=TimeTools.get_now_in_milliseconds(),
             **create_product_price.model_dump(),
         )
 
@@ -47,7 +47,7 @@ class ProductPricesRepository:
     ) -> ProductPriceInDb | None:
         updated_product_price_data = product_price.model_dump(exclude_unset=True)
 
-        updated_product_price_data["updatedAt"] = TimeTools.get_now_utc()
+        updated_product_price_data["updatedAt"] = TimeTools.get_now_in_milliseconds()
 
         result = await self.product_prices_ds.update_product_price_by_id(
             product_price_id, updated_product_price_data

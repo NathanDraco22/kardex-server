@@ -1,5 +1,4 @@
 from typing import Any
-from datetime import datetime
 
 
 def read_agreggation_exit_docs_with_client(
@@ -7,8 +6,8 @@ def read_agreggation_exit_docs_with_client(
     client_id: str | None,
     offset: int,
     limit: int,
-    start_date: datetime | None = None,
-    end_date: datetime | None = None,
+    start_date: int | None = None,
+    end_date: int | None = None,
 ) -> list[dict[str, Any]]:
     match_pipeline: dict[str, Any] = {
         "branchId": branch_id,

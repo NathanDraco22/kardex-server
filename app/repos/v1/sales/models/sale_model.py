@@ -1,25 +1,5 @@
-from datetime import datetime
 from pydantic import BaseModel
-
-
-class ProductItem(BaseModel):
-    id: str
-    name: str
-    unitName: str
-    brandName: str
-    code: str | None = None
-    categoryName: str | None = None
-    tags: list[str] = []
-
-
-class SaleItem(BaseModel):
-    product: ProductItem
-    quantity: int
-    bonQuantity: int = 0
-    cost: int
-    price: int
-    priceName: str
-    discount: int = 0
+from repos.v1.common.models import SaleItem
 
 
 class BaseSale(BaseModel):
@@ -40,5 +20,5 @@ class UpdateSale(BaseModel):
 
 class SaleInDb(BaseSale):
     id: str
-    createdAt: datetime
-    updatedAt: datetime | None = None
+    createdAt: int
+    updatedAt: int | None = None

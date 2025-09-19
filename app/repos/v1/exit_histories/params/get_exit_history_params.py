@@ -1,4 +1,3 @@
-from datetime import datetime
 from dataclasses import dataclass, asdict
 
 
@@ -8,8 +7,8 @@ class GetExitHistoryParams:
     limit: int
     branch_id: str
     client_id: str | None
-    start_date: datetime | None
-    end_date: datetime | None
+    start_date: int | None
+    end_date: int | None
 
     def to_dict(self) -> dict:
         return asdict(self)

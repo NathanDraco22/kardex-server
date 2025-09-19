@@ -1,8 +1,7 @@
-from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel
 
-TransactionType = Literal["ENTRY", "EXIT", "SALE", "INVOICE"]
+TransactionType = Literal["entry", "exit", "sale", "invoice"]
 
 
 class BaseProductTransaction(BaseModel):
@@ -16,4 +15,4 @@ class BaseProductTransaction(BaseModel):
 
 class ProductTransactionInDb(BaseProductTransaction):
     id: str
-    createdAt: datetime
+    createdAt: int

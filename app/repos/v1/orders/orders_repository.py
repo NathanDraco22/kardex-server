@@ -43,7 +43,7 @@ class OrdersRepository:
     ) -> OrderInDb | None:
         update_order_data = order.model_dump(exclude_unset=True)
 
-        update_order_data["updatedAt"] = TimeTools.get_now_utc()
+        update_order_data["updatedAt"] = TimeTools.get_now_in_milliseconds()
 
         result = await self.orders_ds.update_order_by_id(
             order_id,

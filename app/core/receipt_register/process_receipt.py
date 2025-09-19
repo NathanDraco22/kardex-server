@@ -33,7 +33,7 @@ async def process_receipt(
             # 1. Crear y guardar el documento de recibo
             new_receipt_data = create_receipt.model_dump()
             new_receipt_data["id"] = UuidTool.generate_uuid()
-            new_receipt_data["createdAt"] = TimeTools.get_now_utc()
+            new_receipt_data["createdAt"] = TimeTools.get_now_in_milliseconds()
 
             insert_result = await receipt_col.create_receipt_with_session(
                 new_receipt_data,
@@ -55,8 +55,8 @@ async def process_receipt(
                 clientId=create_receipt.clientId,
                 documentId=new_receipt_in_db.id,
                 amount=create_receipt.total,
-                type="CREDIT",
-                createdAt=TimeTools.get_now_utc(),
+                type="credit",
+                createdAt=TimeTools.get_now_in_milliseconds(),
             )
             await client_transaction_col.create_client_transaction_with_session(
                 new_client_transaction.model_dump(),

@@ -1,4 +1,3 @@
-from datetime import datetime
 from pydantic import BaseModel
 
 
@@ -23,5 +22,5 @@ class BaseInventory(BaseModel):
 
 
 class InventoryInDb(BaseInventory):
-    createdAt: datetime
-    updatedAt: datetime | None = None
+    createdAt: int
+    updatedAt: int | None = None

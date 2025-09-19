@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Any
 
 from services import MongoService
@@ -117,8 +116,8 @@ class EntryDocsCollection:
         supplier_id: str | None,
         offset: int,
         limit: int,
-        start_date: datetime | None = None,
-        end_date: datetime | None = None,
+        start_date: int | None = None,
+        end_date: int | None = None,
     ) -> list[dict[str, Any]]:
         collection = self.__collection
 

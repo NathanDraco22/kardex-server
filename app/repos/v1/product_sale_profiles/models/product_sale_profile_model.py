@@ -1,4 +1,3 @@
-from datetime import datetime
 from pydantic import BaseModel, Field
 
 
@@ -44,10 +43,10 @@ class UpdateProductSaleProfile(BaseModel):
 
 
 class ProductSaleProfileInDb(BaseProductSaleProfile):
-    updatedAt: datetime | None = None
+    updatedAt: int | None = None
 
 
 class ProductSaleProfileInDbWithProduct(BaseProductSaleProfile):
-    updated_at: datetime | None = None
+    updated_at: int | None = None
     product: InventoryProduct
     account: ProductAccount

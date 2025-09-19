@@ -1,4 +1,3 @@
-from datetime import datetime
 from pydantic import BaseModel
 
 
@@ -16,7 +15,7 @@ class BaseExitHistory(BaseModel):
     clientId: str
     client: Client
     docNumber: str
-    docDate: datetime
+    docDate: int
     branchId: str
     description: str = ""
     items: list[ExitItem]
@@ -24,4 +23,4 @@ class BaseExitHistory(BaseModel):
 
 class ExitHistoryInDb(BaseExitHistory):
     id: str
-    createdAt: datetime
+    createdAt: int

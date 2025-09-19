@@ -1,9 +1,8 @@
-from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel
 
 
-TransactionType = Literal["CREDIT", "DEBIT"]
+TransactionType = Literal["credit", "debit"]
 
 
 class BaseClientTransaction(BaseModel):
@@ -15,4 +14,4 @@ class BaseClientTransaction(BaseModel):
 
 class ClientTransactionInDb(BaseClientTransaction):
     id: str
-    createdAt: datetime
+    createdAt: int

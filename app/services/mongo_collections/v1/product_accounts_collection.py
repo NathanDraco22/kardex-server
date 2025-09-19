@@ -1,10 +1,12 @@
 from typing import AsyncGenerator
 from typing import Any
-from datetime import datetime
+
 
 from pymongo import ReturnDocument, IndexModel
 
 from services import MongoService
+
+from tools import TimeTools
 
 
 class ProductAccountsCollection:
@@ -78,7 +80,7 @@ class ProductAccountsCollection:
         session: Any,
     ) -> dict[str, Any] | None:
         collection = self.__collection
-        updated_at = datetime.now()
+        updated_at = TimeTools.get_now_in_milliseconds()
         result = await collection.find_one_and_update(
             {
                 "productId": product_id,
@@ -103,7 +105,7 @@ class ProductAccountsCollection:
         self, product_id: str, branch_id: str, quantity: int, session: Any
     ) -> dict[str, Any] | None:
         collection = self.__collection
-        updated_at = datetime.now()
+        updated_at = TimeTools.get_now_in_milliseconds()
         result = await collection.find_one_and_update(
             {
                 "productId": product_id,
@@ -127,7 +129,7 @@ class ProductAccountsCollection:
         self, product_id: str, branch_id: str, quantity: int, session: Any
     ) -> dict[str, Any] | None:
         collection = self.__collection
-        updated_at = datetime.now()
+        updated_at = TimeTools.get_now_in_milliseconds()
         result = await collection.find_one_and_update(
             {
                 "productId": product_id,
@@ -162,7 +164,7 @@ class ProductAccountsCollection:
         session: Any,
     ) -> dict[str, Any]:
         collection = self.__collection
-        update_at = datetime.now()
+        update_at = TimeTools.get_now_in_milliseconds()
 
         result = await collection.find_one_and_update(
             {
@@ -307,7 +309,9 @@ class ProductAccountsCollection:
                     "promiseStock": -quantity_dispatched,
                     "currentStock": -quantity_dispatched,
                 },
-                "$set": {"updatedAt": datetime.now()},
+                "$set": {
+                    "updatedAt": TimeTools.get_now_in_milliseconds(),
+                },
             },
             session=session,
             return_document=ReturnDocument.AFTER,
@@ -335,7 +339,9 @@ class ProductAccountsCollection:
             },
             {
                 "$inc": {"currentStock": -quantity_to_dispatch},
-                "$set": {"updatedAt": datetime.now()},
+                "$set": {
+                    "updatedAt": TimeTools.get_now_in_milliseconds(),
+                },
             },
             session=session,
             return_document=ReturnDocument.AFTER,

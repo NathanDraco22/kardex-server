@@ -17,7 +17,7 @@ class ProductsRepository:
     async def create_product(self, create_product: CreateProduct) -> ProductInDb:
         new_product = ProductInDb(
             id=UuidTool.generate_uuid(),
-            createdAt=TimeTools.get_now_utc(),
+            createdAt=TimeTools.get_now_in_milliseconds(),
             **create_product.model_dump(),
         )
 
@@ -83,7 +83,7 @@ class ProductsRepository:
     ) -> ProductInDb | None:
         updated_data = product.model_dump(exclude_unset=True)
 
-        updated_data["updatedAt"] = TimeTools.get_now_utc()
+        updated_data["updatedAt"] = TimeTools.get_now_in_milliseconds()
 
         updated_data["searchPrefixes"] = generate_prefixes(updated_data["name"])
 
