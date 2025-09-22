@@ -1,6 +1,11 @@
 from fastapi import APIRouter, Depends
 
-from repos.v1.invoices import CreateInvoice, UpdateInvoice, InvoiceInDb
+from repos.v1.invoices import (
+    CreateInvoice,
+    UpdateInvoice,
+    InvoiceInDb,
+    InvoiceTotals,
+)
 
 from responses.v1 import ListResponse
 
@@ -21,6 +26,13 @@ async def get_all_invoices(
     query_params: InvoiceQueryParams = Depends(),
 ) -> ListResponse[InvoiceInDb]:
     return await invoices_controller.get_all_invoices(query_params)
+
+
+@invoices_router.get("/totals")
+async def get_totals_from_invoices(
+    query_params: InvoiceQueryParams = Depends(),
+) -> InvoiceTotals:
+    return await invoices_controller.get_totals_from_invoices(query_params)
 
 
 @invoices_router.get("/{invoice_id}")

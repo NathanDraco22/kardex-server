@@ -1,5 +1,6 @@
 from .data.invoices_datasource import InvoicesDataSource
 from .models.invoice_model import CreateInvoice, UpdateInvoice, InvoiceInDb
+from .models.invoice_totals_model import InvoiceTotals
 from .invoices_repository import InvoicesRepository
 
 __all__ = [
@@ -8,4 +9,5 @@ __all__ = [
     "UpdateInvoice",
     "InvoiceInDb",
     "InvoicesRepository",
+    "InvoiceTotals",
 ]

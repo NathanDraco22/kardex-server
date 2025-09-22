@@ -52,7 +52,7 @@ async def process_exit_doc(
                 new_transaction = ProductTransactionInDb(
                     id=UuidTool.generate_uuid(),
                     documentId=new_exit_doc_generated_id,
-                    type="EXIT",
+                    type="exit",
                     productId=exit_item.productId,
                     branchId=create_exit_doc.branchId,
                     quantity=exit_item.quantity,

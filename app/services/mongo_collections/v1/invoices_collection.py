@@ -2,7 +2,7 @@ from typing import Any
 from pymongo import ReturnDocument, IndexModel
 from services import MongoService
 
-from tools import TimeTools
+from tools import TimeTools, build_query
 
 
 class InvoicesCollection:
@@ -24,21 +24,16 @@ class InvoicesCollection:
     async def fetch_all_invoices(self, **kargs) -> list[dict[str, Any]]:
         collection = self.__collection
 
-        query = {
-            "clientId": kargs.get("clientId"),
-            "branchId": kargs.get("branchId"),
-            "status": kargs.get("status"),
-        }
+        date_field = "paidAt" if kargs.get("byPaidAt") else "createdAt"
 
-        if kargs.get("startDate") and kargs.get("endDate"):
-            query["createdAt"] = {
-                "$gte": kargs.get("startDate"),
-                "$lte": kargs.get("endDate"),
-            }
+        result = build_query(date_field, **kargs)
 
-        query = {k: v for k, v in query.items() if v is not None}
-
-        cursor = collection.find(query)
+        cursor = (
+            collection.find(result.query)
+            .skip(result.offset)
+            .limit(result.limit)
+            .sort(date_field, -1)
+        )
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -175,6 +170,38 @@ class InvoicesCollection:
 
         return result
 
+    async def get_totals_from_invoices(self, **kargs) -> dict[str, Any]:
+        collection = self.__collection
+
+        date_field = "paidAt" if kargs.get("byPaidAt") else "createdAt"
+
+        result = build_query(date_field, **kargs)
+
+        cursor = collection.aggregate(
+            [
+                {"$match": result.query},
+                {
+                    "$group": {
+                        "_id": None,
+                        "totalCost": {"$sum": "$totalCost"},
+                        "total": {"$sum": "$total"},
+                    }
+                },
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        if result:
+            data = result[0]
+            return data
+
+        return {
+            "totalCost": 0,
+            "total": 0,
+        }
+
     async def create_indexes(self):
         collection = self.__collection
         await collection.create_indexes(
@@ -183,5 +210,6 @@ class InvoicesCollection:
                 IndexModel([("clientId", 1), ("status", 1)]),
                 IndexModel([("id", 1)], unique=True),
                 IndexModel([("createdAt", -1)]),
+                IndexModel([("paidAt", -1)]),
             ]
         )
