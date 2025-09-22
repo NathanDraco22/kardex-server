@@ -21,6 +21,7 @@ class SaleItem(BaseModel):
     cost: int
     price: int
     subTotal: int
-    discount: int = 0
+    discountPercentage: int = 0
+    totalDiscount: int = 0
     iva: int = 0
     total: int
