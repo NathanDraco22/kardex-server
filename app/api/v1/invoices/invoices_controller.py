@@ -1,5 +1,4 @@
 from fastapi import HTTPException, status
-
 from core.invoice_register.invoice_register import InvoiceRegister
 
 from repos.v1.invoices import (
@@ -8,6 +7,7 @@ from repos.v1.invoices import (
     InvoiceInDb,
     InvoicesRepository,
     InvoicesDataSource,
+    InvoiceTotals,
 )
 from responses.v1 import ListResponse
 
@@ -34,6 +34,12 @@ class InvoicesController:
         kargs = query_params.model_dump()
         invoices = await self.invoices_repo.get_all_invoices(**kargs)
         return ListResponse(count=len(invoices), data=invoices)
+
+    async def get_totals_from_invoices(
+        self, query_params: InvoiceQueryParams
+    ) -> InvoiceTotals:
+        kargs = query_params.model_dump()
+        return await self.invoices_repo.get_totals_from_invoices(**kargs)
 
     async def get_invoice_by_id(self, invoice_id: str) -> InvoiceInDb:
         invoice = await self.invoices_repo.get_invoice_by_id(invoice_id)

@@ -1,5 +1,6 @@
 from .data.invoices_datasource import InvoicesDataSource
 from .models.invoice_model import UpdateInvoice, InvoiceInDb
+from .models.invoice_totals_model import InvoiceTotals
 
 
 class InvoicesRepository:
@@ -10,6 +11,10 @@ class InvoicesRepository:
         results = await self.invoices_ds.get_all_invoices(**kargs)
         models = [InvoiceInDb.model_validate(result) for result in results]
         return models
+
+    async def get_totals_from_invoices(self, **kargs) -> InvoiceTotals:
+        res = await self.invoices_ds.get_totals_from_invoices(**kargs)
+        return InvoiceTotals(**res)
 
     async def get_invoice_by_id(self, invoice_id: str) -> InvoiceInDb | None:
         result = await self.invoices_ds.get_invoice_by_id(invoice_id)

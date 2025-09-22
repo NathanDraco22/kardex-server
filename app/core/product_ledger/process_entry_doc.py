@@ -77,7 +77,7 @@ async def process_entry_doc(
                 new_transaction = ProductTransactionInDb(
                     id=UuidTool.generate_uuid(),
                     documentId=new_entry_doc_in_db.id,
-                    type="ENTRY",
+                    type="entry",
                     productId=entry_item.productId,
                     branchId=entry_doc.branchId,
                     quantity=entry_item.quantity,

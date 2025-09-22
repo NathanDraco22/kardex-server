@@ -6,3 +6,10 @@ from repos.v1.clients import ClientInDb
 class InvoiceResponse(BaseModel):
     invoice: InvoiceInDb
     clientAccount: ClientInDb
+
+
+class InvoicesWithTotalResponse(BaseModel):
+    count: int
+    data: list[InvoiceInDb]
+    total: int
+    totalCost: int

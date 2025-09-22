@@ -18,6 +18,10 @@ class InvoicesDataSource:
         collection = InvoicesCollection()
         return await collection.fetch_all_invoices(**kargs)
 
+    async def get_totals_from_invoices(self, **kargs) -> dict[str, Any]:
+        collection = InvoicesCollection()
+        return await collection.get_totals_from_invoices(**kargs)
+
     async def get_invoice_by_id(self, invoice_id: str) -> dict[str, Any] | None:
         collection = InvoicesCollection()
         return await collection.fetch_invoice_by_id(invoice_id)

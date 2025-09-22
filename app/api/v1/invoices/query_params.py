@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from repos.v1.invoices.models.invoice_model import InvoiceStatus
 
 
 class InvoiceQueryParams(BaseModel):
@@ -6,5 +7,7 @@ class InvoiceQueryParams(BaseModel):
     branchId: str | None = None
     startDate: int | None = None
     endDate: int | None = None
+    byPaidAt: bool = False
+    status: InvoiceStatus | None = None
     offset: int = 0
     limit: int = 50

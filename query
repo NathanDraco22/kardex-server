@@ -1,0 +1,56 @@
+[
+ 	{
+ 	  $match: {
+ 	    $and : [
+        {$text : {
+          $search: "dolo",
+          $caseSensitive: false,
+          $diacriticSensitive: false,
+        }},
+        {isDeleted : false}
+      ]
+ 	  }
+ 	},
+
+  {
+    $lookup: {
+      from: "ProductAccounts",
+      localField: "id",
+      foreignField: "productId",
+      as: "account",
+      pipeline : [
+        {
+          $match : {
+            branchId : "bd1a7de5-8bfc-4ec9-8f5a-6f1ecb9f11a7"
+          }
+        }
+      ]
+    },
+  },
+
+  {$unwind : "$account"},
+
+  {
+    $lookup: {
+      from: "ProductSaleProfiles",
+      localField: "id",
+      foreignField: "productId",
+      as: "saleProfile",
+      pipeline : [
+        {
+          $match : {
+            branchId : "bd1a7de5-8bfc-4ec9-8f5a-6f1ecb9f11a7"
+          }
+        }
+      ]
+    },
+  },
+
+  {$unwind: "$saleProfile"},
+
+  { $sort: {"name" : 1}},
+
+  {$limit: 7}
+
+  
+]
