@@ -19,6 +19,7 @@ from .receipts.receipts_router import receipts_router
 from .sales.sales_router import sales_router
 from .suppliers.suppliers_router import suppliers_router
 from .units.units_router import units_router
+from .users.users_router import users_router
 
 router_v1 = APIRouter(tags=["apiV1"])
 
@@ -41,4 +42,5 @@ router_v1.include_router(receipts_router, prefix="/receipts")
 router_v1.include_router(sales_router, prefix='/sales')
 router_v1.include_router(suppliers_router, prefix="/suppliers")
 router_v1.include_router(units_router, prefix="/units")
+router_v1.include_router(users_router, prefix='/users')
 
