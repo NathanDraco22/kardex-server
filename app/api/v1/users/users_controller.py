@@ -4,6 +4,7 @@ from repos.v1.users import (
     CreateUser,
     UpdateUser,
     UserInDb,
+    UserInDbWithRole,
     UsersRepository,
     UsersDataSource,
 )
@@ -18,7 +19,7 @@ class UsersController:
     async def create_user(self, body: CreateUser) -> UserInDb:
         return await self.users_repo.create_user(body)
 
-    async def get_all_users(self) -> ListResponse[UserInDb]:
+    async def get_all_users(self) -> ListResponse[UserInDbWithRole]:
         users = await self.users_repo.get_all_users()
         return ListResponse(
             count=len(users),

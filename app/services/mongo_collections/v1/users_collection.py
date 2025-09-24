@@ -22,7 +22,28 @@ class UsersCollection:
 
     async def fetch_all_users(self) -> list[dict[str, Any]]:
         collection = self.__collection
-        cursor = collection.find()
+
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {"isDeleted": False},
+                },
+                {
+                    "$lookup": {
+                        "from": "UserRoles",
+                        "localField": "role",
+                        "foreignField": "id",
+                        "as": "userRole",
+                    }
+                },
+                {
+                    "$unwind": {
+                        "path": "$userRole",
+                        "preserveNullAndEmptyArrays": True,
+                    }
+                },
+            ]
+        )
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -31,8 +52,39 @@ class UsersCollection:
 
     async def fetch_user_by_id(self, user_id: str) -> dict[str, Any] | None:
         collection = self.__collection
-        result = await collection.find_one({"id": user_id})
-        return result
+
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "id": user_id,
+                        "isDeleted": False,
+                    },
+                },
+                {
+                    "$lookup": {
+                        "from": "UserRoles",
+                        "localField": "role",
+                        "foreignField": "id",
+                        "as": "userRole",
+                    }
+                },
+                {
+                    "$unwind": {
+                        "path": "$userRole",
+                        "preserveNullAndEmptyArrays": True,
+                    }
+                },
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        if len(result) == 0:
+            return None
+
+        return result[0]
 
     async def fetch_user_by_username(self, email: str) -> dict[str, Any] | None:
         collection = self.__collection
@@ -56,7 +108,15 @@ class UsersCollection:
 
     async def delete_user_by_id(self, user_id: str) -> dict[str, Any] | None:
         collection = self.__collection
-        result = await collection.find_one_and_delete({"id": user_id})
+        result = await collection.find_one_and_update(
+            {"id": user_id},
+            {
+                "$set": {
+                    "isDeleted": True,
+                    "isActive": False,
+                },
+            },
+        )
         return result
 
     async def create_indexes(self):
