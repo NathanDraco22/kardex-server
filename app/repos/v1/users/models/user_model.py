@@ -10,7 +10,7 @@ class BaseUser(BaseModel):
     username: str
     password: str
     isActive: bool = True
-    role: UserRole
+    role: str
 
 
 class CreateUser(BaseUser):
@@ -18,10 +18,17 @@ class CreateUser(BaseUser):
 
 
 class UpdateUser(BaseModel):
-    accsess: list[str] | None = None
+    username: str | None = None
+    isActive: bool | None = None
+    role: str | None = None
 
 
 class UserInDb(BaseUser):
     id: str
-    created_at: int
-    updated_at: int | None = None
+    isDeleted: bool = False
+    createdAt: int
+    updatedAt: int | None = None
+
+
+class UserInDbWithRole(UserInDb):
+    userRole: UserRole

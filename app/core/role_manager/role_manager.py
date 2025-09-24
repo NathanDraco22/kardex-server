@@ -6,7 +6,7 @@ class Modules:
     CLIENTS = "clients"
     SUPPLIERS = "suppliers"
     PRODUCTS = "products"
-    COMMERCIAL = "commerical"
+    COMMERCIAL = "commercial"
     FINANCE = "finance"
     INVENTORY = "inventory"
     SETTINGS = "settings"
@@ -14,17 +14,17 @@ class Modules:
 
 class CommercialSubModules:
     ORDERS = "orders"
-    CREATE_ORDER = "create_order"
-    CREATE_INVOICE = "create_invoice"
-    PENDING_INVOICES = "pending_invoices"
-    INVOICE_HISTORY = "invoice_history"
-    PRICE_SETTING = "price_setting"
+    CREATE_ORDER = "createOrder"
+    CREATE_INVOICE = "createInvoice"
+    PENDING_INVOICES = "pendingInvoices"
+    INVOICE_HISTORY = "invoiceHistory"
+    PRICE_SETTING = "priceSetting"
 
 
 default_roles = [
-    UserRole(name="admin", access=[Modules.ALL]),
+    UserRole(name="Admin", access=[Modules.ALL]),
     UserRole(
-        name="saler",
+        name="Vendedor",
         access=[
             Modules.COMMERCIAL,
             CommercialSubModules.ORDERS,

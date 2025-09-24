@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from .auths.auths_router import auths_router
 from .branches.branches_router import branches_router
 from .client_transactions.client_transactions_router import client_transactions_router
 from .clients.clients_router import clients_router
@@ -19,10 +20,12 @@ from .receipts.receipts_router import receipts_router
 from .sales.sales_router import sales_router
 from .suppliers.suppliers_router import suppliers_router
 from .units.units_router import units_router
+from .user_roles.user_roles_router import user_roles_router
 from .users.users_router import users_router
 
 router_v1 = APIRouter(tags=["apiV1"])
 
+router_v1.include_router(auths_router, prefix='/auths')
 router_v1.include_router(branches_router, prefix="/branches")
 router_v1.include_router(client_transactions_router, prefix="/client-transactions")
 router_v1.include_router(clients_router, prefix="/clients")
@@ -42,5 +45,6 @@ router_v1.include_router(receipts_router, prefix="/receipts")
 router_v1.include_router(sales_router, prefix='/sales')
 router_v1.include_router(suppliers_router, prefix="/suppliers")
 router_v1.include_router(units_router, prefix="/units")
+router_v1.include_router(user_roles_router, prefix='/user-roles')
 router_v1.include_router(users_router, prefix='/users')
 

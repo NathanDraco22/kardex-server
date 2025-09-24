@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from repos.v1.users import CreateUser, UpdateUser, UserInDb
+from repos.v1.users import CreateUser, UpdateUser, UserInDb, UserInDbWithRole
 
 from responses.v1 import ListResponse
 
@@ -16,7 +16,7 @@ async def create_user(body: CreateUser) -> UserInDb:
 
 
 @users_router.get("")
-async def get_all_users() -> ListResponse[UserInDb]:
+async def get_all_users() -> ListResponse[UserInDbWithRole]:
     return await users_controller.get_all_users()
 
 
