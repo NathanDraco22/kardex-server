@@ -1,4 +1,4 @@
-FROM python:3.12.10-slim-bookworm
+FROM python:3.12.11-slim-bookworm
 
 RUN mkdir -p /home/server
 
@@ -17,4 +17,4 @@ EXPOSE 80
 
 WORKDIR /home/server/app
 
-CMD . ../.venv/bin/activate && fastapi run --host 0.0.0.0 --port $PORT
+CMD ["/bin/sh", "-c", "../.venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port $PORT"]
