@@ -43,7 +43,7 @@ class AuthsController:
 
         return LoginResponse(
             user=user,
-            access_token=token,
+            accessToken=token,
         )
 
     async def refresh_token(self, token: str) -> LoginResponse:
@@ -101,7 +101,7 @@ class AuthsController:
 
         return LoginResponse(
             user=user,
-            access_token=token,
+            accessToken=token,
         )
 
 
