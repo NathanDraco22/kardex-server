@@ -58,6 +58,7 @@ async def process_exit_doc(
                     quantity=exit_item.quantity,
                     averageCost=updated_product_account.averageCost,
                     createdAt=TimeTools.get_now_in_milliseconds(),
+                    resultStock=updated_product_account.currentStock,
                 )
 
                 created_transactions.append(new_transaction)

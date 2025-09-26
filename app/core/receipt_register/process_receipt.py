@@ -30,7 +30,6 @@ async def process_receipt(
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
-            # 1. Crear y guardar el documento de recibo
             new_receipt_data = create_receipt.model_dump()
             new_receipt_data["id"] = UuidTool.generate_uuid()
             new_receipt_data["createdAt"] = TimeTools.get_now_in_milliseconds()
@@ -41,7 +40,6 @@ async def process_receipt(
             )
             new_receipt_in_db = ReceiptInDb.model_validate(insert_result)
 
-            # 2. Aplicar el pago a cada factura involucrada
             for applied_invoice in create_receipt.appliedInvoices:
                 await invoice_col.add_to_amount_paid(
                     invoice_id=applied_invoice.invoiceId,
@@ -49,21 +47,6 @@ async def process_receipt(
                     session=session,
                 )
 
-            # 3. Crear el registro de la transacción de CRÉDITO para el cliente
-            new_client_transaction = ClientTransactionInDb(
-                id=UuidTool.generate_uuid(),
-                clientId=create_receipt.clientId,
-                documentId=new_receipt_in_db.id,
-                amount=create_receipt.total,
-                type="credit",
-                createdAt=TimeTools.get_now_in_milliseconds(),
-            )
-            await client_transaction_col.create_client_transaction_with_session(
-                new_client_transaction.model_dump(),
-                session=session,
-            )
-
-            # 4. Actualizar (restar) el saldo de la cuenta del cliente
             updated_client_account_data = (
                 await client_account_col.substract_from_client_balance(
                     client_id=create_receipt.clientId,
@@ -71,8 +54,23 @@ async def process_receipt(
                     session=session,
                 )
             )
+
             final_client_account = ClientInDb.model_validate(
                 updated_client_account_data
+            )
+
+            new_client_transaction = ClientTransactionInDb(
+                id=UuidTool.generate_uuid(),
+                clientId=create_receipt.clientId,
+                documentId=new_receipt_in_db.id,
+                amount=-abs(create_receipt.total),
+                type="credit",
+                createdAt=TimeTools.get_now_in_milliseconds(),
+                resultBalance=final_client_account.balance,
+            )
+            await client_transaction_col.create_client_transaction_with_session(
+                new_client_transaction.model_dump(),
+                session=session,
             )
 
             return new_receipt_in_db, final_client_account
