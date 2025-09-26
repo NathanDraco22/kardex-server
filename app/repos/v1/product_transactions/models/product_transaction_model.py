@@ -11,6 +11,7 @@ class BaseProductTransaction(BaseModel):
     branchId: str
     quantity: int
     averageCost: int
+    resultStock: int
 
 
 class ProductTransactionInDb(BaseProductTransaction):

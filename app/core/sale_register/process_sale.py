@@ -53,12 +53,13 @@ async def process_sale(
                 new_transaction = ProductTransactionInDb(
                     id=UuidTool.generate_uuid(),
                     documentId=new_sale_id,
-                    type="SALE",
+                    type="sale",
                     productId=sale_item.product.id,
                     branchId=create_sale.branchId,
                     quantity=total_to_substract,
                     averageCost=sale_item.cost,
                     createdAt=TimeTools.get_now_in_milliseconds(),
+                    resultStock=updated_product_account.currentStock,
                 )
                 created_transactions.append(new_transaction)
 

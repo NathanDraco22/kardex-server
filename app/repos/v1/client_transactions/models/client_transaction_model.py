@@ -10,6 +10,7 @@ class BaseClientTransaction(BaseModel):
     clientId: str
     amount: int
     type: TransactionType
+    resultBalance: int
 
 
 class ClientTransactionInDb(BaseClientTransaction):

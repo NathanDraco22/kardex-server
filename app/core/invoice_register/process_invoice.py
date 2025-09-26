@@ -85,6 +85,7 @@ async def process_invoice(
                     branchId=create_invoice.branchId,
                     quantity=-total_to_dispatch,
                     averageCost=updated_product_account.averageCost,
+                    resultStock=updated_product_account.currentStock,
                     createdAt=TimeTools.get_now_in_milliseconds(),
                 )
 
@@ -110,6 +111,14 @@ async def process_invoice(
 
             new_invoice_in_db = InvoiceInDb.model_validate(insert_result)
 
+            client_account_data = await client_account_col.add_to_client_balance(
+                create_invoice.clientId,
+                new_invoice_in_db.total,
+                session=session,
+            )
+
+            client_account = ClientInDb.model_validate(client_account_data)
+
             new_client_transaction = ClientTransactionInDb(
                 id=UuidTool.generate_uuid(),
                 clientId=create_invoice.clientId,
@@ -117,6 +126,7 @@ async def process_invoice(
                 amount=new_invoice_in_db.total,
                 type="debit",
                 createdAt=TimeTools.get_now_in_milliseconds(),
+                resultBalance=client_account.balance,
             )
 
             new_client_transaction_data = new_client_transaction.model_dump()
@@ -126,32 +136,10 @@ async def process_invoice(
                 session=session,
             )
 
-            client_account_data = await client_account_col.add_to_client_balance(
-                create_invoice.clientId,
-                new_invoice_in_db.total,
-                session=session,
-            )
-
             if new_invoice_in_db.paymentType == "cash":
                 await invoice_col.add_to_amount_paid(
                     new_invoice_in_db.id,
                     new_invoice_in_db.total,
-                    session=session,
-                )
-
-                new_client_transaction = ClientTransactionInDb(
-                    id=UuidTool.generate_uuid(),
-                    clientId=create_invoice.clientId,
-                    documentId=new_invoice_in_db.id,
-                    amount=new_invoice_in_db.total,
-                    type="credit",
-                    createdAt=TimeTools.get_now_in_milliseconds(),
-                )
-
-                new_client_transaction_data = new_client_transaction.model_dump()
-
-                await client_transaction_col.create_client_transaction_with_session(
-                    new_client_transaction_data,
                     session=session,
                 )
 
@@ -163,7 +151,24 @@ async def process_invoice(
                     )
                 )
 
-            client_account = ClientInDb.model_validate(client_account_data)
+                client_account = ClientInDb.model_validate(client_account_data)
+
+                new_client_transaction = ClientTransactionInDb(
+                    id=UuidTool.generate_uuid(),
+                    clientId=create_invoice.clientId,
+                    documentId=new_invoice_in_db.id,
+                    amount=new_invoice_in_db.total,
+                    type="credit",
+                    createdAt=TimeTools.get_now_in_milliseconds(),
+                    resultBalance=client_account.balance,
+                )
+
+                new_client_transaction_data = new_client_transaction.model_dump()
+
+                await client_transaction_col.create_client_transaction_with_session(
+                    new_client_transaction_data,
+                    session=session,
+                )
 
             if new_invoice_in_db.orderNumber:
                 await order_col.update_order_status_by_doc_number(

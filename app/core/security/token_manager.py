@@ -27,7 +27,12 @@ class TokenManager:
     def decode_token(token) -> dict | None:
         secret = os.getenv("JWT_SECRET", "secretApp")
         try:
-            res = jwt.decode(token, secret, algorithms=["HS256"])
+            res = jwt.decode(
+                token,
+                secret,
+                algorithms=["HS256"],
+                options={"verify_exp": False},
+            )
             return res
         except Exception:
             return None
