@@ -34,6 +34,7 @@ class AuthsController:
         token = TokenManager.encode_token(
             {
                 "user": {
+                    "id": user.id,
                     "username": user.username,
                     "userRole": user.userRole.model_dump(),
                 },
@@ -63,7 +64,7 @@ class AuthsController:
                 detail="Invalid token",
             )
 
-        username = user.get("username")
+        username = user.get("id")
 
         if username is None:
             raise HTTPException(
