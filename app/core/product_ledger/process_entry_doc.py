@@ -78,6 +78,7 @@ async def process_entry_doc(
                     id=UuidTool.generate_uuid(),
                     documentId=new_entry_doc_in_db.id,
                     type="entry",
+                    subtype="entry",
                     productId=entry_item.productId,
                     branchId=entry_doc.branchId,
                     quantity=entry_item.quantity,

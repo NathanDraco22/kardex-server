@@ -27,5 +27,6 @@ class UpdateClient(BaseModel):
 class ClientInDb(BaseClient):
     id: str
     isDeleted: bool = False
+    isInternal: bool = False
     createdAt: int
     updatedAt: int | None = None

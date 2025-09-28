@@ -12,7 +12,7 @@ from repos.v1.invoices import (
 from responses.v1 import ListResponse
 
 
-from .responses import InvoiceResponse
+from .responses import InvoiceResponse, InvoiceAnonResponse
 from .query_params import InvoiceQueryParams
 
 
@@ -27,6 +27,10 @@ class InvoicesController:
             invoice=invoice,
             clientAccount=client_account,
         )
+
+    async def create_anon_invoice(self, body: CreateInvoice) -> InvoiceAnonResponse:
+        invoice, _ = await self.invoices_regis.regis_anon_invoice(body)
+        return InvoiceAnonResponse(invoice=invoice)
 
     async def get_all_invoices(
         self, query_params: InvoiceQueryParams

@@ -65,6 +65,7 @@ async def process_receipt(
                 documentId=new_receipt_in_db.id,
                 amount=-abs(create_receipt.total),
                 type="credit",
+                subtype="receipt",
                 createdAt=TimeTools.get_now_in_milliseconds(),
                 resultBalance=final_client_account.balance,
             )

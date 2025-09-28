@@ -3,6 +3,12 @@ from pydantic import BaseModel
 
 
 TransactionType = Literal["credit", "debit"]
+TransactionSubType = Literal[
+    "invoice",
+    "discount",
+    "return",
+    "receipt",
+]
 
 
 class BaseClientTransaction(BaseModel):
@@ -10,6 +16,7 @@ class BaseClientTransaction(BaseModel):
     clientId: str
     amount: int
     type: TransactionType
+    subtype: TransactionSubType
     resultBalance: int
 
 

@@ -4,6 +4,7 @@ from pydantic import BaseModel
 class BaseBranch(BaseModel):
     name: str
     description: str = ""
+    isCommerce: bool = True
     pass
 
 
