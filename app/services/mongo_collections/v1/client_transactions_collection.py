@@ -1,6 +1,6 @@
 from typing import Any
 
-from pymongo import ReturnDocument
+from pymongo import ReturnDocument, IndexModel
 from services import MongoService
 
 
@@ -57,6 +57,18 @@ class ClientTransactionsCollection:
         collection = self.__collection
         result = await collection.find_one_and_delete({"id": client_transaction_id})
         return result
+
+    async def create_indexes(self):
+        collection = self.__collection
+        await collection.create_indexes(
+            [
+                IndexModel([("id", 1)], unique=True),
+                IndexModel([("documentId", 1)]),
+                IndexModel([("clientId", 1), ("createdAt", -1)]),
+                IndexModel([("type", 1), ("subtype", 1), ("createdAt", -1)]),
+                IndexModel([("createdAt", -1)]),
+            ],
+        )
 
     async def create_client_transaction_with_session(
         self, client_transaction: dict, session: Any

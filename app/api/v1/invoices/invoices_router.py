@@ -10,7 +10,7 @@ from repos.v1.invoices import (
 from responses.v1 import ListResponse
 
 from .invoices_controller import invoices_controller
-from .responses import InvoiceResponse
+from .responses import InvoiceResponse, InvoiceAnonResponse
 from .query_params import InvoiceQueryParams
 
 invoices_router = APIRouter(tags=["invoicesV1"])
@@ -19,6 +19,11 @@ invoices_router = APIRouter(tags=["invoicesV1"])
 @invoices_router.post("")
 async def create_invoice(body: CreateInvoice) -> InvoiceResponse:
     return await invoices_controller.create_invoice(body)
+
+
+@invoices_router.post("/anon")
+async def create_anon_invoice(body: CreateInvoice) -> InvoiceAnonResponse:
+    return await invoices_controller.create_anon_invoice(body)
 
 
 @invoices_router.get("")

@@ -25,9 +25,22 @@ class ClientsCollection:
         collection = self.__collection
         await collection.insert_one(client)
 
+    async def create_client_if_absent(self, client_id: str, client: dict) -> None:
+        collection = self.__collection
+        await collection.update_one(
+            {"id": client_id},
+            {"$setOnInsert": client},
+            upsert=True,
+        )
+
     async def fetch_all_clients(self) -> list[dict[str, Any]]:
         collection = self.__collection
-        cursor = collection.find({"isDeleted": False})
+        cursor = collection.find(
+            {
+                "isDeleted": False,
+                "isInternal": False,
+            }
+        )
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -50,6 +63,7 @@ class ClientsCollection:
                 "$options": "i",  # 'i' para case-insensitive
             },
             "isDeleted": False,
+            "isInternal": False,
         }
 
         cursor = collection.find(query).limit(7)

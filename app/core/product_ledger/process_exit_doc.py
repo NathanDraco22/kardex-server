@@ -53,6 +53,7 @@ async def process_exit_doc(
                     id=UuidTool.generate_uuid(),
                     documentId=new_exit_doc_generated_id,
                     type="exit",
+                    subtype="exit",
                     productId=exit_item.productId,
                     branchId=create_exit_doc.branchId,
                     quantity=exit_item.quantity,

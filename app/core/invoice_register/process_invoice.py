@@ -80,7 +80,8 @@ async def process_invoice(
                 new_transaction = ProductTransactionInDb(
                     id=UuidTool.generate_uuid(),
                     documentId=new_invoice_doc_id,
-                    type="invoice",
+                    type="exit",
+                    subtype="invoice",
                     productId=invoice_item.product.id,
                     branchId=create_invoice.branchId,
                     quantity=-total_to_dispatch,
@@ -125,6 +126,7 @@ async def process_invoice(
                 documentId=new_invoice_in_db.id,
                 amount=new_invoice_in_db.total,
                 type="debit",
+                subtype="invoice",
                 createdAt=TimeTools.get_now_in_milliseconds(),
                 resultBalance=client_account.balance,
             )
@@ -157,8 +159,9 @@ async def process_invoice(
                     id=UuidTool.generate_uuid(),
                     clientId=create_invoice.clientId,
                     documentId=new_invoice_in_db.id,
-                    amount=new_invoice_in_db.total,
+                    amount=-(new_invoice_in_db.total),
                     type="credit",
+                    subtype="invoice",
                     createdAt=TimeTools.get_now_in_milliseconds(),
                     resultBalance=client_account.balance,
                 )
@@ -178,3 +181,86 @@ async def process_invoice(
                 )
 
             return new_invoice_in_db, client_account
+
+
+async def process_anon_invoice(
+    create_invoice: CreateInvoice,
+) -> tuple[InvoiceInDb, list[ProductAccountInDb]]:
+    """
+    Procesa una factura anónima (venta de mostrador).
+    1. Afecta el inventario (venta directa).
+    2. Enriquece los items con su costo.
+    3. Guarda la factura.
+    4. Guarda las transacciones de producto.
+    """
+    mongo_client = MongoService().client
+    prd_transaction_col = ProductTransactionsCollection()
+    prd_account_col = ProductAccountsCollection()
+    invoice_col = InvoicesCollection()
+
+    async with await mongo_client.start_session() as session:
+        async with session.start_transaction():
+            new_invoice_doc_id = UuidTool.generate_uuid()
+
+            updated_product_accounts: list[ProductAccountInDb] = []
+            created_transactions: list[ProductTransactionInDb] = []
+
+            for invoice_item in create_invoice.saleItems:
+                total_to_dispatch = abs(
+                    invoice_item.quantity + invoice_item.bonQuantity
+                )
+
+                # Para una venta anónima, siempre es un despacho directo.
+                result = await prd_account_col.dispatch_direct_stock(
+                    invoice_item.product.id,
+                    create_invoice.branchId,
+                    total_to_dispatch,
+                    session=session,
+                )
+
+                if result is None:
+                    raise InsufficientBalanceError(
+                        f"Stock insuficiente para {invoice_item.product.id}"
+                    )
+
+                updated_product_account = ProductAccountInDb.model_validate(result)
+                invoice_item.cost = updated_product_account.averageCost
+                updated_product_accounts.append(updated_product_account)
+
+                # Crear el registro para el Kardex de inventario
+                new_transaction = ProductTransactionInDb(
+                    id=UuidTool.generate_uuid(),
+                    documentId=new_invoice_doc_id,
+                    type="exit",
+                    subtype="invoice",
+                    productId=invoice_item.product.id,
+                    branchId=create_invoice.branchId,
+                    quantity=-(total_to_dispatch),
+                    averageCost=updated_product_account.averageCost,
+                    resultStock=updated_product_account.currentStock,
+                    createdAt=TimeTools.get_now_in_milliseconds(),
+                )
+                created_transactions.append(new_transaction)
+
+            # Preparar y guardar el documento de la factura
+            new_invoice_data = create_invoice.model_dump()
+            new_invoice_data["id"] = new_invoice_doc_id
+            new_invoice_data["createdAt"] = TimeTools.get_now_in_milliseconds()
+            # Se asume que siempre es de contado, por lo que el monto pagado es el total.
+            new_invoice_data["amountPaid"] = create_invoice.total
+
+            insert_result = await invoice_col.create_invoice_with_session(
+                new_invoice_data,
+                session=session,
+            )
+
+            # Guardar las transacciones de producto
+            created_transactions_data = [t.model_dump() for t in created_transactions]
+            await prd_transaction_col.create_many_product_transactions_with_session(
+                created_transactions_data,
+                session=session,
+            )
+
+            new_invoice_in_db = InvoiceInDb.model_validate(insert_result)
+
+            return new_invoice_in_db, updated_product_accounts

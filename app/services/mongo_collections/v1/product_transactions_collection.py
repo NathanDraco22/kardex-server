@@ -66,6 +66,7 @@ class ProductTransactionsCollection:
                         ("branchId", 1),
                         ("productId", 1),
                         ("type", 1),
+                        ("subtype", 1),
                     ]
                 ),
                 IndexModel(

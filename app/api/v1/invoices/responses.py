@@ -8,6 +8,10 @@ class InvoiceResponse(BaseModel):
     clientAccount: ClientInDb
 
 
+class InvoiceAnonResponse(BaseModel):
+    invoice: InvoiceInDb
+
+
 class InvoicesWithTotalResponse(BaseModel):
     count: int
     data: list[InvoiceInDb]

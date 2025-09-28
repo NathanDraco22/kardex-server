@@ -53,7 +53,8 @@ async def process_sale(
                 new_transaction = ProductTransactionInDb(
                     id=UuidTool.generate_uuid(),
                     documentId=new_sale_id,
-                    type="sale",
+                    type="exit",
+                    subtype="invoice",
                     productId=sale_item.product.id,
                     branchId=create_sale.branchId,
                     quantity=total_to_substract,
