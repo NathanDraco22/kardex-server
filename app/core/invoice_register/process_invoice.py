@@ -210,7 +210,6 @@ async def process_anon_invoice(
                     invoice_item.quantity + invoice_item.bonQuantity
                 )
 
-                # Para una venta anónima, siempre es un despacho directo.
                 result = await prd_account_col.dispatch_direct_stock(
                     invoice_item.product.id,
                     create_invoice.branchId,
@@ -227,7 +226,6 @@ async def process_anon_invoice(
                 invoice_item.cost = updated_product_account.averageCost
                 updated_product_accounts.append(updated_product_account)
 
-                # Crear el registro para el Kardex de inventario
                 new_transaction = ProductTransactionInDb(
                     id=UuidTool.generate_uuid(),
                     documentId=new_invoice_doc_id,
@@ -242,19 +240,17 @@ async def process_anon_invoice(
                 )
                 created_transactions.append(new_transaction)
 
-            # Preparar y guardar el documento de la factura
             new_invoice_data = create_invoice.model_dump()
             new_invoice_data["id"] = new_invoice_doc_id
             new_invoice_data["createdAt"] = TimeTools.get_now_in_milliseconds()
-            # Se asume que siempre es de contado, por lo que el monto pagado es el total.
             new_invoice_data["amountPaid"] = create_invoice.total
+            new_invoice_data["paidAt"] = TimeTools.get_now_in_milliseconds()
 
             insert_result = await invoice_col.create_invoice_with_session(
                 new_invoice_data,
                 session=session,
             )
 
-            # Guardar las transacciones de producto
             created_transactions_data = [t.model_dump() for t in created_transactions]
             await prd_transaction_col.create_many_product_transactions_with_session(
                 created_transactions_data,
