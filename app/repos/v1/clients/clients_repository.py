@@ -1,4 +1,5 @@
-from tools import UuidTool, TimeTools
+from tools import TimeTools
+from core.counter_manager.counter_manager import CounterManager
 
 from .data.clients_datasource import ClientsDataSource
 from .models.client_model import CreateClient, UpdateClient, ClientInDb
@@ -9,8 +10,9 @@ class ClientsRepository:
         self.clients_ds = clients_ds
 
     async def create_client(self, create_client: CreateClient) -> ClientInDb:
+        client_number = await CounterManager().next_client_number()
         new_client_in_db = ClientInDb(
-            id=UuidTool.generate_uuid(),
+            id=client_number,
             createdAt=TimeTools.get_now_in_milliseconds(),
             **create_client.model_dump(),
         )
