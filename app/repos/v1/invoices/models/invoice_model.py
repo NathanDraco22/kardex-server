@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from repos.v1.common.models.sale_item import SaleItem, PaymentType
+from repos.v1.common.models import SaleItem, PaymentType, ClientInfo
 
 InvoiceStatus = Literal["open", "paid", "partially_paid", "cancelled"]
 
@@ -10,6 +10,7 @@ InvoiceStatus = Literal["open", "paid", "partially_paid", "cancelled"]
 class BaseInvoice(BaseModel):
     branchId: str
     clientId: str
+    clientInfo: ClientInfo
     docNumber: str = ""
     orderNumber: str = ""
     saleItems: list[SaleItem]

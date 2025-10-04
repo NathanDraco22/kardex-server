@@ -45,6 +45,7 @@ class OrdersController:
         create_invoice = CreateInvoice(
             branchId=order.branchId,
             clientId=order.clientId,
+            clientInfo=order.clientInfo,
             orderNumber=order.docNumber,
             saleItems=order.saleItems,
             description=order.description,

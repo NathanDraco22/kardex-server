@@ -1,12 +1,8 @@
 from typing import Literal
-from repos.v1.common.models import SaleItem, PaymentType
+from repos.v1.common.models import SaleItem, PaymentType, ClientInfo
 from pydantic import BaseModel
 
 OrderStatus = Literal["open", "completed", "cancelled"]
-
-
-class ClientInfo(BaseModel):
-    name: str
 
 
 class BaseOrder(BaseModel):
