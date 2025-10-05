@@ -2,7 +2,12 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from repos.v1.common.models import SaleItem, PaymentType, ClientInfo
+from repos.v1.common.models import (
+    SaleItem,
+    PaymentType,
+    ClientInfo,
+    UserInfo,
+)
 
 InvoiceStatus = Literal["open", "paid", "partially_paid", "cancelled"]
 
@@ -21,6 +26,7 @@ class BaseInvoice(BaseModel):
     totalCost: int
     total: int
     paidAt: int | None = None
+    createdBy: UserInfo
 
 
 class CreateInvoice(BaseInvoice):
