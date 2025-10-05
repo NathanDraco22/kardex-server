@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from repos.v1.common.models import UserInfo
 
 
 class EntryItem(BaseModel):
@@ -14,6 +15,7 @@ class BaseEntryDoc(BaseModel):
     branchId: str
     description: str = ""
     items: list[EntryItem]
+    createdBy: UserInfo
 
 
 class CreateEntryDoc(BaseEntryDoc):

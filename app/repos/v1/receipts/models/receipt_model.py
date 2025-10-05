@@ -1,6 +1,6 @@
 from typing import Literal
 from pydantic import BaseModel
-from repos.v1.common.models import ClientInfo
+from repos.v1.common.models import ClientInfo, UserInfo
 
 PaymentMethod = Literal[
     "cash",
@@ -25,6 +25,7 @@ class BaseReceipt(BaseModel):
     paymentMethod: PaymentMethod
     bankReference: str = ""
     total: int
+    createdBy: UserInfo
 
 
 class CreateReceipt(BaseReceipt):

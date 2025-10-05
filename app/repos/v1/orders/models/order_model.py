@@ -1,5 +1,10 @@
 from typing import Literal
-from repos.v1.common.models import SaleItem, PaymentType, ClientInfo
+from repos.v1.common.models import (
+    SaleItem,
+    PaymentType,
+    ClientInfo,
+    UserInfo,
+)
 from pydantic import BaseModel
 
 OrderStatus = Literal["open", "completed", "cancelled"]
@@ -17,6 +22,7 @@ class BaseOrder(BaseModel):
     paymentType: PaymentType
     totalCost: int
     total: int
+    createdBy: UserInfo
 
 
 class CreateOrder(BaseOrder):

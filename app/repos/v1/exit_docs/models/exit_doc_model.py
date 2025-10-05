@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from repos.v1.common.models import UserInfo
 
 
 class ExitItem(BaseModel):
@@ -14,6 +15,7 @@ class BaseExitDoc(BaseModel):
     branchId: str
     description: str = ""
     items: list[ExitItem]
+    createdBy: UserInfo
 
 
 class CreateExitDoc(BaseExitDoc):
