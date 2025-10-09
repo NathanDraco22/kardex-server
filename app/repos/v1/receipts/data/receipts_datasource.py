@@ -14,9 +14,13 @@ class ReceiptsDataSource:
         await collection.create_receipt(receipt)
         return receipt
 
-    async def get_all_receipts(self) -> list[dict[str, Any]]:
+    async def get_all_receipts(self, **kwargs) -> list[dict[str, Any]]:
         collection = ReceiptsCollection()
-        return await collection.fetch_all_receipts()
+        return await collection.fetch_all_receipts(**kwargs)
+
+    async def get_totals_from_receipts(self, **kwargs) -> dict[str, Any]:
+        collection = ReceiptsCollection()
+        return await collection.get_totals_from_receipts(**kwargs)
 
     async def get_receipt_by_id(self, receipt_id: str) -> dict[str, Any] | None:
         collection = ReceiptsCollection()

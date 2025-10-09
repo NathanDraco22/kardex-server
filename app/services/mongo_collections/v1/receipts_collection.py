@@ -1,6 +1,6 @@
 from typing import Any
 
-from pymongo import ReturnDocument
+from pymongo import ReturnDocument, IndexModel
 from services import MongoService
 
 
@@ -20,14 +20,65 @@ class ReceiptsCollection:
         collection = self.__collection
         await collection.insert_one(receipt)
 
-    async def fetch_all_receipts(self) -> list[dict[str, Any]]:
+    async def fetch_all_receipts(self, **kwargs) -> list[dict[str, Any]]:
         collection = self.__collection
-        cursor = collection.find()
+
+        query = {key: value for key, value in kwargs.items() if value is not None}
+
+        offset = query.pop("offset", 0)
+        limit = query.pop("limit", 50)
+
+        if kwargs.get("startDate") and kwargs.get("endDate"):
+            query["createdAt"] = {
+                "$gte": kwargs.get("startDate"),
+                "$lte": kwargs.get("endDate"),
+            }
+
+            del query["startDate"]
+            del query["endDate"]
+
+        cursor = collection.find(query).skip(offset).limit(limit).sort("createdAt", -1)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
 
         return result
+
+    async def get_totals_from_receipts(self, **kwargs) -> dict[str, Any]:
+        collection = self.__collection
+
+        query = {key: value for key, value in kwargs.items() if value is not None}
+
+        if kwargs.get("startDate") and kwargs.get("endDate"):
+            query["createdAt"] = {
+                "$gte": kwargs.get("startDate"),
+                "$lte": kwargs.get("endDate"),
+            }
+
+            del query["startDate"]
+            del query["endDate"]
+
+        cursor = collection.aggregate(
+            [
+                {"$match": query},
+                {
+                    "$group": {
+                        "_id": None,
+                        "total": {"$sum": "$total"},
+                    }
+                },
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+
+        await cursor.close()
+
+        if result:
+            data = result[0]
+            return data
+
+        return {"total": 0}
 
     async def fetch_receipt_by_id(self, receipt_id: str) -> dict[str, Any] | None:
         collection = self.__collection
@@ -69,3 +120,16 @@ class ReceiptsCollection:
         collection = self.__collection
         await collection.insert_one(receipt, session=session)
         return receipt
+
+    async def create_indexes(self):
+        collection = self.__collection
+        await collection.create_indexes(
+            [
+                IndexModel([("id", 1)], unique=True),
+                IndexModel([("docNumber", 1)], unique=True),
+                IndexModel([("clientId", 1), ("createdAt", -1)]),
+                IndexModel([("branchId", 1), ("createdAt", -1)]),
+                IndexModel([("appliedInvoices.invoiceId", 1)]),
+                IndexModel([("createdBy.id", 1)]),
+            ]
+        )

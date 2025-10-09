@@ -13,6 +13,7 @@ PaymentMethod = Literal[
 
 class AppliedInvoice(BaseModel):
     invoiceId: str
+    docNumber: str
     amountApplied: int
 
 

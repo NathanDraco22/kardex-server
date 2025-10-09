@@ -116,6 +116,11 @@ class ExitDocsCollection:
                         ("docDate", -1),
                     ]
                 ),
+                IndexModel(
+                    [
+                        ("createdBy.id", 1),
+                    ],
+                ),
             ]
         )
 

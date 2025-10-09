@@ -130,5 +130,6 @@ class OrdersCollection:
                     [("branchId", 1), ("clientId", 1), ("status", 1), ("createdAt", -1)]
                 ),
                 IndexModel([("status", 1), ("createdAt", -1)]),
+                IndexModel([("createdBy.id", 1)]),
             ]
         )

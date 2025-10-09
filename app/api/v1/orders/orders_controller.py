@@ -54,6 +54,7 @@ class OrdersController:
             paymentType=order.paymentType,
             status="open",
             total=order.total,
+            createdBy=order.createdBy,
         )
 
         res, _ = await self.invoice_register.regis_invoice(create_invoice)
