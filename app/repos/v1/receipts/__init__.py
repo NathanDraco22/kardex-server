@@ -1,11 +1,14 @@
 from .data.receipts_datasource import ReceiptsDataSource
 from .models.receipt_model import CreateReceipt, UpdateReceipt, ReceiptInDb
+from .models.receipt_total import ReceiptTotal
 from .receipts_repository import ReceiptsRepository
+
 
 __all__ = [
     "ReceiptsDataSource",
     "CreateReceipt",
     "UpdateReceipt",
     "ReceiptInDb",
+    "ReceiptTotal",
     "ReceiptsRepository",
 ]

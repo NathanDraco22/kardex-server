@@ -8,7 +8,11 @@ from repos.v1.receipts import (
     ReceiptInDb,
     ReceiptsRepository,
     ReceiptsDataSource,
+    ReceiptTotal,
 )
+
+from .query_params import ReceiptQueryParams
+from responses.v1 import ListResponse
 
 
 class ReceiptsController:
@@ -20,9 +24,31 @@ class ReceiptsController:
         receipt, _ = await self.receipt_register.regis_receipt(body)
         return receipt
 
-    async def get_all_receipts(self) -> list[ReceiptInDb]:
-        receipts = await self.receipts_repo.get_all_receipts()
-        return receipts
+    async def get_all_receipts(
+        self, query_params: ReceiptQueryParams
+    ) -> ListResponse[ReceiptInDb]:
+        if query_params.endDate is None or query_params.startDate is None:
+            query_params.startDate = None
+            query_params.endDate = None
+
+        receipts = await self.receipts_repo.get_all_receipts(
+            **query_params.model_dump()
+        )
+
+        return ListResponse(
+            count=len(receipts),
+            data=receipts,
+        )
+
+    async def get_totals_from_receipts(
+        self, query_params: ReceiptQueryParams
+    ) -> ReceiptTotal:
+        if query_params.endDate is None or query_params.startDate is None:
+            query_params.startDate = None
+            query_params.endDate = None
+        return await self.receipts_repo.get_totals_from_receipts(
+            **query_params.model_dump()
+        )
 
     async def get_receipt_by_id(self, receipt_id: str) -> ReceiptInDb:
         receipt = await self.receipts_repo.get_receipt_by_id(receipt_id)

@@ -213,5 +213,6 @@ class InvoicesCollection:
                 IndexModel([("branchId", 1), ("saleItems.product.id", 1)]),
                 IndexModel([("createdAt", -1)]),
                 IndexModel([("paidAt", -1)]),
+                IndexModel([("createdBy.id", 1)]),
             ]
         )

@@ -1,5 +1,6 @@
 from .data.receipts_datasource import ReceiptsDataSource
 from .models.receipt_model import CreateReceipt, UpdateReceipt, ReceiptInDb
+from .models.receipt_total import ReceiptTotal
 
 
 class ReceiptsRepository:
@@ -10,10 +11,14 @@ class ReceiptsRepository:
         # TODO: implement create
         raise NotImplementedError()
 
-    async def get_all_receipts(self) -> list[ReceiptInDb]:
-        results = await self.receipts_ds.get_all_receipts()
+    async def get_all_receipts(self, **kwargs) -> list[ReceiptInDb]:
+        results = await self.receipts_ds.get_all_receipts(**kwargs)
         models = [ReceiptInDb.model_validate(result) for result in results]
         return models
+
+    async def get_totals_from_receipts(self, **kwargs) -> ReceiptTotal:
+        res = await self.receipts_ds.get_totals_from_receipts(**kwargs)
+        return ReceiptTotal.model_validate(res)
 
     async def get_receipt_by_id(self, receipt_id: str) -> ReceiptInDb | None:
         result = await self.receipts_ds.get_receipt_by_id(receipt_id)

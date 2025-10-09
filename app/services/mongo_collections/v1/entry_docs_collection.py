@@ -107,6 +107,11 @@ class EntryDocsCollection:
                         ("createdAt", -1),
                     ],
                 ),
+                IndexModel(
+                    [
+                        ("createdBy.id", 1),
+                    ],
+                ),
             ]
         )
 
