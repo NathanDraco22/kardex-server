@@ -10,6 +10,8 @@ from repos.v1.clients import (
     ClientsDataSource,
 )
 
+from .query_params import ClientQueryParams
+
 
 class ClientsController:
     def __init__(self, clients_repo: ClientsRepository) -> None:
@@ -20,6 +22,17 @@ class ClientsController:
 
     async def get_all_clients(self) -> ListResponse[ClientInDb]:
         clients = await self.clients_repo.get_all_clients()
+        return ListResponse(
+            data=clients,
+            count=len(clients),
+        )
+
+    async def get_all_clients_with_balance(
+        self, params: ClientQueryParams
+    ) -> ListResponse[ClientInDb]:
+        clients = await self.clients_repo.get_all_clients_with_balance(
+            **params.model_dump()
+        )
         return ListResponse(
             data=clients,
             count=len(clients),

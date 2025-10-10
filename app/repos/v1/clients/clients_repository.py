@@ -26,6 +26,11 @@ class ClientsRepository:
         models = [ClientInDb.model_validate(result) for result in results]
         return models
 
+    async def get_all_clients_with_balance(self, **kwargs) -> list[ClientInDb]:
+        results = await self.clients_ds.get_all_clients_with_balance(**kwargs)
+        models = [ClientInDb.model_validate(result) for result in results]
+        return models
+
     async def get_client_by_id(self, client_id: str) -> ClientInDb | None:
         result = await self.clients_ds.get_client_by_id(client_id)
 

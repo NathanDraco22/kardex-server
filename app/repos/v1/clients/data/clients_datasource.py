@@ -18,6 +18,10 @@ class ClientsDataSource:
         collection = ClientsCollection()
         return await collection.fetch_all_clients()
 
+    async def get_all_clients_with_balance(self, **kwargs) -> list[dict[str, Any]]:
+        collection = ClientsCollection()
+        return await collection.fetch_all_clients_with_balance(**kwargs)
+
     async def get_client_by_id(self, client_id: str) -> dict[str, Any] | None:
         collection = ClientsCollection()
         return await collection.fetch_client_by_id(client_id)

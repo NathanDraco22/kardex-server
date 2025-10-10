@@ -47,6 +47,36 @@ class ClientsCollection:
 
         return result
 
+    async def fetch_all_clients_with_balance(self, **kwargs) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        query = {
+            "isDeleted": False,
+            "isInternal": False,
+            "balance": {
+                "$gt": 0,
+            },
+        }
+
+        filtered_params = {
+            key: value for key, value in kwargs.items() if value is not None
+        }
+
+        offset = filtered_params.pop("offset", 0)
+        limit = filtered_params.pop("limit", 50)
+
+        if filtered_params:
+            query.update(filtered_params)
+
+        cursor = collection.find(query).skip(offset).limit(limit)
+
+        cursor.sort("name", 1)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def fetch_client_by_id(self, client_id: str) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one({"id": client_id, "isDeleted": False})
