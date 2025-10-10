@@ -76,6 +76,23 @@ class OrdersCollection:
 
         return result
 
+    async def update_order_by_doc_number(
+        self,
+        doc_number: str,
+        order: dict,
+        session: Any,
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+
+        result = await collection.find_one_and_update(
+            {"docNumber": doc_number},
+            {"$set": order},
+            return_document=ReturnDocument.AFTER,
+            session=session,
+        )
+
+        return result
+
     async def update_order_status_by_doc_number(
         self,
         doc_number: str,

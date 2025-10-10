@@ -5,6 +5,7 @@ from responses.v1 import ListResponse
 
 
 from .orders_controller import orders_controller
+from .reponses import ConvertOrderToInvoiceResponse
 
 
 orders_router = APIRouter(tags=["ordersV1"])
@@ -16,9 +17,9 @@ async def create_order(body: CreateOrder) -> OrderInDb:
 
 
 @orders_router.post("/make-invoice/{order_id}")
-async def convert_order_to_invoice(order_id: str) -> OrderInDb:
-    _, order = await orders_controller.convert_order_to_invoice(order_id)
-    return order
+async def convert_order_to_invoice(order_id: str) -> ConvertOrderToInvoiceResponse:
+    invoice, order = await orders_controller.convert_order_to_invoice(order_id)
+    return ConvertOrderToInvoiceResponse(invoice=invoice, order=order)
 
 
 @orders_router.get("")
