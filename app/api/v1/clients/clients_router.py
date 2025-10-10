@@ -1,10 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from repos.v1.clients import CreateClient, UpdateClient, ClientInDb
 from responses.v1 import ListResponse
 
 from .clients_controller import clients_controller
-
+from .query_params import ClientQueryParams
 
 clients_router = APIRouter(tags=["clientsV1"])
 
@@ -17,6 +17,13 @@ async def create_client(body: CreateClient) -> ClientInDb:
 @clients_router.get("")
 async def get_all_clients() -> ListResponse[ClientInDb]:
     return await clients_controller.get_all_clients()
+
+
+@clients_router.get("/balance")
+async def get_all_clients_with_balance(
+    params: ClientQueryParams = Depends(),
+) -> ListResponse[ClientInDb]:
+    return await clients_controller.get_all_clients_with_balance(params)
 
 
 @clients_router.get("/{client_id}")
