@@ -30,6 +30,8 @@ async def process_invoice(
     prd_transaction_col = ProductTransactionsCollection()
     prd_account_col = ProductAccountsCollection()
 
+    order_col = OrdersCollection()
+
     client_transaction_col = ClientTransactionsCollection()
     client_account_col = ClientsCollection()
 
@@ -98,6 +100,12 @@ async def process_invoice(
 
             insert_result = await invoice_col.create_invoice_with_session(
                 new_invoice_date,
+                session=session,
+            )
+
+            await order_col.update_order_by_doc_number(
+                create_invoice.orderNumber,
+                {"invoiceId": new_invoice_doc_id},
                 session=session,
             )
 

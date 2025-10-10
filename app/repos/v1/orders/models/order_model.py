@@ -15,6 +15,7 @@ class BaseOrder(BaseModel):
     clientId: str
     clientInfo: ClientInfo
     docNumber: str = ""
+    invoiceId: str = ""
     saleItems: list[SaleItem]
     description: str = ""
     amountPaid: int = 0
