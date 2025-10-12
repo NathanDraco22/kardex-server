@@ -6,10 +6,11 @@ ORIGIN_BRANCH_ID = "ORIGIN_BRANCH"
 origin_branch_name = "Origen"
 
 
-async def create_default_branch() -> BranchInDb:
+async def create_default_branch(branch_name: str | None = None) -> BranchInDb:
+    target_branch_name = branch_name if branch_name is not None else origin_branch_name
     new_branch = BranchInDb(
         id=ORIGIN_BRANCH_ID,
-        name=origin_branch_name,
+        name=target_branch_name,
         createdAt=TimeTools.get_now_in_milliseconds(),
     )
 

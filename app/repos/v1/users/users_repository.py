@@ -54,6 +54,15 @@ class UsersRepository:
 
         return UserInDb.model_validate(result)
 
+    async def change_password(self, user_id: str, password: str) -> UserInDb | None:
+        hashed_password = SysPasswordHasher.hash_password(password)
+        result = await self.users_ds.change_password(user_id, hashed_password)
+
+        if result is None:
+            return None
+
+        return UserInDb.model_validate(result)
+
     async def delete_user_by_id(self, user_id: str) -> UserInDb | None:
         result = await self.users_ds.delete_user_by_id(user_id)
 

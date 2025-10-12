@@ -6,5 +6,11 @@ class LoginBody(BaseModel):
     password: str
 
 
+class ChangePasswordBody(BaseModel):
+    userId: str
+    oldPassword: str
+    newPassword: str
+
+
 class RefreshTokenBody(BaseModel):
     token: str

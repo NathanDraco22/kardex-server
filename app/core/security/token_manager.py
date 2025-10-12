@@ -34,16 +34,18 @@ class TokenManager:
                 options={"verify_exp": False},
             )
             return res
-        except Exception:
+        except Exception as e:
+            print(e)
             return None
 
     @staticmethod
     def super_token_verify(token: str) -> dict | None:
-        public_key = os.getenv("SUPER_PUBLIC_KEY", "secret")
-        public_key_bytes = public_key.encode("utf-8")
+        with open("config/service_public_key.pem", "rb") as f:
+            public_key_bytes = f.read()
 
         try:
             res = jwt.decode(token, public_key_bytes, algorithms=["EdDSA"])
             return res
-        except Exception:
+        except Exception as e:
+            print(e)
             return None

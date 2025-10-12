@@ -106,6 +106,19 @@ class UsersCollection:
 
         return result
 
+    async def change_password(
+        self, user_id: str, password: str
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+
+        result = await collection.find_one_and_update(
+            {"id": user_id},
+            {"$set": {"password": password}},
+            return_document=ReturnDocument.AFTER,
+        )
+
+        return result
+
     async def delete_user_by_id(self, user_id: str) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one_and_update(
