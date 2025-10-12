@@ -3,6 +3,7 @@ from .accounts_collection import AccountsCollection
 from .branches_collection import BranchesCollection
 from .client_transactions_collection import ClientTransactionsCollection
 from .clients_collection import ClientsCollection
+from .core_settings_collection import CoreSettingsCollection
 from .counters_collection import CountersCollection
 from .entry_docs_collection import EntryDocsCollection
 from .exit_docs_collection import ExitDocsCollection
@@ -28,6 +29,7 @@ __all__ = [
     "BranchesCollection",
     "ClientTransactionsCollection",
     "ClientsCollection",
+    "CoreSettingsCollection",
     "CountersCollection",
     "EntryDocsCollection",
     "ExitDocsCollection",

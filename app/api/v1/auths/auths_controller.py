@@ -1,3 +1,4 @@
+from typing import Any
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
@@ -104,6 +105,27 @@ class AuthsController:
             user=user,
             accessToken=token,
         )
+
+    async def change_password(
+        self, user_id: str, old_password: str, new_password: str
+    ) -> dict[str, Any]:
+        user = await self.users_repo.get_user_by_id(user_id)
+
+        if user is None:
+            SysPasswordHasher.verify_password(old_password, "fake_hashed_password")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials",
+            )
+        if not SysPasswordHasher.verify_password(old_password, user.password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials",
+            )
+
+        await self.users_repo.change_password(user_id, new_password)
+
+        return {"message": "Password changed successfully"}
 
 
 auths_controller = AuthsController(

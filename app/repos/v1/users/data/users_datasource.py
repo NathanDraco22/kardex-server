@@ -28,6 +28,12 @@ class UsersDataSource:
         collection = UsersCollection()
         return await collection.update_user_by_id(user_id, user)
 
+    async def change_password(
+        self, user_id: str, password: str
+    ) -> dict[str, Any] | None:
+        collection = UsersCollection()
+        return await collection.change_password(user_id, password)
+
     async def delete_user_by_id(self, user_id: str) -> dict[str, Any] | None:
         collection = UsersCollection()
         return await collection.delete_user_by_id(user_id)
