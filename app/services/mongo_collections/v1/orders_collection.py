@@ -148,6 +148,6 @@ class OrdersCollection:
                 ),
                 IndexModel([("status", 1), ("createdAt", -1)]),
                 IndexModel([("createdBy.id", 1)]),
-                IndexModel([("invoiceId", 1)], unique=True),
+                IndexModel([("invoiceId", 1)]),
             ]
         )
