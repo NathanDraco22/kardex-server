@@ -141,7 +141,7 @@ class OrdersCollection:
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),
-                IndexModel([("docNumber", 1)], unique=True),
+                IndexModel([("docNumber", 1)]),
                 IndexModel([("clientId", 1), ("status", 1), ("createdAt", -1)]),
                 IndexModel(
                     [("branchId", 1), ("clientId", 1), ("status", 1), ("createdAt", -1)]
