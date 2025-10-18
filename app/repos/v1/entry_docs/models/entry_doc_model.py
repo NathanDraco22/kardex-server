@@ -4,6 +4,7 @@ from repos.v1.common.models import UserInfo
 
 class EntryItem(BaseModel):
     productId: str
+    productName: str
     cost: int
     quantity: int = Field(..., gt=0)
 

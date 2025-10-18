@@ -4,6 +4,7 @@ from repos.v1.common.models import UserInfo
 
 class ExitItem(BaseModel):
     productId: str
+    productName: str
     cost: int | None = None
     quantity: int = Field(..., lt=0)
 

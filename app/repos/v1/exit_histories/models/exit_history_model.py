@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class ExitItem(BaseModel):
     productId: str
+    productName: str
     cost: int | None = None
     quantity: int
 
