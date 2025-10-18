@@ -7,6 +7,7 @@ class Supplier(BaseModel):
 
 class EntryItem(BaseModel):
     productId: str
+    productName: str
     cost: int
     quantity: int
 
