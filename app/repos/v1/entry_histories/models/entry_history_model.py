@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from repos.v1.common.models import UserInfo
 
 
 class Supplier(BaseModel):
@@ -20,6 +21,7 @@ class BaseEntryHistory(BaseModel):
     branchId: str
     description: str = ""
     items: list[EntryItem]
+    createdBy: UserInfo
 
 
 class EntryHistoryInDb(BaseEntryHistory):
