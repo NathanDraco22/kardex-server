@@ -16,4 +16,4 @@ COPY . .
 
 WORKDIR /home/server/app
 
-CMD . ../.venv/bin/activate && fastapi run --host 0.0.0.0
+CMD . ../.venv/bin/activate && fastapi run --host 0.0.0.0 --port 8080
