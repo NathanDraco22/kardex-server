@@ -13,6 +13,7 @@ RUN uv sync --frozen --no-dev
 
 COPY . .
 
+EXPOSE 8080
 
 WORKDIR /home/server/app
 
