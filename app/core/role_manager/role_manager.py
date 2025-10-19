@@ -32,6 +32,22 @@ default_roles = [
             CommercialSubModules.PENDING_INVOICES,
         ],
     ),
+    UserRole(
+        name="Operador",
+        access=[
+            Modules.COMMERCIAL,
+            CommercialSubModules.ORDERS,
+            CommercialSubModules.CREATE_ORDER,
+            CommercialSubModules.CREATE_INVOICE,
+            CommercialSubModules.PENDING_INVOICES,
+            CommercialSubModules.INVOICE_HISTORY,
+            CommercialSubModules.PRICE_SETTING,
+            Modules.SUPPLIERS,
+            Modules.CLIENTS,
+            Modules.PRODUCTS,
+            Modules.INVENTORY,
+        ],
+    ),
 ]
 
 
