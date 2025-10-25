@@ -16,6 +16,7 @@ from .product_accounts.product_accounts_router import product_accounts_router
 from .product_categories.product_categories_router import product_categories_router
 from .product_prices.product_prices_router import product_prices_router
 from .product_sale_profiles.product_sale_profiles_router import product_sale_profiles_router
+from .product_transactions.product_transactions_router import product_transactions_router
 from .products.products_router import products_router
 from .receipts.receipts_router import receipts_router
 from .sales.sales_router import sales_router
@@ -42,6 +43,7 @@ router_v1.include_router(product_accounts_router, prefix="/product-accounts")
 router_v1.include_router(product_categories_router, prefix="/product-categories")
 router_v1.include_router(product_prices_router, prefix="/product-prices")
 router_v1.include_router(product_sale_profiles_router, prefix='/product-sale-profiles')
+router_v1.include_router(product_transactions_router, prefix='/product-transactions')
 router_v1.include_router(products_router, prefix="/products")
 router_v1.include_router(receipts_router, prefix="/receipts")
 router_v1.include_router(sales_router, prefix='/sales')

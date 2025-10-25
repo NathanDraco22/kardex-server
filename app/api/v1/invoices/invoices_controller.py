@@ -54,6 +54,15 @@ class InvoicesController:
             )
         return invoice
 
+    async def get_invoice_by_doc_number(self, doc_number: str) -> InvoiceInDb:
+        invoice = await self.invoices_repo.get_invoice_by_doc_number(doc_number)
+        if invoice is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invoice not found",
+            )
+        return invoice
+
     async def get_invoice_by(
         self,
         client_id: str,

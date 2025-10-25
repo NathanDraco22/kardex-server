@@ -45,6 +45,11 @@ async def get_invoice_by_id(invoice_id: str) -> InvoiceInDb:
     return await invoices_controller.get_invoice_by_id(invoice_id)
 
 
+@invoices_router.get("/doc/{doc_number}")
+async def get_invoice_by_doc_number(doc_number: str) -> InvoiceInDb:
+    return await invoices_controller.get_invoice_by_doc_number(doc_number)
+
+
 @invoices_router.get("/client/{client_id}")
 async def get_invoice_by(
     client_id: str,
