@@ -6,8 +6,12 @@ class ProductTransactionsRepository:
     def __init__(self, product_transactions_ds: ProductTransactionsDataSource):
         self.product_transactions_ds = product_transactions_ds
 
-    async def get_all_product_transactions(self) -> list[ProductTransactionInDb]:
-        results = await self.product_transactions_ds.get_all_product_transactions()
+    async def get_all_product_transactions(
+        self, **kwargs
+    ) -> list[ProductTransactionInDb]:
+        results = await self.product_transactions_ds.get_all_product_transactions(
+            **kwargs
+        )
         models = [ProductTransactionInDb.model_validate(result) for result in results]
         return models
 

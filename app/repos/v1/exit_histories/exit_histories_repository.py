@@ -17,3 +17,13 @@ class ExitHistoriesRepository:
         ]
 
         return exit_histories
+
+    async def get_exit_history_by_doc_number_and_branch_id(
+        self, doc_number: str, branch_id: str
+    ) -> ExitHistoryInDb | None:
+        res = await self.exit_histories_ds.get_exit_history_by_doc_number_and_branch_id(
+            doc_number, branch_id
+        )
+        if res is None:
+            return None
+        return ExitHistoryInDb.model_validate(res)

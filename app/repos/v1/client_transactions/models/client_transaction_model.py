@@ -6,7 +6,7 @@ TransactionType = Literal["credit", "debit"]
 TransactionSubType = Literal[
     "invoice",
     "discount",
-    "return",
+    "devolution",
     "receipt",
 ]
 
