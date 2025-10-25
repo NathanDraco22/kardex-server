@@ -1,3 +1,5 @@
+from fastapi import HTTPException
+
 from repos.v1.entry_histories import (
     EntryHistoryInDb,
     EntryHistoriesRepository,
@@ -30,6 +32,16 @@ class EntryHistoriesController:
             params=entry_domain_params
         )
         return ListResponse(count=len(entry_histories), data=entry_histories)
+
+    async def get_entry_history_by_doc_number_and_branch_id(
+        self, doc_number: str, branch_id: str
+    ) -> EntryHistoryInDb:
+        entry_history = await self.entry_histories_repo.get_entry_history_by_doc_number_and_branch_id(
+            doc_number, branch_id
+        )
+        if not entry_history:
+            raise HTTPException(status_code=404, detail="Entry history not found")
+        return entry_history
 
 
 entry_histories_controller = EntryHistoriesController(
