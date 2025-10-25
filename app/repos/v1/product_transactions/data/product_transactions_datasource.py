@@ -16,20 +16,12 @@ class ProductTransactionsDataSource:
         await collection.create_product_transaction(product_transaction)
         return product_transaction
 
-    async def get_all_product_transactions(self) -> list[dict[str, Any]]:
+    async def get_all_product_transactions(self, **kwargs) -> list[dict[str, Any]]:
         collection = ProductTransactionsCollection()
-        return await collection.fetch_all_product_transactions()
+        return await collection.fetch_all_product_transactions(**kwargs)
 
     async def get_product_transaction_by_id(
         self, product_transaction_id: str
     ) -> dict[str, Any] | None:
         collection = ProductTransactionsCollection()
         return await collection.fetch_product_transaction_by_id(product_transaction_id)
-
-    async def update_product_transaction_by_id(
-        self, product_transaction_id: str, product_transaction: dict[str, Any]
-    ) -> dict[str, Any] | None:
-        collection = ProductTransactionsCollection()
-        return await collection.update_product_transaction_by_id(
-            product_transaction_id, product_transaction
-        )

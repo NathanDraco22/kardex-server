@@ -20,9 +20,21 @@ class ProductTransactionsCollection:
         collection = self.__collection
         await collection.insert_one(product_transaction)
 
-    async def fetch_all_product_transactions(self) -> list[dict[str, Any]]:
+    async def fetch_all_product_transactions(self, **kwargs) -> list[dict[str, Any]]:
         collection = self.__collection
-        cursor = collection.find()
+
+        query = {key: value for key, value in kwargs.items() if value is not None}
+
+        if kwargs.get("endDate") is not None:
+            query["createdAt"] = {
+                "$lte": kwargs.get("endDate"),
+            }
+            del query["endDate"]
+
+        offset = query.pop("offset", 0)
+        limit = query.pop("limit", 50)
+
+        cursor = collection.find(query).skip(offset).limit(limit).sort("createdAt", -1)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -64,9 +76,16 @@ class ProductTransactionsCollection:
                 IndexModel(
                     [
                         ("branchId", 1),
-                        ("productId", 1),
                         ("type", 1),
                         ("subtype", 1),
+                        ("createdAt", -1),
+                    ]
+                ),
+                IndexModel(
+                    [
+                        ("branchId", 1),
+                        ("productId", 1),
+                        ("createdAt", -1),
                     ]
                 ),
                 IndexModel(

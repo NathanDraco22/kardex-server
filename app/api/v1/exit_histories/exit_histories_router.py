@@ -14,3 +14,12 @@ async def get_exit_history(
     query_params: ExitHistoryQueryParams = Depends(),
 ) -> ListResponse[ExitHistoryInDb]:
     return await exit_histories_controller.get_exit_history(query_params)
+
+
+@exit_histories_router.get("/{doc_number}/{branch_id}")
+async def get_exit_history_by_doc_number_and_branch_id(
+    doc_number: str, branch_id: str
+) -> ExitHistoryInDb:
+    return await exit_histories_controller.get_exit_history_by_doc_number_and_branch_id(
+        doc_number, branch_id
+    )

@@ -14,3 +14,14 @@ async def get_entry_histories(
     query_params: EntryHistoryQueryParams = Depends(),
 ) -> ListResponse[EntryHistoryInDb]:
     return await entry_histories_controller.get_entry_history(query_params)
+
+
+@entry_histories_router.get("/{doc_number}/{branch_id}")
+async def get_entry_history_by_doc_number_and_branch_id(
+    doc_number: str, branch_id: str
+) -> EntryHistoryInDb:
+    return (
+        await entry_histories_controller.get_entry_history_by_doc_number_and_branch_id(
+            doc_number, branch_id
+        )
+    )
