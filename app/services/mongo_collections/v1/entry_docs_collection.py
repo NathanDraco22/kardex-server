@@ -50,7 +50,7 @@ class EntryDocsCollection:
         return result
 
     async def fetch_entry_doc_by_doc_number_and_branch(
-        self, branch_id: str, doc_number: str
+        self, doc_number: str, branch_id: str
     ) -> dict[str, Any] | None:
         collection = self.__collection
 
