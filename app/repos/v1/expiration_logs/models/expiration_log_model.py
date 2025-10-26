@@ -13,6 +13,7 @@ class ProductInfo(BaseModel):
 
 class BaseExpirationLog(BaseModel):
     product: ProductInfo
+    branchId: str
     lotNumber: str | None = None
     expirationDate: int
 

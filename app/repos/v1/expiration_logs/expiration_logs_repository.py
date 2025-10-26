@@ -26,8 +26,8 @@ class ExpirationLogsRepository:
 
         return new_expiration_log
 
-    async def get_all_expiration_logs(self) -> list[ExpirationLogInDb]:
-        results = await self.expiration_logs_ds.get_all_expiration_logs()
+    async def get_all_expiration_logs(self, **kwargs) -> list[ExpirationLogInDb]:
+        results = await self.expiration_logs_ds.get_all_expiration_logs(**kwargs)
         models = [ExpirationLogInDb.model_validate(result) for result in results]
         return models
 
