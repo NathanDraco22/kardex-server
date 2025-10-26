@@ -13,6 +13,7 @@ TransactionSubType = Literal[
 
 class BaseClientTransaction(BaseModel):
     documentId: str
+    docNumber: str
     clientId: str
     amount: int
     type: TransactionType
