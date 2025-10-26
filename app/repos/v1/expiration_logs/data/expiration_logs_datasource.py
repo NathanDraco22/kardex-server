@@ -39,3 +39,7 @@ class ExpirationLogsDataSource:
     ) -> dict[str, Any] | None:
         collection = ExpirationLogsCollection()
         return await collection.delete_expiration_log_by_id(expiration_log_id)
+
+    async def has_near_expiration_date(self, target_date: int, branch_id: str) -> bool:
+        collection = ExpirationLogsCollection()
+        return await collection.has_near_expiration_date(target_date, branch_id)

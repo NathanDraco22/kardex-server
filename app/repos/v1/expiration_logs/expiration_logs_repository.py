@@ -60,3 +60,8 @@ class ExpirationLogsRepository:
             return None
 
         return ExpirationLogInDb.model_validate(result)
+
+    async def has_near_expiration_date(self, target_date: int, branch_id: str) -> bool:
+        return await self.expiration_logs_ds.has_near_expiration_date(
+            target_date, branch_id
+        )

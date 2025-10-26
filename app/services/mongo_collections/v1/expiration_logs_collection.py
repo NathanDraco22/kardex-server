@@ -70,3 +70,14 @@ class ExpirationLogsCollection:
                 IndexModel([("expirationDate", 1)]),
             ]
         )
+
+    async def has_near_expiration_date(self, target_date: int, branch_id: str) -> bool:
+        collection = self.__collection
+        result = await collection.find_one(
+            {
+                "expirationDate": {"$lte": target_date},
+                "branchId": branch_id,
+            },
+        )
+
+        return result is not None
