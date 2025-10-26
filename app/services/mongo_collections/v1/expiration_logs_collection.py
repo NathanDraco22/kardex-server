@@ -25,7 +25,7 @@ class ExpirationLogsCollection:
 
         query = {key: value for key, value in kwargs.items() if value is not None}
 
-        cursor = collection.find(query).sort("expirationDate", -1)
+        cursor = collection.find(query).sort("expirationDate", 1)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -67,6 +67,6 @@ class ExpirationLogsCollection:
             [
                 IndexModel([("id", 1)], unique=True),
                 IndexModel([("branchId", 1)]),
-                IndexModel([("expirationDate", -1)]),
+                IndexModel([("expirationDate", 1)]),
             ]
         )
