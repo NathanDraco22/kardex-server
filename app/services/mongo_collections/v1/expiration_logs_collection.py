@@ -20,9 +20,12 @@ class ExpirationLogsCollection:
         collection = self.__collection
         await collection.insert_one(expiration_log)
 
-    async def fetch_all_expiration_logs(self) -> list[dict[str, Any]]:
+    async def fetch_all_expiration_logs(self, **kwargs) -> list[dict[str, Any]]:
         collection = self.__collection
-        cursor = collection.find().sort("expirationDate", -1)
+
+        query = {key: value for key, value in kwargs.items() if value is not None}
+
+        cursor = collection.find(query).sort("expirationDate", -1)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -63,6 +66,7 @@ class ExpirationLogsCollection:
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),
+                IndexModel([("branchId", 1)]),
                 IndexModel([("expirationDate", -1)]),
             ]
         )

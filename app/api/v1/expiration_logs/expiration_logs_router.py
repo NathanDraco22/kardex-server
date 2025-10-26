@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from repos.v1.expiration_logs import (
     CreateExpirationLog,
@@ -9,6 +9,7 @@ from repos.v1.expiration_logs import (
 from responses.v1 import ListResponse
 
 from .expiration_logs_controller import expiration_logs_controller
+from .query_params import ExpirationLogQueryParams
 
 
 expiration_logs_router = APIRouter(tags=["expiration_logsV1"])
@@ -20,8 +21,10 @@ async def create_expiration_log(body: CreateExpirationLog) -> ExpirationLogInDb:
 
 
 @expiration_logs_router.get("")
-async def get_all_expiration_logs() -> ListResponse[ExpirationLogInDb]:
-    return await expiration_logs_controller.get_all_expiration_logs()
+async def get_all_expiration_logs(
+    params: ExpirationLogQueryParams = Depends(),
+) -> ListResponse[ExpirationLogInDb]:
+    return await expiration_logs_controller.get_all_expiration_logs(params)
 
 
 @expiration_logs_router.get("/{expiration_log_id}")

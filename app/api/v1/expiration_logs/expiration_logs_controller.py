@@ -10,6 +10,8 @@ from repos.v1.expiration_logs import (
 
 from responses.v1 import ListResponse
 
+from .query_params import ExpirationLogQueryParams
+
 
 class ExpirationLogsController:
     def __init__(self, expiration_logs_repo: ExpirationLogsRepository) -> None:
@@ -20,8 +22,12 @@ class ExpirationLogsController:
     ) -> ExpirationLogInDb:
         return await self.expiration_logs_repo.create_expiration_log(body)
 
-    async def get_all_expiration_logs(self) -> ListResponse[ExpirationLogInDb]:
-        expiration_logs = await self.expiration_logs_repo.get_all_expiration_logs()
+    async def get_all_expiration_logs(
+        self, params: ExpirationLogQueryParams
+    ) -> ListResponse[ExpirationLogInDb]:
+        expiration_logs = await self.expiration_logs_repo.get_all_expiration_logs(
+            **params.model_dump()
+        )
         return ListResponse(
             count=len(expiration_logs),
             data=expiration_logs,
