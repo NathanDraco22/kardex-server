@@ -16,6 +16,13 @@ async def get_entry_histories(
     return await entry_histories_controller.get_entry_history(query_params)
 
 
+@entry_histories_router.get("/{entry_doc_id}")
+async def get_history_by_id_with_supplier(entry_doc_id: str) -> EntryHistoryInDb:
+    return await entry_histories_controller.get_history_by_id_with_supplier(
+        entry_doc_id
+    )
+
+
 @entry_histories_router.get("/{doc_number}/{branch_id}")
 async def get_entry_history_by_doc_number_and_branch_id(
     doc_number: str, branch_id: str

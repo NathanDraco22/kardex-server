@@ -23,6 +23,12 @@ class EntryHistoriesDataSource:
             end_date,
         )
 
+    async def get_entry_history_by_id_with_supplier(
+        self, entry_doc_id: str
+    ) -> dict[str, Any] | None:
+        collection = EntryDocsCollection()
+        return await collection.fetch_entry_doc_by_id_with_supplier(entry_doc_id)
+
     async def get_entry_history_by_doc_number_and_branch_id(
         self, doc_number: str, branch_id: str
     ) -> dict[str, Any] | None:
