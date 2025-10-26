@@ -20,6 +20,17 @@ class EntryHistoriesRepository:
         ]
         return entry_histories
 
+    async def get_entry_history_by_id_with_supplier(
+        self, entry_doc_id: str
+    ) -> EntryHistoryInDb | None:
+        res = await self.entry_histories_ds.get_entry_history_by_id_with_supplier(
+            entry_doc_id
+        )
+        if res is None:
+            return None
+
+        return EntryHistoryInDb.model_validate(res)
+
     async def get_entry_history_by_doc_number_and_branch_id(
         self, doc_number: str, branch_id: str
     ) -> EntryHistoryInDb | None:

@@ -58,6 +58,37 @@ class ExitDocsCollection:
         result = await collection.find_one({"docNumber": doc_number})
         return result
 
+    async def fetch_exit_doc_by_id_with_client(
+        self, exit_doc_id: str
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "id": exit_doc_id,
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "Clients",
+                        "localField": "clientId",
+                        "foreignField": "id",
+                        "as": "client",
+                    }
+                },
+                {"$unwind": "$client"},
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+
+        if result:
+            return result[0]
+
+        return None
+
     async def fetch_exit_doc_by_doc_number_and_branch(
         self,
         doc_number: str,

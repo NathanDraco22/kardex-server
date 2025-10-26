@@ -33,6 +33,18 @@ class EntryHistoriesController:
         )
         return ListResponse(count=len(entry_histories), data=entry_histories)
 
+    async def get_history_by_id_with_supplier(
+        self, entry_doc_id: str
+    ) -> EntryHistoryInDb:
+        entry_history = (
+            await self.entry_histories_repo.get_entry_history_by_id_with_supplier(
+                entry_doc_id
+            )
+        )
+        if not entry_history:
+            raise HTTPException(status_code=404, detail="Entry history not found")
+        return entry_history
+
     async def get_entry_history_by_doc_number_and_branch_id(
         self, doc_number: str, branch_id: str
     ) -> EntryHistoryInDb:
