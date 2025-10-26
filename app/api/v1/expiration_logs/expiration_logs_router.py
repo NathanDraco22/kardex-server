@@ -37,3 +37,8 @@ async def delete_expiration_log_by_id(expiration_log_id: str) -> ExpirationLogIn
     return await expiration_logs_controller.delete_expiration_log_by_id(
         expiration_log_id
     )
+
+
+@expiration_logs_router.get("/near/{branch_id}")
+async def has_near_expiration_date(branch_id: str) -> dict[str, bool]:
+    return await expiration_logs_controller.has_near_expiration_date(branch_id)

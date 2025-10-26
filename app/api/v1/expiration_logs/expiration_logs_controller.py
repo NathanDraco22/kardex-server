@@ -9,6 +9,7 @@ from repos.v1.expiration_logs import (
 )
 
 from responses.v1 import ListResponse
+from tools import TimeTools
 
 from .query_params import ExpirationLogQueryParams
 
@@ -75,6 +76,13 @@ class ExpirationLogsController:
                 detail="ExpirationLog not found",
             )
         return deleted_expiration_log
+
+    async def has_near_expiration_date(self, branch_id: str) -> dict[str, bool]:
+        target_date = TimeTools.get_now_in_100days_in_milliseconds()
+        has_expiration = await self.expiration_logs_repo.has_near_expiration_date(
+            target_date, branch_id
+        )
+        return {"hasExpiration": has_expiration}
 
 
 expiration_logs_controller = ExpirationLogsController(
