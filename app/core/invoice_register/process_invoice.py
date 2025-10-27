@@ -82,6 +82,7 @@ async def process_invoice(
                 new_transaction = ProductTransactionInDb(
                     id=UuidTool.generate_uuid(),
                     documentId=new_invoice_doc_id,
+                    docNumber=create_invoice.docNumber,
                     type="exit",
                     subtype="invoice",
                     productId=invoice_item.product.id,
@@ -132,6 +133,7 @@ async def process_invoice(
                 id=UuidTool.generate_uuid(),
                 clientId=create_invoice.clientId,
                 documentId=new_invoice_in_db.id,
+                docNumber=new_invoice_in_db.docNumber,
                 amount=new_invoice_in_db.total,
                 type="debit",
                 subtype="invoice",
@@ -167,6 +169,7 @@ async def process_invoice(
                     id=UuidTool.generate_uuid(),
                     clientId=create_invoice.clientId,
                     documentId=new_invoice_in_db.id,
+                    docNumber=new_invoice_in_db.docNumber,
                     amount=-(new_invoice_in_db.total),
                     type="credit",
                     subtype="invoice",
@@ -237,6 +240,7 @@ async def process_anon_invoice(
                 new_transaction = ProductTransactionInDb(
                     id=UuidTool.generate_uuid(),
                     documentId=new_invoice_doc_id,
+                    docNumber=create_invoice.docNumber,
                     type="exit",
                     subtype="invoice",
                     productId=invoice_item.product.id,

@@ -49,6 +49,65 @@ class EntryDocsCollection:
         result = await collection.find_one({"id": entry_doc_id})
         return result
 
+    async def fetch_entry_doc_by_id_with_supplier(
+        self, entry_doc_id: str
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "id": entry_doc_id,
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "Suppliers",
+                        "localField": "supplierId",
+                        "foreignField": "id",
+                        "as": "supplier",
+                    }
+                },
+                {"$unwind": "$supplier"},
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+        if result:
+            return result[0]
+        return None
+
+    async def fetch_entry_doc_by_doc_number_and_branch(
+        self, doc_number: str, branch_id: str
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "docNumber": doc_number,
+                        "branchId": branch_id,
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "Suppliers",
+                        "localField": "supplierId",
+                        "foreignField": "id",
+                        "as": "supplier",
+                    }
+                },
+                {"$unwind": "$supplier"},
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+        if result:
+            return result[0]
+        return None
+
     async def fetch_entry_doc_by_doc_number_and_supplier(
         self, supplier_id: str, doc_number: str
     ) -> dict[str, Any] | None:
@@ -82,6 +141,18 @@ class EntryDocsCollection:
 
         await collection.create_indexes(
             [
+                IndexModel(
+                    [
+                        ("id", 1),
+                    ],
+                    unique=True,
+                ),
+                IndexModel(
+                    [
+                        ("docNumber", 1),
+                        ("branchId", 1),
+                    ],
+                ),
                 IndexModel(
                     [
                         ("docNumber", 1),

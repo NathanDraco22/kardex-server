@@ -83,6 +83,59 @@ class ProductsCollection:
 
         return result
 
+    async def searchProductWithAccount(
+        self,
+        branch_id: str,
+        text_query: str,
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "$and": [
+                            {
+                                "$text": {
+                                    "$search": text_query,
+                                    "$caseSensitive": False,
+                                    "$diacriticSensitive": False,
+                                },
+                            },
+                            {"isDeleted": False},
+                        ]
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "ProductAccounts",
+                        "localField": "id",
+                        "foreignField": "productId",
+                        "as": "account",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "branchId": branch_id,
+                                }
+                            }
+                        ],
+                    }
+                },
+                {
+                    "$unwind": "$account",
+                },
+                {
+                    "$sort": {"name": 1},
+                },
+                {
+                    "$limit": 7,
+                },
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+
+        return result
+
     async def searchProductInBranch(
         self,
         branch_id: str,

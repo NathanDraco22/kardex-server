@@ -9,12 +9,13 @@ TransactionSubType = Literal[
     "entry",
     "exit",
     "invoice",
-    "return",
+    "devolution",
 ]
 
 
 class BaseProductTransaction(BaseModel):
     documentId: str
+    docNumber: str
     type: TransactionType
     subtype: TransactionSubType
     productId: str

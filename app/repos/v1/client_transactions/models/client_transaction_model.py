@@ -6,13 +6,14 @@ TransactionType = Literal["credit", "debit"]
 TransactionSubType = Literal[
     "invoice",
     "discount",
-    "return",
+    "devolution",
     "receipt",
 ]
 
 
 class BaseClientTransaction(BaseModel):
     documentId: str
+    docNumber: str
     clientId: str
     amount: int
     type: TransactionType
