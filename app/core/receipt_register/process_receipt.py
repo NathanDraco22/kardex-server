@@ -62,6 +62,7 @@ async def process_receipt(
             new_client_transaction = ClientTransactionInDb(
                 id=UuidTool.generate_uuid(),
                 clientId=create_receipt.clientId,
+                docNumber=new_receipt_in_db.docNumber,
                 documentId=new_receipt_in_db.id,
                 amount=-abs(create_receipt.total),
                 type="credit",
