@@ -13,7 +13,6 @@ from repos.v1.core_settings import (
 
 
 from core.default_values import (
-    create_default_roles,
     create_default_client,
     create_default_branch,
 )
@@ -47,7 +46,6 @@ class CoreSettingsController:
                 detail="CoreSetting not found",
             )
 
-        await create_default_roles()
         await create_default_client()
         await create_default_branch(branch_name=res.name)
 

@@ -7,6 +7,7 @@ from .core_settings_collection import CoreSettingsCollection
 from .counters_collection import CountersCollection
 from .entry_docs_collection import EntryDocsCollection
 from .exit_docs_collection import ExitDocsCollection
+from .expiration_logs_collection import ExpirationLogsCollection
 from .invoices_collection import InvoicesCollection
 from .orders_collection import OrdersCollection
 from .product_accounts_collection import ProductAccountsCollection
@@ -16,7 +17,6 @@ from .product_sale_profiles_collection import ProductSaleProfilesCollection
 from .product_transactions_collection import ProductTransactionsCollection
 from .products_collection import ProductsCollection
 from .receipts_collection import ReceiptsCollection
-from .sales_collection import SalesCollection
 from .suppliers_collection import SuppliersCollection
 from .transactions_collection import TransactionsCollection
 from .units_collection import UnitsCollection
@@ -33,6 +33,7 @@ __all__ = [
     "CountersCollection",
     "EntryDocsCollection",
     "ExitDocsCollection",
+    "ExpirationLogsCollection",
     "InvoicesCollection",
     "OrdersCollection",
     "ProductAccountsCollection",
@@ -42,7 +43,6 @@ __all__ = [
     "ProductTransactionsCollection",
     "ProductsCollection",
     "ReceiptsCollection",
-    "SalesCollection",
     "SuppliersCollection",
     "TransactionsCollection",
     "UnitsCollection",
