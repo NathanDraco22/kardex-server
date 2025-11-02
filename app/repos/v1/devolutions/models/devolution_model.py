@@ -16,6 +16,7 @@ class BaseDevolution(BaseModel):
     clientInfo: ClientInfo
     docNumber: str = ""
     originalInvoiceId: str = ""
+    originalInvoiceDocNumber: str = ""
     returnedItems: list[SaleItem]
     description: str
     status: DevolutionStatus = "open"
