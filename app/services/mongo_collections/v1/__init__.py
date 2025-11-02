@@ -5,6 +5,7 @@ from .client_transactions_collection import ClientTransactionsCollection
 from .clients_collection import ClientsCollection
 from .core_settings_collection import CoreSettingsCollection
 from .counters_collection import CountersCollection
+from .devolutions_collection import DevolutionsCollection
 from .entry_docs_collection import EntryDocsCollection
 from .exit_docs_collection import ExitDocsCollection
 from .expiration_logs_collection import ExpirationLogsCollection
@@ -31,6 +32,7 @@ __all__ = [
     "ClientsCollection",
     "CoreSettingsCollection",
     "CountersCollection",
+    "DevolutionsCollection",
     "EntryDocsCollection",
     "ExitDocsCollection",
     "ExpirationLogsCollection",

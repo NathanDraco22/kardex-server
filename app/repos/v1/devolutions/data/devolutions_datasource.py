@@ -1,0 +1,41 @@
+from typing import Any
+from typing_extensions import Self
+from services.mongo_collections.v1 import DevolutionsCollection
+
+
+class DevolutionsDataSource:
+    def __new__(cls) -> Self:
+        if not hasattr(cls, "instance"):
+            cls.instance = super(cls, cls).__new__(cls)
+        return cls.instance
+
+    async def create_devolution(self, devolution: dict[str, Any]) -> dict[str, Any]:
+        collection = DevolutionsCollection()
+        await collection.create_devolution(devolution)
+        return devolution
+
+    async def get_all_devolutions(self, **kwargs) -> list[dict[str, Any]]:
+        collection = DevolutionsCollection()
+        return await collection.fetch_all_devolutions(**kwargs)
+
+    async def get_devolution_by_id(self, devolution_id: str) -> dict[str, Any] | None:
+        collection = DevolutionsCollection()
+        return await collection.fetch_devolution_by_id(devolution_id)
+
+    async def get_devolution_by_doc_number(
+        self, doc_number: str
+    ) -> dict[str, Any] | None:
+        collection = DevolutionsCollection()
+        return await collection.fetch_devolution_by_doc_number(doc_number)
+
+    async def update_devolution_by_id(
+        self, devolution_id: str, devolution: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        collection = DevolutionsCollection()
+        return await collection.update_devolution_by_id(devolution_id, devolution)
+
+    async def delete_devolution_by_id(
+        self, devolution_id: str
+    ) -> dict[str, Any] | None:
+        collection = DevolutionsCollection()
+        return await collection.delete_devolution_by_id(devolution_id)

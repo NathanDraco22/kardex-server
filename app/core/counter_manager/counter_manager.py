@@ -22,6 +22,10 @@ class CounterManager:
         res = await self.counters_repository.increment_counter("orderNumber")
         return str(res.value)
 
+    async def next_devolution_number(self) -> str:
+        res = await self.counters_repository.increment_counter("devolutionNumber")
+        return str(res.value)
+
     async def next_user_number(self) -> str:
         res = await self.counters_repository.increment_counter("userNumber")
         formatted = str(res.value).zfill(4)

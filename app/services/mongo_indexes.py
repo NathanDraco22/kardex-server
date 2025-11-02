@@ -14,6 +14,7 @@ from services.mongo_collections.v1 import (
     InvoicesCollection,
     OrdersCollection,
     ExpirationLogsCollection,
+    DevolutionsCollection,
 )
 
 
@@ -61,4 +62,7 @@ async def create_indexes():
     await collection.create_indexes()
 
     collection = ExpirationLogsCollection()
+    await collection.create_indexes()
+
+    collection = DevolutionsCollection()
     await collection.create_indexes()
