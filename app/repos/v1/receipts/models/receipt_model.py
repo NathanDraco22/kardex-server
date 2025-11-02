@@ -17,12 +17,19 @@ class AppliedInvoice(BaseModel):
     amountApplied: int
 
 
+class AppliedDevolution(BaseModel):
+    devolutionId: str
+    docNumber: str
+    amountApplied: int
+
+
 class BaseReceipt(BaseModel):
     branchId: str
     clientId: str
     clientInfo: ClientInfo
     docNumber: str = ""
     appliedInvoices: list[AppliedInvoice]
+    appliedDevolutions: list[AppliedDevolution]
     paymentMethod: PaymentMethod
     bankReference: str = ""
     total: int
