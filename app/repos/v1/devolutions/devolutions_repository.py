@@ -1,5 +1,6 @@
 from tools import TimeTools, UuidTool
 from core.counter_manager.counter_manager import CounterManager
+from repos.v1.common.models.history_params import HistoryClientParams
 
 from .data.devolutions_datasource import DevolutionsDataSource
 from .models.devolution_model import CreateDevolution, UpdateDevolution, DevolutionInDb
@@ -74,3 +75,11 @@ class DevolutionsRepository:
             return None
 
         return DevolutionInDb.model_validate(result)
+
+    async def get_devolution_history(
+        self, params: HistoryClientParams
+    ) -> list[DevolutionInDb]:
+        params_data = params.to_query_params()
+        results = await self.devolutions_ds.get_devolution_history(**params_data)
+        models = [DevolutionInDb.model_validate(result) for result in results]
+        return models

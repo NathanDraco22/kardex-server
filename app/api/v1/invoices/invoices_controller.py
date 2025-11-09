@@ -10,6 +10,7 @@ from repos.v1.invoices import (
     InvoiceTotals,
 )
 from responses.v1 import ListResponse
+from repos.v1.common.models.history_params import HistoryClientParams
 
 
 from .responses import InvoiceResponse, InvoiceAnonResponse
@@ -99,6 +100,12 @@ class InvoicesController:
                 detail="Invoice not found",
             )
         return deleted_invoice
+
+    async def get_invoice_history(
+        self, params: HistoryClientParams
+    ) -> ListResponse[InvoiceInDb]:
+        invoices = await self.invoices_repo.get_invoice_history(params)
+        return ListResponse(count=len(invoices), data=invoices)
 
 
 invoices_controller = InvoicesController(

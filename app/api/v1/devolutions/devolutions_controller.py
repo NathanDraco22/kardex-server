@@ -5,6 +5,7 @@ from core.devolution_register.devolution_register import DevolutionRegister
 from repos.v1.branches import BranchesRepository, BranchesDataSource
 from repos.v1.clients import ClientsRepository, ClientsDataSource
 from repos.v1.products import ProductsRepository, ProductsDataSource
+from repos.v1.common.models.history_params import HistoryClientParams
 
 from repos.v1.devolutions import (
     CreateDevolution,
@@ -87,6 +88,23 @@ class DevolutionsController:
                 detail="Devolution not found",
             )
         return deleted_devolution
+
+    async def get_history_devolutions(
+        self, params: HistoryClientParams
+    ) -> ListResponse[DevolutionInDb]:
+        devolutions = await self.devolutions_repo.get_devolution_history(params)
+        return ListResponse(count=len(devolutions), data=devolutions)
+
+    async def get_devolution_by_doc_number(self, doc_number: str) -> DevolutionInDb:
+        devolution = await self.devolutions_repo.get_devolution_by_doc_number(
+            doc_number
+        )
+        if devolution is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Devolution not found",
+            )
+        return devolution
 
 
 devolutions_controller = DevolutionsController(

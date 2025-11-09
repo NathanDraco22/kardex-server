@@ -1,3 +1,4 @@
+from repos.v1.common.models.history_params import HistoryClientParams
 from .data.invoices_datasource import InvoicesDataSource
 from .models.invoice_model import UpdateInvoice, InvoiceInDb
 from .models.invoice_totals_model import InvoiceTotals
@@ -57,3 +58,11 @@ class InvoicesRepository:
             return None
 
         return InvoiceInDb.model_validate(result)
+
+    async def get_invoice_history(
+        self, params: HistoryClientParams
+    ) -> list[InvoiceInDb]:
+        params_data = params.to_query_params()
+        results = await self.invoices_ds.get_invoice_history(**params_data)
+        models = [InvoiceInDb.model_validate(result) for result in results]
+        return models
