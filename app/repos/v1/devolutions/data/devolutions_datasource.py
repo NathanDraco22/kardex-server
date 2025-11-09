@@ -39,3 +39,7 @@ class DevolutionsDataSource:
     ) -> dict[str, Any] | None:
         collection = DevolutionsCollection()
         return await collection.delete_devolution_by_id(devolution_id)
+
+    async def get_devolution_history(self, **kwargs) -> list[dict[str, Any]]:
+        collection = DevolutionsCollection()
+        return await collection.fetch_history_devolutions(**kwargs)

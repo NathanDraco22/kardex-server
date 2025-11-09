@@ -74,6 +74,9 @@ class DevolutionsCollection:
             [
                 IndexModel([("id", 1)], unique=True),
                 IndexModel([("docNumber", 1)]),
+                IndexModel([("clientId", 1)]),
+                IndexModel([("branchId", 1), ("createdAt", -1)]),
+                IndexModel([("createdBy.id", 1)]),
             ]
         )
 
@@ -101,5 +104,27 @@ class DevolutionsCollection:
             return_document=ReturnDocument.AFTER,
             session=session,
         )
+
+        return result
+
+    async def fetch_history_devolutions(self, **kwargs) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        query = {}
+
+        query = {key: value for key, value in kwargs.items() if value is not None}
+
+        if kwargs.get("endDate") is not None:
+            query["createdAt"] = {
+                "$lte": kwargs.get("endDate"),
+            }
+            del query["endDate"]
+
+        offset = query.pop("offset", 0)
+        limit = query.pop("limit", 50)
+
+        cursor = collection.find(query).sort("createdAt", -1).skip(offset).limit(limit)
+
+        result = await cursor.to_list(length=None)
 
         return result

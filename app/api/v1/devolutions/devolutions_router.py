@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends
 
 from repos.v1.devolutions import CreateDevolution, DevolutionInDb
+from repos.v1.common.models.history_params import HistoryClientParams
 from responses.v1 import ListResponse
+
 
 from .devolutions_controller import devolutions_controller
 from .devolution_query_param import DevolutionQueryParams
@@ -19,6 +21,18 @@ async def get_all_devolutions(
     params: DevolutionQueryParams = Depends(),
 ) -> ListResponse[DevolutionInDb]:
     return await devolutions_controller.get_all_devolutions(params)
+
+
+@devolutions_router.get("/history")
+async def get_history_devolutions(
+    params: HistoryClientParams = Depends(),
+) -> ListResponse[DevolutionInDb]:
+    return await devolutions_controller.get_history_devolutions(params)
+
+
+@devolutions_router.get("/doc/{doc_number}")
+async def get_devolution_by_doc_number(doc_number: str) -> DevolutionInDb:
+    return await devolutions_controller.get_devolution_by_doc_number(doc_number)
 
 
 @devolutions_router.get("/{devolution_id}")
