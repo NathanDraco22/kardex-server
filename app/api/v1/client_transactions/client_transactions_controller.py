@@ -6,14 +6,20 @@ from repos.v1.client_transactions import (
     ClientTransactionsDataSource,
 )
 
+from .query_params import ClientTransactionQueryParams
+
 
 class ClientTransactionsController:
     def __init__(self, client_transactions_repo: ClientTransactionsRepository) -> None:
         self.client_transactions_repo = client_transactions_repo
 
-    async def get_all_client_transactions(self) -> list[ClientTransactionInDb]:
+    async def get_all_client_transactions(
+        self,
+        params: ClientTransactionQueryParams,
+    ) -> list[ClientTransactionInDb]:
+        query = params.to_query()
         client_transactions = (
-            await self.client_transactions_repo.get_all_client_transactions()
+            await self.client_transactions_repo.get_all_client_transactions(**query)
         )
         return client_transactions
 

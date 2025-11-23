@@ -12,6 +12,7 @@ from .exit_docs.exit_docs_router import exit_docs_router
 from .exit_histories.exit_histories_router import exit_histories_router
 from .expiration_logs.expiration_logs_router import expiration_logs_router
 from .inventories.inventories_router import inventories_router
+from .invoice_devolutions.invoice_devolutions_router import invoice_devolutions_router
 from .invoices.invoices_router import invoices_router
 from .orders.orders_router import orders_router
 from .product_accounts.product_accounts_router import product_accounts_router
@@ -40,6 +41,7 @@ router_v1.include_router(exit_docs_router, prefix="/exit-docs")
 router_v1.include_router(exit_histories_router, prefix="/exit-histories")
 router_v1.include_router(expiration_logs_router, prefix='/expiration-logs')
 router_v1.include_router(inventories_router, prefix="/inventories")
+router_v1.include_router(invoice_devolutions_router, prefix='/invoice-devolutions')
 router_v1.include_router(invoices_router, prefix="/invoices")
 router_v1.include_router(orders_router, prefix="/orders")
 router_v1.include_router(product_accounts_router, prefix="/product-accounts")

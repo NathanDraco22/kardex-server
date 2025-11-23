@@ -6,8 +6,12 @@ class ClientTransactionsRepository:
     def __init__(self, client_transactions_ds: ClientTransactionsDataSource):
         self.client_transactions_ds = client_transactions_ds
 
-    async def get_all_client_transactions(self) -> list[ClientTransactionInDb]:
-        results = await self.client_transactions_ds.get_all_client_transactions()
+    async def get_all_client_transactions(
+        self, **kwargs
+    ) -> list[ClientTransactionInDb]:
+        results = await self.client_transactions_ds.get_all_client_transactions(
+            **kwargs
+        )
         models = [ClientTransactionInDb.model_validate(result) for result in results]
         return models
 
