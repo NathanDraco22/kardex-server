@@ -34,6 +34,19 @@ class DevolutionsCollection:
 
         return result
 
+    async def fetch_devolutions_by_invoice_id(
+        self, invoice_id: str, client_id: str | None
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+        query = {"originalInvoiceId": invoice_id}
+
+        if client_id is not None:
+            query["clientId"] = client_id
+
+        cursor = collection.find(query)
+        result = await cursor.to_list(length=None)
+        return result
+
     async def fetch_devolution_by_id(self, devolution_id: str) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one({"id": devolution_id})

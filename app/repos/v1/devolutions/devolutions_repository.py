@@ -40,6 +40,15 @@ class DevolutionsRepository:
 
         return DevolutionInDb.model_validate(result)
 
+    async def get_devolution_by_invoice_id(
+        self, invoice_id: str, client_id: str | None
+    ) -> list[DevolutionInDb]:
+        result = await self.devolutions_ds.get_devolutions_by_invoice_id(
+            invoice_id, client_id
+        )
+
+        return [DevolutionInDb.model_validate(devolution) for devolution in result]
+
     async def get_devolution_by_doc_number(
         self, doc_number: str
     ) -> DevolutionInDb | None:

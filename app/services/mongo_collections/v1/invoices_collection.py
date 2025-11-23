@@ -81,7 +81,12 @@ class InvoicesCollection:
         self, docNumber: str
     ) -> dict[str, Any] | None:
         collection = self.__collection
-        result = await collection.find_one({"docNumber": docNumber})
+
+        query = {
+            "docNumber": docNumber,
+        }
+
+        result = await collection.find_one(query)
         return result
 
     async def update_invoice_by_id(
