@@ -1,3 +1,4 @@
+from repos.v1.common.models.history_params import HistoryClientParams
 from .data.receipts_datasource import ReceiptsDataSource
 from .models.receipt_model import CreateReceipt, UpdateReceipt, ReceiptInDb
 from .models.receipt_total import ReceiptTotal
@@ -49,3 +50,11 @@ class ReceiptsRepository:
             return None
 
         return ReceiptInDb.model_validate(result)
+
+    async def get_receipt_history(
+        self, params: HistoryClientParams
+    ) -> list[ReceiptInDb]:
+        params_data = params.to_query_params()
+        results = await self.receipts_ds.fetch_receipt_history(**params_data)
+        models = [ReceiptInDb.model_validate(result) for result in results]
+        return models

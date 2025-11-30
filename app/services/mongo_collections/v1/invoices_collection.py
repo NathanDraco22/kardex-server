@@ -81,7 +81,12 @@ class InvoicesCollection:
         self, docNumber: str
     ) -> dict[str, Any] | None:
         collection = self.__collection
-        result = await collection.find_one({"docNumber": docNumber})
+
+        query = {
+            "docNumber": docNumber,
+        }
+
+        result = await collection.find_one(query)
         return result
 
     async def update_invoice_by_id(
@@ -201,6 +206,21 @@ class InvoicesCollection:
             "totalCost": 0,
             "total": 0,
         }
+
+    async def fetch_invoice_history(self, **kwargs) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        query = {key: value for key, value in kwargs.items() if value is not None}
+
+        offset = query.pop("offset", 0)
+        limit = query.pop("limit", 50)
+
+        cursor = collection.find(query).sort("createdAt", -1).skip(offset).limit(limit)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
 
     async def create_indexes(self):
         collection = self.__collection
