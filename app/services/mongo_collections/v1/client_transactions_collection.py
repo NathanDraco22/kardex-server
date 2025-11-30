@@ -20,9 +20,15 @@ class ClientTransactionsCollection:
         collection = self.__collection
         await collection.insert_one(client_transaction)
 
-    async def fetch_all_client_transactions(self) -> list[dict[str, Any]]:
+    async def fetch_all_client_transactions(self, **kwargs) -> list[dict[str, Any]]:
         collection = self.__collection
-        cursor = collection.find()
+
+        query = {key: value for key, value in kwargs.items() if value is not None}
+
+        offset = query.pop("offset", 0)
+        limit = query.pop("limit", 50)
+
+        cursor = collection.find(query).sort("createdAt", -1).skip(offset).limit(limit)
 
         result = await cursor.to_list(length=None)
         await cursor.close()

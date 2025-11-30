@@ -10,6 +10,8 @@ from repos.v1.receipts import (
     ReceiptsDataSource,
     ReceiptTotal,
 )
+from repos.v1.common.models.history_params import HistoryClientParams
+
 
 from .query_params import ReceiptQueryParams
 from responses.v1 import ListResponse
@@ -82,6 +84,24 @@ class ReceiptsController:
                 detail="Receipt not found",
             )
         return deleted_receipt
+
+    async def get_receipt_history(
+        self, query_params: HistoryClientParams
+    ) -> ListResponse[ReceiptInDb]:
+        receipts = await self.receipts_repo.get_receipt_history(query_params)
+        return ListResponse(
+            count=len(receipts),
+            data=receipts,
+        )
+
+    async def get_receipt_by_doc_number(self, doc_number: str) -> ReceiptInDb:
+        receipt = await self.receipts_repo.get_receipt_by_doc_number(doc_number)
+        if receipt is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Receipt not found",
+            )
+        return receipt
 
 
 receipts_controller = ReceiptsController(

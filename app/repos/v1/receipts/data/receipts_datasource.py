@@ -39,3 +39,7 @@ class ReceiptsDataSource:
     async def delete_receipt_by_id(self, receipt_id: str) -> dict[str, Any] | None:
         collection = ReceiptsCollection()
         return await collection.delete_receipt_by_id(receipt_id)
+
+    async def fetch_receipt_history(self, **kwargs) -> list[dict[str, Any]]:
+        collection = ReceiptsCollection()
+        return await collection.fetch_receipt_history(**kwargs)

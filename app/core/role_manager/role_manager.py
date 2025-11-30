@@ -19,6 +19,9 @@ class CommercialSubModules:
     PENDING_INVOICES = "pendingInvoices"
     INVOICE_HISTORY = "invoiceHistory"
     PRICE_SETTING = "priceSetting"
+    CREATE_DEVOLUTION = "createDevolution"
+    DEVOLUTION_HISTORY = "devolutionHistory"
+    PROCESS_DEVOLUTION = "processDevolution"
 
 
 default_roles = [
@@ -27,9 +30,13 @@ default_roles = [
         name="Vendedor",
         access=[
             Modules.COMMERCIAL,
+            CommercialSubModules.CREATE_INVOICE,
             CommercialSubModules.ORDERS,
             CommercialSubModules.CREATE_ORDER,
             CommercialSubModules.PENDING_INVOICES,
+            CommercialSubModules.INVOICE_HISTORY,
+            CommercialSubModules.CREATE_DEVOLUTION,
+            CommercialSubModules.DEVOLUTION_HISTORY,
         ],
     ),
     UserRole(
@@ -42,6 +49,9 @@ default_roles = [
             CommercialSubModules.PENDING_INVOICES,
             CommercialSubModules.INVOICE_HISTORY,
             CommercialSubModules.PRICE_SETTING,
+            CommercialSubModules.CREATE_DEVOLUTION,
+            CommercialSubModules.DEVOLUTION_HISTORY,
+            CommercialSubModules.PROCESS_DEVOLUTION,
             Modules.SUPPLIERS,
             Modules.CLIENTS,
             Modules.PRODUCTS,

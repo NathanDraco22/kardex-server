@@ -121,6 +121,21 @@ class ReceiptsCollection:
         await collection.insert_one(receipt, session=session)
         return receipt
 
+    async def fetch_receipt_history(self, **kwargs) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        query = {key: value for key, value in kwargs.items() if value is not None}
+
+        offset = query.pop("offset", 0)
+        limit = query.pop("limit", 50)
+
+        cursor = collection.find(query).sort("createdAt", -1).skip(offset).limit(limit)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def create_indexes(self):
         collection = self.__collection
         await collection.create_indexes(

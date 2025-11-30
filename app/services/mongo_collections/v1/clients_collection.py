@@ -54,7 +54,7 @@ class ClientsCollection:
             "isDeleted": False,
             "isInternal": False,
             "balance": {
-                "$gt": 0,
+                "$ne": 0,
             },
         }
 

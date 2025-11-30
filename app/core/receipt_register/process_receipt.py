@@ -4,6 +4,7 @@ from services.mongo_collections.v1 import (
     InvoicesCollection,
     ClientTransactionsCollection,
     ClientsCollection,
+    DevolutionsCollection,
 )
 from repos.v1.receipts import CreateReceipt, ReceiptInDb
 from repos.v1.client_transactions import ClientTransactionInDb
@@ -16,30 +17,29 @@ async def process_receipt(
     create_receipt: CreateReceipt,
 ) -> Tuple[ReceiptInDb, ClientInDb]:
     """
-    Procesa un recibo de pago de forma atómica.
-    1. Guarda el nuevo documento de recibo.
-    2. Aplica el monto a las facturas correspondientes.
-    3. Crea una transacción de CRÉDITO para el cliente.
-    4. Actualiza el saldo de la cuenta del cliente.
+    Procesa un recibo, creando transacciones de cliente separadas para
+    pagos y para la aplicación de devoluciones (notas de crédito).
     """
     mongo_client = MongoService().client
     receipt_col = ReceiptsCollection()
     invoice_col = InvoicesCollection()
+    devolution_col = DevolutionsCollection()
     client_transaction_col = ClientTransactionsCollection()
     client_account_col = ClientsCollection()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
+            # 1. Crear el documento de recibo
             new_receipt_data = create_receipt.model_dump()
             new_receipt_data["id"] = UuidTool.generate_uuid()
             new_receipt_data["createdAt"] = TimeTools.get_now_in_milliseconds()
 
             insert_result = await receipt_col.create_receipt_with_session(
-                new_receipt_data,
-                session=session,
+                new_receipt_data, session=session
             )
             new_receipt_in_db = ReceiptInDb.model_validate(insert_result)
 
+            # 2. Aplicar el pago a cada factura involucrada
             for applied_invoice in create_receipt.appliedInvoices:
                 await invoice_col.add_to_amount_paid(
                     invoice_id=applied_invoice.invoiceId,
@@ -47,31 +47,76 @@ async def process_receipt(
                     session=session,
                 )
 
-            updated_client_account_data = (
-                await client_account_col.substract_from_client_balance(
-                    client_id=create_receipt.clientId,
-                    amount=create_receipt.total,
+            final_client_account = None
+
+            # 3. Procesar CADA DEVOLUCIÓN como una transacción de crédito individual
+            for applied_devolution in create_receipt.appliedDevolutions:
+                # Marcar la devolución como aplicada para que no se use de nuevo
+                await devolution_col.update_devolution_status_by_id(
+                    devolution_id=applied_devolution.devolutionId,
+                    status="applied",
                     session=session,
                 )
-            )
 
-            final_client_account = ClientInDb.model_validate(
-                updated_client_account_data
-            )
+                # Actualizar el saldo del cliente
+                updated_client_data = (
+                    await client_account_col.substract_from_client_balance(
+                        client_id=create_receipt.clientId,
+                        amount=applied_devolution.amountApplied,
+                        session=session,
+                    )
+                )
+                final_client_account = ClientInDb.model_validate(updated_client_data)
 
-            new_client_transaction = ClientTransactionInDb(
-                id=UuidTool.generate_uuid(),
-                clientId=create_receipt.clientId,
-                documentId=new_receipt_in_db.id,
-                amount=-abs(create_receipt.total),
-                type="credit",
-                subtype="receipt",
-                createdAt=TimeTools.get_now_in_milliseconds(),
-                resultBalance=final_client_account.balance,
-            )
-            await client_transaction_col.create_client_transaction_with_session(
-                new_client_transaction.model_dump(),
-                session=session,
-            )
+                # Crear la transacción específica para la DEVOLUCIÓN
+                devolution_transaction = ClientTransactionInDb(
+                    id=UuidTool.generate_uuid(),
+                    clientId=create_receipt.clientId,
+                    documentId=applied_devolution.devolutionId,  # Enlaza a la devolución
+                    docNumber=applied_devolution.docNumber,
+                    amount=-abs(applied_devolution.amountApplied),
+                    type="credit",
+                    subtype="devolution",
+                    resultBalance=final_client_account.balance,
+                    createdAt=TimeTools.get_now_in_milliseconds(),
+                )
+                await client_transaction_col.create_client_transaction_with_session(
+                    devolution_transaction.model_dump(), session=session
+                )
+
+            # 4. Procesar el PAGO MONETARIO como una transacción de crédito separada
+            if create_receipt.total > 0:
+                # Actualizar el saldo del cliente
+                updated_client_data = (
+                    await client_account_col.substract_from_client_balance(
+                        client_id=create_receipt.clientId,
+                        amount=create_receipt.total,
+                        session=session,
+                    )
+                )
+                final_client_account = ClientInDb.model_validate(updated_client_data)
+
+                # Crear la transacción específica para el PAGO
+                payment_transaction = ClientTransactionInDb(
+                    id=UuidTool.generate_uuid(),
+                    clientId=create_receipt.clientId,
+                    documentId=new_receipt_in_db.id,  # Enlaza al recibo
+                    docNumber=create_receipt.docNumber,
+                    amount=-abs(create_receipt.total),
+                    type="credit",
+                    subtype="receipt",
+                    resultBalance=final_client_account.balance,
+                    createdAt=TimeTools.get_now_in_milliseconds(),
+                )
+                await client_transaction_col.create_client_transaction_with_session(
+                    payment_transaction.model_dump(), session=session
+                )
+
+            # Si no hubo pago monetario, necesitamos obtener el estado final del cliente
+            if final_client_account is None:
+                client_data = await client_account_col.fetch_client_by_id(
+                    create_receipt.clientId
+                )
+                final_client_account = ClientInDb.model_validate(client_data)
 
             return new_receipt_in_db, final_client_account
