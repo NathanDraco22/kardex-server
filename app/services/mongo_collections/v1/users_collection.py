@@ -50,6 +50,45 @@ class UsersCollection:
 
         return result
 
+    async def fetch_all_active_users_by_branch(
+        self, branch_id: str | None
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        branch_query = {}
+        if branch_id:
+            branch_query = {"branches": {"$in": [branch_id]}}
+
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "isDeleted": False,
+                        "isActive": True,
+                        **branch_query,
+                    },
+                },
+                {
+                    "$lookup": {
+                        "from": "UserRoles",
+                        "localField": "role",
+                        "foreignField": "id",
+                        "as": "userRole",
+                    }
+                },
+                {
+                    "$unwind": {
+                        "path": "$userRole",
+                        "preserveNullAndEmptyArrays": True,
+                    }
+                },
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+
+        return result
+
     async def fetch_user_by_id(self, user_id: str) -> dict[str, Any] | None:
         collection = self.__collection
 
@@ -138,5 +177,6 @@ class UsersCollection:
             [
                 IndexModel([("id", 1)], unique=True),
                 IndexModel([("username", 1)], unique=True),
+                IndexModel([("branches", 1)]),
             ]
         )
