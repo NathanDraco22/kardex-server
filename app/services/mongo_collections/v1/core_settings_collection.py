@@ -29,12 +29,14 @@ class CoreSettingsCollection:
 
         return result
 
-    async def fetch_core_setting_by_id(self, core_setting_id: str) -> dict[str, Any] | None:
+    async def fetch_core_setting_by_id(
+        self, core_setting_id: str
+    ) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one({"id": core_setting_id})
         return result
 
-    async def update_core_setting_by_id(
+    async def update_core_setting_by_nickname(
         self,
         core_setting_id: str,
         core_setting: dict,
@@ -42,14 +44,16 @@ class CoreSettingsCollection:
         collection = self.__collection
 
         result = await collection.find_one_and_update(
-            {"id": core_setting_id},
+            {"nickname": core_setting_id},
             {"$set": core_setting},
             return_document=ReturnDocument.AFTER,
         )
 
         return result
 
-    async def delete_core_setting_by_id(self, core_setting_id: str) -> dict[str, Any] | None:
+    async def delete_core_setting_by_id(
+        self, core_setting_id: str
+    ) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one_and_delete({"id": core_setting_id})
         return result
