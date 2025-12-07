@@ -27,7 +27,7 @@ async def get_core_setting_by_id(core_setting_id: str) -> CoreSettingInDb:
     return await core_settings_controller.get_core_setting_by_id(core_setting_id)
 
 
-@core_settings_router.patch("/{core_setting_id}")
+@core_settings_router.patch("/{core_setting_nickname}")
 async def update_core_setting_by_nickname(
     core_setting_nickname: str, body: UpdateCoreSetting
 ) -> CoreSettingInDb:
