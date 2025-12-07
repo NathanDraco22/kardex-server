@@ -49,14 +49,14 @@ class CoreSettingsRepository:
 
         return CoreSettingInDb.model_validate(result)
 
-    async def update_core_setting_by_id(
+    async def update_core_setting_by_nickname(
         self, core_setting_id: str, core_setting: UpdateCoreSetting
     ) -> CoreSettingInDb | None:
         updated_data = core_setting.model_dump(exclude_unset=True)
 
         updated_data["updatedAt"] = TimeTools.get_now_in_milliseconds()
 
-        result = await self.core_settings_ds.update_core_setting_by_id(
+        result = await self.core_settings_ds.update_core_setting_by_nickname(
             core_setting_id, updated_data
         )
 
