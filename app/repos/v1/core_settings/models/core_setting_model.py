@@ -11,6 +11,7 @@ class DecodedCoreSetting(BaseModel):
 
 
 class BaseCoreSetting(BaseModel):
+    nickname: str
     token: str
 
 
