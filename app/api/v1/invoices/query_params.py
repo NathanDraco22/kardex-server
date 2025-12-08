@@ -9,5 +9,6 @@ class InvoiceQueryParams(BaseModel):
     endDate: int | None = None
     byPaidAt: bool = False
     status: InvoiceStatus | None = None
+    createdBy: str | None = None
     offset: int = 0
     limit: int = 50

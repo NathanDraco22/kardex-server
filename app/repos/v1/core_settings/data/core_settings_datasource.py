@@ -18,16 +18,22 @@ class CoreSettingsDataSource:
         collection = CoreSettingsCollection()
         return await collection.fetch_all_core_settings()
 
-    async def get_core_setting_by_id(self, core_setting_id: str) -> dict[str, Any] | None:
+    async def get_core_setting_by_id(
+        self, core_setting_id: str
+    ) -> dict[str, Any] | None:
         collection = CoreSettingsCollection()
         return await collection.fetch_core_setting_by_id(core_setting_id)
 
-    async def update_core_setting_by_id(
+    async def update_core_setting_by_nickname(
         self, core_setting_id: str, core_setting: dict[str, Any]
     ) -> dict[str, Any] | None:
         collection = CoreSettingsCollection()
-        return await collection.update_core_setting_by_id(core_setting_id, core_setting)
+        return await collection.update_core_setting_by_nickname(
+            core_setting_id, core_setting
+        )
 
-    async def delete_core_setting_by_id(self, core_setting_id: str) -> dict[str, Any] | None:
+    async def delete_core_setting_by_id(
+        self, core_setting_id: str
+    ) -> dict[str, Any] | None:
         collection = CoreSettingsCollection()
         return await collection.delete_core_setting_by_id(core_setting_id)

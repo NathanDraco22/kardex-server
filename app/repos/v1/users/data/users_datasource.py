@@ -18,6 +18,12 @@ class UsersDataSource:
         collection = UsersCollection()
         return await collection.fetch_all_users()
 
+    async def get_all_active_users_by_branch(
+        self, branch_id: str | None
+    ) -> list[dict[str, Any]]:
+        collection = UsersCollection()
+        return await collection.fetch_all_active_users_by_branch(branch_id)
+
     async def get_user_by_id(self, user_id: str) -> dict[str, Any] | None:
         collection = UsersCollection()
         return await collection.fetch_user_by_id(user_id)

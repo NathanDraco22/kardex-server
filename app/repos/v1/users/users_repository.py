@@ -30,6 +30,13 @@ class UsersRepository:
         models = [UserInDbWithRole.model_validate(result) for result in results]
         return models
 
+    async def get_all_active_users_by_branch_id(
+        self, branch_id: str | None
+    ) -> list[UserInDbWithRole]:
+        results = await self.users_ds.get_all_active_users_by_branch(branch_id)
+        models = [UserInDbWithRole.model_validate(result) for result in results]
+        return models
+
     async def get_user_by_id(self, user_id: str) -> UserInDbWithRole | None:
         result = await self.users_ds.get_user_by_id(user_id)
 
