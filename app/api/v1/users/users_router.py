@@ -20,6 +20,13 @@ async def get_all_users() -> ListResponse[UserInDbWithRole]:
     return await users_controller.get_all_users()
 
 
+@users_router.get("/active")
+async def get_all_active_users_by_branch_id(
+    branchId: str | None = None,
+) -> ListResponse[UserInDbWithRole]:
+    return await users_controller.get_all_active_users_by_branch_id(branchId)
+
+
 @users_router.get("/{user_id}")
 async def get_user_by_id(user_id: str) -> UserInDb:
     return await users_controller.get_user_by_id(user_id)

@@ -26,6 +26,15 @@ class UsersController:
             data=users,
         )
 
+    async def get_all_active_users_by_branch_id(
+        self, branch_id: str | None
+    ) -> ListResponse[UserInDbWithRole]:
+        users = await self.users_repo.get_all_active_users_by_branch_id(branch_id)
+        return ListResponse(
+            count=len(users),
+            data=users,
+        )
+
     async def get_user_by_id(self, user_id: str) -> UserInDb:
         user = await self.users_repo.get_user_by_id(user_id)
         if user is None:

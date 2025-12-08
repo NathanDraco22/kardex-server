@@ -70,11 +70,13 @@ class CoreSettingsController:
             )
         return core_setting
 
-    async def update_core_setting_by_id(
+    async def update_core_setting_by_nickname(
         self, core_setting_id: str, body: UpdateCoreSetting
     ) -> CoreSettingInDb:
-        updated_core_setting = await self.core_settings_repo.update_core_setting_by_id(
-            core_setting_id, body
+        updated_core_setting = (
+            await self.core_settings_repo.update_core_setting_by_nickname(
+                core_setting_id, body
+            )
         )
         if updated_core_setting is None:
             raise HTTPException(

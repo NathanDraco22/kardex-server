@@ -6,6 +6,8 @@ from repos.v1.client_transactions import (
     ClientTransactionsDataSource,
 )
 
+from responses.v1 import ListResponse
+
 from .query_params import ClientTransactionQueryParams
 
 
@@ -16,12 +18,15 @@ class ClientTransactionsController:
     async def get_all_client_transactions(
         self,
         params: ClientTransactionQueryParams,
-    ) -> list[ClientTransactionInDb]:
+    ) -> ListResponse[ClientTransactionInDb]:
         query = params.to_query()
         client_transactions = (
             await self.client_transactions_repo.get_all_client_transactions(**query)
         )
-        return client_transactions
+        return ListResponse(
+            count=len(client_transactions),
+            data=client_transactions,
+        )
 
     async def get_client_transaction_by_id(
         self, client_transaction_id: str

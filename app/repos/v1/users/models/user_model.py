@@ -11,6 +11,7 @@ class BaseUser(BaseModel):
     password: str
     isActive: bool = True
     role: str
+    branches: list[str] = []
 
 
 class CreateUser(BaseUser):

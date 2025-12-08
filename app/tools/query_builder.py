@@ -21,6 +21,9 @@ def build_query(date_field: str, **kargs) -> QueryResult:
             "$lte": kargs.get("endDate"),
         }
 
+    if kargs.get("createdBy"):
+        query["createdBy.id"] = kargs.get("createdBy")
+
     query = {k: v for k, v in query.items() if v is not None}
 
     return QueryResult(query, offset, limit)
