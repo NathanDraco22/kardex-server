@@ -7,7 +7,12 @@ from repos.v1.common.models import (
 )
 from pydantic import BaseModel
 
-OrderStatus = Literal["open", "completed", "cancelled"]
+OrderStatus = Literal[
+    "draft",
+    "open",
+    "completed",
+    "cancelled",
+]
 
 
 class BaseOrder(BaseModel):
@@ -31,8 +36,13 @@ class CreateOrder(BaseOrder):
 
 
 class UpdateOrder(BaseModel):
+    saleItems: list[SaleItem] | None = None
+    description: str | None = None
+    amountPaid: int | None = None
     status: OrderStatus | None = None
-    pass
+    paymentType: PaymentType | None = None
+    totalCost: int | None = None
+    total: int | None = None
 
 
 class OrderInDb(BaseOrder):

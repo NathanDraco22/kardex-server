@@ -53,7 +53,7 @@ async def process_invoice(
                 total_to_dispatch = abs(
                     invoice_item.quantity + invoice_item.bonQuantity
                 )
-                if create_invoice.orderNumber:
+                if create_invoice.orderNumber and create_invoice.status == "open":
                     result = await prd_account_col.dispatch_promise_stock(
                         invoice_item.product.id,
                         create_invoice.branchId,
