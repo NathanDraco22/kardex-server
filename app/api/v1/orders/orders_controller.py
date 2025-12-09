@@ -1,9 +1,14 @@
 from fastapi import HTTPException, status
 
-from repos.v1.invoices.models.invoice_model import InvoiceInDb, CreateInvoice
+from repos.v1.invoices.models.invoice_model import (
+    InvoiceInDb,
+    CreateInvoice,
+    InvoiceStatus,
+)
 from core.order_register.order_register import OrderRegister
 from core.invoice_register.invoice_register import InvoiceRegister
 from core.order_register.cancel_order import cancel_order
+from core.counter_manager.counter_manager import CounterManager
 from repos.v1.orders import (
     CreateOrder,
     UpdateOrder,
@@ -13,6 +18,7 @@ from repos.v1.orders import (
 )
 
 from responses.v1 import ListResponse
+from .orders_query_params import OrderQueryParams
 
 
 class OrdersController:
@@ -22,7 +28,22 @@ class OrdersController:
         self.invoice_register = InvoiceRegister()
 
     async def create_order(self, body: CreateOrder) -> OrderInDb:
-        res, _ = await self.order_register.regis_order(body)
+        if body.status == "draft":
+            body.docNumber = await CounterManager().next_order_number()
+
+            current_order = await self.orders_repo.get_order_by_doc_number(
+                body.docNumber
+            )
+            if current_order is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Order with this document number already exists",
+                )
+
+            await self.order_register.validate_document(body)
+            return await self.orders_repo.create_draft_order(body)
+        else:
+            res, _ = await self.order_register.regis_order(body)
         return res
 
     async def convert_order_to_invoice(
@@ -36,11 +57,18 @@ class OrdersController:
                 detail="Order not found",
             )
 
-        if order.status != "open":
+        allowed_statuses = ["open", "draft"]
+
+        if order.status not in allowed_statuses:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Order is not open",
             )
+
+        new_invoice_status: InvoiceStatus = "open"
+
+        if order.status == "draft":
+            new_invoice_status = "draft"
 
         create_invoice = CreateInvoice(
             branchId=order.branchId,
@@ -52,7 +80,7 @@ class OrdersController:
             amountPaid=order.amountPaid,
             totalCost=order.totalCost,
             paymentType=order.paymentType,
-            status="open",
+            status=new_invoice_status,
             total=order.total,
             createdBy=order.createdBy,
         )
@@ -69,18 +97,10 @@ class OrdersController:
         return res, order
 
     async def get_paginated_orders(
-        self,
-        skip: int,
-        limit: int,
-        client_id: str | None,
-        branch_id: str | None,
+        self, params: OrderQueryParams
     ) -> ListResponse[OrderInDb]:
-        res = await self.orders_repo.get_paginated_orders(
-            skip,
-            limit,
-            client_id,
-            branch_id,
-        )
+        raw_params = params.model_dump(exclude_unset=True)
+        res = await self.orders_repo.get_paginated_orders(**raw_params)
         return ListResponse(
             count=len(res),
             data=res,
@@ -95,8 +115,10 @@ class OrdersController:
             )
         return order
 
-    async def update_order_by_id(self, order_id: str, body: UpdateOrder) -> OrderInDb:
-        updated_order = await self.orders_repo.update_order_by_id(order_id, body)
+    async def update_order_draft_by_id(
+        self, order_id: str, body: UpdateOrder
+    ) -> OrderInDb:
+        updated_order = await self.orders_repo.update_order_draft_by_id(order_id, body)
         if updated_order is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

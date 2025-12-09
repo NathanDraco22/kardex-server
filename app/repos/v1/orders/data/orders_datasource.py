@@ -14,17 +14,9 @@ class OrdersDataSource:
         await collection.create_order(order)
         return order
 
-    async def get_paginated_orders(
-        self,
-        skip: int,
-        limit: int,
-        client_id: str | None,
-        branch_id: str | None,
-    ) -> list[dict[str, Any]]:
+    async def get_paginated_orders(self, **kwargs) -> list[dict[str, Any]]:
         collection = OrdersCollection()
-        return await collection.fetch_paginated_orders(
-            skip, limit, client_id, branch_id
-        )
+        return await collection.fetch_paginated_orders(**kwargs)
 
     async def get_order_by_id(self, order_id: str) -> dict[str, Any] | None:
         collection = OrdersCollection()
@@ -34,11 +26,11 @@ class OrdersDataSource:
         collection = OrdersCollection()
         return await collection.fetch_order_by_doc_number(doc_number)
 
-    async def update_order_by_id(
+    async def update_order_draft_by_id(
         self, order_id: str, order: dict[str, Any]
     ) -> dict[str, Any] | None:
         collection = OrdersCollection()
-        return await collection.update_order_by_id(order_id, order)
+        return await collection.update_order_draft_by_id(order_id, order)
 
     async def delete_order_by_id(self, order_id: str) -> dict[str, Any] | None:
         collection = OrdersCollection()

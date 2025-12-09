@@ -110,6 +110,17 @@ class ProductAccountsCollection:
             {
                 "productId": product_id,
                 "branchId": branch_id,
+                "$expr": {
+                    "$gte": [
+                        {
+                            "$subtract": [
+                                "$currentStock",
+                                "$promiseStock",
+                            ],
+                        },
+                        quantity,
+                    ]
+                },
             },
             {
                 "$inc": {
