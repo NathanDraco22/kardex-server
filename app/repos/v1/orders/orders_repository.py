@@ -54,8 +54,8 @@ class OrdersRepository:
 
         return OrderInDb.model_validate(result)
 
-    async def delete_order_by_id(self, order_id: str) -> OrderInDb | None:
-        result = await self.orders_ds.delete_order_by_id(order_id)
+    async def delete_order_draft_by_id(self, order_id: str) -> OrderInDb | None:
+        result = await self.orders_ds.delete_order_draft_by_id(order_id)
 
         if result is None:
             return None

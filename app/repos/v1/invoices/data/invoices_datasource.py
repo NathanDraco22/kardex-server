@@ -51,10 +51,6 @@ class InvoicesDataSource:
         collection = InvoicesCollection()
         return await collection.update_invoice_by_id(invoice_id, invoice)
 
-    async def delete_invoice_by_id(self, invoice_id: str) -> dict[str, Any] | None:
-        collection = InvoicesCollection()
-        return await collection.delete_invoice_by_id(invoice_id)
-
     async def get_invoice_history(self, **kargs) -> list[dict[str, Any]]:
         collection = InvoicesCollection()
         return await collection.fetch_invoice_history(**kargs)

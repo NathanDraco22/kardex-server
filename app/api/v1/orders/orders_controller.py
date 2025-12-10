@@ -134,7 +134,9 @@ class OrdersController:
                 detail="Order not found",
             )
 
-        if order.status != "open":
+        allowed_statuses = ["open", "draft"]
+
+        if order.status not in allowed_statuses:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Order is not open",
@@ -143,6 +145,14 @@ class OrdersController:
         cancelled_order = await cancel_order(order)
 
         return cancelled_order
+
+    async def delete_order_draft_by_id(self, order_id: str) -> None:
+        res = await self.orders_repo.delete_order_draft_by_id(order_id)
+        if res is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Order is not found",
+            )
 
 
 orders_controller = OrdersController(

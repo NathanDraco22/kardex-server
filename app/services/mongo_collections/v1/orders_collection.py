@@ -118,9 +118,14 @@ class OrdersCollection:
             session=session,
         )
 
-    async def delete_order_by_id(self, order_id: str) -> dict[str, Any] | None:
+    async def delete_order_draft_by_id(self, order_id: str) -> dict[str, Any] | None:
         collection = self.__collection
-        result = await collection.find_one_and_delete({"id": order_id})
+        result = await collection.find_one_and_delete(
+            {
+                "id": order_id,
+                "status": "draft",
+            }
+        )
         return result
 
     async def update_order_status(
