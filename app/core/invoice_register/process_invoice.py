@@ -95,6 +95,9 @@ async def process_invoice(
 
                 created_transactions.append(new_transaction)
 
+            if create_invoice.status == "draft":
+                create_invoice.status = "open"
+
             new_invoice_date = create_invoice.model_dump()
             new_invoice_date["id"] = new_invoice_doc_id
             new_invoice_date["createdAt"] = TimeTools.get_now_in_milliseconds()
