@@ -32,6 +32,6 @@ class OrdersDataSource:
         collection = OrdersCollection()
         return await collection.update_order_draft_by_id(order_id, order)
 
-    async def delete_order_by_id(self, order_id: str) -> dict[str, Any] | None:
+    async def delete_order_draft_by_id(self, order_id: str) -> dict[str, Any] | None:
         collection = OrdersCollection()
-        return await collection.delete_order_by_id(order_id)
+        return await collection.delete_order_draft_by_id(order_id)

@@ -92,15 +92,6 @@ class InvoicesController:
             )
         return updated_invoice
 
-    async def delete_invoice_by_id(self, invoice_id: str) -> InvoiceInDb:
-        deleted_invoice = await self.invoices_repo.delete_invoice_by_id(invoice_id)
-        if deleted_invoice is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Invoice not found",
-            )
-        return deleted_invoice
-
     async def get_invoice_history(
         self, params: HistoryClientParams
     ) -> ListResponse[InvoiceInDb]:
