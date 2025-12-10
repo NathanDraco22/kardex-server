@@ -70,7 +70,7 @@ async def process_invoice(
 
                 if result is None:
                     raise InsufficientBalanceError(
-                        f"Stock insuficiente para {invoice_item.product.id}"
+                        f"Stock insuficiente para {invoice_item.product.name}"
                     )
 
                 updated_product_account = ProductAccountInDb.model_validate(result)
