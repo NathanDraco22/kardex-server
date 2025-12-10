@@ -146,13 +146,14 @@ class OrdersController:
 
         return cancelled_order
 
-    async def delete_order_draft_by_id(self, order_id: str) -> None:
+    async def delete_order_draft_by_id(self, order_id: str) -> OrderInDb:
         res = await self.orders_repo.delete_order_draft_by_id(order_id)
         if res is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Order is not found",
             )
+        return res
 
 
 orders_controller = OrdersController(
