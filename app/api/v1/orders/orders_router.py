@@ -45,6 +45,6 @@ async def cancel_order_by_id(order_id: str) -> OrderInDb:
     return await orders_controller.cancel_order_by_id(order_id)
 
 
-@orders_router.delete("/{order_id}")
-async def delete_order_draft_by_id(order_id: str) -> None:
-    await orders_controller.delete_order_draft_by_id(order_id)
+@orders_router.delete("/draft/{order_id}")
+async def delete_order_draft_by_id(order_id: str) -> OrderInDb:
+    return await orders_controller.delete_order_draft_by_id(order_id)
