@@ -53,7 +53,7 @@ async def process_invoice(
                 total_to_dispatch = abs(
                     invoice_item.quantity + invoice_item.bonQuantity
                 )
-                if create_invoice.orderNumber:
+                if create_invoice.orderNumber and create_invoice.status == "open":
                     result = await prd_account_col.dispatch_promise_stock(
                         invoice_item.product.id,
                         create_invoice.branchId,
@@ -70,7 +70,7 @@ async def process_invoice(
 
                 if result is None:
                     raise InsufficientBalanceError(
-                        f"Stock insuficiente para {invoice_item.product.id}"
+                        f"Stock insuficiente para {invoice_item.product.name}"
                     )
 
                 updated_product_account = ProductAccountInDb.model_validate(result)
@@ -94,6 +94,9 @@ async def process_invoice(
                 )
 
                 created_transactions.append(new_transaction)
+
+            if create_invoice.status == "draft":
+                create_invoice.status = "open"
 
             new_invoice_date = create_invoice.model_dump()
             new_invoice_date["id"] = new_invoice_doc_id

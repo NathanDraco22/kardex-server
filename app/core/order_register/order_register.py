@@ -24,7 +24,7 @@ class OrderRegister:
         self.branches_repo = BranchesRepository(BranchesDataSource())
         self.products_repo = ProductsRepository(ProductsDataSource())
 
-    async def _validate_document(self, doc: CreateOrder):
+    async def validate_document(self, doc: CreateOrder):
         branch = await self.branches_repo.get_branch_by_id(doc.branchId)
         if branch is None:
             raise HTTPException(
@@ -51,7 +51,7 @@ class OrderRegister:
                 detail="Order with this document number already exists",
             )
 
-        await self._validate_document(create_order)
+        await self.validate_document(create_order)
 
         max_retries = 3
         for _ in range(max_retries):
