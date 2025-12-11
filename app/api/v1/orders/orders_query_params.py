@@ -6,5 +6,6 @@ class OrderQueryParams(BaseModel):
     skip: int = 0
     limit: int = 50
     status: OrderStatus | None = None
+    neStatus: OrderStatus | None = None
     clientId: str | None = None
     branchId: str | None = None
