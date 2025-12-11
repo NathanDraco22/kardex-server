@@ -27,14 +27,14 @@ class OrdersCollection:
         await collection.insert_one(order, session=session)
         return order
 
-    async def fetch_paginated_orders(
-        self,
-        skip: int,
-        limit: int,
-        cliend_id: str | None,
-        branch_id: str | None,
-    ) -> list[dict[str, Any]]:
+    async def fetch_paginated_orders(self, **kwargs) -> list[dict[str, Any]]:
         collection = self.__collection
+
+        skip = kwargs.pop("skip", 0)
+        limit = kwargs.pop("limit", 50)
+        status = kwargs.pop("status", None)
+        cliend_id = kwargs.pop("clientId", None)
+        branch_id = kwargs.pop("branchId", None)
 
         query = {}
 
@@ -43,6 +43,9 @@ class OrdersCollection:
 
         if cliend_id:
             query["clientId"] = cliend_id
+
+        if status:
+            query["status"] = status
 
         cursor = collection.find(query).sort("createdAt", -1).skip(skip).limit(limit)
 
@@ -61,7 +64,7 @@ class OrdersCollection:
         result = await collection.find_one({"docNumber": doc_number})
         return result
 
-    async def update_order_by_id(
+    async def update_order_draft_by_id(
         self,
         order_id: str,
         order: dict,
@@ -69,7 +72,10 @@ class OrdersCollection:
         collection = self.__collection
 
         result = await collection.find_one_and_update(
-            {"id": order_id},
+            {
+                "id": order_id,
+                "status": "draft",
+            },
             {"$set": order},
             return_document=ReturnDocument.AFTER,
         )
@@ -112,9 +118,14 @@ class OrdersCollection:
             session=session,
         )
 
-    async def delete_order_by_id(self, order_id: str) -> dict[str, Any] | None:
+    async def delete_order_draft_by_id(self, order_id: str) -> dict[str, Any] | None:
         collection = self.__collection
-        result = await collection.find_one_and_delete({"id": order_id})
+        result = await collection.find_one_and_delete(
+            {
+                "id": order_id,
+                "status": "draft",
+            }
+        )
         return result
 
     async def update_order_status(

@@ -104,11 +104,6 @@ class InvoicesCollection:
 
         return result
 
-    async def delete_invoice_by_id(self, invoice_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
-        result = await collection.find_one_and_delete({"id": invoice_id})
-        return result
-
     async def create_invoice_with_session(self, invoice: dict, session: Any) -> dict:
         collection = self.__collection
         await collection.insert_one(

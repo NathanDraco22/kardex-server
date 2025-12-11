@@ -80,8 +80,3 @@ async def get_pending_to_paid_invoices(client_id: str) -> ListResponse[InvoiceIn
 @invoices_router.patch("/{invoice_id}")
 async def update_invoice_by_id(invoice_id: str, body: UpdateInvoice) -> InvoiceInDb:
     return await invoices_controller.update_invoice_by_id(invoice_id, body)
-
-
-@invoices_router.delete("/{invoice_id}")
-async def delete_invoice_by_id(invoice_id: str) -> InvoiceInDb:
-    return await invoices_controller.delete_invoice_by_id(invoice_id)

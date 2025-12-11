@@ -51,14 +51,6 @@ class InvoicesRepository:
         # TODO: implement update
         raise NotImplementedError()
 
-    async def delete_invoice_by_id(self, invoice_id: str) -> InvoiceInDb | None:
-        result = await self.invoices_ds.delete_invoice_by_id(invoice_id)
-
-        if result is None:
-            return None
-
-        return InvoiceInDb.model_validate(result)
-
     async def get_invoice_history(
         self, params: HistoryClientParams
     ) -> list[InvoiceInDb]:

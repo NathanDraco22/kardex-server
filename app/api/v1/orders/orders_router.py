@@ -1,11 +1,12 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from repos.v1.orders import CreateOrder, UpdateOrder, OrderInDb
 from responses.v1 import ListResponse
 
 
 from .orders_controller import orders_controller
-from .reponses import ConvertOrderToInvoiceResponse
+from .responses import ConvertOrderToInvoiceResponse
+from .orders_query_params import OrderQueryParams
 
 
 orders_router = APIRouter(tags=["ordersV1"])
@@ -24,17 +25,9 @@ async def convert_order_to_invoice(order_id: str) -> ConvertOrderToInvoiceRespon
 
 @orders_router.get("")
 async def get_paginated_orders(
-    skip: int,
-    limit: int,
-    client_id: str | None = None,
-    branch_id: str | None = None,
+    query_params: OrderQueryParams = Depends(),
 ) -> ListResponse[OrderInDb]:
-    return await orders_controller.get_paginated_orders(
-        skip,
-        limit,
-        client_id,
-        branch_id,
-    )
+    return await orders_controller.get_paginated_orders(query_params)
 
 
 @orders_router.get("/{order_id}")
@@ -43,10 +36,15 @@ async def get_order_by_id(order_id: str) -> OrderInDb:
 
 
 @orders_router.patch("/{order_id}")
-async def update_order_by_id(order_id: str, body: UpdateOrder) -> OrderInDb:
-    return await orders_controller.update_order_by_id(order_id, body)
+async def update_order_draft_by_id(order_id: str, body: UpdateOrder) -> OrderInDb:
+    return await orders_controller.update_order_draft_by_id(order_id, body)
 
 
 @orders_router.patch("/cancel/{order_id}")
 async def cancel_order_by_id(order_id: str) -> OrderInDb:
     return await orders_controller.cancel_order_by_id(order_id)
+
+
+@orders_router.delete("/draft/{order_id}")
+async def delete_order_draft_by_id(order_id: str) -> OrderInDb:
+    return await orders_controller.delete_order_draft_by_id(order_id)
