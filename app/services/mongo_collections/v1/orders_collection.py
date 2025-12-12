@@ -33,6 +33,7 @@ class OrdersCollection:
         skip = kwargs.pop("skip", 0)
         limit = kwargs.pop("limit", 50)
         status = kwargs.pop("status", None)
+        ne_status = kwargs.pop("neStatus", None)
         cliend_id = kwargs.pop("clientId", None)
         branch_id = kwargs.pop("branchId", None)
 
@@ -46,6 +47,9 @@ class OrdersCollection:
 
         if status:
             query["status"] = status
+
+        if ne_status:
+            query["status"] = {"$ne": ne_status}
 
         cursor = collection.find(query).sort("createdAt", -1).skip(skip).limit(limit)
 
