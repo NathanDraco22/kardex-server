@@ -1,4 +1,3 @@
-from operator import ne
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel
