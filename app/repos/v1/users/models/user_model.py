@@ -22,6 +22,7 @@ class UpdateUser(BaseModel):
     username: str | None = None
     isActive: bool | None = None
     role: str | None = None
+    branches: list[str] | None = None
 
 
 class UserInDb(BaseUser):
