@@ -32,6 +32,28 @@ class AdminPanelsController:
         results.reverse()
         return AdminChartsResponses(last7DaysTotals=results)
 
+    async def get_last_7_days_by_branch(
+        self, branch_id: str, end_date: int
+    ) -> AdminChartsResponses:
+        current_end_date = end_date
+        coros = []
+        for _ in range(0, 7):
+            start_date = current_end_date - TimeTools.ms_day
+            coro = self.invoices_repo.get_totals_from_invoices(
+                startDate=start_date,
+                endDate=current_end_date,
+                branchId=branch_id,
+            )
+
+            current_end_date = start_date
+
+            coros.append(coro)
+
+        results = await asyncio.gather(*coros)
+
+        results.reverse()
+        return AdminChartsResponses(last7DaysTotals=results)
+
 
 admin_panels_controller = AdminPanelsController(
     InvoicesRepository(InvoicesDataSource())
