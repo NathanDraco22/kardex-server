@@ -63,6 +63,7 @@ class ProductAccountsCollection:
 
         if result:
             result = result[0]
+            return result
 
         return None
 
@@ -295,6 +296,39 @@ class ProductAccountsCollection:
 
         async for product_account in cursor:
             yield product_account
+
+    async def get_total_current_stock(self, branch_id: str) -> int:
+        collection = self.__collection
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "branchId": branch_id,
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": branch_id,
+                        "total": {
+                            "$sum": {
+                                "$multiply": [
+                                    "$currentStock",
+                                    "$averageCost",
+                                ],
+                            },
+                        },
+                    }
+                },
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        if result:
+            return result[0]["total"]
+
+        return 0
 
     async def dispatch_promise_stock(
         self,

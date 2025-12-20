@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, AsyncGenerator
 from pymongo import ReturnDocument, IndexModel
 from services import MongoService
 
@@ -20,6 +20,25 @@ class InvoicesCollection:
     async def create_invoice(self, invoice: dict) -> None:
         collection = self.__collection
         await collection.insert_one(invoice)
+
+    async def fetch_all_invoices_stream(
+        self, **kargs
+    ) -> AsyncGenerator[dict[str, Any], None]:
+        collection = self.__collection
+
+        date_field = "paidAt" if kargs.get("byPaidAt") else "createdAt"
+
+        result = build_query(date_field, **kargs)
+
+        cursor = (
+            collection.find(result.query)
+            .skip(result.offset)
+            .limit(result.limit)
+            .sort(date_field, -1)
+        )
+
+        async for result in cursor:
+            yield result
 
     async def fetch_all_invoices(self, **kargs) -> list[dict[str, Any]]:
         collection = self.__collection
@@ -226,6 +245,7 @@ class InvoicesCollection:
                 IndexModel([("clientId", 1), ("status", 1), ("docDate", -1)]),
                 IndexModel([("saleItems.product.id", 1)]),
                 IndexModel([("branchId", 1), ("saleItems.product.id", 1)]),
+                IndexModel([("branchId", 1), ("createdAt", -1)]),
                 IndexModel([("createdAt", -1)]),
                 IndexModel([("paidAt", -1)]),
                 IndexModel([("createdBy.id", 1)]),
