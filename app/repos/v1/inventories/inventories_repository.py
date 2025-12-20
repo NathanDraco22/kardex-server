@@ -14,3 +14,6 @@ class InventoriesRepository:
             branch_id
         ):
             yield InventoryInDb.model_validate(result)
+
+    async def get_total_current_stock(self, branch_id: str) -> int:
+        return await self.inventories_ds.get_total_current_stock(branch_id)
