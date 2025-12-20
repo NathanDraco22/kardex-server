@@ -13,8 +13,8 @@ def build_query(date_field: str, **kargs) -> QueryResult:
         "status": kargs.get("status"),
     }
 
-    offset = int(kargs["offset"])
-    limit = int(kargs["limit"])
+    offset = int(kargs.get("offset") or 0)
+    limit = int(kargs.get("limit") or 0)
     if kargs.get("startDate") and kargs.get("endDate"):
         query[date_field] = {
             "$gte": kargs.get("startDate"),

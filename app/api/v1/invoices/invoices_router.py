@@ -13,7 +13,7 @@ from responses.v1 import ListResponse
 
 from .invoices_controller import invoices_controller
 from .responses import InvoiceResponse, InvoiceAnonResponse
-from .query_params import InvoiceQueryParams
+from api.common.query_params import InvoiceQueryParams
 
 invoices_router = APIRouter(tags=["invoicesV1"])
 
