@@ -14,7 +14,7 @@ from repos.v1.common.models.history_params import HistoryClientParams
 
 
 from .responses import InvoiceResponse, InvoiceAnonResponse
-from .query_params import InvoiceQueryParams
+from api.common.query_params import InvoiceQueryParams
 
 
 class InvoicesController:

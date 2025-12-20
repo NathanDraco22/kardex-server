@@ -1,3 +1,4 @@
+from typing import AsyncGenerator
 from repos.v1.common.models.history_params import HistoryClientParams
 from .data.invoices_datasource import InvoicesDataSource
 from .models.invoice_model import UpdateInvoice, InvoiceInDb
@@ -12,6 +13,12 @@ class InvoicesRepository:
         results = await self.invoices_ds.get_all_invoices(**kargs)
         models = [InvoiceInDb.model_validate(result) for result in results]
         return models
+
+    async def get_all_invoices_stream(
+        self, **kargs
+    ) -> AsyncGenerator[InvoiceInDb, None]:
+        async for result in self.invoices_ds.get_all_invoices_stream(**kargs):
+            yield InvoiceInDb.model_validate(result)
 
     async def get_totals_from_invoices(self, **kargs) -> InvoiceTotals:
         res = await self.invoices_ds.get_totals_from_invoices(**kargs)

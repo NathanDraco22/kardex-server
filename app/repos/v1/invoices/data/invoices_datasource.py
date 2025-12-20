@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, AsyncGenerator
 from typing_extensions import Self
 from services.mongo_collections.v1 import InvoicesCollection
 
@@ -17,6 +17,10 @@ class InvoicesDataSource:
     async def get_all_invoices(self, **kargs) -> list[dict[str, Any]]:
         collection = InvoicesCollection()
         return await collection.fetch_all_invoices(**kargs)
+
+    def get_all_invoices_stream(self, **kargs) -> AsyncGenerator[dict[str, Any], None]:
+        collection = InvoicesCollection()
+        return collection.fetch_all_invoices_stream(**kargs)
 
     async def get_totals_from_invoices(self, **kargs) -> dict[str, Any]:
         collection = InvoicesCollection()
