@@ -24,7 +24,13 @@ class DailyReportMaker:
         self.daily_summaries_repo = DailySummariesRepository(DailySummariesDataSource())
 
     async def ensure_daily_report(self, current_time: datetime) -> None:
-        yesterday = current_time - timedelta(days=1)
+        selected_time = datetime(
+            current_time.year,
+            current_time.month,
+            current_time.day,
+            tzinfo=current_time.tzinfo,
+        )
+        yesterday = selected_time - timedelta(days=1)
         date_id = yesterday.strftime("%Y-%m-%d")
 
         # Idempotency check: prevent duplicate reports if scheduler retries
@@ -38,7 +44,7 @@ class DailyReportMaker:
 
         print(f"✨ Creating NEW Daily Report for {date_id}")
 
-        current_timestamp = int(current_time.timestamp() * 1000)
+        current_timestamp = int(selected_time.timestamp() * 1000)
         yesterday_timestamp = int(yesterday.timestamp() * 1000)
 
         res = await self.report_maker.get_total_invoices_by_date_range(
