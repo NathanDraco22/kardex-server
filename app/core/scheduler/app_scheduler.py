@@ -14,6 +14,8 @@ class AppScheduler:
 
     _started = False
 
+    _task: asyncio.Task | None = None
+
     def __init__(self) -> None:
         if hasattr(self, "initialized"):
             return
@@ -24,7 +26,8 @@ class AppScheduler:
     async def start_task(self):
         if self._started:
             return
-        asyncio.create_task(self.run_every_midnight())
+        # Store a hard reference to the task to prevent garbage collection
+        self._task = asyncio.create_task(self.run_every_midnight())
         self._started = True
         print("🕒 Scheduler Init")
 
