@@ -317,6 +317,7 @@ class ProductAccountsCollection:
                                 ],
                             },
                         },
+                        "count": {"$sum": 1},
                     }
                 },
             ]

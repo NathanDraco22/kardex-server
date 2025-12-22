@@ -10,6 +10,7 @@ class DailyInvoiceReportResult(BaseModel):
     results: list[tuple[BranchInDb, InvoiceTotals]]
     total: int
     totalCost: int
+    totalInvoices: int
 
 
 class CurrentInventoryReportResult(BaseModel):
@@ -26,7 +27,7 @@ class ReportManager:
     async def get_total_invoices_by_date_range(
         self, start_date: int, end_date: int
     ) -> DailyInvoiceReportResult:
-        all_branches = await self.branches_repo.get_all_branches()
+        all_branches = await self.branches_repo.get_all_commerce_branches()
 
         coros = []
 
@@ -42,13 +43,18 @@ class ReportManager:
 
         total = 0
         total_cost = 0
+        total_invoices = 0
 
         for result in results:
             total += result.total
             total_cost += result.totalCost
+            total_invoices += result.count
 
         return DailyInvoiceReportResult(
-            results=paired_results, total=total, totalCost=total_cost
+            results=paired_results,
+            total=total,
+            totalCost=total_cost,
+            totalInvoices=total_invoices,
         )
 
     async def get_total_inventory_all_branches(self) -> CurrentInventoryReportResult:

@@ -24,6 +24,11 @@ class BranchesRepository:
         models = [BranchInDb.model_validate(result) for result in results]
         return models
 
+    async def get_all_commerce_branches(self) -> list[BranchInDb]:
+        results = await self.branches_ds.get_all_commerce_branches()
+        models = [BranchInDb.model_validate(result) for result in results]
+        return models
+
     async def get_branch_by_id(self, branch_id: str) -> BranchInDb | None:
         result = await self.branches_ds.get_branch_by_id(branch_id)
 

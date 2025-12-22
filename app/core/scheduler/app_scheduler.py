@@ -1,33 +1,71 @@
 import asyncio
 from datetime import datetime, timedelta
+from typing import Self
+
+from core.scheduler.daily_report_maker import DailyReportMaker, WeeklyReportMaker
 from tools import TimeTools
 
 
 class AppScheduler:
+    def __new__(cls) -> Self:
+        if not hasattr(cls, "instance"):
+            cls.instance = super(cls, cls).__new__(cls)
+        return cls.instance
+
+    _started = False
+
+    _task: asyncio.Task | None = None
+
+    def __init__(self) -> None:
+        if hasattr(self, "initialized"):
+            return
+        self.initialized = True
+        self.daily_maker = DailyReportMaker()
+        self.weekly_maker = WeeklyReportMaker()
+
     async def start_task(self):
-        asyncio.create_task(self.run_every_midnight())
+        if self._started:
+            return
+        # Store a hard reference to the task to prevent garbage collection
+        self._task = asyncio.create_task(self.run_every_midnight())
+        self._started = True
         print("🕒 Scheduler Init")
 
     async def run_every_midnight(self):
         nic_tz = TimeTools.default_timezone
         while True:
-            try:
-                next_day = datetime.now(nic_tz) + timedelta(days=1)
-                next_midnight = next_day.replace(
-                    hour=0, minute=0, second=0, microsecond=0
-                )
-                diff_seconds = (next_midnight - datetime.now(nic_tz)).total_seconds()
-                await asyncio.sleep(diff_seconds)
-                await self._set_daily_tasks(next_midnight)
-            except asyncio.CancelledError:
-                print("Scheduler Stopped")
-                break
-            except Exception as e:
-                print("Error in run_every_midnight")
-                print(e)
-                await asyncio.sleep(60)
+            # 1. Calculate next target execution time (Next Midnight)
+            now = datetime.now(nic_tz)
+            next_day = now + timedelta(days=1)
+            target_time = next_day.replace(hour=0, minute=0, second=0, microsecond=0)
+
+            # 2. Wait until that time
+            wait_seconds = (target_time - datetime.now(nic_tz)).total_seconds()
+            if wait_seconds > 0:
+                await asyncio.sleep(wait_seconds)
+
+            # 3. Execution with retry loop
+            while True:
+                try:
+                    await self._set_daily_tasks(target_time)
+                    break  # Success! Exit retry loop
+                except asyncio.CancelledError:
+                    print("Scheduler Stopped")
+                    return
+                except Exception as e:
+                    print(
+                        f"Error executing daily task at {target_time}, retrying in 60s..."
+                    )
+                    print(e)
+                    await asyncio.sleep(60)
 
     async def _set_daily_tasks(self, current_time: datetime):
         print(f"🚀 Daily Task: {current_time}")
-        # here the daily tasks will be set
-        pass
+        await asyncio.sleep(1)
+
+        # 1. Daily Report
+        await self.daily_maker.create_report(current_time)
+
+        # 2. Weekly Report (if Monday)
+        if current_time.weekday() == 0:
+            await self.weekly_maker.create_report(current_time)
