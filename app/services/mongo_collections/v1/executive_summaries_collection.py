@@ -99,6 +99,7 @@ class ExecutiveSummariesCollection:
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),
+                IndexModel([("dateId", 1), ("type", 1)], unique=True),
                 IndexModel([("year", 1)]),
                 IndexModel([("month", 1)]),
                 IndexModel([("commercialBranches.branchId", 1)]),
