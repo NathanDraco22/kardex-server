@@ -1,26 +1,9 @@
 import asyncio
-from typing_extensions import Self
-from functools import reduce
 from datetime import datetime, timedelta
+from typing import Self
+
+from core.scheduler.daily_report_maker import DailyReportMaker, WeeklyReportMaker
 from tools import TimeTools
-
-from core.report_manager.report_manager import ReportManager
-from repos.v1.daily_summaries import (
-    DailySummariesRepository,
-    DailySummariesDataSource,
-    CommercialBranchDetail,
-    CreateDailySummary,
-)
-
-from repos.v1.executive_summaries import (
-    ExecutiveSummariesRepository,
-    ExecutiveSummariesDataSource,
-    CreateExecutiveSummary,
-)
-
-from repos.v1.inventories import InventoriesRepository, InventoriesDataSource
-
-from repos.v1.common.models import InventoryBranchDetail
 
 
 class AppScheduler:
@@ -35,17 +18,8 @@ class AppScheduler:
         if hasattr(self, "initialized"):
             return
         self.initialized = True
-
-        self.daily_summaries_repo = DailySummariesRepository(
-            DailySummariesDataSource(),
-        )
-        self.executive_summaries_repo = ExecutiveSummariesRepository(
-            ExecutiveSummariesDataSource(),
-        )
-
-        self.inventories_repo = InventoriesRepository(
-            InventoriesDataSource(),
-        )
+        self.daily_maker = DailyReportMaker()
+        self.weekly_maker = WeeklyReportMaker()
 
     async def start_task(self):
         if self._started:
@@ -57,96 +31,38 @@ class AppScheduler:
     async def run_every_midnight(self):
         nic_tz = TimeTools.default_timezone
         while True:
-            try:
-                next_day = datetime.now(nic_tz) + timedelta(days=1)
-                next_midnight = next_day.replace(
-                    hour=0, minute=0, second=0, microsecond=0
-                )
-                diff_seconds = (next_midnight - datetime.now(nic_tz)).total_seconds()
-                await asyncio.sleep(diff_seconds)
-                await self._set_daily_tasks(next_midnight)
-            except asyncio.CancelledError:
-                print("Scheduler Stopped")
-                break
-            except Exception as e:
-                print("Error in run_every_midnight")
-                print(e)
-                await asyncio.sleep(60)
+            # 1. Calculate next target execution time (Next Midnight)
+            now = datetime.now(nic_tz)
+            next_day = now + timedelta(days=1)
+            target_time = next_day.replace(hour=0, minute=0, second=0, microsecond=0)
+
+            # 2. Wait until that time
+            wait_seconds = (target_time - datetime.now(nic_tz)).total_seconds()
+            if wait_seconds > 0:
+                await asyncio.sleep(wait_seconds)
+
+            # 3. Execution with retry loop
+            while True:
+                try:
+                    await self._set_daily_tasks(target_time)
+                    break  # Success! Exit retry loop
+                except asyncio.CancelledError:
+                    print("Scheduler Stopped")
+                    return
+                except Exception as e:
+                    print(
+                        f"Error executing daily task at {target_time}, retrying in 60s..."
+                    )
+                    print(e)
+                    await asyncio.sleep(60)
 
     async def _set_daily_tasks(self, current_time: datetime):
         print(f"🚀 Daily Task: {current_time}")
         await asyncio.sleep(1)
-        # here the daily tasks will be set
-        report_maker = ReportManager()
 
-        yesterday = current_time - timedelta(days=1)
+        # 1. Daily Report
+        await self.daily_maker.create_report(current_time)
 
-        current_timestamp = int(current_time.timestamp() * 1000)
-        yesterday_timestamp = int(yesterday.timestamp() * 1000)
-
-        res = await report_maker.get_total_invoices_by_date_range(
-            yesterday_timestamp, current_timestamp
-        )
-
-        branch_details = [
-            CommercialBranchDetail(
-                branchId=branch.id,
-                total=totals.total,
-                totalCost=totals.totalCost,
-                totalInvoices=totals.count,
-            )
-            for branch, totals in res.results
-        ]
-
-        create_daily = CreateDailySummary(
-            dateId=yesterday.strftime("%Y-%m-%d"),
-            startDate=yesterday_timestamp,
-            endDate=current_timestamp,
-            total=res.total,
-            totalCost=res.totalCost,
-            totalInvoices=res.totalInvoices,
-            branches=branch_details,
-        )
-
-        await self.daily_summaries_repo.create_daily_summary(create_daily)
-
-        # detect is new week
+        # 2. Weekly Report (if Monday)
         if current_time.weekday() == 0:
-            previous_week = current_time - timedelta(weeks=1)
-            previous_week_timestamp = int(previous_week.timestamp() * 1000)
-            sumaries = await self.daily_summaries_repo.get_all_daily_summaries(
-                startDate=previous_week_timestamp,
-                endDate=current_timestamp + 5000,  # add 5 seconds
-            )
-
-            weekly_summary = reduce(lambda a, b: a + b, sumaries)
-
-            inventory_result = await report_maker.get_total_inventory_all_branches()
-
-            inventory_branches = [
-                InventoryBranchDetail(
-                    branchId=branch.id,
-                    inventoryTotalCost=total,
-                )
-                for branch, total in inventory_result.results
-            ]
-
-            create_weekly_summary = CreateExecutiveSummary(
-                type="weekly",
-                year=current_time.year,
-                month=current_time.month,
-                startDate=previous_week_timestamp,
-                endDate=current_timestamp,
-                salesTotal=weekly_summary.total,
-                salesTotalCost=weekly_summary.totalCost,
-                totalInvoices=weekly_summary.totalInvoices,
-                commercialBranches=weekly_summary.branches,
-                inventoryTotalCost=inventory_result.total,
-                inventoryBranches=inventory_branches,
-            )
-
-            await self.executive_summaries_repo.create_executive_summary(
-                create_weekly_summary
-            )
-
-        pass
+            await self.weekly_maker.create_report(current_time)
