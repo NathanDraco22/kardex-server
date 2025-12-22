@@ -28,4 +28,4 @@ class CreateExecutiveSummary(BaseExecutiveSummary):
 class ExecutiveSummaryInDb(BaseExecutiveSummary):
     id: str
     createdAt: int
-    updatedAt: int
+    updatedAt: int | None = None

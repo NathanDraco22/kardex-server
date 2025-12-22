@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from functools import reduce
 
+from tools import TimeTools
+
 from core.report_manager.report_manager import ReportManager
 from repos.v1.daily_summaries import (
     DailySummariesRepository,
@@ -21,8 +23,20 @@ class DailyReportMaker:
         self.report_maker = ReportManager()
         self.daily_summaries_repo = DailySummariesRepository(DailySummariesDataSource())
 
-    async def create_report(self, current_time: datetime) -> None:
+    async def ensure_daily_report(self, current_time: datetime) -> None:
         yesterday = current_time - timedelta(days=1)
+        date_id = yesterday.strftime("%Y-%m-%d")
+
+        # Idempotency check: prevent duplicate reports if scheduler retries
+        print(f"🔍 Checking existence for Daily Report: {date_id}")
+        existing_report = await self.daily_summaries_repo.get_daily_summary_by_date_id(
+            date_id
+        )
+        if existing_report:
+            print(f"⚠️ Daily Report {date_id} already exists. Skipping creation.")
+            return
+
+        print(f"✨ Creating NEW Daily Report for {date_id}")
 
         current_timestamp = int(current_time.timestamp() * 1000)
         yesterday_timestamp = int(yesterday.timestamp() * 1000)
@@ -42,7 +56,7 @@ class DailyReportMaker:
         ]
 
         create_daily = CreateDailySummary(
-            dateId=yesterday.strftime("%Y-%m-%d"),
+            dateId=date_id,
             startDate=yesterday_timestamp,
             endDate=current_timestamp,
             total=res.total,
@@ -62,14 +76,44 @@ class WeeklyReportMaker:
             ExecutiveSummariesDataSource()
         )
 
-    async def create_report(self, current_time: datetime) -> None:
+    async def ensure_weekly_report(self, current_time: datetime):
+        print(
+            f"🔍 Checking existence for Weekly Report: {current_time.strftime('%Y-%m-%d')}"
+        )
+        selected_time = datetime(
+            current_time.year,
+            current_time.month,
+            current_time.day,
+            tzinfo=current_time.tzinfo,
+        )
+        if current_time.weekday() != 0:
+            selected_time = current_time - timedelta(days=current_time.weekday())
+
+        result = await self.executive_summaries_repo.get_executive_summary_by_date_id_and_type(
+            selected_time.strftime("%Y-%m-%d"), "weekly"
+        )
+
+        if result:
+            print(
+                f"⚠️ Weekly Report {selected_time.strftime('%Y-%m-%d')} already exists. Skipping creation."
+            )
+            return
+
+        print(f"✨ Creating NEW Weekly Report for {selected_time.strftime('%Y-%m-%d')}")
+
+        await self._create_report(selected_time)
+
+    async def _create_report(self, current_time: datetime) -> None:
         current_timestamp = int(current_time.timestamp() * 1000)
         previous_week = current_time - timedelta(weeks=1)
         previous_week_timestamp = int(previous_week.timestamp() * 1000)
 
+        # Use actual current time + buffer to ensure we catch the just-created daily report involved in latency
+        end_date_limit = TimeTools.get_now_in_milliseconds() + 60000
+
         sumaries = await self.daily_summaries_repo.get_all_daily_summaries(
             startDate=previous_week_timestamp,
-            endDate=current_timestamp + 5000,  # add 5 seconds
+            endDate=end_date_limit,
         )
 
         if not sumaries:
@@ -88,6 +132,7 @@ class WeeklyReportMaker:
         ]
 
         create_weekly_summary = CreateExecutiveSummary(
+            dateId=current_time.strftime("%Y-%m-%d"),
             type="weekly",
             year=current_time.year,
             month=current_time.month,

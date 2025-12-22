@@ -37,3 +37,13 @@ class DailySummariesRepository:
             return None
 
         return DailySummaryInDb.model_validate(result)
+
+    async def get_daily_summary_by_date_id(
+        self, date_id: str
+    ) -> DailySummaryInDb | None:
+        result = await self.daily_summaries_ds.get_daily_summary_by_date_id(date_id)
+
+        if result is None:
+            return None
+
+        return DailySummaryInDb.model_validate(result)

@@ -26,7 +26,16 @@ class AppScheduler:
     async def start_task(self):
         if self._started:
             return
-        # Store a hard reference to the task to prevent garbage collection
+
+        print("🔄 Scheduler Recovery: Checking for missed reports...")
+        now = datetime.now(TimeTools.default_timezone)
+
+        try:
+            await self.daily_maker.ensure_daily_report(now)
+            await self.weekly_maker.ensure_weekly_report(now)
+        except Exception as e:
+            print(f"❌ Error during scheduler recovery: {e}")
+
         self._task = asyncio.create_task(self.run_every_midnight())
         self._started = True
         print("🕒 Scheduler Init")
@@ -63,9 +72,7 @@ class AppScheduler:
         print(f"🚀 Daily Task: {current_time}")
         await asyncio.sleep(1)
 
-        # 1. Daily Report
-        await self.daily_maker.create_report(current_time)
+        await self.daily_maker.ensure_daily_report(current_time)
 
-        # 2. Weekly Report (if Monday)
         if current_time.weekday() == 0:
-            await self.weekly_maker.create_report(current_time)
+            await self.weekly_maker.ensure_weekly_report(current_time)

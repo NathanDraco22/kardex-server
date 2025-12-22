@@ -26,6 +26,10 @@ class DailySummariesDataSource:
         collection = DailySummariesCollection()
         return await collection.fetch_daily_summary_by_id(daily_summary_id)
 
+    async def get_daily_summary_by_date_id(self, date_id: str) -> dict[str, Any] | None:
+        collection = DailySummariesCollection()
+        return await collection.fetch_daily_summary_by_date_id(date_id)
+
     async def update_daily_summary_by_id(
         self, daily_summary_id: str, daily_summary: dict[str, Any]
     ) -> dict[str, Any] | None:
