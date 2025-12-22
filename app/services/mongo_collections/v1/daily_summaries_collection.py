@@ -50,6 +50,13 @@ class DailySummariesCollection:
         result = await collection.find_one({"id": daily_summary_id})
         return result
 
+    async def fetch_daily_summary_by_date_id(
+        self, date_id: str
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+        result = await collection.find_one({"dateId": date_id})
+        return result
+
     async def update_daily_summary_by_id(
         self,
         daily_summary_id: str,

@@ -1,5 +1,9 @@
 from .data.executive_summaries_datasource import ExecutiveSummariesDataSource
-from .models.executive_summary_model import CreateExecutiveSummary, ExecutiveSummaryInDb
+from .models.executive_summary_model import (
+    CreateExecutiveSummary,
+    ExecutiveSummaryInDb,
+    SummaryType,
+)
 
 from tools import UuidTool, TimeTools
 
@@ -35,6 +39,20 @@ class ExecutiveSummariesRepository:
     ) -> ExecutiveSummaryInDb | None:
         result = await self.executive_summaries_ds.get_executive_summary_by_id(
             executive_summary_id
+        )
+
+        if result is None:
+            return None
+
+        return ExecutiveSummaryInDb.model_validate(result)
+
+    async def get_executive_summary_by_date_id_and_type(
+        self, date_id: str, type: SummaryType
+    ) -> ExecutiveSummaryInDb | None:
+        result = (
+            await self.executive_summaries_ds.get_executive_summary_by_date_id_and_type(
+                date_id, type
+            )
         )
 
         if result is None:

@@ -1,6 +1,6 @@
 from typing import Any
 
-from pymongo import ReturnDocument
+from pymongo import ReturnDocument, IndexModel
 from services import MongoService
 
 
@@ -60,6 +60,18 @@ class ExecutiveSummariesCollection:
         result = await collection.find_one({"id": executive_summary_id})
         return result
 
+    async def fetch_executive_summary_by_date_id_and_type(
+        self, date_id: str, type: str
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+        result = await collection.find_one(
+            {
+                "dateId": date_id,
+                "type": type,
+            }
+        )
+        return result
+
     async def update_executive_summary_by_id(
         self,
         executive_summary_id: str,
@@ -81,3 +93,16 @@ class ExecutiveSummariesCollection:
         collection = self.__collection
         result = await collection.find_one_and_delete({"id": executive_summary_id})
         return result
+
+    async def create_indexes(self):
+        collection = self.__collection
+        await collection.create_indexes(
+            [
+                IndexModel([("id", 1)], unique=True),
+                IndexModel([("year", 1)]),
+                IndexModel([("month", 1)]),
+                IndexModel([("commercialBranches.branchId", 1)]),
+                IndexModel([("inventoryBranches.branchId", 1)]),
+                IndexModel([("createdAt", -1)]),
+            ],
+        )
