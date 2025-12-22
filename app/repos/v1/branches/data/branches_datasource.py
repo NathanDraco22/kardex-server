@@ -18,6 +18,10 @@ class BranchesDataSource:
         collection = BranchesCollection()
         return await collection.fetch_all_branches()
 
+    async def get_all_commerce_branches(self) -> list[dict[str, Any]]:
+        collection = BranchesCollection()
+        return await collection.fetch_all_commerce_branches()
+
     async def get_branch_by_id(self, branch_id: str) -> dict[str, Any] | None:
         collection = BranchesCollection()
         return await collection.fetch_branch_by_id(branch_id)

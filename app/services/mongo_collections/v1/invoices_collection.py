@@ -204,6 +204,7 @@ class InvoicesCollection:
                         "_id": None,
                         "totalCost": {"$sum": "$totalCost"},
                         "total": {"$sum": "$total"},
+                        "count": {"$sum": 1},
                     }
                 },
             ]
