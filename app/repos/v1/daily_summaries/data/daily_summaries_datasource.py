@@ -20,6 +20,12 @@ class DailySummariesDataSource:
         collection = DailySummariesCollection()
         return await collection.fetch_all_daily_summaries(**kwargs)
 
+    async def get_daily_summary_by_start_date_range(
+        self, **kwargs
+    ) -> list[dict[str, Any]]:
+        collection = DailySummariesCollection()
+        return await collection.fetch_daily_summary_by_start_date_range(**kwargs)
+
     async def get_daily_summary_by_id(
         self, daily_summary_id: str
     ) -> dict[str, Any] | None:
