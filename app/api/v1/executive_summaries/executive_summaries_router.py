@@ -1,0 +1,32 @@
+from fastapi import APIRouter, Depends
+
+from repos.v1.executive_summaries import CreateExecutiveSummary, ExecutiveSummaryInDb
+
+from .query_params import ExecutiveSummaryQueryParams
+from .executive_summaries_controller import executive_summaries_controller
+
+
+executive_summaries_router = APIRouter(tags=["executive_summariesV1"])
+
+
+@executive_summaries_router.post("")
+async def create_executive_summary(
+    body: CreateExecutiveSummary,
+) -> ExecutiveSummaryInDb:
+    return await executive_summaries_controller.create_executive_summary(body)
+
+
+@executive_summaries_router.get("")
+async def get_all_executive_summaries(
+    query: ExecutiveSummaryQueryParams = Depends(),
+) -> list[ExecutiveSummaryInDb]:
+    return await executive_summaries_controller.get_all_executive_summaries(query)
+
+
+@executive_summaries_router.get("/{executive_summary_id}")
+async def get_executive_summary_by_id(
+    executive_summary_id: str,
+) -> ExecutiveSummaryInDb:
+    return await executive_summaries_controller.get_executive_summary_by_id(
+        executive_summary_id
+    )

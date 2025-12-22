@@ -37,6 +37,15 @@ class BranchesCollection:
 
         return result
 
+    async def fetch_all_commerce_branches(self) -> list[dict[str, Any]]:
+        collection = self.__collection
+        cursor = collection.find({"isCommerce": True})
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def fetch_branch_by_id(self, branch_id: str) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one({"id": branch_id})

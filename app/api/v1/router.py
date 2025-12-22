@@ -6,9 +6,11 @@ from .branches.branches_router import branches_router
 from .client_transactions.client_transactions_router import client_transactions_router
 from .clients.clients_router import clients_router
 from .core_settings.core_settings_router import core_settings_router
+from .daily_summaries.daily_summaries_router import daily_summaries_router
 from .devolutions.devolutions_router import devolutions_router
 from .entry_docs.entry_docs_router import entry_docs_router
 from .entry_histories.entry_histories_router import entry_histories_router
+from .executive_summaries.executive_summaries_router import executive_summaries_router
 from .exit_docs.exit_docs_router import exit_docs_router
 from .exit_histories.exit_histories_router import exit_histories_router
 from .expiration_logs.expiration_logs_router import expiration_logs_router
@@ -36,9 +38,11 @@ router_v1.include_router(branches_router, prefix="/branches")
 router_v1.include_router(client_transactions_router, prefix="/client-transactions")
 router_v1.include_router(clients_router, prefix="/clients")
 router_v1.include_router(core_settings_router, prefix="/core-settings")
+router_v1.include_router(daily_summaries_router, prefix='/daily-summaries')
 router_v1.include_router(devolutions_router, prefix='/devolutions')
 router_v1.include_router(entry_docs_router, prefix="/entry-docs")
 router_v1.include_router(entry_histories_router, prefix="/entry-histories")
+router_v1.include_router(executive_summaries_router, prefix='/executive-summaries')
 router_v1.include_router(exit_docs_router, prefix="/exit-docs")
 router_v1.include_router(exit_histories_router, prefix="/exit-histories")
 router_v1.include_router(expiration_logs_router, prefix='/expiration-logs')
