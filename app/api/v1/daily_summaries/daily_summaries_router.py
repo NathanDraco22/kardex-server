@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from repos.v1.daily_summaries import CreateDailySummary, DailySummaryInDb
 
 from .daily_summaries_controller import daily_summaries_controller
-from query_params import DailySummaryQueryParams
+from .query_params import DailySummaryQueryParams
 
 
 daily_summaries_router = APIRouter(tags=["daily_summariesV1"])
