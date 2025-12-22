@@ -8,6 +8,7 @@ SummaryType = Literal["weekly", "monthly", "yearly"]
 
 
 class BaseExecutiveSummary(BaseModel):
+    dateId: str
     type: SummaryType
     year: int
     month: int
