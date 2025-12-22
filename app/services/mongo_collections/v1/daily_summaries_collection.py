@@ -43,6 +43,26 @@ class DailySummariesCollection:
 
         return result
 
+    async def fetch_daily_summary_by_start_date_range(self, **kwargs):
+        collection = self.__collection
+
+        query = {}
+
+        end_date = kwargs.get("endDate")
+        start_date = kwargs.get("startDate")
+
+        if end_date and start_date:
+            query["startDate"] = {"$gte": start_date, "$lte": end_date}
+        elif end_date:
+            query["startDate"] = {"$lte": end_date}
+
+        cursor = collection.find(query).sort("startDate", -1)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def fetch_daily_summary_by_id(
         self, daily_summary_id: str
     ) -> dict[str, Any] | None:
@@ -87,5 +107,6 @@ class DailySummariesCollection:
                 IndexModel([("dateId", 1)], unique=True),
                 IndexModel([("branches.branchId", 1)]),
                 IndexModel([("createdAt", -1)]),
+                IndexModel([("startDate", -1)]),
             ]
         )

@@ -2,7 +2,12 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Self
 
-from core.scheduler.daily_report_maker import DailyReportMaker, WeeklyReportMaker
+from core.scheduler.daily_report_maker import (
+    DailyReportMaker,
+    WeeklyReportMaker,
+    MonthlyReportMaker,
+    YearlyReportMaker,
+)
 from tools import TimeTools
 
 
@@ -22,6 +27,8 @@ class AppScheduler:
         self.initialized = True
         self.daily_maker = DailyReportMaker()
         self.weekly_maker = WeeklyReportMaker()
+        self.monthly_maker = MonthlyReportMaker()
+        self.yearly_maker = YearlyReportMaker()
 
     async def start_task(self):
         if self._started:
@@ -33,6 +40,10 @@ class AppScheduler:
         try:
             await self.daily_maker.ensure_daily_report(now)
             await self.weekly_maker.ensure_weekly_report(now)
+            # Ensure monthly report (if today is 1st or shortly after)
+            await self.monthly_maker.ensure_monthly_report(now)
+            # Ensure yearly report (if today is Jan 1st or shortly after)
+            await self.yearly_maker.ensure_yearly_report(now)
         except Exception as e:
             print(f"❌ Error during scheduler recovery: {e}")
 
@@ -76,3 +87,11 @@ class AppScheduler:
 
         if current_time.weekday() == 0:
             await self.weekly_maker.ensure_weekly_report(current_time)
+
+        # 3. Monthly Report (if 1st of month) - Idempotent
+        if current_time.day == 1:
+            await self.monthly_maker.ensure_monthly_report(current_time)
+
+            # 4. Yearly Report (if 1st of January) - Idempotent
+            if current_time.month == 1:
+                await self.yearly_maker.ensure_yearly_report(current_time)

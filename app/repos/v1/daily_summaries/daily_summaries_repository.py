@@ -28,6 +28,15 @@ class DailySummariesRepository:
         models = [DailySummaryInDb.model_validate(result) for result in results]
         return models
 
+    async def get_daily_summary_by_start_date_range(
+        self, **kwargs
+    ) -> list[DailySummaryInDb]:
+        results = await self.daily_summaries_ds.get_daily_summary_by_start_date_range(
+            **kwargs
+        )
+        models = [DailySummaryInDb.model_validate(result) for result in results]
+        return models
+
     async def get_daily_summary_by_id(
         self, daily_summary_id: str
     ) -> DailySummaryInDb | None:

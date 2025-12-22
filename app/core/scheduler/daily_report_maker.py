@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
 from functools import reduce
 
-from tools import TimeTools
-
 from core.report_manager.report_manager import ReportManager
 from repos.v1.daily_summaries import (
     DailySummariesRepository,
@@ -33,7 +31,6 @@ class DailyReportMaker:
         yesterday = selected_time - timedelta(days=1)
         date_id = yesterday.strftime("%Y-%m-%d")
 
-        # Idempotency check: prevent duplicate reports if scheduler retries
         print(f"🔍 Checking existence for Daily Report: {date_id}")
         existing_report = await self.daily_summaries_repo.get_daily_summary_by_date_id(
             date_id
@@ -114,12 +111,18 @@ class WeeklyReportMaker:
         previous_week = current_time - timedelta(weeks=1)
         previous_week_timestamp = int(previous_week.timestamp() * 1000)
 
-        # Use actual current time + buffer to ensure we catch the just-created daily report involved in latency
-        end_date_limit = TimeTools.get_now_in_milliseconds() + 60000
+        # We want reports from Monday (inclusive) to Sunday (inclusive).
+        # Daily Report for Sunday starts at Sunday 00:00.
+        # Next Monday report starts at Monday 00:00 (current_timestamp).
+        # So we want startDate < current_timestamp.
+        # Since we use $lte in repo, we subtract 1ms to exclude Next Monday.
+        end_date_limit = current_timestamp - 1
 
-        sumaries = await self.daily_summaries_repo.get_all_daily_summaries(
-            startDate=previous_week_timestamp,
-            endDate=end_date_limit,
+        sumaries = (
+            await self.daily_summaries_repo.get_daily_summary_by_start_date_range(
+                startDate=previous_week_timestamp,
+                endDate=end_date_limit,
+            )
         )
 
         if not sumaries:
@@ -154,4 +157,186 @@ class WeeklyReportMaker:
 
         await self.executive_summaries_repo.create_executive_summary(
             create_weekly_summary
+        )
+
+
+class MonthlyReportMaker:
+    def __init__(self) -> None:
+        self.report_maker = ReportManager()
+        self.daily_summaries_repo = DailySummariesRepository(DailySummariesDataSource())
+        self.executive_summaries_repo = ExecutiveSummariesRepository(
+            ExecutiveSummariesDataSource()
+        )
+
+    async def ensure_monthly_report(self, current_time: datetime):
+        """
+        Generates a report for the PREVIOUS month based on current_time.
+        e.g. if current_time is March 1st, generates report for February.
+        Idempotent: checks if exists first.
+        """
+        # Normalize to start of current day
+        date_current = datetime(
+            current_time.year,
+            current_time.month,
+            current_time.day,
+            tzinfo=current_time.tzinfo,
+        )
+
+        # Go back to the last day of previous month
+        last_day_prev_month = date_current.replace(day=1) - timedelta(days=1)
+        # First day of previous month
+        first_day_prev_month = last_day_prev_month.replace(day=1)
+
+        date_id = first_day_prev_month.strftime("%Y-%m")  # e.g., 2024-02
+
+        print(f"🔍 Checking existence for Monthly Report: {date_id}")
+
+        result = await self.executive_summaries_repo.get_executive_summary_by_date_id_and_type(
+            date_id, "monthly"
+        )
+
+        if result:
+            print(f"⚠️ Monthly Report {date_id} already exists. Skipping creation.")
+            return
+
+        print(f"✨ Creating NEW Monthly Report for {date_id}")
+
+        await self._create_report(first_day_prev_month, last_day_prev_month, date_id)
+
+    async def _create_report(
+        self, start_date: datetime, end_date: datetime, date_id: str
+    ) -> None:
+        # Using startDate for filtering is much cleaner.
+        # We want all daily summaries where startDate is within the month range.
+        start_timestamp = int(start_date.timestamp() * 1000)
+        end_timestamp = int(end_date.timestamp() * 1000)
+
+        sumaries = (
+            await self.daily_summaries_repo.get_daily_summary_by_start_date_range(
+                startDate=start_timestamp,
+                endDate=end_timestamp,
+            )
+        )
+
+        if not sumaries:
+            return
+
+        monthly_summary = reduce(lambda a, b: a + b, sumaries)
+
+        inventory_result = await self.report_maker.get_total_inventory_all_branches()
+
+        inventory_branches = [
+            InventoryBranchDetail(
+                branchId=branch.id,
+                inventoryTotalCost=total,
+            )
+            for branch, total in inventory_result.results
+        ]
+
+        create_monthly_summary = CreateExecutiveSummary(
+            dateId=date_id,
+            type="monthly",
+            year=start_date.year,
+            month=start_date.month,
+            startDate=start_timestamp,
+            endDate=end_timestamp,
+            salesTotal=monthly_summary.total,
+            salesTotalCost=monthly_summary.totalCost,
+            totalInvoices=monthly_summary.totalInvoices,
+            commercialBranches=monthly_summary.branches,
+            inventoryTotalCost=inventory_result.total,
+            inventoryBranches=inventory_branches,
+        )
+
+        await self.executive_summaries_repo.create_executive_summary(
+            create_monthly_summary
+        )
+
+
+class YearlyReportMaker:
+    def __init__(self) -> None:
+        self.report_maker = ReportManager()
+        self.daily_summaries_repo = DailySummariesRepository(DailySummariesDataSource())
+        self.executive_summaries_repo = ExecutiveSummariesRepository(
+            ExecutiveSummariesDataSource()
+        )
+
+    async def ensure_yearly_report(self, current_time: datetime):
+        """
+        Generates a report for the PREVIOUS year based on current_time.
+        e.g. if current_time is Jan 1st 2025, generates report for 2024.
+        """
+        # Normalize
+        date_current = datetime(
+            current_time.year,
+            current_time.month,
+            current_time.day,
+            tzinfo=current_time.tzinfo,
+        )
+
+        prev_year = date_current.year - 1
+        date_id = str(prev_year)
+
+        print(f"🔍 Checking existence for Yearly Report: {date_id}")
+
+        result = await self.executive_summaries_repo.get_executive_summary_by_date_id_and_type(
+            date_id, "yearly"
+        )
+
+        if result:
+            print(f"⚠️ Yearly Report {date_id} already exists. Skipping creation.")
+            return
+
+        print(f"✨ Creating NEW Yearly Report for {date_id}")
+
+        start_date = datetime(prev_year, 1, 1, tzinfo=current_time.tzinfo)
+        end_date = datetime(prev_year, 12, 31, tzinfo=current_time.tzinfo)
+
+        await self._create_report(start_date, end_date, date_id)
+
+    async def _create_report(
+        self, start_date: datetime, end_date: datetime, date_id: str
+    ) -> None:
+        start_timestamp = int(start_date.timestamp() * 1000)
+        end_timestamp = int(end_date.timestamp() * 1000)
+
+        sumaries = (
+            await self.daily_summaries_repo.get_daily_summary_by_start_date_range(
+                startDate=start_timestamp,
+                endDate=end_timestamp,
+            )
+        )
+
+        if not sumaries:
+            return
+
+        yearly_summary = reduce(lambda a, b: a + b, sumaries)
+
+        inventory_result = await self.report_maker.get_total_inventory_all_branches()
+
+        inventory_branches = [
+            InventoryBranchDetail(
+                branchId=branch.id,
+                inventoryTotalCost=total,
+            )
+            for branch, total in inventory_result.results
+        ]
+
+        create_yearly_summary = CreateExecutiveSummary(
+            dateId=date_id,
+            type="yearly",
+            year=start_date.year,
+            month=0,  # 0 indicates full year in this context
+            startDate=start_timestamp,
+            endDate=end_timestamp,
+            salesTotal=yearly_summary.total,
+            salesTotalCost=yearly_summary.totalCost,
+            totalInvoices=yearly_summary.totalInvoices,
+            commercialBranches=yearly_summary.branches,
+            inventoryTotalCost=inventory_result.total,
+            inventoryBranches=inventory_branches,
+        )
+
+        await self.executive_summaries_repo.create_executive_summary(
+            create_yearly_summary
         )
