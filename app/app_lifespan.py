@@ -8,6 +8,6 @@ from core.scheduler.app_scheduler import AppScheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await AppScheduler().start_task()
     await init_services()
+    await AppScheduler().start_task()
     yield
