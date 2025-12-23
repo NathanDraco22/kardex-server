@@ -4,6 +4,8 @@ from repos.v1.executive_summaries import CreateExecutiveSummary, ExecutiveSummar
 
 from responses.v1 import ListResponse
 
+from app_middleware import cache_header_response_midnight
+
 from .query_params import ExecutiveSummaryQueryParams
 from .executive_summaries_controller import executive_summaries_controller
 
@@ -11,7 +13,9 @@ from .executive_summaries_controller import executive_summaries_controller
 executive_summaries_router = APIRouter(tags=["executive_summariesV1"])
 
 
-@executive_summaries_router.post("")
+@executive_summaries_router.post(
+    "", dependencies=[Depends(cache_header_response_midnight)]
+)
 async def create_executive_summary(
     body: CreateExecutiveSummary,
 ) -> ExecutiveSummaryInDb:
