@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
-
-from repos.v1.daily_summaries import CreateDailySummary, DailySummaryInDb
+from repos.v1.daily_summaries import DailySummaryInDb
+from app_middleware import cache_header_response_midnight
 from responses.v1 import ListResponse
 
 from .daily_summaries_controller import daily_summaries_controller
@@ -10,12 +10,12 @@ from .query_params import DailySummaryQueryParams
 daily_summaries_router = APIRouter(tags=["daily_summariesV1"])
 
 
-@daily_summaries_router.post("")
-async def create_daily_summary(body: CreateDailySummary) -> DailySummaryInDb:
-    return await daily_summaries_controller.create_daily_summary(body)
-
-
-@daily_summaries_router.get("")
+@daily_summaries_router.get(
+    "",
+    dependencies=[
+        Depends(cache_header_response_midnight),
+    ],
+)
 async def get_all_daily_summaries(
     query: DailySummaryQueryParams = Depends(),
 ) -> ListResponse[DailySummaryInDb]:
