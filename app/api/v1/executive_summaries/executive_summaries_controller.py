@@ -7,6 +7,8 @@ from repos.v1.executive_summaries import (
     ExecutiveSummariesDataSource,
 )
 
+from responses.v1 import ListResponse
+
 from .query_params import ExecutiveSummaryQueryParams
 
 
@@ -21,12 +23,15 @@ class ExecutiveSummariesController:
 
     async def get_all_executive_summaries(
         self, query: ExecutiveSummaryQueryParams
-    ) -> list[ExecutiveSummaryInDb]:
+    ) -> ListResponse[ExecutiveSummaryInDb]:
         raw_query = query.model_dump(exclude_unset=True)
         executive_summaries = (
             await self.executive_summaries_repo.get_all_executive_summaries(**raw_query)
         )
-        return executive_summaries
+        return ListResponse(
+            count=len(executive_summaries),
+            data=executive_summaries,
+        )
 
     async def get_executive_summary_by_id(
         self, executive_summary_id: str

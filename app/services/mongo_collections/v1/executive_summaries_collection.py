@@ -32,18 +32,14 @@ class ExecutiveSummariesCollection:
         limit = kwargs.get("limit", 50)
 
         if end_date:
-            query["$match"] = {
-                "createdAt": {
-                    "$lte": end_date,
-                }
+            query["createdAt"] = {
+                "$lte": end_date,
             }
 
         if end_date and start_date:
-            query["$match"] = {
-                "createdAt": {
-                    "$gte": start_date,
-                    "$lte": end_date,
-                }
+            query["createdAt"] = {
+                "$gte": start_date,
+                "$lte": end_date,
             }
 
         cursor = collection.find(query).sort("createdAt", -1).skip(offset).limit(limit)
@@ -66,7 +62,7 @@ class ExecutiveSummariesCollection:
         collection = self.__collection
         result = await collection.find_one(
             {
-                "dateId": date_id,
+                "dateId": {"$regex": f"^{date_id}"},
                 "type": type,
             }
         )

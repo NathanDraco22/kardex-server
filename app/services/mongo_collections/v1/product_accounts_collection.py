@@ -34,6 +34,19 @@ class ProductAccountsCollection:
         )
         return result
 
+    async def get_product_accounts_by_product(
+        self,
+        product_id: str,
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+        cursor = collection.find(
+            {
+                "productId": product_id,
+            }
+        )
+
+        return await cursor.to_list(length=None)
+
     async def get_product_account_with_product_data(
         self, product_id: str, branch_id: str
     ) -> dict[str, Any] | None:
@@ -259,6 +272,11 @@ class ProductAccountsCollection:
                 IndexModel(
                     [
                         ("branchId", 1),
+                    ]
+                ),
+                IndexModel(
+                    [
+                        ("productId", 1),
                     ]
                 ),
                 IndexModel(

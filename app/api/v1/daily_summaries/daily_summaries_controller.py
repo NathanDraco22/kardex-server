@@ -7,6 +7,8 @@ from repos.v1.daily_summaries import (
     DailySummariesDataSource,
 )
 
+from responses.v1 import ListResponse
+
 from .query_params import DailySummaryQueryParams
 
 
@@ -19,12 +21,15 @@ class DailySummariesController:
 
     async def get_all_daily_summaries(
         self, query: DailySummaryQueryParams
-    ) -> list[DailySummaryInDb]:
+    ) -> ListResponse[DailySummaryInDb]:
         raw_query = query.model_dump(exclude_unset=True)
         daily_summaries = await self.daily_summaries_repo.get_all_daily_summaries(
             **raw_query
         )
-        return daily_summaries
+        return ListResponse(
+            count=len(daily_summaries),
+            data=daily_summaries,
+        )
 
     async def get_daily_summary_by_id(self, daily_summary_id: str) -> DailySummaryInDb:
         daily_summary = await self.daily_summaries_repo.get_daily_summary_by_id(
