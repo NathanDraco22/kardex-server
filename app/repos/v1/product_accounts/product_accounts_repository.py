@@ -29,3 +29,12 @@ class ProductAccountsRepository:
             return None
 
         return ProductAccountInDb.model_validate(result)
+
+    async def get_product_accounts_by_product(
+        self, product_id: str
+    ) -> list[ProductAccountInDb]:
+        result = await self.product_accounts_ds.get_product_accounts_by_product(
+            product_id
+        )
+
+        return [ProductAccountInDb.model_validate(account) for account in result]

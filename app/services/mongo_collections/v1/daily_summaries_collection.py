@@ -74,7 +74,13 @@ class DailySummariesCollection:
         self, date_id: str
     ) -> dict[str, Any] | None:
         collection = self.__collection
-        result = await collection.find_one({"dateId": date_id})
+        result = await collection.find_one(
+            {
+                "dateId": {
+                    "$regex": f"^{date_id}",
+                },
+            },
+        )
         return result
 
     async def update_daily_summary_by_id(
