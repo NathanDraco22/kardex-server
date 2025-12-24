@@ -10,7 +10,7 @@
       "request": "launch",
       "cwd": "${workspaceFolder}/app/",
       "module": "fastapi",
-      "args": ["dev"],
+      "args": ["dev",  "--port", "8080"],
       "jinja": true
     }
   ]

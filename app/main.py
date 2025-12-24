@@ -23,6 +23,7 @@ app = FastAPI(
 
 app.add_exception_handler(NotModified, not_modified_exception_handler)
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
