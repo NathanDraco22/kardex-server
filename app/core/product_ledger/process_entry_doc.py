@@ -74,6 +74,8 @@ async def process_entry_doc(
                 product_stats = CreateProductStat(
                     branchId=updated_product_account.branchId,
                     productId=updated_product_account.productId,
+                    startDate=now_in_milliseconds,
+                    endDate=now_in_milliseconds,
                     totalUnits=0,
                     totalTransactions=0,
                     daysAnalyzed=0,

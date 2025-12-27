@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from repos.v1.common.models import ProductItem
+from repos.v1.product_accounts import ProductAccountInDb
 
 
 class BaseProductStat(BaseModel):
@@ -34,3 +35,7 @@ class ProductStatInDb(BaseProductStat):
 
 class ProductStatInDbWithInfo(ProductStatInDb):
     product: ProductItem
+
+
+class ProductStatInDbWithAccount(ProductStatInDbWithInfo):
+    account: ProductAccountInDb

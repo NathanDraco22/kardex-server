@@ -1,9 +1,8 @@
 from .data.product_stats_datasource import ProductStatsDataSource
 from .models.product_stat_model import (
-    CreateProductStat,
-    UpdateProductStat,
     ProductStatInDb,
     ProductStatInDbWithInfo,
+    ProductStatInDbWithAccount,
     UpdateProductStatBatchItem,
 )
 
@@ -22,6 +21,17 @@ class ProductStatsRepository:
     ) -> list[ProductStatInDbWithInfo]:
         results = await self.product_stats_ds.get_all_product_stats_with_info(**kwargs)
         models = [ProductStatInDbWithInfo.model_validate(result) for result in results]
+        return models
+
+    async def get_all_product_stats_with_account(
+        self, **kwargs
+    ) -> list[ProductStatInDbWithAccount]:
+        results = await self.product_stats_ds.get_all_product_stats_with_account(
+            **kwargs
+        )
+        models = [
+            ProductStatInDbWithAccount.model_validate(result) for result in results
+        ]
         return models
 
     async def get_product_stats_with_transaction(self) -> list[ProductStatInDb]:

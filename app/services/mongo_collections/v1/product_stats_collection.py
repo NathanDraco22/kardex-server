@@ -59,6 +59,54 @@ class ProductStatsCollection:
 
         return result
 
+    async def fetch_all_product_stats_with_account(
+        self, **kwargs
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        query = kwargs
+
+        cursor = collection.aggregate(
+            [
+                {"$match": {**query}},
+                {"$sort": {"estimationLevel": -1}},
+                {
+                    "$lookup": {
+                        "from": "Products",
+                        "localField": "productId",
+                        "foreignField": "id",
+                        "as": "product",
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "ProductAccounts",
+                        "let": {"pid": "$productId", "bid": "$branchId"},
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "$expr": {
+                                        "$and": [
+                                            {"$eq": ["$productId", "$$pid"]},
+                                            {"$eq": ["$branchId", "$$bid"]},
+                                        ]
+                                    }
+                                }
+                            }
+                        ],
+                        "as": "account",
+                    }
+                },
+                {"$unwind": "$product"},
+                {"$unwind": "$account"},
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def fetch_all_product_stats_with_transaction(self) -> list[dict[str, Any]]:
         collection = self.__collection
 
@@ -145,6 +193,15 @@ class ProductStatsCollection:
         session: Any,
     ):
         collection = self.__collection
+
+        branches_collection = MongoService().get_collection("Branches")
+
+        is_valid_commerce = await branches_collection.find_one(
+            {"id": branch_id, "isCommerce": True}, session=session
+        )
+
+        if not is_valid_commerce:
+            return None
 
         await collection.find_one_and_update(
             {

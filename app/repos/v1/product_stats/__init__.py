@@ -5,6 +5,7 @@ from .models.product_stat_model import (
     ProductStatInDb,
     UpdateProductStatBatchItem,
     ProductStatInDbWithInfo,
+    ProductStatInDbWithAccount,
 )
 from .product_stats_repository import ProductStatsRepository
 
@@ -16,4 +17,5 @@ __all__ = [
     "ProductStatsRepository",
     "UpdateProductStatBatchItem",
     "ProductStatInDbWithInfo",
+    "ProductStatInDbWithAccount",
 ]

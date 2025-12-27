@@ -17,6 +17,12 @@ class ProductStatsDataSource:
         collection = ProductStatsCollection()
         return await collection.fetch_all_product_stats_with_info(**kwargs)
 
+    async def get_all_product_stats_with_account(
+        self, **kwargs
+    ) -> list[dict[str, Any]]:
+        collection = ProductStatsCollection()
+        return await collection.fetch_all_product_stats_with_account(**kwargs)
+
     async def get_all_product_stats_with_transaction(self) -> list[dict[str, Any]]:
         collection = ProductStatsCollection()
         return await collection.fetch_all_product_stats_with_transaction()
