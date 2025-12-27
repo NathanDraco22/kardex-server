@@ -4,6 +4,7 @@ from repos.v1.product_accounts import (
 )
 from repos.v1.product_transactions import ProductTransactionInDb
 from repos.v1.product_sale_profiles import CreateProductSaleProfile
+from repos.v1.product_stats import CreateProductStat
 from repos.v1.entry_docs import (
     EntryDocInDb,
 )
@@ -16,6 +17,7 @@ from services.mongo_collections.v1 import (
     ProductTransactionsCollection,
     ProductAccountsCollection,
     ProductSaleProfilesCollection,
+    ProductStatsCollection,
 )
 
 
@@ -25,6 +27,7 @@ async def process_entry_doc(
     mongo_client = MongoService().client
     prd_transaction_col = ProductTransactionsCollection()
     product_account_col = ProductAccountsCollection()
+    product_stats_col = ProductStatsCollection()
     product_prof = ProductSaleProfilesCollection()
 
     entry_items = entry_doc.items
@@ -33,8 +36,10 @@ async def process_entry_doc(
         async with session.start_transaction():
             new_entry_data = entry_doc.model_dump()
 
+            now_in_milliseconds = TimeTools.get_now_in_milliseconds()
+
             new_entry_data["id"] = UuidTool.generate_uuid()
-            new_entry_data["createdAt"] = TimeTools.get_now_in_milliseconds()
+            new_entry_data["createdAt"] = now_in_milliseconds
 
             insert_result = await EntryDocsCollection().create_entry_doc_with_session(
                 new_entry_data,
@@ -65,6 +70,17 @@ async def process_entry_doc(
                     productId=updated_product_account.productId,
                     salePrice=0,
                 )
+
+                product_stats = CreateProductStat(
+                    branchId=updated_product_account.branchId,
+                    productId=updated_product_account.productId,
+                    startDate=now_in_milliseconds,
+                    endDate=now_in_milliseconds,
+                    totalUnits=0,
+                    totalTransactions=0,
+                    daysAnalyzed=0,
+                    lastEstimation=now_in_milliseconds,
+                )
                 await (
                     product_prof.create_product_sale_profile_if_not_exist_with_session(
                         sale_profile.branchId,
@@ -72,6 +88,13 @@ async def process_entry_doc(
                         sale_profile.model_dump(),
                         session=session,
                     )
+                )
+
+                await product_stats_col.create_product_stats_if_not_exist_with_session(
+                    product_stats.branchId,
+                    product_stats.productId,
+                    product_stats.model_dump(),
+                    session=session,
                 )
 
                 new_transaction = ProductTransactionInDb(
@@ -84,7 +107,7 @@ async def process_entry_doc(
                     branchId=entry_doc.branchId,
                     quantity=entry_item.quantity,
                     averageCost=updated_product_account.averageCost,
-                    createdAt=TimeTools.get_now_in_milliseconds(),
+                    createdAt=now_in_milliseconds,
                     resultStock=updated_product_account.currentStock,
                 )
 

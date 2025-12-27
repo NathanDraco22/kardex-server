@@ -26,3 +26,6 @@ class ProductTransactionsRepository:
             return None
 
         return ProductTransactionInDb.model_validate(result)
+
+    async def estimate_product_stats(self, **kwargs):
+        await self.product_transactions_ds.estimate_product_stats(**kwargs)
