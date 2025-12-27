@@ -30,3 +30,15 @@ class EtagTool:
 
     def get_branches_etag(self) -> Etag | None:
         return self._tags.get("branches_count")
+
+    def set_projection_file_etag(self, value: str):
+        self._tags["projection"] = Etag("projection", value)
+
+    def get_projection_file_etag(self) -> Etag | None:
+        return self._tags.get("projection")
+
+    def estimation_etag(self, value: str):
+        self._tags["estimation"] = Etag("estimation", value)
+
+    def get_estimation_etag(self) -> Etag | None:
+        return self._tags.get("estimation")

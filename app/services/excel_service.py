@@ -47,7 +47,7 @@ class ProjectionExcelService:
     def __init__(self):
         pass
 
-    def create_projection_xslx(self, sheets: list[ProjectionSheet]):
+    def create_projection_xslx(self, sheets: list[ProjectionSheet]) -> Path:
         workbook: Workbook = Workbook()
 
         for sheet in sheets:
@@ -82,3 +82,8 @@ class ProjectionExcelService:
             workbook.remove(workbook["Sheet"])
 
         workbook.save(STATIC_PATH / "projection.xlsx")
+
+        return STATIC_PATH / "projection.xlsx"
+
+    def get_projection_xslx(self) -> Path:
+        return STATIC_PATH / "projection.xlsx"

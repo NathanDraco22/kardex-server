@@ -1,6 +1,9 @@
-from fastapi import HTTPException, status
+import base64
 
-from tools import TimeTools
+from fastapi import HTTPException, status
+from fastapi.responses import FileResponse
+
+from tools import TimeTools, EtagTool
 
 from core.ml import ProductClassifier, ProductDataStat
 
@@ -78,15 +81,24 @@ class ProductStatsController:
             data=product_stats,
         )
 
-    def _get_classification_label(self, level: int) -> str:
-        mapping = {
-            5: "ALTO (5)",
-            4: "BUENO (4)",
-            3: "REGULAR (3)",
-            2: "BAJO (2)",
-            1: "MIN (1)",
-        }
-        return mapping.get(level, str(level))
+    async def get_projection_file(self) -> FileResponse:
+        path = ProjectionExcelService().get_projection_xslx()
+        if not path.exists():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="EL archivo No Existe o no Ha sido creado",
+            )
+
+        current_etag = EtagTool().get_projection_file_etag()
+        headers = {}
+        if current_etag is not None:
+            headers["ETag"] = current_etag.value
+
+        return FileResponse(
+            path,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers=headers,
+        )
 
     async def create_projection_xslx_file(self, projection_days: int) -> None:
         commercial_branches = await self.branches_repo.get_all_commerce_branches()
@@ -126,12 +138,14 @@ class ProductStatsController:
                     stat.account.currentStock
                 )
                 consolidated_map[stat.productId]["totalAverageDay"] += average_day
-                
+
                 # Sumanos el costo directo para luego promediarlo por el número de sucursales
                 consolidated_map[stat.productId]["sumAverageCost"] += (
                     stat.account.averageCost
                 )
-                consolidated_map[stat.productId]["sumClassification"] += stat.estimationLevel
+                consolidated_map[stat.productId]["sumClassification"] += (
+                    stat.estimationLevel
+                )
                 consolidated_map[stat.productId]["countAdded"] += 1
 
                 rows.append(
@@ -166,12 +180,16 @@ class ProductStatsController:
             count_added = data["countAdded"]
             sum_average_cost = data["sumAverageCost"]
             sum_classification = data["sumClassification"]
-            
+
             # Request: Promedio de los promedios (dividir entre sucursales que sumaron)
-            final_average_cost = sum_average_cost / count_added if count_added > 0 else 0
+            final_average_cost = (
+                sum_average_cost / count_added if count_added > 0 else 0
+            )
             final_average_cost = round(final_average_cost / 100, 2)
 
-            average_classification = round(sum_classification / count_added) if count_added > 0 else 1
+            average_classification = (
+                round(sum_classification / count_added) if count_added > 0 else 1
+            )
 
             consolidated_rows.append(
                 ProjectionRow(
@@ -200,6 +218,8 @@ class ProductStatsController:
 
         ProjectionExcelService().create_projection_xslx(sheets)
 
+        EtagTool().set_projection_file_etag(str(TimeTools.get_now_in_milliseconds()))
+
     async def get_product_stat_by_id(self, product_stat_id: str) -> ProductStatInDb:
         product_stat = await self.product_stats_repo.get_product_stat_by_id(
             product_stat_id
@@ -225,7 +245,6 @@ class ProductStatsController:
         )
 
         if len(all_product_stats) == 0:
-            print("Get in")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Empty product stats",
@@ -259,6 +278,18 @@ class ProductStatsController:
         ]
 
         await self.product_stats_repo.update_product_batch(update_items)
+        key = base64.b64encode(str(raw_query_params).encode()).decode()
+        EtagTool().estimation_etag(key)
+
+    def _get_classification_label(self, level: int) -> str:
+        mapping = {
+            5: "ALTO (5)",
+            4: "BUENO (4)",
+            3: "REGULAR (3)",
+            2: "BAJO (2)",
+            1: "MIN (1)",
+        }
+        return mapping.get(level, str(level))
 
 
 product_stats_controller = ProductStatsController(
