@@ -10,6 +10,7 @@ TransactionSubType = Literal[
     "exit",
     "invoice",
     "devolution",
+    "transfer",
 ]
 
 
