@@ -29,7 +29,15 @@ class ExpirationLogsRepository:
     async def create_many_expiration_logs(
         self, expiration_logs: list[CreateExpirationLog]
     ):
-        raw_data = [log.model_dump() for log in expiration_logs]
+        models_in_db = [
+            ExpirationLogInDb(
+                **createLog.model_dump(),
+                id=UuidTool.generate_uuid(),
+                createdAt=TimeTools.get_now_in_milliseconds(),
+            )
+            for createLog in expiration_logs
+        ]
+        raw_data = [log.model_dump() for log in models_in_db]
         await self.expiration_logs_ds.create_many_expiration_logs(raw_data)
 
     async def get_all_expiration_logs(self, **kwargs) -> list[ExpirationLogInDb]:
