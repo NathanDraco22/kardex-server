@@ -9,6 +9,7 @@ class BaseTransfer(BaseModel):
     origin: str
     destination: str
     docNumber: str = ""
+    description: str = ""
     status: TransferStatus
     items: list[TransferItem]
     createdBy: UserInfo

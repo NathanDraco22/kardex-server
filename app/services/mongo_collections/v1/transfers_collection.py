@@ -100,10 +100,24 @@ class TransfersCollection:
         collection = self.__collection
         await collection.create_indexes(
             [
+                IndexModel([("id", 1)], unique=True, name="unique_id_index"),
+                IndexModel(
+                    [("docNumber", 1)], unique=True, name="unique_docNumber_index"
+                ),
                 IndexModel(
                     [
-                        ("docNumber", 1),
+                        ("origin", 1),  # Filtro (Equality)
+                        ("createdAt", -1),  # Orden (Sort)
                     ],
-                )
+                    name="origin_date_index",
+                ),
+                IndexModel(
+                    [
+                        ("destination", 1),  # Filtro (Equality)
+                        ("createdAt", -1),  # Orden (Sort)
+                    ],
+                    name="destination_date_index",
+                ),
+                IndexModel([("createdAt", -1)], name="global_date_index"),
             ]
         )
