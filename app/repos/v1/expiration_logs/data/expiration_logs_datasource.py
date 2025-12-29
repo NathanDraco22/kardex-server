@@ -16,6 +16,10 @@ class ExpirationLogsDataSource:
         await collection.create_expiration_log(expiration_log)
         return expiration_log
 
+    async def create_many_expiration_logs(self, expiration_logs: list[dict[str, Any]]):
+        collection = ExpirationLogsCollection()
+        await collection.create_many_expiration_logs(expiration_logs)
+
     async def get_all_expiration_logs(self, **kwargs) -> list[dict[str, Any]]:
         collection = ExpirationLogsCollection()
         return await collection.fetch_all_expiration_logs(**kwargs)

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 
 from repos.v1.transfers import (
     CreateTransfer,
@@ -40,9 +40,9 @@ async def get_transfer_by_id(transfer_id: str) -> TransferInDb:
 
 @transfers_router.post("/{transfer_id}/receive")
 async def receive_transfer(
-    transfer_id: str, intent: ReceiveTransferIntent
+    transfer_id: str, intent: ReceiveTransferIntent, bg_tasks: BackgroundTasks
 ) -> TransferInDb:
-    return await transfers_controller.receive_transfer(transfer_id, intent)
+    return await transfers_controller.receive_transfer(transfer_id, intent, bg_tasks)
 
 
 @transfers_router.post("/{transfer_id}/cancel")

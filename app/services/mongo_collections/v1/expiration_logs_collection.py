@@ -20,6 +20,10 @@ class ExpirationLogsCollection:
         collection = self.__collection
         await collection.insert_one(expiration_log)
 
+    async def create_many_expiration_logs(self, expiration_logs: list[dict]) -> None:
+        collection = self.__collection
+        await collection.insert_many(expiration_logs)
+
     async def fetch_all_expiration_logs(self, **kwargs) -> list[dict[str, Any]]:
         collection = self.__collection
 
