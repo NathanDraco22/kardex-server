@@ -23,6 +23,7 @@ from .products_collection import ProductsCollection
 from .receipts_collection import ReceiptsCollection
 from .suppliers_collection import SuppliersCollection
 from .transactions_collection import TransactionsCollection
+from .transfers_collection import TransfersCollection
 from .units_collection import UnitsCollection
 from .user_roles_collection import UserRolesCollection
 from .users_collection import UsersCollection
@@ -52,6 +53,7 @@ __all__ = [
     "ProductsCollection",
     "ReceiptsCollection",
     "SuppliersCollection",
+    "TransfersCollection",
     "TransactionsCollection",
     "UnitsCollection",
     "UserRolesCollection",
