@@ -175,6 +175,39 @@ class ProductAccountsCollection:
 
         return result
 
+    async def adjust_product_stock_only(
+        self,
+        product_id: str,
+        branch_id: str,
+        quantity_delta: int,
+        session: Any,
+    ) -> dict[str, Any]:
+        collection = self.__collection
+        update_at = TimeTools.get_now_in_milliseconds()
+
+        result = await collection.find_one_and_update(
+            {
+                "productId": product_id,
+                "branchId": branch_id,
+            },
+            [
+                {
+                    "$set": {
+                        "currentStock": {
+                            "$add": [{"$ifNull": ["$currentStock", 0]}, quantity_delta]
+                        },
+                        "updatedAt": update_at,
+                        "createdAt": {"$ifNull": ["$createdAt", update_at]},
+                    }
+                },
+            ],
+            upsert=True,
+            session=session,
+            return_document=ReturnDocument.AFTER,
+        )
+
+        return result
+
     async def update_product_account_balance_data(
         self,
         product_id: str,

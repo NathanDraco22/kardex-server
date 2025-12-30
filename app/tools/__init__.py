@@ -4,6 +4,7 @@ from .search_tools import generate_prefixes
 from .query_builder import build_query
 from .etag_tool import EtagTool
 from .app_exceptions import NotModified, not_modified_exception_handler
+from .branches_tool import BranchesTool
 
 __all__ = [
     "TimeTools",
@@ -13,4 +14,5 @@ __all__ = [
     "EtagTool",
     "NotModified",
     "not_modified_exception_handler",
+    "BranchesTool",
 ]

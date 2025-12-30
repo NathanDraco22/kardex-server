@@ -4,7 +4,7 @@ from repos.v1.product_transactions import ProductTransactionInDb
 from repos.v1.product_sale_profiles import CreateProductSaleProfile
 from repos.v1.product_stats import CreateProductStat
 
-from tools import UuidTool, TimeTools
+from tools import UuidTool, TimeTools, BranchesTool
 
 from services import MongoService
 from services.mongo_collections.v1 import (
@@ -46,8 +46,15 @@ async def process_incoming_transfer(
             transfer_doc = TransferInDb.model_validate(existing_transfer_dict)
 
             # (Opcional) Validar que no haya sido recibido ya
-            if transfer_doc.status == "received":
-                raise Exception("Este traslado ya fue recibido anteriormente")
+            if transfer_doc.status != "inTransit":
+                raise Exception("Este traslado ya fue procesado anteriormente")
+
+            destination_branch_in_db = BranchesTool().get_branch_by_id(
+                transfer_doc.destination
+            )
+
+            if destination_branch_in_db is None:
+                raise Exception("Sucursal de Destino no encontrada")
 
             now_in_milliseconds = TimeTools.get_now_in_milliseconds()
             destination_branch = transfer_doc.destination
@@ -55,6 +62,9 @@ async def process_incoming_transfer(
 
             updated_dest_accounts: list[ProductAccountInDb] = []
             created_transactions: list[ProductTransactionInDb] = []
+
+            sale_profiles: list[CreateProductSaleProfile] = []
+            new_product_stats: list[CreateProductStat] = []
 
             # 2. PROCESAR CADA ITEM (Igual que un Entry Doc)
             for item in items_to_receive:
@@ -78,31 +88,22 @@ async def process_incoming_transfer(
                     salePrice=0,  # Ojo: Entra con precio 0, alguien deberá ponerle precio luego
                 )
 
-                await product_prof_col.create_product_sale_profile_if_not_exist_with_session(
-                    sale_profile.branchId,
-                    sale_profile.productId,
-                    sale_profile.model_dump(),
-                    session=session,
-                )
+                sale_profiles.append(sale_profile)
 
-                # C. Inicializar Stats (Si no existe en esta sucursal)
-                product_stats = CreateProductStat(
-                    branchId=destination_branch,
-                    productId=item.id,
-                    startDate=now_in_milliseconds,
-                    endDate=now_in_milliseconds,
-                    totalUnits=0,
-                    totalTransactions=0,
-                    daysAnalyzed=0,
-                    lastEstimation=now_in_milliseconds,
-                )
+                if destination_branch_in_db.isCommerce:
+                    # C. Inicializar Stats (Si no existe en esta sucursal)
+                    product_stats = CreateProductStat(
+                        branchId=destination_branch,
+                        productId=item.id,
+                        startDate=now_in_milliseconds,
+                        endDate=now_in_milliseconds,
+                        totalUnits=0,
+                        totalTransactions=0,
+                        daysAnalyzed=0,
+                        lastEstimation=now_in_milliseconds,
+                    )
 
-                await product_stats_col.create_product_stats_if_not_exist_with_session(
-                    product_stats.branchId,
-                    product_stats.productId,
-                    product_stats.model_dump(),
-                    session=session,
-                )
+                    new_product_stats.append(product_stats)
 
                 # D. Crear Transacción de ENTRADA
                 new_transaction = ProductTransactionInDb(
@@ -133,6 +134,19 @@ async def process_incoming_transfer(
             )
 
             updated_transfer_in_db = TransferInDb.model_validate(updated_transfer_dict)
+
+            # 4. INSERTAR PERFILES DE VENTA EN LOTE
+            sale_profiles_raw = [sp.model_dump() for sp in sale_profiles]
+            await product_prof_col.bulk_create_product_sale_profiles(
+                sale_profiles_raw, session=session
+            )
+
+            if destination_branch_in_db.isCommerce:
+                # 4. INSERTAR STATS EN LOTE
+                new_product_stats_raw = [ps.model_dump() for ps in new_product_stats]
+                await product_stats_col.bulk_create_product_stats_if_not_exist(
+                    new_product_stats_raw, session=session
+                )
 
             # 4. INSERTAR TRANSACCIONES EN LOTE
             created_transactions_data = [t.model_dump() for t in created_transactions]
