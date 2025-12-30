@@ -9,7 +9,7 @@ from repos.v1.entry_docs import (
     EntryDocInDb,
 )
 
-from tools import UuidTool, TimeTools
+from tools import UuidTool, TimeTools, BranchesTool
 
 from services import MongoService
 from services.mongo_collections.v1 import (
@@ -52,6 +52,13 @@ async def process_entry_doc(
 
             created_transactions: list[ProductTransactionInDb] = []
 
+            created_sales_profiles: list[CreateProductSaleProfile] = []
+            created_product_stats: list[CreateProductStat] = []
+
+            current_branch_in_db = BranchesTool().get_branch_by_id(entry_doc.branchId)
+            if current_branch_in_db is None:
+                raise Exception("Branch not found in process")
+
             for entry_item in entry_items:
                 result = await product_account_col.update_product_account_balance_data(
                     entry_item.productId,
@@ -71,31 +78,20 @@ async def process_entry_doc(
                     salePrice=0,
                 )
 
-                product_stats = CreateProductStat(
-                    branchId=updated_product_account.branchId,
-                    productId=updated_product_account.productId,
-                    startDate=now_in_milliseconds,
-                    endDate=now_in_milliseconds,
-                    totalUnits=0,
-                    totalTransactions=0,
-                    daysAnalyzed=0,
-                    lastEstimation=now_in_milliseconds,
-                )
-                await (
-                    product_prof.create_product_sale_profile_if_not_exist_with_session(
-                        sale_profile.branchId,
-                        sale_profile.productId,
-                        sale_profile.model_dump(),
-                        session=session,
-                    )
-                )
+                created_sales_profiles.append(sale_profile)
 
-                await product_stats_col.create_product_stats_if_not_exist_with_session(
-                    product_stats.branchId,
-                    product_stats.productId,
-                    product_stats.model_dump(),
-                    session=session,
-                )
+                if current_branch_in_db.isCommerce:
+                    product_stats = CreateProductStat(
+                        branchId=updated_product_account.branchId,
+                        productId=updated_product_account.productId,
+                        startDate=now_in_milliseconds,
+                        endDate=now_in_milliseconds,
+                        totalUnits=0,
+                        totalTransactions=0,
+                        daysAnalyzed=0,
+                        lastEstimation=now_in_milliseconds,
+                    )
+                    created_product_stats.append(product_stats)
 
                 new_transaction = ProductTransactionInDb(
                     id=UuidTool.generate_uuid(),
@@ -113,6 +109,27 @@ async def process_entry_doc(
 
                 created_transactions.append(new_transaction)
 
+            # Create sales profiles
+            raw_created_sales_profiles = [
+                sale_profile.model_dump() for sale_profile in created_sales_profiles
+            ]
+
+            await product_prof.bulk_create_product_sale_profiles(
+                raw_created_sales_profiles,
+                session=session,
+            )
+
+            # Create product stats
+            if current_branch_in_db.isCommerce:
+                raw_created_product_stats = [
+                    product_stat.model_dump() for product_stat in created_product_stats
+                ]
+                await product_stats_col.bulk_create_product_stats_if_not_exist(
+                    raw_created_product_stats,
+                    session=session,
+                )
+
+            # Create transactions
             created_transactions_data = [
                 transaction.model_dump() for transaction in created_transactions
             ]

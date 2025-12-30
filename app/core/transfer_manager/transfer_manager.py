@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from pymongo.errors import OperationFailure
 
 from core.counter_manager.counter_manager import CounterManager
+from tools import BranchesTool
 
 from repos.v1.transfers import (
     TransfersRepository,
@@ -178,7 +179,8 @@ class TransferManager:
     # ---------------------------------------------------------
     async def _validate_outgoing_transfer(self, doc: CreateTransfer):
         # 1. Validar Sucursal Origen
-        origin_branch = await self.branches_repo.get_branch_by_id(doc.origin)
+        branches_tool = BranchesTool()
+        origin_branch = branches_tool.get_branch_by_id(doc.origin)
         if origin_branch is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -186,7 +188,7 @@ class TransferManager:
             )
 
         # 2. Validar Sucursal Destino
-        destination_branch = await self.branches_repo.get_branch_by_id(doc.destination)
+        destination_branch = branches_tool.get_branch_by_id(doc.destination)
         if destination_branch is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

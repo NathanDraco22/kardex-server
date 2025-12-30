@@ -17,6 +17,8 @@ from core.default_values import (
     create_default_branch,
 )
 
+from tools import BranchesTool
+
 
 class CoreSettingsController:
     def __init__(
@@ -52,6 +54,8 @@ class CoreSettingsController:
         origin_user = CreateUser(username=res.ownerName, password="12345", role="Admin")
 
         await self.users_repo.create_user(origin_user)
+
+        await BranchesTool().refresh_current_branches()
 
         return res
 

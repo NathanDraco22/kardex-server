@@ -1,4 +1,3 @@
-from ast import Index
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel, UpdateOne
@@ -185,6 +184,25 @@ class ProductStatsCollection:
             },
         )
 
+    async def bulk_create_product_stats_if_not_exist(
+        self, product_stats: list[dict], session: Any
+    ):
+        collection = self.__collection
+
+        update_operations = [
+            UpdateOne(
+                {
+                    "branchId": product_stat["branchId"],
+                    "productId": product_stat["productId"],
+                },
+                {"$setOnInsert": product_stat},
+                upsert=True,
+            )
+            for product_stat in product_stats
+        ]
+
+        await collection.bulk_write(update_operations, session=session)
+
     async def create_product_stats_if_not_exist_with_session(
         self,
         branch_id: str,
@@ -193,15 +211,6 @@ class ProductStatsCollection:
         session: Any,
     ):
         collection = self.__collection
-
-        branches_collection = MongoService().get_collection("Branches")
-
-        is_valid_commerce = await branches_collection.find_one(
-            {"id": branch_id, "isCommerce": True}, session=session
-        )
-
-        if not is_valid_commerce:
-            return None
 
         await collection.find_one_and_update(
             {
