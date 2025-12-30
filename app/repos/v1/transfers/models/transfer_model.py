@@ -7,7 +7,9 @@ TransferStatus = Literal["inTransit", "received", "cancelled"]
 
 class BaseTransfer(BaseModel):
     origin: str
+    originName: str
     destination: str
+    destinationName: str
     docNumber: str = ""
     description: str = ""
     status: TransferStatus
