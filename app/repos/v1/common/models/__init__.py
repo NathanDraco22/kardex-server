@@ -3,6 +3,8 @@ from .client_info import ClientInfo
 from .user_info import UserInfo
 from .branch_detail import CommercialBranchDetail, InventoryBranchDetail
 from .transfer_item import TransferItem
+from .entry_item import EntryItem
+from .exit_item import ExitItem
 
 
 __all__ = [
@@ -14,4 +16,6 @@ __all__ = [
     "CommercialBranchDetail",
     "InventoryBranchDetail",
     "TransferItem",
+    "EntryItem",
+    "ExitItem",
 ]

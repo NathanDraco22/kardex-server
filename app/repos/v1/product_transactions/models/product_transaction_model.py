@@ -11,6 +11,8 @@ TransactionSubType = Literal[
     "invoice",
     "devolution",
     "transfer",
+    "adjustment",
+    "loss",
 ]
 
 

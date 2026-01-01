@@ -187,6 +187,9 @@ class ProductStatsCollection:
     async def bulk_create_product_stats_if_not_exist(
         self, product_stats: list[dict], session: Any
     ):
+        if not product_stats:
+            return
+
         collection = self.__collection
 
         update_operations = [
