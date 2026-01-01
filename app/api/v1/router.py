@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 
+from .adjust_entries.adjust_entries_router import adjust_entries_router
+from .adjust_exits.adjust_exits_router import adjust_exits_router
 from .admin_panels.admin_panels_router import admin_panels_router
 from .auths.auths_router import auths_router
 from .branches.branches_router import branches_router
@@ -38,6 +40,8 @@ from .users.users_router import users_router
 
 router_v1 = APIRouter(tags=["apiV1"])
 
+router_v1.include_router(adjust_entries_router, prefix="/adjust-entries")
+router_v1.include_router(adjust_exits_router, prefix="/adjust-exits")
 router_v1.include_router(admin_panels_router, prefix="/admin-panels")
 router_v1.include_router(auths_router, prefix="/auths")
 router_v1.include_router(branches_router, prefix="/branches")

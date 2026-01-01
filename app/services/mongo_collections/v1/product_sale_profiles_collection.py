@@ -151,6 +151,9 @@ class ProductSaleProfilesCollection:
     async def bulk_create_product_sale_profiles(
         self, product_sale_profiles: list[dict], session: Any
     ):
+        if not product_sale_profiles:
+            return
+
         collection = self.__collection
 
         update_operations = [

@@ -1,5 +1,7 @@
 from .account_balances_collection import AccountBalancesCollection
 from .accounts_collection import AccountsCollection
+from .adjust_entries_collection import AdjustEntriesCollection
+from .adjust_exits_collection import AdjustExitsCollection
 from .branches_collection import BranchesCollection
 from .client_transactions_collection import ClientTransactionsCollection
 from .clients_collection import ClientsCollection
@@ -31,6 +33,8 @@ from .users_collection import UsersCollection
 __all__ = [
     "AccountBalancesCollection",
     "AccountsCollection",
+    "AdjustEntriesCollection",
+    "AdjustExitsCollection",
     "BranchesCollection",
     "ClientTransactionsCollection",
     "ClientsCollection",
@@ -53,8 +57,8 @@ __all__ = [
     "ProductsCollection",
     "ReceiptsCollection",
     "SuppliersCollection",
-    "TransfersCollection",
     "TransactionsCollection",
+    "TransfersCollection",
     "UnitsCollection",
     "UserRolesCollection",
     "UsersCollection",

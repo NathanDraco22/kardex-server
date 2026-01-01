@@ -40,3 +40,8 @@ class CounterManager:
         res = await self.counters_repository.increment_counter("transferNumber")
         formatted = str(res.value)
         return formatted
+
+    async def next_adjust_number(self) -> str:
+        res = await self.counters_repository.increment_counter("adjustNumber")
+        formatted = str(res.value)
+        return formatted
