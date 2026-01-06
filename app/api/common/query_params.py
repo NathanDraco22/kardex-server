@@ -12,3 +12,10 @@ class InvoiceQueryParams(BaseModel):
     createdBy: str | None = None
     offset: int = 0
     limit: int = 50
+
+
+class AdjustQueryParams(BaseModel):
+    offset: int = 0
+    limit: int = 50
+    branchId: str | None = None
+    endDate: int | None = None

@@ -1,12 +1,5 @@
-from pydantic import BaseModel, Field
-from repos.v1.common.models import UserInfo
-
-
-class EntryItem(BaseModel):
-    productId: str
-    productName: str
-    cost: int
-    quantity: int = Field(..., gt=0)
+from pydantic import BaseModel
+from repos.v1.common.models import UserInfo, EntryItem
 
 
 class BaseEntryDoc(BaseModel):

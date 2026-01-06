@@ -14,14 +14,14 @@ class BranchesCollection:
 
     def __init__(self):
         mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
+        self._collection = mongo_service.get_collection(self.collection_name)
 
     async def create_branch(self, branch: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(branch)
 
     async def create_branch_if_absent(self, branch_id: str, branch: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.update_one(
             {"id": branch_id},
             {"$setOnInsert": branch},
@@ -29,8 +29,17 @@ class BranchesCollection:
         )
 
     async def fetch_all_branches(self) -> list[dict[str, Any]]:
-        collection = self.__collection
-        cursor = collection.find()
+        collection = self._collection
+        cursor = collection.find({}, {"image": 0})
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
+    async def fetch_all_commerce_branches(self) -> list[dict[str, Any]]:
+        collection = self._collection
+        cursor = collection.find({"isCommerce": True})
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -38,7 +47,7 @@ class BranchesCollection:
         return result
 
     async def fetch_branch_by_id(self, branch_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": branch_id})
         return result
 
@@ -47,7 +56,7 @@ class BranchesCollection:
         branch_id: str,
         branch: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": branch_id},
@@ -58,6 +67,6 @@ class BranchesCollection:
         return result
 
     async def delete_branch_by_id(self, branch_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_delete({"id": branch_id})
         return result

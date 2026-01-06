@@ -6,8 +6,8 @@ class ProductInfo(BaseModel):
     name: str
     description: str | None = None
     code: str | None = None
-    brandName: str
-    unitName: str
+    brandName: str | None = None
+    unitName: str | None = None
     categoryName: str | None = None
 
 

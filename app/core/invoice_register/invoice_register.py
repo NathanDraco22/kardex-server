@@ -1,6 +1,7 @@
 import asyncio
 from typing import Callable, Coroutine
 from fastapi import HTTPException, status
+from tools import BranchesTool
 
 from repos.v1.invoices import (
     CreateInvoice,
@@ -94,7 +95,7 @@ class InvoiceRegister:
         return await self._register_transaction(create_invoice, process_anon_invoice)
 
     async def _validate_document(self, doc: CreateInvoice):
-        branch = await self.branches_repo.get_branch_by_id(doc.branchId)
+        branch = BranchesTool().get_branch_by_id(doc.branchId)
         if branch is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="BRANCH_NOT_FOUND"

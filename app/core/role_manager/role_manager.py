@@ -9,6 +9,7 @@ class Modules:
     COMMERCIAL = "commercial"
     FINANCE = "finance"
     INVENTORY = "inventory"
+    ADVANCED_TOOLS = "advancedTools"
     SETTINGS = "settings"
 
 
@@ -56,6 +57,26 @@ default_roles = [
             Modules.CLIENTS,
             Modules.PRODUCTS,
             Modules.INVENTORY,
+        ],
+    ),
+    UserRole(
+        name="Supervisor",
+        access=[
+            Modules.COMMERCIAL,
+            CommercialSubModules.ORDERS,
+            CommercialSubModules.CREATE_ORDER,
+            CommercialSubModules.CREATE_INVOICE,
+            CommercialSubModules.PENDING_INVOICES,
+            CommercialSubModules.INVOICE_HISTORY,
+            CommercialSubModules.PRICE_SETTING,
+            CommercialSubModules.CREATE_DEVOLUTION,
+            CommercialSubModules.DEVOLUTION_HISTORY,
+            CommercialSubModules.PROCESS_DEVOLUTION,
+            Modules.SUPPLIERS,
+            Modules.CLIENTS,
+            Modules.PRODUCTS,
+            Modules.INVENTORY,
+            Modules.ADVANCED_TOOLS,
         ],
     ),
 ]

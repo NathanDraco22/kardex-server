@@ -1,5 +1,10 @@
 from .data.expiration_logs_datasource import ExpirationLogsDataSource
-from .models.expiration_log_model import CreateExpirationLog, UpdateExpirationLog, ExpirationLogInDb
+from .models.expiration_log_model import (
+    CreateExpirationLog,
+    UpdateExpirationLog,
+    ExpirationLogInDb,
+    ProductInfo,
+)
 from .expiration_logs_repository import ExpirationLogsRepository
 
 __all__ = [
@@ -8,4 +13,5 @@ __all__ = [
     "UpdateExpirationLog",
     "ExpirationLogInDb",
     "ExpirationLogsRepository",
+    "ProductInfo",
 ]

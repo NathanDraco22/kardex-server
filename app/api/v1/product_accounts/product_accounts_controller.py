@@ -1,30 +1,30 @@
 from responses.v1 import ListResponse
-from repos.v1.products import (
-    ProductsRepository,
-    ProductInDbWithAccounts,
-    ProductsDataSource,
+from repos.v1.product_accounts import (
+    ProductAccountsRepository,
+    ProductAccountsDataSource,
+    ProductAccountInDb,
 )
 
 
 class ProductAccountsController:
-    def __init__(self, product_repo: ProductsRepository) -> None:
-        self.product_repo = product_repo
+    def __init__(self, product_account_repo: ProductAccountsRepository) -> None:
+        self.product_account_repo = product_account_repo
         pass
 
-    async def get_all_product_with_accounts(
-        self, branch_id: str, current_pos: int
-    ) -> ListResponse[ProductInDbWithAccounts]:
-        LIMIT = 50
-        page = int((current_pos / LIMIT) + 1)
-        res = await self.product_repo.get_all_products_with_accounts(
-            branch_id, page, LIMIT
+    async def get_product_accounts_by_product(
+        self, product_id: str
+    ) -> ListResponse[ProductAccountInDb]:
+        res = await self.product_account_repo.get_product_accounts_by_product(
+            product_id
         )
-        models = [ProductInDbWithAccounts.model_validate(result) for result in res]
-        return ListResponse(count=len(models), data=models)
+        return ListResponse(
+            data=res,
+            count=len(res),
+        )
 
 
 product_accounts_controller = ProductAccountsController(
-    product_repo=ProductsRepository(
-        products_ds=ProductsDataSource(),
-    )
+    product_account_repo=ProductAccountsRepository(
+        product_accounts_ds=ProductAccountsDataSource()
+    ),
 )
