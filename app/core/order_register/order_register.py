@@ -17,6 +17,8 @@ from core.counter_manager.counter_manager import CounterManager
 
 from .process_order import process_order, InsufficientBalanceError
 
+from tools import BranchesTool
+
 
 class OrderRegister:
     def __init__(self) -> None:
@@ -25,7 +27,7 @@ class OrderRegister:
         self.products_repo = ProductsRepository(ProductsDataSource())
 
     async def validate_document(self, doc: CreateOrder):
-        branch = await self.branches_repo.get_branch_by_id(doc.branchId)
+        branch = BranchesTool().get_branch_by_id(doc.branchId)
         if branch is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="BRANCH_NOT_FOUND"

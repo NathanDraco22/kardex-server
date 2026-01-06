@@ -25,3 +25,7 @@ class ProductTransactionsDataSource:
     ) -> dict[str, Any] | None:
         collection = ProductTransactionsCollection()
         return await collection.fetch_product_transaction_by_id(product_transaction_id)
+
+    async def estimate_product_stats(self, **kwargs) -> None:
+        collection = ProductTransactionsCollection()
+        await collection.estimate_invoice_product_stats(**kwargs)

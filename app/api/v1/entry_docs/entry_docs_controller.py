@@ -1,8 +1,14 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, BackgroundTasks
 
 from responses.v1.list_response import ListResponse
 from core.product_ledger.product_ledger_manager import ProductLedgerManager
 
+from repos.v1.expiration_logs import (
+    ExpirationLogsRepository,
+    ExpirationLogsDataSource,
+    CreateExpirationLog,
+    ProductInfo,
+)
 from repos.v1.entry_docs import (
     CreateEntryDoc,
     EntryDocInDb,
@@ -16,12 +22,43 @@ class EntryDocsController:
         self,
         entry_docs_repo: EntryDocsRepository,
         product_ledger_manager: ProductLedgerManager,
+        expiration_logs_repo: ExpirationLogsRepository,
     ) -> None:
         self.entry_docs_repo = entry_docs_repo
         self.product_ledger_manager = product_ledger_manager
+        self.expiration_logs_repo = expiration_logs_repo
 
-    async def create_entry_doc(self, body: CreateEntryDoc) -> EntryDocInDb:
+    async def _create_expiration_logs(self, entry_doc: EntryDocInDb) -> None:
+        try:
+            entry_items = entry_doc.items
+            creation_logs: list[CreateExpirationLog] = []
+            for entry_item in entry_items:
+                expiration_date = entry_item.expirationDate
+                if expiration_date is None:
+                    continue
+                product_info = ProductInfo(
+                    id=entry_item.productId,
+                    name=entry_item.productName,
+                    brandName=entry_item.brandName,
+                    unitName=entry_item.unitName,
+                )
+                new_expiration_log = CreateExpirationLog(
+                    product=product_info,
+                    branchId=entry_doc.branchId,
+                    expirationDate=expiration_date,
+                )
+                creation_logs.append(new_expiration_log)
+
+            await self.expiration_logs_repo.create_many_expiration_logs(creation_logs)
+
+        except Exception as e:
+            print(e)
+
+    async def create_entry_doc(
+        self, body: CreateEntryDoc, bg_tasks: BackgroundTasks
+    ) -> EntryDocInDb:
         entry_doc, _ = await self.product_ledger_manager.regis_entry_doc(body)
+        bg_tasks.add_task(self._create_expiration_logs, entry_doc)
         return entry_doc
 
     async def get_all_entry_docs(self) -> list[EntryDocInDb]:
@@ -54,4 +91,7 @@ entry_docs_controller = EntryDocsController(
         entry_docs_ds=EntryDocsDataSource(),
     ),
     product_ledger_manager=ProductLedgerManager(),
+    expiration_logs_repo=ExpirationLogsRepository(
+        expiration_logs_ds=ExpirationLogsDataSource(),
+    ),
 )

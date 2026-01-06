@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 
 
 from responses.v1.list_response import ListResponse
@@ -12,8 +12,10 @@ entry_docs_router = APIRouter(tags=["entry_docsV1"])
 
 
 @entry_docs_router.post("")
-async def create_entry_doc(body: CreateEntryDoc) -> EntryDocInDb:
-    return await entry_docs_controller.create_entry_doc(body)
+async def create_entry_doc(
+    body: CreateEntryDoc, bg_tasks: BackgroundTasks
+) -> EntryDocInDb:
+    return await entry_docs_controller.create_entry_doc(body, bg_tasks)
 
 
 @entry_docs_router.get("")

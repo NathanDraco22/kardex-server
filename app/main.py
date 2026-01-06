@@ -5,6 +5,7 @@ from fastapi.responses import ORJSONResponse
 from dotenv import load_dotenv
 from api.v1.router import router_v1
 from app_lifespan import lifespan
+from tools import NotModified, not_modified_exception_handler
 
 load_dotenv()
 
@@ -19,6 +20,9 @@ app = FastAPI(
     openapi_url=open_api_url,
     lifespan=lifespan,
 )
+
+app.add_exception_handler(NotModified, not_modified_exception_handler)
+
 
 app.add_middleware(
     CORSMiddleware,

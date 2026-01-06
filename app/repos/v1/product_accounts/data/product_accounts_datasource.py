@@ -24,6 +24,12 @@ class ProductAccountsDataSource:
             product_id, branch_id
         )
 
+    async def get_product_accounts_by_product(
+        self, product_id: str
+    ) -> list[dict[str, Any]]:
+        collection = ProductAccountsCollection()
+        return await collection.get_product_accounts_by_product(product_id)
+
     async def get_product_account_with_product_data(
         self,
         product_id: str,

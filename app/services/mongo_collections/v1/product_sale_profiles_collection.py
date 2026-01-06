@@ -1,6 +1,6 @@
 from typing import Any
 
-from pymongo import ReturnDocument, IndexModel
+from pymongo import ReturnDocument, IndexModel, UpdateOne
 from services import MongoService
 
 
@@ -147,6 +147,28 @@ class ProductSaleProfilesCollection:
                 ),
             ]
         )
+
+    async def bulk_create_product_sale_profiles(
+        self, product_sale_profiles: list[dict], session: Any
+    ):
+        if not product_sale_profiles:
+            return
+
+        collection = self.__collection
+
+        update_operations = [
+            UpdateOne(
+                {
+                    "branchId": product_sale_profile["branchId"],
+                    "productId": product_sale_profile["productId"],
+                },
+                {"$setOnInsert": product_sale_profile},
+                upsert=True,
+            )
+            for product_sale_profile in product_sale_profiles
+        ]
+
+        await collection.bulk_write(update_operations, session=session)
 
     async def create_product_sale_profile_if_not_exist_with_session(
         self,

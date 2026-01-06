@@ -25,6 +25,8 @@ from repos.v1.product_accounts import (
 )
 from repos.v1.products import ProductsRepository, ProductsDataSource
 
+from tools import BranchesTool
+
 
 from .process_entry_doc import process_entry_doc
 from .process_exit_doc import process_exit_doc, InsufficientBalanceError
@@ -136,7 +138,7 @@ class ProductLedgerManager:
         )
 
     async def _validate_document(self, doc):
-        branch = await self.branches_repo.get_branch_by_id(doc.branchId)
+        branch = BranchesTool().get_branch_by_id(doc.branchId)
         if branch is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="BRANCH_NOT_FOUND"

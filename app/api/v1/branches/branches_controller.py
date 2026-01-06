@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 
+from tools import BranchesTool
 from repos.v1.branches import (
     CreateBranch,
     UpdateBranch,
@@ -16,7 +17,9 @@ class BranchesController:
         self.branches_repo = branches_repo
 
     async def create_branch(self, body: CreateBranch) -> BranchInDb:
-        return await self.branches_repo.create_branch(body)
+        res = await self.branches_repo.create_branch(body)
+        await BranchesTool().refresh_current_branches()
+        return res
 
     async def get_all_branches(self) -> ListResponse[BranchInDb]:
         branches = await self.branches_repo.get_all_branches()
@@ -26,6 +29,10 @@ class BranchesController:
         )
 
     async def get_branch_by_id(self, branch_id: str) -> BranchInDb:
+        cache_branches = BranchesTool().get_branch_by_id(branch_id)
+        if cache_branches is not None:
+            return cache_branches
+
         branch = await self.branches_repo.get_branch_by_id(branch_id)
         if branch is None:
             raise HTTPException(
@@ -43,6 +50,8 @@ class BranchesController:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Branch not found",
             )
+
+        await BranchesTool().refresh_current_branches()
         return updated_branch
 
     async def delete_branch_by_id(self, branch_id: str) -> BranchInDb:
@@ -52,6 +61,8 @@ class BranchesController:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Branch not found",
             )
+
+        await BranchesTool().refresh_current_branches()
         return deleted_branch
 
 
