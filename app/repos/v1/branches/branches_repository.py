@@ -44,6 +44,7 @@ class BranchesRepository:
         branch = BranchInDb.model_validate(result)
 
         EtagTool().set_tag(branch.id, str(branch.updatedAt))
+        EtagTool().set_last_update_branch_etag(str(branch.updatedAt))
 
         return branch
 
@@ -61,11 +62,12 @@ class BranchesRepository:
         if result is None:
             return None
 
-        uupdated_branch = BranchInDb.model_validate(result)
+        updated_branch = BranchInDb.model_validate(result)
 
-        EtagTool().set_tag(uupdated_branch.id, str(uupdated_branch.updatedAt))
+        EtagTool().set_tag(updated_branch.id, str(updated_branch.updatedAt))
+        EtagTool().set_last_update_branch_etag(str(updated_branch.updatedAt))
 
-        return uupdated_branch
+        return updated_branch
 
     async def delete_branch_by_id(self, branch_id: str) -> BranchInDb | None:
         result = await self.branches_ds.delete_branch_by_id(branch_id)
