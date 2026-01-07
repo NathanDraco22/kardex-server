@@ -30,7 +30,7 @@ class BranchesCollection:
 
     async def fetch_all_branches(self) -> list[dict[str, Any]]:
         collection = self._collection
-        cursor = collection.find({}, {"image": 0})
+        cursor = collection.find()
 
         result = await cursor.to_list(length=None)
         await cursor.close()
