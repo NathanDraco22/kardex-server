@@ -10,6 +10,7 @@ from repos.v1.users import (
 )
 
 from responses.v1 import ListResponse
+from tools.users_tool import UsersTool
 
 
 class UsersController:
@@ -51,6 +52,10 @@ class UsersController:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
             )
+
+        if body.isActive is not None:
+            await UsersTool().refresh_inactive_users()
+
         return updated_user
 
     async def delete_user_by_id(self, user_id: str) -> UserInDb:
