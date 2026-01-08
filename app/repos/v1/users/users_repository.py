@@ -37,6 +37,11 @@ class UsersRepository:
         models = [UserInDbWithRole.model_validate(result) for result in results]
         return models
 
+    async def get_all_inactive_users(self) -> list[UserInDb]:
+        results = await self.users_ds.get_inactive_users()
+        models = [UserInDb.model_validate(result) for result in results]
+        return models
+
     async def get_user_by_id(self, user_id: str) -> UserInDbWithRole | None:
         result = await self.users_ds.get_user_by_id(user_id)
 

@@ -102,6 +102,7 @@ class AuthsController:
         token = TokenManager.encode_token(
             {
                 "user": {
+                    "id": user.id,
                     "username": user.username,
                     "userRole": user.userRole.model_dump(),
                 },

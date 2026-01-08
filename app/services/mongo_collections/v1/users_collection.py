@@ -89,6 +89,25 @@ class UsersCollection:
 
         return result
 
+    async def get_inactive_users(self) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "isDeleted": False,
+                        "isActive": False,
+                    },
+                },
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def fetch_user_by_id(self, user_id: str) -> dict[str, Any] | None:
         collection = self.__collection
 
