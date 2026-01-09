@@ -53,6 +53,8 @@ async def get_branch_by_id(
 
     result = await branches_controller.get_branch_by_id(branch_id)
 
+    current_tag = EtagTool().get_etag(branch_id)
+
     if current_tag is not None:
         response.headers["ETag"] = current_tag.value
 

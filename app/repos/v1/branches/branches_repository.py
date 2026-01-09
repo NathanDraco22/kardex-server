@@ -44,7 +44,6 @@ class BranchesRepository:
         branch = BranchInDb.model_validate(result)
 
         EtagTool().set_tag(branch.id, str(branch.updatedAt))
-        EtagTool().set_last_update_branch_etag(str(branch.updatedAt))
 
         return branch
 
