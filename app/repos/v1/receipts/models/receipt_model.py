@@ -28,8 +28,8 @@ class BaseReceipt(BaseModel):
     clientId: str
     clientInfo: ClientInfo
     docNumber: str = ""
-    appliedInvoices: list[AppliedInvoice]
-    appliedDevolutions: list[AppliedDevolution]
+    appliedInvoices: list[AppliedInvoice] = []
+    appliedDevolutions: list[AppliedDevolution] = []
     paymentMethod: PaymentMethod
     bankReference: str = ""
     total: int
