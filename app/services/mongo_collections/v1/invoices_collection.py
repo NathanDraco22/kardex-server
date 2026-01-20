@@ -96,6 +96,13 @@ class InvoicesCollection:
         result = await collection.find_one({"id": invoice_id})
         return result
 
+    async def fetch_invoice_by_id_with_session(
+        self, invoice_id: str, session: Any
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+        result = await collection.find_one({"id": invoice_id}, session=session)
+        return result
+
     async def fetch_invoice_by_doc_number(
         self, docNumber: str
     ) -> dict[str, Any] | None:
@@ -149,7 +156,7 @@ class InvoicesCollection:
                         "$cond": {
                             "if": {"$gte": ["$amountPaid", "$total"]},
                             "then": "paid",
-                            "else": "partially_paid",
+                            "else": "partiallyPaid",
                         }
                     },
                     "paidAt": {

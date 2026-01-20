@@ -9,7 +9,7 @@ from repos.v1.common.models import (
     UserInfo,
 )
 
-InvoiceStatus = Literal["draft", "open", "paid", "partially_paid", "cancelled"]
+InvoiceStatus = Literal["draft", "open", "paid", "partiallyPaid", "cancelled"]
 
 
 class BaseInvoice(BaseModel):

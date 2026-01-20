@@ -6,6 +6,7 @@ from services.mongo_collections.v1 import (
     ClientsCollection,
     DevolutionsCollection,
 )
+from repos.v1.invoices import InvoiceInDb
 from repos.v1.receipts import CreateReceipt, ReceiptInDb
 from repos.v1.client_transactions import ClientTransactionInDb
 from repos.v1.clients import ClientInDb
@@ -29,7 +30,19 @@ async def process_receipt(
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
-            # 1. Crear el documento de recibo
+            # 1. Validar Cuadratura de Sumas (Total + Devoluciones == Facturas Aplicadas)
+            total_funds = create_receipt.total + sum(
+                d.amountApplied for d in create_receipt.appliedDevolutions
+            )
+            total_applied = sum(i.amountApplied for i in create_receipt.appliedInvoices)
+
+            if total_funds != total_applied:
+                raise Exception(
+                    f"Discrepancy Error: Total Funds ({total_funds}) "
+                    f"does not match Total Applied to Invoices ({total_applied})."
+                )
+
+            # 2. Crear el documento de recibo
             new_receipt_data = create_receipt.model_dump()
             new_receipt_data["id"] = UuidTool.generate_uuid()
             new_receipt_data["createdAt"] = TimeTools.get_now_in_milliseconds()
@@ -39,8 +52,37 @@ async def process_receipt(
             )
             new_receipt_in_db = ReceiptInDb.model_validate(insert_result)
 
-            # 2. Aplicar el pago a cada factura involucrada
+            # 3. Aplicar el pago a cada factura involucrada
             for applied_invoice in create_receipt.appliedInvoices:
+                # A. Validar que el monto no exceda el saldo pendiente (Overpayment Protection)
+                current_invoice_data = (
+                    await invoice_col.fetch_invoice_by_id_with_session(
+                        invoice_id=applied_invoice.invoiceId, session=session
+                    )
+                )
+
+                if current_invoice_data is None:
+                    # Si no existe, fallará más adelante o aquí mismo.
+                    # Asumimos que existe validación previa,
+                    # pero por seguridad devolvemos error.
+                    raise Exception(f"Invoice {applied_invoice.invoiceId} not found")
+
+                current_invoice = InvoiceInDb.model_validate(current_invoice_data)
+
+                total_amount = current_invoice.total
+                amount_paid_so_far = current_invoice.amountPaid
+                pending_balance = total_amount - amount_paid_so_far
+
+                # Permitimos un pequeño margen de error por flotantes si fuera necesario,
+                # pero aquí trabajamos con enteros (centavos presumably).
+                if applied_invoice.amountApplied > pending_balance:
+                    raise Exception(
+                        f"Overpayment Error: Payment of {applied_invoice.amountApplied} "
+                        f"exceeds pending balance of {pending_balance} "
+                        f"for Invoice {current_invoice.docNumber}"
+                    )
+
+                # B. Aplicar el pago
                 await invoice_col.add_to_amount_paid(
                     invoice_id=applied_invoice.invoiceId,
                     amount_paid=applied_invoice.amountApplied,

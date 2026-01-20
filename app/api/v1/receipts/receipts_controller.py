@@ -42,6 +42,15 @@ class ReceiptsController:
             data=receipts,
         )
 
+    async def get_receipts_by_invoice_id(
+        self, invoice_id: str
+    ) -> ListResponse[ReceiptInDb]:
+        receipts = await self.receipts_repo.get_receipts_by_invoice_id(invoice_id)
+        return ListResponse(
+            count=len(receipts),
+            data=receipts,
+        )
+
     async def get_totals_from_receipts(
         self, query_params: ReceiptQueryParams
     ) -> ReceiptTotal:
