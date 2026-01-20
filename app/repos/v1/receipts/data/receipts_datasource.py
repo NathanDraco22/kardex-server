@@ -18,6 +18,10 @@ class ReceiptsDataSource:
         collection = ReceiptsCollection()
         return await collection.fetch_all_receipts(**kwargs)
 
+    async def get_receipts_by_invoice_id(self, invoice_id: str) -> list[dict[str, Any]]:
+        collection = ReceiptsCollection()
+        return await collection.fetch_receipts_by_invoice_id(invoice_id)
+
     async def get_totals_from_receipts(self, **kwargs) -> dict[str, Any]:
         collection = ReceiptsCollection()
         return await collection.get_totals_from_receipts(**kwargs)

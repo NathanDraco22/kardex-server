@@ -1,5 +1,4 @@
 from fastapi import HTTPException, status
-
 from tools import BranchesTool
 from repos.v1.branches import (
     CreateBranch,
@@ -29,10 +28,6 @@ class BranchesController:
         )
 
     async def get_branch_by_id(self, branch_id: str) -> BranchInDb:
-        cache_branches = BranchesTool().get_branch_by_id(branch_id)
-        if cache_branches is not None:
-            return cache_branches
-
         branch = await self.branches_repo.get_branch_by_id(branch_id)
         if branch is None:
             raise HTTPException(

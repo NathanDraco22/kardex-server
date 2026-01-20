@@ -24,6 +24,11 @@ async def get_all_receipts(
     return await receipts_controller.get_all_receipts(query_params)
 
 
+@receipts_router.get("/invoice/{invoice_id}")
+async def get_receipts_by_invoice_id(invoice_id: str) -> ListResponse[ReceiptInDb]:
+    return await receipts_controller.get_receipts_by_invoice_id(invoice_id)
+
+
 @receipts_router.get("/totals")
 async def get_totals_from_receipts(
     query_params: ReceiptQueryParams = Depends(),

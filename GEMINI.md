@@ -35,3 +35,23 @@ Revisión profunda del módulo `transfers` (`router`, `controller`, `manager`, `
 
 ### Acciones
 - Actualizado reporte `review_transfers.md` con análisis detallado por endpoint.
+
+# Contexto de Conversación - Code Review Branches ETag
+
+## Fecha: 2026-01-08
+### Objetivo
+Revisión profunda de `app\api\v1\branches\branches_router.py` con foco en la lógica de `ETag`.
+
+### Diagnóstico
+1.  **Estado NO Compartido (Critical)**: `EtagTool` usa estado en memoria (`_tags: dict`) que se pierde al reiniciar y NO se comparte entre workers (Uvicorn). Esto causa incositencias graves (clients getting stale 304s).
+2.  **Acoplamiento y Responsabilidad**: El repositorio (`BranchesRepository`) actualiza explícitamente el `EtagTool`. Esto es un anti-patrón; la capa de datos no debería conocer sobre mecanismos de caché HTTP.
+3.  **Lógica Rota en Lectura**: `get_all_branches` devuelve un ETag incompleto ("-") o nulo hasta que ocurre una escritura en esa instancia del servidor, inutilizando el caché para contenido estático inicial.
+4.  **Ineficiencia**: `create_branch` ejecuta consultas pesadas (`estimated_document_count`) sincrónicamente para actualizar el ETag.
+
+### Recomendación
+Eliminar `EtagTool` stateful. Implementar generación de ETag sin estado (Calculado al vuelo en base a `updatedAt` o hash del contenido) o usar Redis si se requiere persistencia distribuida.
+
+### Discusión con Usuario
+- **Usuario**: Considera que no es grave, asumiendo que el ETag se generará eventualmente.
+- **Riesgo Clarificado**: El mayor riesgo es en entornos con múltiples workers (Gunicorn/Uvicorn). Si Worker A actualiza el dato (y su ETag local), Worker B no se entera. Un cliente consultando a Worker B podría recibir un `304 Not Modified` incorrecto y ver **datos viejos**, aunque la base de datos ya esté actualizada. Esto es un riesgo de inconsistencia de datos, no solo de eficiencia.
+- **Conclusión Final**: El usuario confirma que el despliegue es **Single Instance**. Bajo esta restricción, el riesgo de inconsistencia desaparece. Se mantiene la observación sobre el acoplamiento arquitectónico (Repository -> EtagTool), pero se acepta la solución actual como válida para el contexto de uso.

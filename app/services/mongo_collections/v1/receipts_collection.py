@@ -44,6 +44,17 @@ class ReceiptsCollection:
 
         return result
 
+    async def fetch_receipts_by_invoice_id(
+        self, invoice_id: str
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+        cursor = collection.find({"appliedInvoices.invoiceId": invoice_id})
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def get_totals_from_receipts(self, **kwargs) -> dict[str, Any]:
         collection = self.__collection
 
