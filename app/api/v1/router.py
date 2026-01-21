@@ -32,6 +32,7 @@ from .product_transactions.product_transactions_router import (
 )
 from .products.products_router import products_router
 from .receipts.receipts_router import receipts_router
+from .reports.reports_router import reports_router
 from .suppliers.suppliers_router import suppliers_router
 from .transfers.transfers_router import transfers_router
 from .units.units_router import units_router
@@ -68,6 +69,7 @@ router_v1.include_router(product_stats_router, prefix="/product-stats")
 router_v1.include_router(product_transactions_router, prefix="/product-transactions")
 router_v1.include_router(products_router, prefix="/products")
 router_v1.include_router(receipts_router, prefix="/receipts")
+router_v1.include_router(reports_router, prefix="/reports")
 router_v1.include_router(suppliers_router, prefix="/suppliers")
 router_v1.include_router(transfers_router, prefix="/transfers")
 router_v1.include_router(units_router, prefix="/units")
