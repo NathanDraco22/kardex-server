@@ -1,6 +1,8 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, BackgroundTasks
 from api.common.query_params import AdjustQueryParams
 from core.adjust_ledger.adjust_ledger import AdjustLedgerManager
+from core.app_notifier.app_notifier import AppNotifier
+from tools import BranchesTool
 
 from responses.v1 import ListResponse
 
@@ -18,8 +20,21 @@ class AdjustExitsController:
         self.adjust_exits_repo = adjust_exits_repo
         self.adjust_ledger_manager = AdjustLedgerManager()
 
-    async def create_adjust_exit(self, body: CreateAdjustExit) -> AdjustExitInDb:
+    async def create_adjust_exit(
+        self, body: CreateAdjustExit, bg_tasks: BackgroundTasks
+    ) -> AdjustExitInDb:
         res, _ = await self.adjust_ledger_manager.regis_adjust_exit(body)
+
+        doc_branch = BranchesTool().get_branch_by_id(res.branchId)
+
+        if doc_branch is not None:
+            bg_tasks.add_task(
+                AppNotifier().notify_adjustments,
+                doc_branch.name,
+                res.docNumber,
+                "out",
+                res.createdBy.name,
+            )
         return res
 
     async def get_all_adjust_exits(

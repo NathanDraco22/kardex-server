@@ -16,6 +16,7 @@ from .executive_summaries.executive_summaries_router import executive_summaries_
 from .exit_docs.exit_docs_router import exit_docs_router
 from .exit_histories.exit_histories_router import exit_histories_router
 from .expiration_logs.expiration_logs_router import expiration_logs_router
+from .integrations.integrations_router import integrations_router
 from .inventories.inventories_router import inventories_router
 from .invoice_devolutions.invoice_devolutions_router import invoice_devolutions_router
 from .invoices.invoices_router import invoices_router
@@ -23,13 +24,9 @@ from .orders.orders_router import orders_router
 from .product_accounts.product_accounts_router import product_accounts_router
 from .product_categories.product_categories_router import product_categories_router
 from .product_prices.product_prices_router import product_prices_router
-from .product_sale_profiles.product_sale_profiles_router import (
-    product_sale_profiles_router,
-)
+from .product_sale_profiles.product_sale_profiles_router import sale_prof_router
 from .product_stats.product_stats_router import product_stats_router
-from .product_transactions.product_transactions_router import (
-    product_transactions_router,
-)
+from .product_transactions.product_transactions_router import prod_tx_router
 from .products.products_router import products_router
 from .receipts.receipts_router import receipts_router
 from .reports.reports_router import reports_router
@@ -57,19 +54,20 @@ router_v1.include_router(executive_summaries_router, prefix="/executive-summarie
 router_v1.include_router(exit_docs_router, prefix="/exit-docs")
 router_v1.include_router(exit_histories_router, prefix="/exit-histories")
 router_v1.include_router(expiration_logs_router, prefix="/expiration-logs")
+router_v1.include_router(integrations_router, prefix="/integrations")
 router_v1.include_router(inventories_router, prefix="/inventories")
 router_v1.include_router(invoice_devolutions_router, prefix="/invoice-devolutions")
 router_v1.include_router(invoices_router, prefix="/invoices")
 router_v1.include_router(orders_router, prefix="/orders")
+router_v1.include_router(prod_tx_router, prefix="/product-transactions")
 router_v1.include_router(product_accounts_router, prefix="/product-accounts")
 router_v1.include_router(product_categories_router, prefix="/product-categories")
 router_v1.include_router(product_prices_router, prefix="/product-prices")
-router_v1.include_router(product_sale_profiles_router, prefix="/product-sale-profiles")
 router_v1.include_router(product_stats_router, prefix="/product-stats")
-router_v1.include_router(product_transactions_router, prefix="/product-transactions")
 router_v1.include_router(products_router, prefix="/products")
 router_v1.include_router(receipts_router, prefix="/receipts")
 router_v1.include_router(reports_router, prefix="/reports")
+router_v1.include_router(sale_prof_router, prefix="/product-sale-profiles")
 router_v1.include_router(suppliers_router, prefix="/suppliers")
 router_v1.include_router(transfers_router, prefix="/transfers")
 router_v1.include_router(units_router, prefix="/units")
