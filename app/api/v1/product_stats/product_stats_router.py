@@ -1,3 +1,4 @@
+from typing import Any
 from fastapi import APIRouter, Depends, Response
 from fastapi.responses import FileResponse
 
@@ -49,5 +50,8 @@ async def create_projection_xslx_file(body: CreateXlsxFileBody, res: Response) -
 
 
 @product_stats_router.post("/estimate")
-async def estimate_product_stats(query_params: ProductStatQueryParams) -> None:
+async def estimate_product_stats(
+    query_params: ProductStatQueryParams,
+) -> dict[str, Any]:
     await product_stats_controller.estimate_product_stats(query_params)
+    return {"message": "Product stats estimated"}

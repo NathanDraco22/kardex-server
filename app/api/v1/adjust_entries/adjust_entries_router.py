@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 
 from api.common.query_params import AdjustQueryParams
 from repos.v1.adjust_entries import (
@@ -15,8 +15,10 @@ adjust_entries_router = APIRouter(tags=["adjust_entriesV1"])
 
 
 @adjust_entries_router.post("")
-async def create_adjust_entry(body: CreateAdjustEntry) -> AdjustEntryInDb:
-    return await adjust_entries_controller.create_adjust_entry(body)
+async def create_adjust_entry(
+    body: CreateAdjustEntry, bg_tasks: BackgroundTasks
+) -> AdjustEntryInDb:
+    return await adjust_entries_controller.create_adjust_entry(body, bg_tasks)
 
 
 @adjust_entries_router.get("")

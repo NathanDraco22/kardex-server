@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 from api.common.query_params import AdjustQueryParams
 from repos.v1.adjust_exits import CreateAdjustExit, AdjustExitInDb
 
@@ -11,8 +11,10 @@ adjust_exits_router = APIRouter(tags=["adjust_exitsV1"])
 
 
 @adjust_exits_router.post("")
-async def create_adjust_exit(body: CreateAdjustExit) -> AdjustExitInDb:
-    return await adjust_exits_controller.create_adjust_exit(body)
+async def create_adjust_exit(
+    body: CreateAdjustExit, bg_tasks: BackgroundTasks
+) -> AdjustExitInDb:
+    return await adjust_exits_controller.create_adjust_exit(body, bg_tasks)
 
 
 @adjust_exits_router.get("")
