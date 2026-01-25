@@ -103,4 +103,42 @@ Resultados para {formatted_datetime}
     async def notify_executive_report(
         self, executive_summary: ExecutiveSummaryInDb
     ) -> None:
-        pass
+        current_integration = await IntegrationTool().get_current_integration()
+        telegram = current_integration.telegram
+
+        if not telegram.isActive:
+            return
+
+        title_type: str
+
+        match executive_summary.type:
+            case "weekly":
+                title_type = "Semanal 📄"
+            case "monthly":
+                title_type = "Mensual 📅"
+            case "yearly":
+                title_type = "Anual ⭐"
+            case "custom":
+                title_type = "Personalizado"
+
+        start_date = datetime.fromtimestamp(executive_summary.startDate / 1000)
+        end_date = datetime.fromtimestamp(executive_summary.endDate / 1000)
+
+        date_range = f"{start_date.day}/{month_es[start_date.month]} - {end_date.day}/{month_es[end_date.month]}"
+
+        utility = executive_summary.salesTotal - executive_summary.salesTotalCost
+
+        report_channel = telegram.reportId
+
+        message = f"""*Reporte {title_type}*
+Periodo: {date_range}
+
+📦 Inventario: {(executive_summary.inventoryTotalCost / 100):,}
+
+💲 Ventas: {(executive_summary.salesTotal / 100):,}
+📈 Costos: {(executive_summary.salesTotalCost / 100):,}
+---------------------------------------------
+💰 Utilidad: {(utility / 100):,}
+"""
+
+        await TelegramService().send_message(report_channel, message)

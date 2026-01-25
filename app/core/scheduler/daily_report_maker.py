@@ -13,6 +13,7 @@ from repos.v1.executive_summaries import (
     ExecutiveSummariesRepository,
     ExecutiveSummariesDataSource,
     CreateExecutiveSummary,
+    ExecutiveSummaryInDb,
 )
 from repos.v1.common.models import InventoryBranchDetail
 
@@ -83,7 +84,9 @@ class WeeklyReportMaker:
             ExecutiveSummariesDataSource()
         )
 
-    async def ensure_weekly_report(self, current_time: datetime):
+    async def ensure_weekly_report(
+        self, current_time: datetime
+    ) -> ExecutiveSummaryInDb | None:
         print(
             f"🔍 Checking existence for Weekly Report: {current_time.strftime('%Y-%m-%d')}"
         )
@@ -104,13 +107,17 @@ class WeeklyReportMaker:
             print(
                 f"⚠️ Weekly Report {selected_time.strftime('%Y-%m-%d')} already exists. Skipping creation."
             )
-            return
+            return result
 
         print(f"✨ Creating NEW Weekly Report for {selected_time.strftime('%Y-%m-%d')}")
 
-        await self._create_report(selected_time)
+        res = await self._create_report(selected_time)
 
-    async def _create_report(self, current_time: datetime) -> None:
+        return res
+
+    async def _create_report(
+        self, current_time: datetime
+    ) -> ExecutiveSummaryInDb | None:
         current_timestamp = int(current_time.timestamp() * 1000)
         previous_week = current_time - timedelta(weeks=1)
         previous_week_timestamp = int(previous_week.timestamp() * 1000)
@@ -159,9 +166,11 @@ class WeeklyReportMaker:
             inventoryBranches=inventory_branches,
         )
 
-        await self.executive_summaries_repo.create_executive_summary(
+        res = await self.executive_summaries_repo.create_executive_summary(
             create_weekly_summary
         )
+
+        return res
 
 
 class MonthlyReportMaker:
@@ -172,7 +181,9 @@ class MonthlyReportMaker:
             ExecutiveSummariesDataSource()
         )
 
-    async def ensure_monthly_report(self, current_time: datetime):
+    async def ensure_monthly_report(
+        self, current_time: datetime
+    ) -> ExecutiveSummaryInDb | None:
         """
         Generates a report for the PREVIOUS month based on current_time.
         e.g. if current_time is March 1st, generates report for February.
@@ -201,15 +212,19 @@ class MonthlyReportMaker:
 
         if result:
             print(f"⚠️ Monthly Report {date_id} already exists. Skipping creation.")
-            return
+            return result
 
         print(f"✨ Creating NEW Monthly Report for {date_id}")
 
-        await self._create_report(first_day_prev_month, last_day_prev_month, date_id)
+        res = await self._create_report(
+            first_day_prev_month, last_day_prev_month, date_id
+        )
+
+        return res
 
     async def _create_report(
         self, start_date: datetime, end_date: datetime, date_id: str
-    ) -> None:
+    ) -> ExecutiveSummaryInDb | None:
         # Using startDate for filtering is much cleaner.
         # We want all daily summaries where startDate is within the month range.
         start_timestamp = int(start_date.timestamp() * 1000)
@@ -252,9 +267,11 @@ class MonthlyReportMaker:
             inventoryBranches=inventory_branches,
         )
 
-        await self.executive_summaries_repo.create_executive_summary(
+        res = await self.executive_summaries_repo.create_executive_summary(
             create_monthly_summary
         )
+
+        return res
 
 
 class YearlyReportMaker:
@@ -265,7 +282,9 @@ class YearlyReportMaker:
             ExecutiveSummariesDataSource()
         )
 
-    async def ensure_yearly_report(self, current_time: datetime):
+    async def ensure_yearly_report(
+        self, current_time: datetime
+    ) -> ExecutiveSummaryInDb | None:
         """
         Generates a report for the PREVIOUS year based on current_time.
         e.g. if current_time is Jan 1st 2025, generates report for 2024.
