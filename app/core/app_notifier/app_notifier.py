@@ -73,10 +73,10 @@ class AppNotifier:
         )
 
         message = f"""📊 *Reporte Diario* 📊
-        📅 Fecha: *{formatted_datetime}*
-        💲 Ventas: *C$ {daily_summary.total / 100}*
-        📈 Costos: *C$ {daily_summary.totalCost / 100}*
-        💰 Utilidad: *C$ {utility / 100}*
-        """
+📅 *{formatted_datetime}*
+💲 Ventas: *C$ {daily_summary.total / 100}*
+📈 Costos: *C$ {daily_summary.totalCost / 100}*
+💰 Utilidad: *C$ {utility / 100}*
+"""
 
         await TelegramService().send_message(report_channel, message)
