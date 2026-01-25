@@ -31,6 +31,22 @@ class AppReminder:
 
     @staticmethod
     async def morning_executive_report_7am(
-        today_midnight: datetime, executive_summary: ExecutiveSummaryInDb
+        today_midnight: datetime, executive_summary: ExecutiveSummaryInDb, delay: int
     ) -> None:
-        pass
+        today_morning = today_midnight.replace(
+            hour=7, minute=0, second=0, microsecond=0
+        )
+        seconds = (
+            today_morning - datetime.now(tz=TimeTools.default_timezone)
+        ).total_seconds()
+
+        if seconds <= 0:
+            await AppNotifier().notify_executive_report(executive_summary)
+            return
+
+        async def inner_action():
+            await asyncio.sleep(seconds + delay)
+            await AppNotifier().notify_executive_report(executive_summary)
+            pass
+
+        asyncio.create_task(inner_action())
