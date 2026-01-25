@@ -104,11 +104,13 @@ class WeeklyReportMaker:
             print(
                 f"⚠️ Weekly Report {selected_time.strftime('%Y-%m-%d')} already exists. Skipping creation."
             )
-            return
+            return result
 
         print(f"✨ Creating NEW Weekly Report for {selected_time.strftime('%Y-%m-%d')}")
 
-        await self._create_report(selected_time)
+        res = await self._create_report(selected_time)
+
+        return res
 
     async def _create_report(self, current_time: datetime) -> None:
         current_timestamp = int(current_time.timestamp() * 1000)
@@ -201,11 +203,15 @@ class MonthlyReportMaker:
 
         if result:
             print(f"⚠️ Monthly Report {date_id} already exists. Skipping creation.")
-            return
+            return result
 
         print(f"✨ Creating NEW Monthly Report for {date_id}")
 
-        await self._create_report(first_day_prev_month, last_day_prev_month, date_id)
+        res = await self._create_report(
+            first_day_prev_month, last_day_prev_month, date_id
+        )
+
+        return res
 
     async def _create_report(
         self, start_date: datetime, end_date: datetime, date_id: str

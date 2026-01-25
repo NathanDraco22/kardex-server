@@ -43,9 +43,17 @@ class AppScheduler:
             if daily_summary is not None:
                 await AppReminder.morning_reminder_7am(now, daily_summary)
 
-            await self.weekly_maker.ensure_weekly_report(now)
+            weekly_summary = await self.weekly_maker.ensure_weekly_report(now)
+            if weekly_summary is not None:
+                await AppReminder.morning_executive_report_7am(
+                    now, weekly_summary, delay=10
+                )
             # Ensure monthly report (if today is 1st or shortly after)
-            await self.monthly_maker.ensure_monthly_report(now)
+            monthly_summary = await self.monthly_maker.ensure_monthly_report(now)
+            if monthly_summary is not None:
+                await AppReminder.morning_executive_report_7am(
+                    now, monthly_summary, delay=20
+                )
             # Ensure yearly report (if today is Jan 1st or shortly after)
             await self.yearly_maker.ensure_yearly_report(now)
         except Exception as e:
@@ -93,11 +101,23 @@ class AppScheduler:
             await AppReminder.morning_reminder_7am(midnight_time, daily_summary)
 
         if midnight_time.weekday() == 0:
-            await self.weekly_maker.ensure_weekly_report(midnight_time)
+            weekly_summary = await self.weekly_maker.ensure_weekly_report(midnight_time)
+
+            if weekly_summary is not None:
+                await AppReminder.morning_executive_report_7am(
+                    midnight_time, weekly_summary, delay=10
+                )
 
         # 3. Monthly Report (if 1st of month) - Idempotent
         if midnight_time.day == 1:
-            await self.monthly_maker.ensure_monthly_report(midnight_time)
+            monthly_summary = await self.monthly_maker.ensure_monthly_report(
+                midnight_time
+            )
+
+            if monthly_summary is not None:
+                await AppReminder.morning_executive_report_7am(
+                    midnight_time, monthly_summary, delay=20
+                )
 
             # 4. Yearly Report (if 1st of January) - Idempotent
             if midnight_time.month == 1:
