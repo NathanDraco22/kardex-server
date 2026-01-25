@@ -15,7 +15,7 @@ class TelegramService:
     def __init__(self) -> None:
         self.__tlg_token = os.getenv("TELEGRAM_BOT_TOKEN")
 
-    async def send_message(self, chat_id: str, text: str):
+    async def send_message(self, chat_id: str, text: str) -> None:
         if not self.__tlg_token:
             return
         BASE_URL = f"https://api.telegram.org/bot{self.__tlg_token}/sendMessage"
