@@ -5,6 +5,7 @@ from services import TelegramService
 
 from tools.integration_tool import IntegrationTool
 from repos.v1.daily_summaries import DailySummaryInDb
+from repos.v1.executive_summaries import ExecutiveSummaryInDb
 
 
 AdjusmentType = Literal["in", "out"]
@@ -33,6 +34,22 @@ class AppNotifier:
             cls._instance = super().__new__(cls)
         return cls._instance
 
+    async def notify_test_message(self) -> None:
+        current_integration = await IntegrationTool().get_current_integration()
+        telegram = current_integration.telegram
+
+        if not telegram.isActive:
+            return
+
+        test_channel = telegram.reportId
+
+        message = """Hola 👋, soy un bot 🤖
+mi deber es enviarte mensajes, darte informacion y alertas
+sera un placer trabajar contigo.
+"""
+
+        await TelegramService().send_message(test_channel, message)
+
     async def notify_adjustments(
         self, branch_name: str, document: str, type: AdjusmentType, author: str
     ) -> None:
@@ -52,7 +69,7 @@ class AppNotifier:
             case "out":
                 adjust_type_label = "Salida ↗️"
 
-        message = f"⚠️ *Ajuste de Inventario* ⚠️\n📦 *{branch_name}* \n📄 documento: *{document}*\ntipo: *{adjust_type_label}*\nAutor: *{author}*"
+        message = f"⚠️ *Ajuste de Inventario* ⚠️\n\n📦 *{branch_name}* \n📄 documento: *{document}*\ntipo: *{adjust_type_label}*\nAutor: *{author}*"
         await TelegramService().send_message(adjustments_channel, message)
 
     async def notify_daily_report(self, daily_summary: DailySummaryInDb) -> None:
@@ -82,3 +99,8 @@ Resultados para {formatted_datetime}
 """
 
         await TelegramService().send_message(report_channel, message)
+
+    async def notify_executive_report(
+        self, executive_summary: ExecutiveSummaryInDb
+    ) -> None:
+        pass

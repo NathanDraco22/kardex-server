@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 from repos.v1.daily_summaries import DailySummaryInDb
+from repos.v1.executive_summaries import ExecutiveSummaryInDb
 from core.app_notifier.app_notifier import AppNotifier
 from tools import TimeTools
 
@@ -27,3 +28,9 @@ class AppReminder:
             pass
 
         asyncio.create_task(inner_action())
+
+    @staticmethod
+    async def morning_executive_report_7am(
+        today_midnight: datetime, executive_summary: ExecutiveSummaryInDb
+    ) -> None:
+        pass

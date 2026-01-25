@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-
+from core.app_notifier.app_notifier import AppNotifier
 from repos.v1.integrations import (
     UpdateIntegration,
     IntegrationInDb,
@@ -45,6 +45,9 @@ class IntegrationsController:
 
         await IntegrationTool().refresh_current_integration()
         return updated_integration
+
+    async def send_telegram_test_message(self) -> None:
+        await AppNotifier().notify_test_message()
 
 
 integrations_controller = IntegrationsController(

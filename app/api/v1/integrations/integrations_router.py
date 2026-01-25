@@ -24,3 +24,9 @@ async def update_integration_by_id(
     integration_id: str, body: UpdateIntegration
 ) -> IntegrationInDb:
     return await integrations_controller.update_integration_by_id(integration_id, body)
+
+
+@integrations_router.post("/telegram/test")
+async def telegrand_test() -> dict:
+    await integrations_controller.send_telegram_test_message()
+    return {"status": "ok"}
