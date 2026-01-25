@@ -7,6 +7,7 @@ from repos.v1.daily_summaries import (
     DailySummariesDataSource,
     CommercialBranchDetail,
     CreateDailySummary,
+    DailySummaryInDb,
 )
 from repos.v1.executive_summaries import (
     ExecutiveSummariesRepository,
@@ -21,7 +22,9 @@ class DailyReportMaker:
         self.report_maker = ReportManager()
         self.daily_summaries_repo = DailySummariesRepository(DailySummariesDataSource())
 
-    async def ensure_daily_report(self, current_time: datetime) -> None:
+    async def ensure_daily_report(
+        self, current_time: datetime
+    ) -> DailySummaryInDb | None:
         selected_time = datetime(
             current_time.year,
             current_time.month,
@@ -37,7 +40,7 @@ class DailyReportMaker:
         )
         if existing_report:
             print(f"⚠️ Daily Report {date_id} already exists. Skipping creation.")
-            return
+            return existing_report
 
         print(f"✨ Creating NEW Daily Report for {date_id}")
 
@@ -68,7 +71,8 @@ class DailyReportMaker:
             branches=branch_details,
         )
 
-        await self.daily_summaries_repo.create_daily_summary(create_daily)
+        res = await self.daily_summaries_repo.create_daily_summary(create_daily)
+        return res
 
 
 class WeeklyReportMaker:

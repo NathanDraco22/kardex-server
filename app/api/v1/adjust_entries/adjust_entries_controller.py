@@ -1,7 +1,9 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, BackgroundTasks
 from api.common.query_params import AdjustQueryParams
 from responses.v1.list_response import ListResponse
 from core.adjust_ledger.adjust_ledger import AdjustLedgerManager
+from core.app_notifier.app_notifier import AppNotifier
+from tools import BranchesTool
 
 from repos.v1.adjust_entries import (
     CreateAdjustEntry,
@@ -17,8 +19,22 @@ class AdjustEntriesController:
         self.adjust_entries_repo = adjust_entries_repo
         self.adjust_ledger_manager = AdjustLedgerManager()
 
-    async def create_adjust_entry(self, body: CreateAdjustEntry) -> AdjustEntryInDb:
+    async def create_adjust_entry(
+        self, body: CreateAdjustEntry, bg_tasks: BackgroundTasks
+    ) -> AdjustEntryInDb:
         res, _ = await self.adjust_ledger_manager.regis_adjust_entry(body)
+
+        doc_branch = BranchesTool().get_branch_by_id(res.branchId)
+
+        if doc_branch is not None:
+            bg_tasks.add_task(
+                AppNotifier().notify_adjustments,
+                doc_branch.name,
+                res.docNumber,
+                "in",
+                res.createdBy.name,
+            )
+
         return res
 
     async def get_all_adjust_entries(

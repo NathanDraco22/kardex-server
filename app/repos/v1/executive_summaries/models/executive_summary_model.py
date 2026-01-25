@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from repos.v1.common.models import CommercialBranchDetail
 from repos.v1.common.models import InventoryBranchDetail
 
-SummaryType = Literal["weekly", "monthly", "yearly"]
+SummaryType = Literal["weekly", "monthly", "yearly", "custom"]
 
 
 class BaseExecutiveSummary(BaseModel):

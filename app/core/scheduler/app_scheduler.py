@@ -8,6 +8,7 @@ from core.scheduler.daily_report_maker import (
     MonthlyReportMaker,
     YearlyReportMaker,
 )
+from core.scheduler.app_reminder import AppReminder
 from tools import TimeTools
 
 
@@ -38,7 +39,10 @@ class AppScheduler:
         now = datetime.now(TimeTools.default_timezone)
 
         try:
-            await self.daily_maker.ensure_daily_report(now)
+            daily_summary = await self.daily_maker.ensure_daily_report(now)
+            if daily_summary is not None:
+                await AppReminder.morning_reminder_7am(now, daily_summary)
+
             await self.weekly_maker.ensure_weekly_report(now)
             # Ensure monthly report (if today is 1st or shortly after)
             await self.monthly_maker.ensure_monthly_report(now)
@@ -79,19 +83,22 @@ class AppScheduler:
                     print(e)
                     await asyncio.sleep(60)
 
-    async def _set_daily_tasks(self, current_time: datetime):
-        print(f"🚀 Daily Task: {current_time}")
+    async def _set_daily_tasks(self, midnight_time: datetime):
+        print(f"🚀 Daily Task: {midnight_time}")
         await asyncio.sleep(1)
 
-        await self.daily_maker.ensure_daily_report(current_time)
+        daily_summary = await self.daily_maker.ensure_daily_report(midnight_time)
 
-        if current_time.weekday() == 0:
-            await self.weekly_maker.ensure_weekly_report(current_time)
+        if daily_summary is not None:
+            await AppReminder.morning_reminder_7am(midnight_time, daily_summary)
+
+        if midnight_time.weekday() == 0:
+            await self.weekly_maker.ensure_weekly_report(midnight_time)
 
         # 3. Monthly Report (if 1st of month) - Idempotent
-        if current_time.day == 1:
-            await self.monthly_maker.ensure_monthly_report(current_time)
+        if midnight_time.day == 1:
+            await self.monthly_maker.ensure_monthly_report(midnight_time)
 
             # 4. Yearly Report (if 1st of January) - Idempotent
-            if current_time.month == 1:
-                await self.yearly_maker.ensure_yearly_report(current_time)
+            if midnight_time.month == 1:
+                await self.yearly_maker.ensure_yearly_report(midnight_time)
