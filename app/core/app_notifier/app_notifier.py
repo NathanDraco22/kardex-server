@@ -69,14 +69,16 @@ class AppNotifier:
         datetime_obj = datetime.strptime(daily_summary.dateId, "%Y-%m-%d")
 
         formatted_datetime = (
-            f"{datetime_obj.day} de {month_es[datetime_obj.month]} {datetime_obj.year}"
+            f"{datetime_obj.day} {month_es[datetime_obj.month]} {datetime_obj.year}"
         )
 
         message = f"""📊 *Reporte Diario* 📊
-📅 *{formatted_datetime}*
-💲 Ventas: *C$ {daily_summary.total / 100}*
-📈 Costos: *C$ {daily_summary.totalCost / 100}*
-💰 Utilidad: *C$ {utility / 100}*
+Resultados para {formatted_datetime}
+
+💲 Ventas: {(daily_summary.total / 100):,}
+📈 Costos: {(daily_summary.totalCost / 100):,}
+---------------------------------------------
+💰 Utilidad: {(utility / 100):,}
 """
 
         await TelegramService().send_message(report_channel, message)
