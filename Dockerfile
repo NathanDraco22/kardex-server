@@ -13,7 +13,8 @@ RUN uv sync --frozen --no-dev
 
 COPY . .
 
+EXPOSE 8080
 
 WORKDIR /home/server/app
 
-CMD . ../.venv/bin/activate && fastapi run --host 0.0.0.0
+CMD . ../.venv/bin/activate && fastapi run --host 0.0.0.0 --port 8080
