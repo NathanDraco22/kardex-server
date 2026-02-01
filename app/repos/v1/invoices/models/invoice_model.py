@@ -23,6 +23,7 @@ class BaseInvoice(BaseModel):
     amountPaid: int = 0
     status: InvoiceStatus
     paymentType: PaymentType
+    bankReference: str = ""
     totalCost: int
     total: int
     paidAt: int | None = None
