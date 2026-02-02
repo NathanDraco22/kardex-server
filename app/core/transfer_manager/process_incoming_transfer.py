@@ -1,10 +1,12 @@
+from tools import BranchesTool
+from core.inventory import (
+    execute_inventory_entry_db_operations,
+    InventoryEntryBatchItem,
+    prepare_inventory_entry_batch,
+)
+
 from repos.v1.transfers import TransferInDb, ReceiveTransferIntent
 from repos.v1.product_accounts import ProductAccountInDb
-from repos.v1.product_transactions import ProductTransactionInDb
-from repos.v1.product_sale_profiles import CreateProductSaleProfile
-from repos.v1.product_stats import CreateProductStat
-
-from tools import UuidTool, TimeTools, BranchesTool
 
 from services import MongoService
 from services.mongo_collections.v1 import (
@@ -16,23 +18,33 @@ from services.mongo_collections.v1 import (
 )
 
 
+class TransferNotFoundError(Exception):
+    pass
+
+
+class TransferAlreadyProcessedError(Exception):
+    pass
+
+
 async def process_incoming_transfer(
     transfer_id: str,
     intent: ReceiveTransferIntent,
 ) -> tuple[TransferInDb, list[ProductAccountInDb]]:
     mongo_client = MongoService().client
 
-    # Colecciones necesarias
+    # Colecciones
     transfers_col = TransfersCollection()
     product_account_col = ProductAccountsCollection()
     product_stats_col = ProductStatsCollection()
     product_prof_col = ProductSaleProfilesCollection()
     prd_transaction_col = ProductTransactionsCollection()
 
+    # Tools
+    branches_tool = BranchesTool()
+
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
-            # 1. OBTENER EL TRASLADO EXISTENTE
-            # Necesitamos leer los items y el destination original
+            # 1. OBTENER Y VALIDAR TRASLADO
             existing_transfer_dict = (
                 await transfers_col.fetch_transfer_by_id_with_session(
                     transfer_id, session=session
@@ -40,119 +52,82 @@ async def process_incoming_transfer(
             )
 
             if not existing_transfer_dict:
-                raise Exception(f"Traslado {transfer_id} no encontrado")
+                raise TransferNotFoundError(f"Traslado {transfer_id} no encontrado")
 
-            # Convertimos a objeto para trabajar fácil
             transfer_doc = TransferInDb.model_validate(existing_transfer_dict)
 
-            # (Opcional) Validar que no haya sido recibido ya
             if transfer_doc.status != "inTransit":
-                raise Exception("Este traslado ya fue procesado anteriormente")
+                raise TransferAlreadyProcessedError(
+                    "Este traslado ya fue procesado anteriormente"
+                )
 
-            destination_branch_in_db = BranchesTool().get_branch_by_id(
+            # Validar Sucursal Destino
+            destination_branch_in_db = branches_tool.get_branch_by_id(
                 transfer_doc.destination
             )
-
             if destination_branch_in_db is None:
                 raise Exception("Sucursal de Destino no encontrada")
 
-            now_in_milliseconds = TimeTools.get_now_in_milliseconds()
             destination_branch = transfer_doc.destination
-            items_to_receive = transfer_doc.items
 
-            updated_dest_accounts: list[ProductAccountInDb] = []
-            created_transactions: list[ProductTransactionInDb] = []
+            # 2. PREPARAR DATOS DE ENTRADA (Mapeo a tu nuevo modelo InventoryEntryBatchItem)
+            # Convertimos los items del traslado al formato genérico que espera tu función lógica
+            batch_items = [
+                InventoryEntryBatchItem(
+                    product_id=item.id, quantity=item.quantity, unit_cost=item.cost
+                )
+                for item in transfer_doc.items
+            ]
 
-            sale_profiles: list[CreateProductSaleProfile] = []
-            new_product_stats: list[CreateProductStat] = []
+            # 3. OBTENER CUENTAS ACTUALES (Snapshot Read)
+            # Solo buscamos las cuentas de los productos involucrados
+            product_ids = [item.product_id for item in batch_items]
 
-            # 2. PROCESAR CADA ITEM (Igual que un Entry Doc)
-            for item in items_to_receive:
-                # A. Sumar al Stock del DESTINO y Recalcular Costo Promedio
-                # Usamos item.cost (que viene del origen) como costo de entrada
-                result = await product_account_col.update_product_account_balance_data(
-                    product_id=item.id,
-                    branch_id=destination_branch,  # <--- IMPORTANTE: Sucursal Destino
-                    add_to_current_stock=item.quantity,  # Cantidad Positiva (Entrada)
-                    last_cost=item.cost,  # Costo (int/centavos)
+            existing_accounts_data = (
+                await product_account_col.get_accounts_by_branch_id(
+                    branch_id=destination_branch,
+                    product_ids=product_ids,
                     session=session,
                 )
+            )
 
-                updated_account = ProductAccountInDb.model_validate(result)
-                updated_dest_accounts.append(updated_account)
+            accounts_dict = {
+                acc["productId"]: ProductAccountInDb.model_validate(acc)
+                for acc in existing_accounts_data
+            }
 
-                # B. Inicializar Perfil de Venta (Si no existe en esta sucursal)
-                sale_profile = CreateProductSaleProfile(
-                    branchId=destination_branch,
-                    productId=item.id,
-                    salePrice=0,  # Ojo: Entra con precio 0, alguien deberá ponerle precio luego
-                )
+            # 4. EJECUTAR LÓGICA PURA (Tu función prepare_inventory_entry_batch)
+            # Aquí obtenemos el objeto EntryBatchResult fuertemente tipado
+            batch_result = prepare_inventory_entry_batch(
+                branch_id=destination_branch,
+                is_commerce_branch=destination_branch_in_db.isCommerce,
+                items=batch_items,
+                existing_accounts_dict=accounts_dict,
+                document_id=transfer_doc.id,
+                doc_number=transfer_doc.docNumber,
+                tx_type="entry",  # Usando literal o Enum TransactionType.ENTRY
+                tx_subtype="transfer",  # Usando literal o Enum TransactionSubType.TRANSFER
+            )
 
-                sale_profiles.append(sale_profile)
+            # 5. PERSISTENCIA EN BD (Usando la función que te di arriba)
+            await execute_inventory_entry_db_operations(
+                branch_id=destination_branch,
+                batch_result=batch_result,
+                session=session,
+                account_col=product_account_col,
+                profile_col=product_prof_col,
+                stats_col=product_stats_col,
+                transaction_col=prd_transaction_col,
+            )
 
-                if destination_branch_in_db.isCommerce:
-                    # C. Inicializar Stats (Si no existe en esta sucursal)
-                    product_stats = CreateProductStat(
-                        branchId=destination_branch,
-                        productId=item.id,
-                        startDate=now_in_milliseconds,
-                        endDate=now_in_milliseconds,
-                        totalUnits=0,
-                        totalTransactions=0,
-                        daysAnalyzed=0,
-                        lastEstimation=now_in_milliseconds,
-                    )
-
-                    new_product_stats.append(product_stats)
-
-                # D. Crear Transacción de ENTRADA
-                new_transaction = ProductTransactionInDb(
-                    id=UuidTool.generate_uuid(),
-                    documentId=transfer_doc.id,
-                    docNumber=transfer_doc.docNumber,
-                    type="entry",  # Tipo Entrada (Suma inventario)
-                    subtype="transfer",  # Subtipo específico
-                    productId=item.id,
-                    branchId=destination_branch,
-                    # REGLA: Entrada = Positivo
-                    quantity=abs(item.quantity),
-                    averageCost=updated_account.averageCost,
-                    createdAt=now_in_milliseconds,
-                    resultStock=updated_account.currentStock,
-                )
-                created_transactions.append(new_transaction)
-
-            # 3. ACTUALIZAR EL DOCUMENTO DE TRASLADO
-            # Usamos los datos del Intent (fecha, usuario, status)
+            # 6. ACTUALIZAR ESTADO DEL TRASLADO
             update_data = intent.model_dump()
-
-            # Nota: Necesitarás un método update_transfer_with_session en tu colección
             updated_transfer_dict = (
                 await transfers_col.update_transfer_status_with_session(
                     transfer_id=transfer_id, update_data=update_data, session=session
                 )
             )
-
             updated_transfer_in_db = TransferInDb.model_validate(updated_transfer_dict)
 
-            # 4. INSERTAR PERFILES DE VENTA EN LOTE
-            sale_profiles_raw = [sp.model_dump() for sp in sale_profiles]
-            await product_prof_col.bulk_create_product_sale_profiles(
-                sale_profiles_raw, session=session
-            )
-
-            if destination_branch_in_db.isCommerce:
-                # 4. INSERTAR STATS EN LOTE
-                new_product_stats_raw = [ps.model_dump() for ps in new_product_stats]
-                await product_stats_col.bulk_create_product_stats_if_not_exist(
-                    new_product_stats_raw, session=session
-                )
-
-            # 4. INSERTAR TRANSACCIONES EN LOTE
-            created_transactions_data = [t.model_dump() for t in created_transactions]
-            await prd_transaction_col.create_many_product_transactions_with_session(
-                created_transactions_data,
-                session=session,
-            )
-
-            return updated_transfer_in_db, updated_dest_accounts
+            # Retornamos el traslado actualizado y las cuentas simuladas que generó tu lógica
+            return updated_transfer_in_db, batch_result.simulated_accounts

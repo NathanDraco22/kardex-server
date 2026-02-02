@@ -21,10 +21,13 @@ from repos.v1.product_accounts import (
 )
 from repos.v1.products import ProductsRepository, ProductsDataSource
 
-# Importamos los procesos que creamos previamente
+
+from core.inventory import (
+    InsufficientBalanceError,
+)
+
 from .process_out_transfer import (
     process_outgoing_transfer,
-    InsufficientBalanceError,
 )
 from .process_incoming_transfer import process_incoming_transfer
 from .process_cancel_transfer import process_cancel_transfer
@@ -44,7 +47,7 @@ class TransferManager:
     # ---------------------------------------------------------
     async def regis_outgoing_transfer(
         self, create_transfer: CreateTransfer
-    ) -> tuple[TransferInDb, list[ProductAccountInDb]]:
+    ) -> TransferInDb:
         # A. Validar Duplicidad (Opcional, si usas docNumber único)
         if not create_transfer.docNumber:
             create_transfer.docNumber = await CounterManager().next_tranfer_number()
@@ -75,15 +78,12 @@ class TransferManager:
                     detail=f"INSUFFICIENT_STOCK: {str(e)}",
                 )
 
-            except OperationFailure as e:
-                # Error 112: WriteConflict (MongoDB) -> Reintentar
-                if e.code == 112:
-                    await asyncio.sleep(0.3)
-                else:
-                    raise HTTPException(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail="Error processing transfer exit \n" + str(e),
-                    )
+            except OperationFailure as _:
+                # Error 112: WriteConflict (Conflicto concurrente)
+                # O error personalizado de bulk_write (desincronización de stock detectada)
+                # Reintentamos para obtener un nuevo snapshot del stock
+                await asyncio.sleep(0.3)
+                continue
 
             except Exception as e:
                 raise HTTPException(
@@ -112,21 +112,16 @@ class TransferManager:
                 return result
 
             except Exception as e:
-                # Aquí capturamos errores como "Traslado no encontrado" o "Ya recibido"
-                if "no encontrado" in str(e) or "ya fue recibido" in str(e):
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=str(e),
-                    )
-
-                # Manejo de conflicto de escritura
+                # Manejo de conflicto de escritura (MongoDB Concurrent Conflict)
                 if isinstance(e, OperationFailure) and e.code == 112:
                     await asyncio.sleep(0.3)
                     continue
 
+                # Error de negocio: Traslado no encontrado o ya procesado
+                # Mantener el 400 para errores esperados de flujo
                 raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Error processing transfer entry \n" + str(e),
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=str(e),
                 )
 
         raise HTTPException(
@@ -139,7 +134,7 @@ class TransferManager:
     # ---------------------------------------------------------
     async def cancel_transfer(
         self, transfer_id: str, intent: CancelTransferIntent
-    ) -> tuple[TransferInDb, list[ProductAccountInDb]]:
+    ) -> TransferInDb:
         max_retries = 3
         for _ in range(max_retries):
             try:
@@ -200,16 +195,4 @@ class TransferManager:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="ORIGIN_AND_DESTINATION_ARE_SAME",
-            )
-
-        # 4. Validar Existencia de Productos
-        product_ids = list(
-            set(item.id for item in doc.items)
-        )  # item.id es productId en tu modelo
-        products = await self.products_repo.get_product_by_ids(product_ids)
-
-        if len(products) != len(product_ids):
-            # Opcional: Podrías identificar cuál falta para dar mejor feedback
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="PRODUCT_NOT_FOUND"
             )
