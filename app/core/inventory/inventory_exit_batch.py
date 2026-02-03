@@ -123,7 +123,7 @@ async def execute_inventory_exit_db_operations(
     # Inyección de dependencias
     account_col: ProductAccountsCollection,
     transaction_col: ProductTransactionsCollection,
-):
+) -> None:
     """
     Ejecuta la resta de inventario y creación de historial de salida.
     """
