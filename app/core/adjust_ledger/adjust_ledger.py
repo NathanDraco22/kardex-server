@@ -28,10 +28,10 @@ from repos.v1.products import ProductsRepository, ProductsDataSource
 from core.counter_manager.counter_manager import CounterManager
 
 from tools import BranchesTool
-
+from core.inventory import InsufficientBalanceError
 
 from .process_adjust_entry import process_adjust_entry
-from .process_adjust_exit import process_adjust_exit, InsufficientBalanceError
+from .process_adjust_exit import process_adjust_exit
 
 
 class AdjustLedgerManager:

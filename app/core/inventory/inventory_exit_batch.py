@@ -21,6 +21,7 @@ class InsufficientBalanceError(Exception):
 
 class InventoryExitBatchItem(BaseModel):
     product_id: str
+    product_name: str
     quantity: int  # Siempre positivo
     # No necesitamos cost de entrada, porque el costo lo dicta el sistema (AverageCost)
 
@@ -41,54 +42,66 @@ def prepare_inventory_exit_batch(
     branch_id: str,
     items: list[InventoryExitBatchItem],
     existing_accounts_dict: dict[str, ProductAccountInDb],
-    # Metadata para el Kardex
     document_id: str,
     doc_number: str,
-    tx_type: TransactionType,  # ej: TransactionType.EXIT
-    tx_subtype: TransactionSubType,  # ej: TransactionSubType.TRANSFER
+    tx_type: TransactionType,
+    tx_subtype: TransactionSubType,
+    is_order_fulfillment: bool = False,
 ) -> ExitBatchResult:
     now = TimeTools.get_now_in_milliseconds()
 
-    # 1. Consolidar para validar Stock Total (Fail Fast)
+    # 1. Consolidar y Crear Mapa de Nombres
     consolidated_req: dict[str, int] = {}
+    id_name_map: dict[str, str] = {}  # <--- Mapa para errores
+
     for item in items:
         consolidated_req[item.product_id] = (
             consolidated_req.get(item.product_id, 0) + item.quantity
         )
+        # Guardamos el nombre para usarlo si hay error
+        if item.product_id not in id_name_map:
+            id_name_map[item.product_id] = item.product_name
 
-    # 2. Validaciones de Stock (Sin tocar BD, solo memoria)
-    # Validamos contra lo que consolidamos para asegurar que alcanza para TODO el lote
+    # 2. Validaciones
     pair_op: list[tuple[str, int]] = []
 
     for p_id, total_qty_needed in consolidated_req.items():
+        # Obtenemos el nombre amigable
+        p_name = id_name_map.get(p_id, "Producto Desconocido")
+
         if p_id not in existing_accounts_dict:
-            raise InsufficientBalanceError(f"Producto {p_id} no encontrado en origen")
+            raise InsufficientBalanceError(
+                f"El producto '{p_name}' no tiene cuenta en esta sucursal."
+            )
 
         account = existing_accounts_dict[p_id]
 
-        if total_qty_needed > account.currentStock:
+        # Lógica del Interruptor (Pedido vs Venta)
+        promise_stock = account.promiseStock if account.promiseStock else 0
+        limit_stock = account.currentStock
+
+        if not is_order_fulfillment:
+            limit_stock = account.currentStock - promise_stock
+
+        if total_qty_needed > limit_stock:
+            stock_type_msg = "FÍSICO" if is_order_fulfillment else "DISPONIBLE"
             raise InsufficientBalanceError(
-                f"Stock insuficiente para {p_id}. "
-                f"Requerido: {total_qty_needed}, Disponible: {account.currentStock}"
+                f"Stock {stock_type_msg} insuficiente para '{p_name}'. "
+                f"Requerido: {total_qty_needed}, "
+                f"Disponible: {limit_stock}"
             )
 
-        # Preparamos la tupla para el bulk_substract
         pair_op.append((p_id, total_qty_needed))
 
-    # 3. Generar Transacciones y Asignar Costos
+    # 3. Generar Transacciones (Igual que antes...)
     transactions: list[ProductTransactionInDb] = []
     assigned_costs: list[int] = []
 
-    # Iteramos sobre los items ORIGINALES (no los consolidados) para mantener el detalle del documento
     for item in items:
         current_account = existing_accounts_dict[item.product_id]
-
-        # El costo de salida es el Costo Promedio actual
         cost_at_exit = current_account.averageCost
         assigned_costs.append(cost_at_exit)
 
-        # Calculamos el stock resultante simulado
-        # (Restamos en memoria para que si el item se repite, el resultStock baje progresivamente)
         new_stock_level = current_account.currentStock - item.quantity
 
         new_tx = ProductTransactionInDb(
@@ -99,14 +112,12 @@ def prepare_inventory_exit_batch(
             subtype=tx_subtype,
             productId=item.product_id,
             branchId=branch_id,
-            quantity=-abs(item.quantity),  # Negativo para salida
+            quantity=-abs(item.quantity),
             averageCost=cost_at_exit,
             createdAt=now,
             resultStock=new_stock_level,
         )
         transactions.append(new_tx)
-
-        # Actualizamos la referencia en memoria para la siguiente iteración del bucle
         current_account.currentStock = new_stock_level
 
     return ExitBatchResult(
