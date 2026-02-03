@@ -5,6 +5,7 @@ from core.inventory import (
     execute_inventory_exit_db_operations,
     prepare_inventory_exit_batch,
     InventoryExitBatchItem,
+    InsufficientBalanceError,
 )
 
 from core.finance import process_client_financial_movement, FinanceTransactionRequest
@@ -22,8 +23,7 @@ from services.mongo_collections.v1 import (
 )
 
 
-class InsufficientBalanceError(Exception):
-    pass
+
 
 
 async def process_invoice(
@@ -31,7 +31,6 @@ async def process_invoice(
 ) -> tuple[InvoiceInDb, ClientInDb]:
     mongo_client = MongoService().client
 
-    # Colecciones
     prd_transaction_col = ProductTransactionsCollection()
     product_account_col = ProductAccountsCollection()
     invoice_col = InvoicesCollection()
@@ -52,7 +51,9 @@ async def process_invoice(
                 total_qty = abs(item.quantity + item.bonQuantity)
                 batch_items.append(
                     InventoryExitBatchItem(
-                        product_id=item.product.id, quantity=total_qty
+                        product_id=item.product.id,
+                        quantity=total_qty,
+                        product_name=item.product.name,
                     )
                 )
 
@@ -68,7 +69,13 @@ async def process_invoice(
                 for acc in accounts_data
             }
 
-            # Ejecutar cálculos (Validación de stock físico + Costos + Kardex)
+            # Determinar si es despacho de pedido antes de validar
+            is_order_fulfillment = bool(
+                create_invoice.orderNumber and create_invoice.status == "open"
+            )
+
+            # Ejecutar cálculos (Validación de stock + Costos + Kardex)
+            # Pasamos is_order_fulfillment para que la validación en memoria sea correcta
             batch_result = prepare_inventory_exit_batch(
                 branch_id=create_invoice.branchId,
                 items=batch_items,
@@ -77,6 +84,7 @@ async def process_invoice(
                 doc_number=create_invoice.docNumber,
                 tx_type="exit",
                 tx_subtype="invoice",
+                is_order_fulfillment=is_order_fulfillment,
             )
 
             # Asignar Costos Reales a la Factura
@@ -86,9 +94,7 @@ async def process_invoice(
             # ==========================================
             # 2. PERSISTENCIA DE INVENTARIO (DIFERENCIADA)
             # ==========================================
-            is_order_fulfillment = (
-                create_invoice.orderNumber and create_invoice.status == "open"
-            )
+
 
             if is_order_fulfillment:
                 # CAMINO A: ES UN PEDIDO -> Usamos bulk_dispatch_promise_stock
@@ -116,9 +122,6 @@ async def process_invoice(
                     transaction_col=prd_transaction_col,
                 )
 
-            # ==========================================
-            # 3. GUARDAR FACTURA
-            # ==========================================
             if create_invoice.status == "draft":
                 create_invoice.status = "open"
 
@@ -205,7 +208,6 @@ async def process_anon_invoice(
     """
     mongo_client = MongoService().client
 
-    # Colecciones
     prd_transaction_col = ProductTransactionsCollection()
     product_account_col = ProductAccountsCollection()
     invoice_col = InvoicesCollection()
@@ -225,6 +227,7 @@ async def process_anon_invoice(
                     InventoryExitBatchItem(
                         product_id=item.product.id,  # Accedemos al ID dentro del objeto product
                         quantity=total_to_dispatch,
+                        product_name=item.product.name,
                     )
                 )
 

@@ -204,15 +204,33 @@ class ProductAccountsCollection:
         operations: list[UpdateOne] = []
         for update_element in bulk_to_substrack:
             product_id, substract_to_current_stock = update_element
+
+            # Usamos abs() por seguridad
+            qty = abs(substract_to_current_stock)
+
             update_op = UpdateOne(
                 {
                     "productId": product_id,
                     "branchId": branch_id,
-                    "currentStock": {"$gte": abs(substract_to_current_stock)},
+                    # 🔥 AQUÍ ESTÁ LA MAGIA:
+                    # Usamos $expr para calcular (Current - Promise) >= Cantidad a sacar
+                    "$expr": {
+                        "$gte": [
+                            {
+                                "$subtract": [
+                                    {
+                                        "$ifNull": ["$currentStock", 0]
+                                    },  # ifNull por seguridad
+                                    {"$ifNull": ["$promiseStock", 0]},
+                                ]
+                            },
+                            qty,
+                        ]
+                    },
                 },
                 {
                     "$inc": {
-                        "currentStock": -abs(substract_to_current_stock),
+                        "currentStock": -qty,
                     },
                     "$set": {
                         "updatedAt": updated_at,
@@ -226,10 +244,13 @@ class ProductAccountsCollection:
             ordered=True,
             session=session,
         )
-        if result.modified_count < len(operations):
+
+        # Si matched_count < len, significa que alguno falló la condición $expr
+        if result.matched_count < len(operations):
             raise OperationFailure(
-                f"No se pudieron actualizar todos los productos (Match: {result.matched_count}/{len(operations)}). "
-                "Es posible que el stock haya cambiado durante la operación."
+                f"No se pudieron actualizar todos los productos. "
+                f"(Match: {result.matched_count}/{len(operations)}). "
+                "Es posible que el stock disponible (Físico - Prometido) sea insuficiente."
             )
 
         return True
@@ -609,7 +630,7 @@ class ProductAccountsCollection:
 
         # Validación de seguridad
         if result.matched_count < len(operations):
-            raise Exception(
+            raise OperationFailure(
                 f"No se pudo despachar el stock prometido para todos los items. "
                 f"(Match: {result.matched_count}/{len(operations)}). "
                 "Posible inconsistencia en promiseStock."
