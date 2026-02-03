@@ -569,6 +569,54 @@ class ProductAccountsCollection:
             return_document=ReturnDocument.AFTER,
         )
 
+    async def bulk_dispatch_promise_stock(
+        self,
+        branch_id: str,
+        # Lista de tuplas (product_id, quantity)
+        bulk_data: list[tuple[str, int]],
+        session: Any,
+    ) -> bool:
+        """
+        Versión masiva de dispatch_promise_stock.
+        Resta Current y Promise al mismo tiempo.
+        """
+        collection = self.__collection
+        updated_at = TimeTools.get_now_in_milliseconds()
+
+        operations = []
+        for p_id, qty in bulk_data:
+            op = UpdateOne(
+                {
+                    "productId": p_id,
+                    "branchId": branch_id,
+                    # Validamos que exista stock prometido suficiente
+                    "promiseStock": {"$gte": qty},
+                },
+                {
+                    "$inc": {
+                        "promiseStock": -qty,
+                        "currentStock": -qty,
+                    },
+                    "$set": {"updatedAt": updated_at},
+                },
+            )
+            operations.append(op)
+
+        if not operations:
+            return True
+
+        result = await collection.bulk_write(operations, session=session)
+
+        # Validación de seguridad
+        if result.matched_count < len(operations):
+            raise Exception(
+                f"No se pudo despachar el stock prometido para todos los items. "
+                f"(Match: {result.matched_count}/{len(operations)}). "
+                "Posible inconsistencia en promiseStock."
+            )
+
+        return True
+
     async def dispatch_direct_stock(
         self, product_id: str, branch_id: str, quantity_to_dispatch: int, session: Any
     ) -> dict[str, Any] | None:
