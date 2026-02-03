@@ -14,6 +14,7 @@ from pymongo.errors import OperationFailure
 
 from core.counter_manager.counter_manager import CounterManager
 from core.default_values import SALE_CLIENT_ID
+from core.inventory import InsufficientBalanceError
 
 from repos.v1.clients import ClientInDb
 from repos.v1.product_accounts import ProductAccountInDb
@@ -22,7 +23,6 @@ from repos.v1.products import ProductsRepository, ProductsDataSource
 
 from .process_invoice import (
     process_invoice,
-    InsufficientBalanceError,
     process_anon_invoice,
 )
 

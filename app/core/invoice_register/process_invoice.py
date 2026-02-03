@@ -5,7 +5,6 @@ from core.inventory import (
     execute_inventory_exit_db_operations,
     prepare_inventory_exit_batch,
     InventoryExitBatchItem,
-    InsufficientBalanceError,
 )
 
 from core.finance import process_client_financial_movement, FinanceTransactionRequest
@@ -21,9 +20,6 @@ from services.mongo_collections.v1 import (
     ClientTransactionsCollection,
     OrdersCollection,
 )
-
-
-
 
 
 async def process_invoice(
@@ -94,7 +90,6 @@ async def process_invoice(
             # ==========================================
             # 2. PERSISTENCIA DE INVENTARIO (DIFERENCIADA)
             # ==========================================
-
 
             if is_order_fulfillment:
                 # CAMINO A: ES UN PEDIDO -> Usamos bulk_dispatch_promise_stock
