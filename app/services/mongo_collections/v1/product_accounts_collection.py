@@ -290,6 +290,70 @@ class ProductAccountsCollection:
 
         return result
 
+    async def bulk_add_to_promise_stock(
+        self,
+        branch_id: str,
+        # Lista de tuplas: (product_id, quantity_to_reserve)
+        bulk_data: list[tuple[str, int]],
+        session: Any,
+    ) -> bool:
+        """
+        Incrementa masivamente el stock prometido (Reserva).
+        Valida que: (Current - Promise) >= Cantidad a reservar.
+        """
+        collection = self.__collection
+        updated_at = TimeTools.get_now_in_milliseconds()
+
+        operations: list[UpdateOne] = []
+
+        for product_id, quantity in bulk_data:
+            qty_to_reserve = abs(quantity)
+
+            op = UpdateOne(
+                {
+                    "productId": product_id,
+                    "branchId": branch_id,
+                    "$expr": {
+                        "$gte": [
+                            {
+                                "$subtract": [
+                                    {"$ifNull": ["$currentStock", 0]},
+                                    {"$ifNull": ["$promiseStock", 0]},
+                                ]
+                            },
+                            qty_to_reserve,
+                        ]
+                    },
+                },
+                {
+                    "$inc": {
+                        "promiseStock": qty_to_reserve,
+                    },
+                    "$set": {
+                        "updatedAt": updated_at,
+                    },
+                },
+            )
+            operations.append(op)
+
+        if not operations:
+            return True
+
+        result = await collection.bulk_write(
+            operations,
+            ordered=True,
+            session=session,
+        )
+
+        if result.matched_count < len(operations):
+            raise Exception(
+                f"No se pudo reservar el stock para todos los productos. "
+                f"(Match: {result.matched_count}/{len(operations)}). "
+                "Stock disponible insuficiente (Físico - Prometido) para realizar la reserva."
+            )
+
+        return True
+
     async def substract_from_promise_stock(
         self, product_id: str, branch_id: str, quantity: int, session: Any
     ) -> dict[str, Any] | None:
@@ -314,6 +378,59 @@ class ProductAccountsCollection:
         )
 
         return result
+
+    async def bulk_substract_from_promise_stock(
+        self,
+        branch_id: str,
+        bulk_data: list[tuple[str, int]],
+        session: Any,
+    ) -> bool:
+        """
+        Libera masivamente stock prometido (Ej: Cancelación de Pedido).
+        Resta del promiseStock, pero NO toca el currentStock.
+        """
+        collection = self.__collection
+        updated_at = TimeTools.get_now_in_milliseconds()
+
+        operations: list[UpdateOne] = []
+
+        for product_id, quantity in bulk_data:
+            qty_to_release = abs(quantity)
+
+            op = UpdateOne(
+                {
+                    "productId": product_id,
+                    "branchId": branch_id,
+                    "promiseStock": {"$gte": qty_to_release},
+                },
+                {
+                    "$inc": {
+                        "promiseStock": -qty_to_release,
+                    },
+                    "$set": {
+                        "updatedAt": updated_at,
+                    },
+                },
+            )
+            operations.append(op)
+
+        if not operations:
+            return True
+
+        result = await collection.bulk_write(
+            operations,
+            ordered=True,
+            session=session,
+        )
+
+        if result.matched_count < len(operations):
+            raise Exception(
+                f"No se pudo liberar el stock prometido. "
+                f"(Match: {result.matched_count}/{len(operations)}). "
+                "Inconsistencia detectada: El stock prometido en BD es menor al que intentas liberar."
+            )
+
+        return True
 
     async def adjust_product_stock_only(
         self,
