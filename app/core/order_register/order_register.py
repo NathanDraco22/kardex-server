@@ -33,13 +33,6 @@ class OrderRegister:
                 status_code=status.HTTP_400_BAD_REQUEST, detail="BRANCH_NOT_FOUND"
             )
 
-        product_ids = list(set(item.product.id for item in doc.saleItems))
-        products = await self.products_repo.get_product_by_ids(product_ids)
-        if len(products) != len(product_ids):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="PRODUCT_NOT_FOUND"
-            )
-
     async def regis_order(
         self, create_order: CreateOrder
     ) -> Tuple[OrderInDb, List[ProductAccountInDb]]:
