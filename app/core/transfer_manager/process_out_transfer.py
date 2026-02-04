@@ -37,6 +37,7 @@ async def process_outgoing_transfer(
                 InventoryExitBatchItem(
                     product_id=item.id,
                     quantity=item.quantity,
+                    product_name=item.name,
                 )
                 for item in create_transfer.items
             ]
