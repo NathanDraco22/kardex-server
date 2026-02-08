@@ -2,7 +2,8 @@ from typing import AsyncGenerator
 from typing import Any
 
 
-from pymongo import ReturnDocument, IndexModel
+from pymongo import ReturnDocument, IndexModel, UpdateOne
+from pymongo.errors import OperationFailure
 
 from services import MongoService
 
@@ -33,6 +34,23 @@ class ProductAccountsCollection:
             {"productId": product_id, "branchId": branch_id}
         )
         return result
+
+    async def get_accounts_by_branch_id(
+        self, branch_id: str, product_ids: list[str], session: Any
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        cursor = collection.find(
+            {
+                "branchId": branch_id,
+                "productId": {"$in": product_ids},
+            },
+            session=session,
+        )
+
+        res = await cursor.to_list(length=None)
+
+        return res
 
     async def get_product_accounts_by_product(
         self,
@@ -115,6 +133,128 @@ class ProductAccountsCollection:
 
         return result
 
+    async def bulk_update_product_account_balance_with_average_cost(
+        self,
+        branch_id: str,
+        # Recibimos una lista de diccionarios para mayor claridad dado que son varios datos
+        # Estructura esperada: {"product_id": str, "qty": int, "last_cost": int, "avg_cost": int}
+        bulk_data: list[dict[str, Any]],
+        session: Any,
+    ) -> bool:
+        collection = self.__collection
+        updated_at = TimeTools.get_now_in_milliseconds()
+
+        operations: list[UpdateOne] = []
+
+        for item in bulk_data:
+            # Preparamos la operación individual
+            update_op = UpdateOne(
+                {
+                    "productId": item["product_id"],
+                    "branchId": branch_id,
+                },
+                {
+                    # 1. Suma atómica (Equivalente a tu $add con $ifNull)
+                    # Si el doc no existe, crea currentStock con este valor.
+                    "$inc": {"currentStock": item["qty"]},
+                    # 2. Sobrescribir costos y fecha de actualización
+                    "$set": {
+                        "lastCost": item["last_cost"],
+                        "averageCost": item["avg_cost"],
+                        "updatedAt": updated_at,
+                    },
+                    # 3. Solo si es un documento NUEVO (Equivalente a tu $ifNull en createdAt)
+                    "$setOnInsert": {
+                        "createdAt": updated_at,
+                        "promiseStock": 0,
+                    },
+                },
+                upsert=True,  # CRÍTICO: Crea el documento si no existe
+            )
+            operations.append(update_op)
+
+        # Ejecutamos en lote
+        result = await collection.bulk_write(
+            operations,
+            ordered=True,
+            session=session,
+        )
+
+        # Validación de Integridad para UPSERT
+        # En una entrada, éxito significa: o se actualizó (match) o se creó (upsert)
+        total_processed = result.matched_count + result.upserted_count
+
+        if total_processed < len(operations):
+            raise OperationFailure(
+                f"No se pudieron procesar todas las entradas de inventario. "
+                f"(Procesados: {total_processed}/{len(operations)})"
+            )
+
+        return True
+
+    async def bulk_substract_product_account_data(
+        self,
+        branch_id: str,
+        bulk_to_substrack: list[tuple[str, int]],
+        session: Any,
+    ) -> bool:
+        collection = self.__collection
+        updated_at = TimeTools.get_now_in_milliseconds()
+
+        operations: list[UpdateOne] = []
+        for update_element in bulk_to_substrack:
+            product_id, substract_to_current_stock = update_element
+
+            # Usamos abs() por seguridad
+            qty = abs(substract_to_current_stock)
+
+            update_op = UpdateOne(
+                {
+                    "productId": product_id,
+                    "branchId": branch_id,
+                    # 🔥 AQUÍ ESTÁ LA MAGIA:
+                    # Usamos $expr para calcular (Current - Promise) >= Cantidad a sacar
+                    "$expr": {
+                        "$gte": [
+                            {
+                                "$subtract": [
+                                    {
+                                        "$ifNull": ["$currentStock", 0]
+                                    },  # ifNull por seguridad
+                                    {"$ifNull": ["$promiseStock", 0]},
+                                ]
+                            },
+                            qty,
+                        ]
+                    },
+                },
+                {
+                    "$inc": {
+                        "currentStock": -qty,
+                    },
+                    "$set": {
+                        "updatedAt": updated_at,
+                    },
+                },
+            )
+            operations.append(update_op)
+
+        result = await collection.bulk_write(
+            operations,
+            ordered=True,
+            session=session,
+        )
+
+        # Si matched_count < len, significa que alguno falló la condición $expr
+        if result.matched_count < len(operations):
+            raise OperationFailure(
+                f"No se pudieron actualizar todos los productos. "
+                f"(Match: {result.matched_count}/{len(operations)}). "
+                "Es posible que el stock disponible (Físico - Prometido) sea insuficiente."
+            )
+
+        return True
+
     async def add_to_promise_stock(
         self, product_id: str, branch_id: str, quantity: int, session: Any
     ) -> dict[str, Any] | None:
@@ -150,6 +290,70 @@ class ProductAccountsCollection:
 
         return result
 
+    async def bulk_add_to_promise_stock(
+        self,
+        branch_id: str,
+        # Lista de tuplas: (product_id, quantity_to_reserve)
+        bulk_data: list[tuple[str, int]],
+        session: Any,
+    ) -> bool:
+        """
+        Incrementa masivamente el stock prometido (Reserva).
+        Valida que: (Current - Promise) >= Cantidad a reservar.
+        """
+        collection = self.__collection
+        updated_at = TimeTools.get_now_in_milliseconds()
+
+        operations: list[UpdateOne] = []
+
+        for product_id, quantity in bulk_data:
+            qty_to_reserve = abs(quantity)
+
+            op = UpdateOne(
+                {
+                    "productId": product_id,
+                    "branchId": branch_id,
+                    "$expr": {
+                        "$gte": [
+                            {
+                                "$subtract": [
+                                    {"$ifNull": ["$currentStock", 0]},
+                                    {"$ifNull": ["$promiseStock", 0]},
+                                ]
+                            },
+                            qty_to_reserve,
+                        ]
+                    },
+                },
+                {
+                    "$inc": {
+                        "promiseStock": qty_to_reserve,
+                    },
+                    "$set": {
+                        "updatedAt": updated_at,
+                    },
+                },
+            )
+            operations.append(op)
+
+        if not operations:
+            return True
+
+        result = await collection.bulk_write(
+            operations,
+            ordered=True,
+            session=session,
+        )
+
+        if result.matched_count < len(operations):
+            raise Exception(
+                f"No se pudo reservar el stock para todos los productos. "
+                f"(Match: {result.matched_count}/{len(operations)}). "
+                "Stock disponible insuficiente (Físico - Prometido) para realizar la reserva."
+            )
+
+        return True
+
     async def substract_from_promise_stock(
         self, product_id: str, branch_id: str, quantity: int, session: Any
     ) -> dict[str, Any] | None:
@@ -175,6 +379,59 @@ class ProductAccountsCollection:
 
         return result
 
+    async def bulk_substract_from_promise_stock(
+        self,
+        branch_id: str,
+        bulk_data: list[tuple[str, int]],
+        session: Any,
+    ) -> bool:
+        """
+        Libera masivamente stock prometido (Ej: Cancelación de Pedido).
+        Resta del promiseStock, pero NO toca el currentStock.
+        """
+        collection = self.__collection
+        updated_at = TimeTools.get_now_in_milliseconds()
+
+        operations: list[UpdateOne] = []
+
+        for product_id, quantity in bulk_data:
+            qty_to_release = abs(quantity)
+
+            op = UpdateOne(
+                {
+                    "productId": product_id,
+                    "branchId": branch_id,
+                    "promiseStock": {"$gte": qty_to_release},
+                },
+                {
+                    "$inc": {
+                        "promiseStock": -qty_to_release,
+                    },
+                    "$set": {
+                        "updatedAt": updated_at,
+                    },
+                },
+            )
+            operations.append(op)
+
+        if not operations:
+            return True
+
+        result = await collection.bulk_write(
+            operations,
+            ordered=True,
+            session=session,
+        )
+
+        if result.matched_count < len(operations):
+            raise Exception(
+                f"No se pudo liberar el stock prometido. "
+                f"(Match: {result.matched_count}/{len(operations)}). "
+                "Inconsistencia detectada: El stock prometido en BD es menor al que intentas liberar."
+            )
+
+        return True
+
     async def adjust_product_stock_only(
         self,
         product_id: str,
@@ -198,6 +455,47 @@ class ProductAccountsCollection:
                         },
                         "updatedAt": update_at,
                         "createdAt": {"$ifNull": ["$createdAt", update_at]},
+                    }
+                },
+            ],
+            upsert=True,
+            session=session,
+            return_document=ReturnDocument.AFTER,
+        )
+
+        return result
+
+    async def update_product_account_balance_with_average_cost(
+        self,
+        product_id: str,
+        branch_id: str,
+        add_to_current_stock: int,
+        last_cost: int,
+        average_cost: int,
+        session: Any,
+    ) -> dict[str, Any]:
+        collection = self.__collection
+        update_at = TimeTools.get_now_in_milliseconds()
+
+        result = await collection.find_one_and_update(
+            {
+                "productId": product_id,
+                "branchId": branch_id,
+            },
+            [
+                {
+                    "$set": {
+                        "currentStock": {
+                            "$add": [
+                                {"$ifNull": ["$currentStock", 0]},
+                                add_to_current_stock,
+                            ]
+                        },
+                        "lastCost": last_cost,
+                        "averageCost": average_cost,
+                        "updatedAt": update_at,
+                        "createdAt": {"$ifNull": ["$createdAt", update_at]},
+                        "promiseStock": {"$ifNull": ["$promiseStock", 0]},
                     }
                 },
             ],
@@ -408,6 +706,54 @@ class ProductAccountsCollection:
             session=session,
             return_document=ReturnDocument.AFTER,
         )
+
+    async def bulk_dispatch_promise_stock(
+        self,
+        branch_id: str,
+        # Lista de tuplas (product_id, quantity)
+        bulk_data: list[tuple[str, int]],
+        session: Any,
+    ) -> bool:
+        """
+        Versión masiva de dispatch_promise_stock.
+        Resta Current y Promise al mismo tiempo.
+        """
+        collection = self.__collection
+        updated_at = TimeTools.get_now_in_milliseconds()
+
+        operations = []
+        for p_id, qty in bulk_data:
+            op = UpdateOne(
+                {
+                    "productId": p_id,
+                    "branchId": branch_id,
+                    # Validamos que exista stock prometido suficiente
+                    "promiseStock": {"$gte": qty},
+                },
+                {
+                    "$inc": {
+                        "promiseStock": -qty,
+                        "currentStock": -qty,
+                    },
+                    "$set": {"updatedAt": updated_at},
+                },
+            )
+            operations.append(op)
+
+        if not operations:
+            return True
+
+        result = await collection.bulk_write(operations, session=session)
+
+        # Validación de seguridad
+        if result.matched_count < len(operations):
+            raise OperationFailure(
+                f"No se pudo despachar el stock prometido para todos los items. "
+                f"(Match: {result.matched_count}/{len(operations)}). "
+                "Posible inconsistencia en promiseStock."
+            )
+
+        return True
 
     async def dispatch_direct_stock(
         self, product_id: str, branch_id: str, quantity_to_dispatch: int, session: Any

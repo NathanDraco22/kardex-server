@@ -1,7 +1,12 @@
 from tools import UuidTool, TimeTools
+from core.inventory import (
+    execute_inventory_exit_db_operations,
+    prepare_inventory_exit_batch,
+    InventoryExitBatchItem,
+)
+
 from repos.v1.transfers import TransferInDb, CreateTransfer
 from repos.v1.product_accounts import ProductAccountInDb
-from repos.v1.product_transactions import ProductTransactionInDb
 
 from services import MongoService
 from services.mongo_collections.v1 import (
@@ -11,13 +16,9 @@ from services.mongo_collections.v1 import (
 )
 
 
-class InsufficientBalanceError(Exception):
-    pass
-
-
 async def process_outgoing_transfer(
     create_transfer: CreateTransfer,
-) -> tuple[TransferInDb, list[ProductAccountInDb]]:
+) -> TransferInDb:
     mongo_client = MongoService().client
 
     # Colecciones
@@ -25,87 +26,86 @@ async def process_outgoing_transfer(
     product_account_col = ProductAccountsCollection()
     transfers_col = TransfersCollection()
 
-    transfer_items = create_transfer.items
-
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
             new_transfer_id = UuidTool.generate_uuid()
             current_time = TimeTools.get_now_in_milliseconds()
 
-            updated_origin_accounts: list[ProductAccountInDb] = []
-            created_transactions: list[ProductTransactionInDb] = []
-
-            # 1. PROCESAR ITEMS (Descontar de Origen y crear transacciones)
-            for item in transfer_items:
-                # A. Restar Stock del Origen
-                # Nota: Pasamos quantity positivo, la función se encarga de restar
-                result = await product_account_col.substract_product_account_data(
+            # 1. PREPARAR DATOS (Mapeo a InventoryExitBatchItem)
+            # Convertimos los items del traslado al formato genérico de salida
+            batch_items = [
+                InventoryExitBatchItem(
                     product_id=item.id,
+                    quantity=item.quantity,
+                    product_name=item.name,
+                )
+                for item in create_transfer.items
+            ]
+
+            # 2. OBTENER CUENTAS ACTUALES (Snapshot Read)
+            # Obtenemos las cuentas para verificar stock y costo promedio
+            product_ids = [item.product_id for item in batch_items]
+
+            existing_accounts_data = (
+                await product_account_col.get_accounts_by_branch_id(
                     branch_id=create_transfer.origin,
-                    substract_to_current_stock=item.quantity,
+                    product_ids=product_ids,
                     session=session,
                 )
+            )
 
-                if result is None:
-                    raise InsufficientBalanceError(
-                        f"Stock insuficiente para el producto: {item.name}"
-                    )
+            accounts_dict = {
+                acc["productId"]: ProductAccountInDb.model_validate(acc)
+                for acc in existing_accounts_data
+            }
 
-                updated_account = ProductAccountInDb.model_validate(result)
+            # 3. EJECUTAR LÓGICA PURA REUTILIZABLE 🧠
+            # Esta función valida stock (lanza InsufficientBalanceError si falla),
+            # calcula saldos y prepara las transacciones.
+            batch_result = prepare_inventory_exit_batch(
+                branch_id=create_transfer.origin,
+                items=batch_items,
+                existing_accounts_dict=accounts_dict,
+                # Metadata
+                document_id=new_transfer_id,
+                doc_number=create_transfer.docNumber,
+                tx_type="exit",
+                tx_subtype="transfer",
+            )
 
-                # B. Actualizar el costo del ítem en el documento de traslado
-                # Regla: Se mantiene en int (centavos)
-                item.cost = updated_account.averageCost
+            # 4. ACTUALIZAR COSTOS EN EL OBJETO DE TRASLADO
+            # La lógica nos devolvió 'assigned_costs' (los costos promedio al momento de la salida).
+            # Debemos actualizar los items del traslado con este valor real antes de guardarlo.
+            for i, item in enumerate(create_transfer.items):
+                # batch_result.assigned_costs tiene el mismo orden que items
+                item.cost = batch_result.assigned_costs[i]
 
-                updated_origin_accounts.append(updated_account)
+            # 5. PERSISTENCIA MASIVA EN BD (Stock y Kardex) 💾
+            await execute_inventory_exit_db_operations(
+                branch_id=create_transfer.origin,
+                batch_result=batch_result,
+                session=session,
+                account_col=product_account_col,
+                transaction_col=prd_transaction_col,
+            )
 
-                # C. Crear registro de Transacción (Kardex)
-                new_transaction = ProductTransactionInDb(
-                    id=UuidTool.generate_uuid(),
-                    documentId=new_transfer_id,
-                    docNumber=create_transfer.docNumber,
-                    type="exit",
-                    subtype="transfer",  # Específico para salida de traslado
-                    productId=item.id,
-                    branchId=create_transfer.origin,
-                    # REGLA: Salida de inventario = Cantidad Negativa
-                    quantity=-abs(item.quantity),
-                    averageCost=updated_account.averageCost,
-                    createdAt=current_time,
-                    resultStock=updated_account.currentStock,
-                )
-                created_transactions.append(new_transaction)
-
-            # 2. PREPARAR DOCUMENTO DE TRASLADO
+            # 6. CREAR DOCUMENTO DE TRASLADO
             new_transfer_data = create_transfer.model_dump()
-
-            # Sobrescribimos/Agregamos campos de sistema
             new_transfer_data.update(
                 {
                     "id": new_transfer_id,
                     "createdAt": current_time,
-                    "status": "inTransit",  # Estado inicial obligatorio
-                    # Guardamos los items con el costo actualizado
-                    "items": [item.model_dump() for item in transfer_items],
+                    "status": "inTransit",
+                    # Guardamos items con el costo actualizado en el paso 4
+                    "items": [item.model_dump() for item in create_transfer.items],
                 }
             )
 
             new_transfer_in_db = TransferInDb.model_validate(new_transfer_data)
 
-            # 3. INSERTAR EL TRASLADO EN BD
-            # Asumo que tienes este método en TransfersCollection similar a ExitDocsCollection
             await transfers_col.create_transfer_with_session(
                 new_transfer_in_db.model_dump(),
                 session=session,
             )
 
-            # 4. INSERTAR LAS TRANSACCIONES EN LOTE
-            created_transactions_data = [t.model_dump() for t in created_transactions]
-            await prd_transaction_col.create_many_product_transactions_with_session(
-                created_transactions_data,
-                session=session,
-            )
-
-            # 5. RETORNAR RESULTADOS
-
-            return new_transfer_in_db, updated_origin_accounts
+            return new_transfer_in_db

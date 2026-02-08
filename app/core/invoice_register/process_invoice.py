@@ -1,9 +1,13 @@
 from tools import UuidTool, TimeTools
 from repos.v1.invoices import CreateInvoice, InvoiceInDb
 from repos.v1.product_accounts import ProductAccountInDb
-from repos.v1.product_transactions import ProductTransactionInDb
+from core.inventory import (
+    execute_inventory_exit_db_operations,
+    prepare_inventory_exit_batch,
+    InventoryExitBatchItem,
+)
 
-from repos.v1.client_transactions import ClientTransactionInDb
+from core.finance import process_client_financial_movement, FinanceTransactionRequest
 from repos.v1.clients import ClientInDb
 
 from services import MongoService
@@ -18,180 +22,174 @@ from services.mongo_collections.v1 import (
 )
 
 
-class InsufficientBalanceError(Exception):
-    pass
-
-
 async def process_invoice(
     create_invoice: CreateInvoice,
 ) -> tuple[InvoiceInDb, ClientInDb]:
     mongo_client = MongoService().client
 
     prd_transaction_col = ProductTransactionsCollection()
-    prd_account_col = ProductAccountsCollection()
-
-    order_col = OrdersCollection()
-
-    client_transaction_col = ClientTransactionsCollection()
-    client_account_col = ClientsCollection()
-
+    product_account_col = ProductAccountsCollection()
     invoice_col = InvoicesCollection()
-
     order_col = OrdersCollection()
-
-    invoice_items = create_invoice.saleItems
+    client_col = ClientsCollection()
+    client_tx_col = ClientTransactionsCollection()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
-            new_invoice_doc_id = UuidTool.generate_uuid()
+            new_invoice_id = UuidTool.generate_uuid()
+            current_time = TimeTools.get_now_in_milliseconds()
 
-            updated_product_accounts: list[ProductAccountInDb] = []
-
-            created_transactions: list[ProductTransactionInDb] = []
-
-            for _, invoice_item in enumerate(invoice_items):
-                total_to_dispatch = abs(
-                    invoice_item.quantity + invoice_item.bonQuantity
-                )
-                if create_invoice.orderNumber and create_invoice.status == "open":
-                    result = await prd_account_col.dispatch_promise_stock(
-                        invoice_item.product.id,
-                        create_invoice.branchId,
-                        total_to_dispatch,
-                        session=session,
+            # ==========================================
+            # 1. PREPARACIÓN DE INVENTARIO
+            # ==========================================
+            batch_items: list[InventoryExitBatchItem] = []
+            for item in create_invoice.saleItems:
+                total_qty = abs(item.quantity + item.bonQuantity)
+                batch_items.append(
+                    InventoryExitBatchItem(
+                        product_id=item.product.id,
+                        quantity=total_qty,
+                        product_name=item.product.name,
                     )
-                else:
-                    result = await prd_account_col.dispatch_direct_stock(
-                        invoice_item.product.id,
-                        create_invoice.branchId,
-                        total_to_dispatch,
-                        session=session,
-                    )
-
-                if result is None:
-                    raise InsufficientBalanceError(
-                        f"Stock insuficiente para {invoice_item.product.name}"
-                    )
-
-                updated_product_account = ProductAccountInDb.model_validate(result)
-
-                invoice_item.cost = updated_product_account.averageCost
-
-                updated_product_accounts.append(updated_product_account)
-
-                new_transaction = ProductTransactionInDb(
-                    id=UuidTool.generate_uuid(),
-                    documentId=new_invoice_doc_id,
-                    docNumber=create_invoice.docNumber,
-                    type="exit",
-                    subtype="invoice",
-                    productId=invoice_item.product.id,
-                    branchId=create_invoice.branchId,
-                    quantity=-total_to_dispatch,
-                    averageCost=updated_product_account.averageCost,
-                    resultStock=updated_product_account.currentStock,
-                    createdAt=TimeTools.get_now_in_milliseconds(),
                 )
 
-                created_transactions.append(new_transaction)
+            # Obtener Cuentas
+            product_ids = [item.product_id for item in batch_items]
+            accounts_data = await product_account_col.get_accounts_by_branch_id(
+                branch_id=create_invoice.branchId,
+                product_ids=product_ids,
+                session=session,
+            )
+            accounts_dict = {
+                acc["productId"]: ProductAccountInDb.model_validate(acc)
+                for acc in accounts_data
+            }
+
+            # Determinar si es despacho de pedido antes de validar
+            is_order_fulfillment = bool(
+                create_invoice.orderNumber and create_invoice.status == "open"
+            )
+
+            # Ejecutar cálculos (Validación de stock + Costos + Kardex)
+            # Pasamos is_order_fulfillment para que la validación en memoria sea correcta
+            batch_result = prepare_inventory_exit_batch(
+                branch_id=create_invoice.branchId,
+                items=batch_items,
+                existing_accounts_dict=accounts_dict,
+                document_id=new_invoice_id,
+                doc_number=create_invoice.docNumber,
+                tx_type="exit",
+                tx_subtype="invoice",
+                is_order_fulfillment=is_order_fulfillment,
+            )
+
+            # Asignar Costos Reales a la Factura
+            for i, item in enumerate(create_invoice.saleItems):
+                item.cost = batch_result.assigned_costs[i]
+
+            # ==========================================
+            # 2. PERSISTENCIA DE INVENTARIO (DIFERENCIADA)
+            # ==========================================
+
+            if is_order_fulfillment:
+                # CAMINO A: ES UN PEDIDO -> Usamos bulk_dispatch_promise_stock
+                await product_account_col.bulk_dispatch_promise_stock(
+                    branch_id=create_invoice.branchId,
+                    bulk_data=batch_result.stock_subtractions,
+                    session=session,
+                )
+
+                # Guardar Kardex manualmente (porque no usamos execute_inventory_exit...)
+                created_transactions_data = [
+                    t.model_dump() for t in batch_result.transactions
+                ]
+                await prd_transaction_col.create_many_product_transactions_with_session(
+                    created_transactions_data, session=session
+                )
+
+            else:
+                # CAMINO B: VENTA DIRECTA -> Usamos el método estándar
+                await execute_inventory_exit_db_operations(
+                    branch_id=create_invoice.branchId,
+                    batch_result=batch_result,
+                    session=session,
+                    account_col=product_account_col,
+                    transaction_col=prd_transaction_col,
+                )
 
             if create_invoice.status == "draft":
                 create_invoice.status = "open"
 
-            new_invoice_date = create_invoice.model_dump()
-            new_invoice_date["id"] = new_invoice_doc_id
-            new_invoice_date["createdAt"] = TimeTools.get_now_in_milliseconds()
-
-            insert_result = await invoice_col.create_invoice_with_session(
-                new_invoice_date,
-                session=session,
+            new_invoice_data = create_invoice.model_dump()
+            new_invoice_data.update(
+                {
+                    "id": new_invoice_id,
+                    "createdAt": current_time,
+                    "amountPaid": create_invoice.total
+                    if create_invoice.paymentType == "cash"
+                    else 0,
+                    "paidAt": current_time
+                    if create_invoice.paymentType == "cash"
+                    else None,
+                    "saleItems": [
+                        item.model_dump() for item in create_invoice.saleItems
+                    ],
+                }
             )
 
-            await order_col.update_order_by_doc_number(
-                create_invoice.orderNumber,
-                {"invoiceId": new_invoice_doc_id},
-                session=session,
+            await invoice_col.create_invoice_with_session(
+                new_invoice_data, session=session
             )
+            new_invoice_in_db = InvoiceInDb.model_validate(new_invoice_data)
 
-            created_transactions_data = [
-                transaction.model_dump() for transaction in created_transactions
-            ]
+            # ==========================================
+            # 4. ACTUALIZAR PEDIDO (USANDO TU MÉTODO EXISTENTE)
+            # ==========================================
+            if create_invoice.orderNumber:
+                # Preparamos el diccionario de actualización
+                order_update_payload = {
+                    "invoiceId": new_invoice_id,
+                    "status": "completed",  # O el estado que marque cierre
+                    "updatedAt": current_time,
+                }
 
-            await prd_transaction_col.create_many_product_transactions_with_session(
-                created_transactions_data,
-                session=session,
-            )
-
-            new_invoice_in_db = InvoiceInDb.model_validate(insert_result)
-
-            client_account_data = await client_account_col.add_to_client_balance(
-                create_invoice.clientId,
-                new_invoice_in_db.total,
-                session=session,
-            )
-
-            client_account = ClientInDb.model_validate(client_account_data)
-
-            new_client_transaction = ClientTransactionInDb(
-                id=UuidTool.generate_uuid(),
-                clientId=create_invoice.clientId,
-                documentId=new_invoice_in_db.id,
-                docNumber=new_invoice_in_db.docNumber,
-                amount=new_invoice_in_db.total,
-                type="debit",
-                subtype="invoice",
-                createdAt=TimeTools.get_now_in_milliseconds(),
-                resultBalance=client_account.balance,
-            )
-
-            new_client_transaction_data = new_client_transaction.model_dump()
-
-            await client_transaction_col.create_client_transaction_with_session(
-                new_client_transaction_data,
-                session=session,
-            )
-
-            if new_invoice_in_db.paymentType == "cash":
-                await invoice_col.add_to_amount_paid(
-                    new_invoice_in_db.id,
-                    new_invoice_in_db.total,
+                await order_col.update_order_by_doc_number(
+                    doc_number=create_invoice.orderNumber,
+                    order=order_update_payload,  # <--- Pasamos el dict aquí
                     session=session,
                 )
 
-                client_account_data = (
-                    await client_account_col.substract_from_client_balance(
-                        create_invoice.clientId,
-                        new_invoice_in_db.total,
-                        session=session,
-                    )
-                )
+            # ==========================================
+            # 5. GESTIÓN FINANCIERA
+            # ==========================================
 
-                client_account = ClientInDb.model_validate(client_account_data)
-
-                new_client_transaction = ClientTransactionInDb(
-                    id=UuidTool.generate_uuid(),
-                    clientId=create_invoice.clientId,
-                    documentId=new_invoice_in_db.id,
-                    docNumber=new_invoice_in_db.docNumber,
-                    amount=-(new_invoice_in_db.total),
-                    type="credit",
+            # A. Cargo (Deuda)
+            client_account = await process_client_financial_movement(
+                request=FinanceTransactionRequest(
+                    client_id=create_invoice.clientId,
+                    amount=new_invoice_in_db.total,
+                    document_id=new_invoice_id,
+                    doc_number=new_invoice_in_db.docNumber,
                     subtype="invoice",
-                    createdAt=TimeTools.get_now_in_milliseconds(),
-                    resultBalance=client_account.balance,
-                )
+                ),
+                session=session,
+                client_col=client_col,
+                client_tx_col=client_tx_col,
+            )
 
-                new_client_transaction_data = new_client_transaction.model_dump()
-
-                await client_transaction_col.create_client_transaction_with_session(
-                    new_client_transaction_data,
+            # B. Pago Contado (Abono)
+            if new_invoice_in_db.paymentType == "cash":
+                client_account = await process_client_financial_movement(
+                    request=FinanceTransactionRequest(
+                        client_id=create_invoice.clientId,
+                        amount=-(new_invoice_in_db.total),
+                        document_id=new_invoice_id,
+                        doc_number=new_invoice_in_db.docNumber,
+                        subtype="invoice",
+                    ),
                     session=session,
-                )
-
-            if new_invoice_in_db.orderNumber:
-                await order_col.update_order_status_by_doc_number(
-                    doc_number=new_invoice_in_db.orderNumber,
-                    status="completed",
-                    session=session,
+                    client_col=client_col,
+                    client_tx_col=client_tx_col,
                 )
 
             return new_invoice_in_db, client_account
@@ -201,77 +199,105 @@ async def process_anon_invoice(
     create_invoice: CreateInvoice,
 ) -> tuple[InvoiceInDb, list[ProductAccountInDb]]:
     """
-    Procesa una factura anónima (venta de mostrador).
-    1. Afecta el inventario (venta directa).
-    2. Enriquece los items con su costo.
-    3. Guarda la factura.
-    4. Guarda las transacciones de producto.
+    Procesa una factura anónima (venta de mostrador) utilizando el motor de inventario unificado.
     """
     mongo_client = MongoService().client
+
     prd_transaction_col = ProductTransactionsCollection()
-    prd_account_col = ProductAccountsCollection()
+    product_account_col = ProductAccountsCollection()
     invoice_col = InvoicesCollection()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
             new_invoice_doc_id = UuidTool.generate_uuid()
+            current_time = TimeTools.get_now_in_milliseconds()
 
-            updated_product_accounts: list[ProductAccountInDb] = []
-            created_transactions: list[ProductTransactionInDb] = []
+            # 1. PREPARAR DATOS DE SALIDA (Mapeo a InventoryExitBatchItem)
+            # REGLA DE NEGOCIO: En ventas, descontamos Cantidad + Bonificación
+            batch_items = []
+            for item in create_invoice.saleItems:
+                total_to_dispatch = abs(item.quantity + item.bonQuantity)
 
-            for invoice_item in create_invoice.saleItems:
-                total_to_dispatch = abs(
-                    invoice_item.quantity + invoice_item.bonQuantity
+                batch_items.append(
+                    InventoryExitBatchItem(
+                        product_id=item.product.id,  # Accedemos al ID dentro del objeto product
+                        quantity=total_to_dispatch,
+                        product_name=item.product.name,
+                    )
                 )
 
-                result = await prd_account_col.dispatch_direct_stock(
-                    invoice_item.product.id,
-                    create_invoice.branchId,
-                    total_to_dispatch,
+            # 2. OBTENER CUENTAS ACTUALES (Snapshot Read)
+            product_ids = [item.product_id for item in batch_items]
+
+            existing_accounts_data = (
+                await product_account_col.get_accounts_by_branch_id(
+                    branch_id=create_invoice.branchId,
+                    product_ids=product_ids,
                     session=session,
                 )
+            )
 
-                if result is None:
-                    raise InsufficientBalanceError(
-                        f"Stock insuficiente para {invoice_item.product.id}"
-                    )
+            accounts_dict = {
+                acc["productId"]: ProductAccountInDb.model_validate(acc)
+                for acc in existing_accounts_data
+            }
 
-                updated_product_account = ProductAccountInDb.model_validate(result)
-                invoice_item.cost = updated_product_account.averageCost
-                updated_product_accounts.append(updated_product_account)
+            # 3. EJECUTAR LÓGICA PURA REUTILIZABLE 🧠
+            # Valida stock, calcula costos de salida y prepara transacciones
+            batch_result = prepare_inventory_exit_batch(
+                branch_id=create_invoice.branchId,
+                items=batch_items,
+                existing_accounts_dict=accounts_dict,
+                # Metadata de la Factura
+                document_id=new_invoice_doc_id,
+                doc_number=create_invoice.docNumber,
+                # Tipo de Transacción
+                tx_type="exit",
+                tx_subtype="invoice",  # "invoice"
+            )
 
-                new_transaction = ProductTransactionInDb(
-                    id=UuidTool.generate_uuid(),
-                    documentId=new_invoice_doc_id,
-                    docNumber=create_invoice.docNumber,
-                    type="exit",
-                    subtype="invoice",
-                    productId=invoice_item.product.id,
-                    branchId=create_invoice.branchId,
-                    quantity=-(total_to_dispatch),
-                    averageCost=updated_product_account.averageCost,
-                    resultStock=updated_product_account.currentStock,
-                    createdAt=TimeTools.get_now_in_milliseconds(),
-                )
-                created_transactions.append(new_transaction)
+            # 4. ENRIQUECER ITEMS DE LA FACTURA CON EL COSTO REAL
+            # Asignamos el Costo Promedio calculado al momento de la salida
+            # Nota: Asumimos que el orden de create_invoice.saleItems coincide con batch_items
+            for i, invoice_item in enumerate(create_invoice.saleItems):
+                invoice_item.cost = batch_result.assigned_costs[i]
 
+            # 5. PERSISTENCIA MASIVA EN BD 💾
+            await execute_inventory_exit_db_operations(
+                branch_id=create_invoice.branchId,
+                batch_result=batch_result,
+                session=session,
+                account_col=product_account_col,
+                transaction_col=prd_transaction_col,
+            )
+
+            # 6. GUARDAR LA FACTURA
             new_invoice_data = create_invoice.model_dump()
-            new_invoice_data["id"] = new_invoice_doc_id
-            new_invoice_data["createdAt"] = TimeTools.get_now_in_milliseconds()
-            new_invoice_data["amountPaid"] = create_invoice.total
-            new_invoice_data["paidAt"] = TimeTools.get_now_in_milliseconds()
+            new_invoice_data.update(
+                {
+                    "id": new_invoice_doc_id,
+                    "createdAt": current_time,
+                    "paidAt": current_time,  # Al ser anónima/contado, se paga al instante
+                    "amountPaid": create_invoice.total,
+                    # Guardamos los items ya con su campo 'cost' actualizado en el paso 4
+                    "saleItems": [
+                        item.model_dump() for item in create_invoice.saleItems
+                    ],
+                }
+            )
 
             insert_result = await invoice_col.create_invoice_with_session(
                 new_invoice_data,
                 session=session,
             )
 
-            created_transactions_data = [t.model_dump() for t in created_transactions]
-            await prd_transaction_col.create_many_product_transactions_with_session(
-                created_transactions_data,
-                session=session,
-            )
-
             new_invoice_in_db = InvoiceInDb.model_validate(insert_result)
 
-            return new_invoice_in_db, updated_product_accounts
+            # 7. PREPARAR RETORNO (Cuentas actualizadas)
+            # Filtramos del diccionario las cuentas que fueron tocadas
+            updated_accounts = []
+            for item in batch_items:
+                if item.product_id in accounts_dict:
+                    updated_accounts.append(accounts_dict[item.product_id])
+
+            return new_invoice_in_db, updated_accounts

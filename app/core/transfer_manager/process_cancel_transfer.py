@@ -1,30 +1,48 @@
+from tools import BranchesTool
+from core.inventory import (
+    execute_inventory_entry_db_operations,
+    InventoryEntryBatchItem,
+    prepare_inventory_entry_batch,
+)
 from repos.v1.transfers import TransferInDb, CancelTransferIntent
 from repos.v1.product_accounts import ProductAccountInDb
-from repos.v1.product_transactions import ProductTransactionInDb
-
-from tools import UuidTool, TimeTools
-
 from services import MongoService
 from services.mongo_collections.v1 import (
     TransfersCollection,
     ProductTransactionsCollection,
     ProductAccountsCollection,
+    ProductSaleProfilesCollection,
+    ProductStatsCollection,
 )
+
+
+class TransferNotFoundError(Exception):
+    pass
+
+
+class TransferInvalidStatusError(Exception):
+    pass
 
 
 async def process_cancel_transfer(
     transfer_id: str,
     intent: CancelTransferIntent,
-) -> tuple[TransferInDb, list[ProductAccountInDb]]:
+) -> TransferInDb:
     mongo_client = MongoService().client
 
+    # Colecciones
     transfers_col = TransfersCollection()
     product_account_col = ProductAccountsCollection()
+    product_stats_col = ProductStatsCollection()
+    product_prof_col = ProductSaleProfilesCollection()
     prd_transaction_col = ProductTransactionsCollection()
+
+    # Tools
+    branches_tool = BranchesTool()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
-            # 1. OBTENER EL TRASLADO EXISTENTE
+            # 1. OBTENER Y VALIDAR TRASLADO
             existing_transfer_dict = (
                 await transfers_col.fetch_transfer_by_id_with_session(
                     transfer_id, session=session
@@ -32,59 +50,76 @@ async def process_cancel_transfer(
             )
 
             if not existing_transfer_dict:
-                raise Exception(f"Traslado {transfer_id} no encontrado")
+                raise TransferNotFoundError(f"Traslado {transfer_id} no encontrado")
 
             transfer_doc = TransferInDb.model_validate(existing_transfer_dict)
 
-            # 2. VALIDAR ESTADO (Solo se puede cancelar si está en tránsito)
+            # 2. VALIDAR ESTADO (Solo 'inTransit' se puede cancelar)
             if transfer_doc.status != "inTransit":
-                raise Exception(
+                raise TransferInvalidStatusError(
                     f"No se puede cancelar un traslado con estado: {transfer_doc.status}"
                 )
 
-            now_in_milliseconds = TimeTools.get_now_in_milliseconds()
+            # 3. OBTENER DATOS DE LA SUCURSAL DE ORIGEN (A donde vuelve la mercadería)
+            origin_branch_id = transfer_doc.origin
 
-            # NOTA CRUCIAL: En cancelación, el inventario vuelve al ORIGEN
-            target_branch = transfer_doc.origin
-            items_to_return = transfer_doc.items
+            origin_branch_in_db = branches_tool.get_branch_by_id(origin_branch_id)
+            if origin_branch_in_db is None:
+                raise Exception("Sucursal de Origen no encontrada para retorno")
 
-            updated_origin_accounts: list[ProductAccountInDb] = []
-            created_transactions: list[ProductTransactionInDb] = []
+            # 4. PREPARAR ITEMS PARA EL RETORNO
+            # Mapeamos los items del traslado a InventoryEntryBatchItem
+            # Nota: Usamos el costo original con el que salieron para que el reingreso sea contablemente neutro
+            batch_items = [
+                InventoryEntryBatchItem(
+                    product_id=item.id, quantity=item.quantity, unit_cost=item.cost
+                )
+                for item in transfer_doc.items
+            ]
 
-            # 3. DEVOLVER ITEMS AL STOCK DE ORIGEN
-            for item in items_to_return:
-                # A. Sumar al Stock del ORIGEN
-                # Usamos update_product_account_balance_data porque es una ENTRADA de inventario
-                result = await product_account_col.update_product_account_balance_data(
-                    product_id=item.id,
-                    branch_id=target_branch,  # Vuelve a casa
-                    add_to_current_stock=item.quantity,  # Cantidad Positiva (Reingreso)
-                    last_cost=item.cost,  # Mismo costo con el que salió
+            # 5. OBTENER CUENTAS ACTUALES EN ORIGEN (Snapshot Read)
+            product_ids = [item.product_id for item in batch_items]
+
+            existing_accounts_data = (
+                await product_account_col.get_accounts_by_branch_id(
+                    branch_id=origin_branch_id,
+                    product_ids=product_ids,
                     session=session,
                 )
+            )
 
-                updated_account = ProductAccountInDb.model_validate(result)
-                updated_origin_accounts.append(updated_account)
+            accounts_dict = {
+                acc["productId"]: ProductAccountInDb.model_validate(acc)
+                for acc in existing_accounts_data
+            }
 
-                # B. Crear Transacción de REVERSA (Cancelación)
-                new_transaction = ProductTransactionInDb(
-                    id=UuidTool.generate_uuid(),
-                    documentId=transfer_doc.id,
-                    docNumber=transfer_doc.docNumber,
-                    # Tipo Entry: Porque estamos recuperando el stock
-                    type="entry",
-                    subtype="transfer",  # Subtipo específico para auditoría
-                    productId=item.id,
-                    branchId=target_branch,
-                    # REGLA: Entrada = Positivo
-                    quantity=item.quantity,
-                    averageCost=updated_account.averageCost,
-                    createdAt=now_in_milliseconds,
-                    resultStock=updated_account.currentStock,
-                )
-                created_transactions.append(new_transaction)
+            # 6. EJECUTAR LÓGICA PURA REUTILIZABLE 🧠
+            # Usamos la misma lógica que una entrada normal, porque el stock está entrando de vuelta.
+            batch_result = prepare_inventory_entry_batch(
+                branch_id=origin_branch_id,
+                is_commerce_branch=origin_branch_in_db.isCommerce,
+                items=batch_items,
+                existing_accounts_dict=accounts_dict,
+                # Metadata
+                document_id=transfer_doc.id,
+                doc_number=transfer_doc.docNumber,
+                # Definimos el tipo de movimiento en el Kardex
+                tx_type="entry",  # Es una entrada (retorno)
+                tx_subtype="transfer",  # O podrías crear TransactionSubType.CANCEL_RETURN
+            )
 
-            # 4. ACTUALIZAR EL DOCUMENTO DE TRASLADO A "CANCELLED"
+            # 7. PERSISTENCIA MASIVA 💾
+            await execute_inventory_entry_db_operations(
+                branch_id=origin_branch_id,
+                batch_result=batch_result,
+                session=session,
+                account_col=product_account_col,
+                profile_col=product_prof_col,
+                stats_col=product_stats_col,
+                transaction_col=prd_transaction_col,
+            )
+
+            # 8. ACTUALIZAR ESTADO DEL TRASLADO A "CANCELLED"
             update_data = intent.model_dump()
 
             updated_transfer_dict = (
@@ -95,11 +130,4 @@ async def process_cancel_transfer(
 
             updated_transfer_in_db = TransferInDb.model_validate(updated_transfer_dict)
 
-            # 5. INSERTAR TRANSACCIONES
-            created_transactions_data = [t.model_dump() for t in created_transactions]
-            await prd_transaction_col.create_many_product_transactions_with_session(
-                created_transactions_data,
-                session=session,
-            )
-
-            return updated_transfer_in_db, updated_origin_accounts
+            return updated_transfer_in_db

@@ -14,6 +14,7 @@ from pymongo.errors import OperationFailure
 
 from core.counter_manager.counter_manager import CounterManager
 from core.default_values import SALE_CLIENT_ID
+from core.inventory import InsufficientBalanceError
 
 from repos.v1.clients import ClientInDb
 from repos.v1.product_accounts import ProductAccountInDb
@@ -22,7 +23,6 @@ from repos.v1.products import ProductsRepository, ProductsDataSource
 
 from .process_invoice import (
     process_invoice,
-    InsufficientBalanceError,
     process_anon_invoice,
 )
 
@@ -61,14 +61,9 @@ class InvoiceRegister:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"INSUFFICIENT_STOCK: {e}",
                 )
-            except OperationFailure as e:
-                if e.code == 112:
-                    await asyncio.sleep(0.3)
-                else:
-                    raise HTTPException(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail=f"Database error: {e}",
-                    )
+            except OperationFailure as _:
+                await asyncio.sleep(0.3)
+                continue
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server is too busy, please try again later",
@@ -99,11 +94,4 @@ class InvoiceRegister:
         if branch is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="BRANCH_NOT_FOUND"
-            )
-
-        product_ids = list(set(item.product.id for item in doc.saleItems))
-        products = await self.products_repo.get_product_by_ids(product_ids)
-        if len(products) != len(product_ids):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="PRODUCT_NOT_FOUND"
             )
