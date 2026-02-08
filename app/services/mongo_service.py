@@ -24,7 +24,8 @@ class MongoService:
         collection_name: str,
         database_name: DatabaseName = "LedgerDB",
     ) -> AsyncIOMotorCollection[dict[str, Any]]:
-        db = self.client.get_database(database_name)
+        current_db_name = os.getenv("DB_NAME", database_name)
+        db = self.client.get_database(current_db_name)
         return db.get_collection(collection_name)
 
     async def create_indexes(self):

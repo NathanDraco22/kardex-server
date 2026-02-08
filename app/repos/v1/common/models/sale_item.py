@@ -1,7 +1,7 @@
 from typing import Literal
 from pydantic import BaseModel
 
-PaymentType = Literal["cash", "credit"]
+PaymentType = Literal["cash", "credit", "transfer", "card", "check", "other"]
 
 
 class ProductItem(BaseModel):

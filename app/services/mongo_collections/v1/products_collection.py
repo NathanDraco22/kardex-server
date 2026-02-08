@@ -159,6 +159,12 @@ class ProductsCollection:
                     }
                 },
                 {
+                    "$sort": {"name": 1},
+                },
+                {
+                    "$limit": 21,
+                },
+                {
                     "$lookup": {
                         "from": "ProductAccounts",
                         "localField": "id",
@@ -193,12 +199,6 @@ class ProductsCollection:
                 },
                 {
                     "$unwind": "$saleProfile",
-                },
-                {
-                    "$sort": {"name": 1},
-                },
-                {
-                    "$limit": 7,
                 },
             ]
         )

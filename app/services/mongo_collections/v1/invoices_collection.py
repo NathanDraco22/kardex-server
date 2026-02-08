@@ -251,6 +251,7 @@ class InvoicesCollection:
                 IndexModel([("docNumber", 1)], unique=True),
                 IndexModel([("id", 1)], unique=True),
                 IndexModel([("clientId", 1), ("status", 1), ("docDate", -1)]),
+                IndexModel([("paymentType", 1)]),
                 IndexModel([("saleItems.product.id", 1)]),
                 IndexModel([("branchId", 1), ("saleItems.product.id", 1)]),
                 IndexModel([("branchId", 1), ("createdAt", -1)]),

@@ -1,20 +1,20 @@
+from tools import UuidTool, TimeTools, BranchesTool
+from core.inventory import (
+    execute_inventory_exit_db_operations,
+    prepare_inventory_exit_batch,
+    InventoryExitBatchItem,
+)
+
 from repos.v1.adjust_exits import AdjustExitInDb, CreateAdjustExit
 from repos.v1.product_accounts import ProductAccountInDb
-from repos.v1.product_transactions import ProductTransactionInDb, TransactionSubType
-
-from tools import UuidTool, TimeTools, BranchesTool
+from repos.v1.product_transactions import TransactionSubType
 
 from services import MongoService
 from services.mongo_collections.v1 import (
-    AdjustExitsCollection,  # <--- Asumo que crearás esta colección
+    AdjustExitsCollection,
     ProductTransactionsCollection,
     ProductAccountsCollection,
 )
-
-
-# Reutilizamos tu excepción personalizada
-class InsufficientBalanceError(Exception):
-    pass
 
 
 async def process_adjust_exit(
@@ -27,80 +27,94 @@ async def process_adjust_exit(
     prd_transaction_col = ProductTransactionsCollection()
     product_account_col = ProductAccountsCollection()
 
-    exit_items = adjust_exit.items
+    # Tools
+    branches_tool = BranchesTool()
 
-    transaction_sub_type: TransactionSubType = "adjustment"
-
+    # Determinar el Subtipo de Transacción
+    # Mapeamos el string del input al Enum del sistema
+    tx_subtype: TransactionSubType = "adjustment"
     if adjust_exit.type == "devolution":
-        transaction_sub_type = "devolution"
-    if adjust_exit.type == "loss":
-        transaction_sub_type = "loss"
+        tx_subtype = "devolution"
+    elif adjust_exit.type == "loss":
+        tx_subtype = "loss"
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
-            # 1. Validar Branch
-            current_branch_in_db = BranchesTool().get_branch_by_id(adjust_exit.branchId)
+            new_adjust_id = UuidTool.generate_uuid()
+            now_in_milliseconds = TimeTools.get_now_in_milliseconds()
 
+            # 1. VALIDAR BRANCH
+            current_branch_in_db = branches_tool.get_branch_by_id(adjust_exit.branchId)
             if current_branch_in_db is None:
                 raise Exception(
                     f"Branch {adjust_exit.branchId} not found processing Adjust Exit"
                 )
 
-            new_adjust_id = UuidTool.generate_uuid()
-            now_in_milliseconds = TimeTools.get_now_in_milliseconds()
+            # 2. PREPARAR DATOS (Mapeo a InventoryExitBatchItem)
+            batch_items = [
+                InventoryExitBatchItem(
+                    product_id=item.productId,  # Ojo: En AdjustExit suele ser 'productId'
+                    quantity=item.quantity,
+                    product_name=item.productName,
+                )
+                for item in adjust_exit.items
+            ]
 
-            updated_product_accounts: list[ProductAccountInDb] = []
-            created_transactions: list[ProductTransactionInDb] = []
+            # 3. OBTENER CUENTAS ACTUALES (Snapshot Read)
+            product_ids = [item.product_id for item in batch_items]
 
-            # 2. Procesar Ítems (Restar Stock)
-            for item in exit_items:
-                # A. Restar del Stock
-                # Nota: substract_product_account_data maneja la lógica de restar
-                result = await product_account_col.substract_product_account_data(
-                    product_id=item.productId,
+            existing_accounts_data = (
+                await product_account_col.get_accounts_by_branch_id(
                     branch_id=adjust_exit.branchId,
-                    substract_to_current_stock=item.quantity,  # Se pasa positivo, el método resta
+                    product_ids=product_ids,
                     session=session,
                 )
+            )
 
-                if result is None:
-                    # Si devuelve None es porque no alcanzó el stock
-                    raise InsufficientBalanceError("Stock insuficiente para ajuste")
+            accounts_dict = {
+                acc["productId"]: ProductAccountInDb.model_validate(acc)
+                for acc in existing_accounts_data
+            }
 
-                updated_account = ProductAccountInDb.model_validate(result)
+            # 4. EJECUTAR LÓGICA PURA REUTILIZABLE 🧠
+            # Valida stock insuficiente y calcula costos de salida
+            batch_result = prepare_inventory_exit_batch(
+                branch_id=adjust_exit.branchId,
+                items=batch_items,
+                existing_accounts_dict=accounts_dict,
+                # Metadata
+                document_id=new_adjust_id,
+                doc_number=adjust_exit.docNumber,
+                # Tipos
+                tx_type="exit",
+                tx_subtype=tx_subtype,  # "adjustment", "loss", "devolution"
+            )
 
-                # B. Snapshot del Costo
-                # Es vital guardar cuánto costaba el producto cuando lo ajustamos (perdimos)
-                item.cost = updated_account.averageCost
+            # 5. ACTUALIZAR COSTOS EN EL DOCUMENTO ORIGINAL
+            # Asignamos el Costo Promedio al momento de la salida a cada item
+            for i, item in enumerate(adjust_exit.items):
+                item.cost = batch_result.assigned_costs[i]
 
-                updated_product_accounts.append(updated_account)
+            # 6. PERSISTENCIA MASIVA 💾
+            await execute_inventory_exit_db_operations(
+                branch_id=adjust_exit.branchId,
+                batch_result=batch_result,
+                session=session,
+                account_col=product_account_col,
+                transaction_col=prd_transaction_col,
+            )
 
-                # C. Crear Transacción (Kardex)
-                new_transaction = ProductTransactionInDb(
-                    id=UuidTool.generate_uuid(),
-                    documentId=new_adjust_id,
-                    docNumber=adjust_exit.docNumber,
-                    type="exit",  # Salida de inventario
-                    subtype=transaction_sub_type,  # <--- Subtipo Ajuste
-                    productId=item.productId,
-                    branchId=adjust_exit.branchId,
-                    # REGLA: Salida = Negativo
-                    quantity=-abs(item.quantity),
-                    averageCost=updated_account.averageCost,
-                    createdAt=now_in_milliseconds,
-                    resultStock=updated_account.currentStock,
-                )
-                created_transactions.append(new_transaction)
-
-            # 3. Crear Documento de Ajuste
+            # 7. CREAR DOCUMENTO DE AJUSTE
             new_adjust_data = adjust_exit.model_dump()
+            new_adjust_data.update(
+                {
+                    "id": new_adjust_id,
+                    "createdAt": now_in_milliseconds,
+                    # Guardamos items con el costo actualizado
+                    "items": [item.model_dump() for item in adjust_exit.items],
+                }
+            )
 
-            new_adjust_data["id"] = new_adjust_id
-            new_adjust_data["createdAt"] = now_in_milliseconds
-            # Actualizamos items con el costo capturado
-            new_adjust_data["items"] = [item.model_dump() for item in exit_items]
-
-            # Insertar en BD
             await adjust_col.create_adjust_exit_with_session(
                 new_adjust_data,
                 session=session,
@@ -108,14 +122,12 @@ async def process_adjust_exit(
 
             new_adjust_in_db = AdjustExitInDb.model_validate(new_adjust_data)
 
-            # 4. Insertar Transacciones (Bulk)
-            if created_transactions:
-                created_transactions_data = [
-                    t.model_dump() for t in created_transactions
-                ]
-                await prd_transaction_col.create_many_product_transactions_with_session(
-                    created_transactions_data,
-                    session=session,
-                )
+            # Para retornar las cuentas simuladas (estado final tras la resta)
+            # Reconstruimos las cuentas basadas en el resultado en memoria
+            updated_accounts_simulated = []
+            for item in batch_items:
+                if item.product_id in accounts_dict:
+                    # accounts_dict ya fue modificado en memoria por prepare_inventory_exit_batch
+                    updated_accounts_simulated.append(accounts_dict[item.product_id])
 
-            return new_adjust_in_db, updated_product_accounts
+            return new_adjust_in_db, updated_accounts_simulated

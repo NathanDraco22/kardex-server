@@ -62,7 +62,7 @@ class TransfersController:
             print(e)
 
     async def create_transfer(self, body: CreateTransfer) -> TransferInDb:
-        transfer, _ = await self.transfer_manager.regis_outgoing_transfer(body)
+        transfer = await self.transfer_manager.regis_outgoing_transfer(body)
 
         return transfer
 
@@ -108,7 +108,7 @@ class TransfersController:
     async def cancel_transfer(
         self, transfer_id: str, intent: CancelTransferIntent
     ) -> TransferInDb:
-        transfer, _ = await self.transfer_manager.cancel_transfer(transfer_id, intent)
+        transfer = await self.transfer_manager.cancel_transfer(transfer_id, intent)
         return transfer
 
 
