@@ -54,6 +54,15 @@ class ClientsController:
             count=len(clients),
         )
 
+    async def search_clients_with_balance(
+        self, text_query: str
+    ) -> ListResponse[ClientInDb]:
+        clients = await self.clients_repo.search_clients_with_balance(text_query)
+        return ListResponse(
+            data=clients,
+            count=len(clients),
+        )
+
     async def update_client_by_id(
         self, client_id: str, body: UpdateClient
     ) -> ClientInDb:
