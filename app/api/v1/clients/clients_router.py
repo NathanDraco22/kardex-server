@@ -36,6 +36,11 @@ async def search_client_by_text(text_query: str) -> ListResponse[ClientInDb]:
     return await clients_controller.search_client_by_text(text_query)
 
 
+@clients_router.get("/search/balance/{text_query}")
+async def search_clients_with_balance(text_query: str) -> ListResponse[ClientInDb]:
+    return await clients_controller.search_clients_with_balance(text_query)
+
+
 @clients_router.patch("/{client_id}")
 async def update_client_by_id(client_id: str, body: UpdateClient) -> ClientInDb:
     return await clients_controller.update_client_by_id(client_id, body)
