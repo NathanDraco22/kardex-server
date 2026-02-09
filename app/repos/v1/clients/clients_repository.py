@@ -44,6 +44,11 @@ class ClientsRepository:
         models = [ClientInDb.model_validate(result) for result in results]
         return models
 
+    async def search_clients_with_balance(self, text_query: str) -> list[ClientInDb]:
+        results = await self.clients_ds.search_clients_with_balance(text_query)
+        models = [ClientInDb.model_validate(result) for result in results]
+        return models
+
     async def update_client_by_id(
         self, client_id: str, client: UpdateClient
     ) -> ClientInDb | None:

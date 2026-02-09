@@ -77,6 +77,32 @@ class ClientsCollection:
 
         return result
 
+    async def search_clients_with_balance(
+        self,
+        text_query: str,
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        safe_query = re.escape(text_query)
+
+        query = {
+            "name": {
+                "$regex": safe_query,
+                "$options": "i",
+            },
+            "isDeleted": False,
+            "isInternal": False,
+            "balance": {
+                "$ne": 0,
+            },
+        }
+        cursor = collection.find(query).sort("name", 1).limit(10)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def fetch_client_by_id(self, client_id: str) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one({"id": client_id, "isDeleted": False})
