@@ -144,6 +144,16 @@ class ClientsCollection:
 
         return result
 
+    async def update_group(
+        self,
+        old_group: str,
+        new_group: str,
+    ):
+        collection = self.__collection
+        await collection.update_many(
+            {"group": old_group}, {"$set": {"group": new_group}}
+        )
+
     async def create_indexes(self):
         collection = self.__collection
         await collection.create_indexes(
@@ -154,6 +164,11 @@ class ClientsCollection:
                         ("isDeleted", 1),
                     ],
                     unique=True,
+                ),
+                IndexModel(
+                    [
+                        ("group", 1),
+                    ],
                 ),
                 IndexModel(
                     [
