@@ -41,3 +41,7 @@ class ClientsDataSource:
     ) -> dict[str, Any] | None:
         collection = ClientsCollection()
         return await collection.update_client_by_id(client_id, client)
+
+    async def update_group(self, old_group: str, new_group: str) -> None:
+        collection = ClientsCollection()
+        return await collection.update_group(old_group, new_group)

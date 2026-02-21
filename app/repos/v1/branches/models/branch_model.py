@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from repos.v1.common.models import Coordinates
 
 
 class BaseBranch(BaseModel):
@@ -10,7 +11,7 @@ class BaseBranch(BaseModel):
     image: str = ""
     description: str = ""
     isCommerce: bool = True
-    pass
+    coordinates: Coordinates | None = None
 
 
 class CreateBranch(BaseBranch):
