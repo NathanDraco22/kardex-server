@@ -21,8 +21,8 @@ class ClientsRepository:
 
         return ClientInDb.model_validate(result)
 
-    async def get_all_clients(self) -> list[ClientInDb]:
-        results = await self.clients_ds.get_all_clients()
+    async def get_all_clients(self, **kwargs) -> list[ClientInDb]:
+        results = await self.clients_ds.get_all_clients(**kwargs)
         models = [ClientInDb.model_validate(result) for result in results]
         return models
 

@@ -20,8 +20,12 @@ class ClientsController:
     async def create_client(self, body: CreateClient) -> ClientInDb:
         return await self.clients_repo.create_client(body)
 
-    async def get_all_clients(self) -> ListResponse[ClientInDb]:
-        clients = await self.clients_repo.get_all_clients()
+    async def get_all_clients(
+        self, params: ClientQueryParams
+    ) -> ListResponse[ClientInDb]:
+        clients = await self.clients_repo.get_all_clients(
+            **params.model_dump(exclude_none=True)
+        )
         return ListResponse(
             data=clients,
             count=len(clients),
@@ -31,7 +35,7 @@ class ClientsController:
         self, params: ClientQueryParams
     ) -> ListResponse[ClientInDb]:
         clients = await self.clients_repo.get_all_clients_with_balance(
-            **params.model_dump()
+            **params.model_dump(exclude_none=True)
         )
         return ListResponse(
             data=clients,

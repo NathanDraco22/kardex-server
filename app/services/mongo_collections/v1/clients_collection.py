@@ -33,12 +33,19 @@ class ClientsCollection:
             upsert=True,
         )
 
-    async def fetch_all_clients(self) -> list[dict[str, Any]]:
+    async def fetch_all_clients(self, **kwargs) -> list[dict[str, Any]]:
         collection = self.__collection
+        group_param = kwargs.pop("group", None)
+
+        query = {}
+        if group_param:
+            query = {"group": group_param}
+
         cursor = collection.find(
             {
                 "isDeleted": False,
                 "isInternal": False,
+                **query,
             }
         )
 
@@ -49,10 +56,16 @@ class ClientsCollection:
 
     async def fetch_all_clients_with_balance(self, **kwargs) -> list[dict[str, Any]]:
         collection = self.__collection
+        group_param = kwargs.pop("group", None)
+
+        query = {}
+        if group_param:
+            query = {"group": group_param}
 
         query = {
             "isDeleted": False,
             "isInternal": False,
+            **query,
             "balance": {
                 "$ne": 0,
             },
