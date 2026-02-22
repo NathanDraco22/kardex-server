@@ -14,9 +14,9 @@ class ClientsDataSource:
         await collection.create_client(client)
         return client
 
-    async def get_all_clients(self) -> list[dict[str, Any]]:
+    async def get_all_clients(self, **kwargs) -> list[dict[str, Any]]:
         collection = ClientsCollection()
-        return await collection.fetch_all_clients()
+        return await collection.fetch_all_clients(**kwargs)
 
     async def get_all_clients_with_balance(self, **kwargs) -> list[dict[str, Any]]:
         collection = ClientsCollection()
