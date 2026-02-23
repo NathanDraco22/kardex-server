@@ -1,7 +1,6 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import ORJSONResponse
 from dotenv import load_dotenv
 from api.v1.router import router_v1
 from app_lifespan import lifespan
@@ -16,7 +15,6 @@ if current_mode == "PROD":
 
 app = FastAPI(
     title="Ledger Server",
-    default_response_class=ORJSONResponse,
     openapi_url=open_api_url,
     lifespan=lifespan,
 )

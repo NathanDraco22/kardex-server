@@ -21,8 +21,8 @@ class ClientsRepository:
 
         return ClientInDb.model_validate(result)
 
-    async def get_all_clients(self) -> list[ClientInDb]:
-        results = await self.clients_ds.get_all_clients()
+    async def get_all_clients(self, **kwargs) -> list[ClientInDb]:
+        results = await self.clients_ds.get_all_clients(**kwargs)
         models = [ClientInDb.model_validate(result) for result in results]
         return models
 
@@ -64,6 +64,9 @@ class ClientsRepository:
             return None
 
         return ClientInDb.model_validate(result)
+
+    async def update_group(self, old_group: str, new_group: str) -> None:
+        return await self.clients_ds.update_group(old_group, new_group)
 
     async def delete_client_by_id(self, client_id: str) -> ClientInDb | None:
         result = await self.clients_ds.update_client_by_id(

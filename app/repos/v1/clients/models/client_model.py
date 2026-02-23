@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from repos.v1.common.models import Coordinates
 
 
 class BaseClient(BaseModel):
@@ -12,6 +13,8 @@ class BaseClient(BaseModel):
     creditLimit: int = 0
     isCreditActive: bool = False
     isActive: bool = True
+    group: str = ""
+    coordinates: Coordinates | None = None
 
 
 class CreateClient(BaseClient):
@@ -28,6 +31,8 @@ class UpdateClient(BaseModel):
     isActive: bool | None = None
     isCreditActive: bool | None = None
     creditLimit: int | None = None
+    group: str | None = None
+    coordinates: Coordinates | None = None
 
 
 class ClientInDb(BaseClient):

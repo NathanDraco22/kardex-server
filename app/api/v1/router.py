@@ -5,6 +5,7 @@ from .adjust_exits.adjust_exits_router import adjust_exits_router
 from .admin_panels.admin_panels_router import admin_panels_router
 from .auths.auths_router import auths_router
 from .branches.branches_router import branches_router
+from .client_groups.client_groups_router import c_groups_router
 from .client_transactions.client_transactions_router import client_transactions_router
 from .clients.clients_router import clients_router
 from .core_settings.core_settings_router import core_settings_router
@@ -43,6 +44,7 @@ router_v1.include_router(adjust_exits_router, prefix="/adjust-exits")
 router_v1.include_router(admin_panels_router, prefix="/admin-panels")
 router_v1.include_router(auths_router, prefix="/auths")
 router_v1.include_router(branches_router, prefix="/branches")
+router_v1.include_router(c_groups_router, prefix="/client-groups")
 router_v1.include_router(client_transactions_router, prefix="/client-transactions")
 router_v1.include_router(clients_router, prefix="/clients")
 router_v1.include_router(core_settings_router, prefix="/core-settings")
