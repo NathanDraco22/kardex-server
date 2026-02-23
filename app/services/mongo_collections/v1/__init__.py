@@ -3,6 +3,7 @@ from .accounts_collection import AccountsCollection
 from .adjust_entries_collection import AdjustEntriesCollection
 from .adjust_exits_collection import AdjustExitsCollection
 from .branches_collection import BranchesCollection
+from .client_groups_collection import ClientGroupsCollection
 from .client_transactions_collection import ClientTransactionsCollection
 from .clients_collection import ClientsCollection
 from .core_settings_collection import CoreSettingsCollection
@@ -37,6 +38,7 @@ __all__ = [
     "AdjustEntriesCollection",
     "AdjustExitsCollection",
     "BranchesCollection",
+    "ClientGroupsCollection",
     "ClientTransactionsCollection",
     "ClientsCollection",
     "CoreSettingsCollection",

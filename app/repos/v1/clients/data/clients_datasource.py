@@ -14,9 +14,9 @@ class ClientsDataSource:
         await collection.create_client(client)
         return client
 
-    async def get_all_clients(self) -> list[dict[str, Any]]:
+    async def get_all_clients(self, **kwargs) -> list[dict[str, Any]]:
         collection = ClientsCollection()
-        return await collection.fetch_all_clients()
+        return await collection.fetch_all_clients(**kwargs)
 
     async def get_all_clients_with_balance(self, **kwargs) -> list[dict[str, Any]]:
         collection = ClientsCollection()
@@ -41,3 +41,7 @@ class ClientsDataSource:
     ) -> dict[str, Any] | None:
         collection = ClientsCollection()
         return await collection.update_client_by_id(client_id, client)
+
+    async def update_group(self, old_group: str, new_group: str) -> None:
+        collection = ClientsCollection()
+        return await collection.update_group(old_group, new_group)
