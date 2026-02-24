@@ -199,7 +199,25 @@ class ClientsCollection:
 
         result = await collection.find_one_and_update(
             {"id": client_id},
-            {"$inc": {"balance": amount}, "$set": {"updatedAt": updated_at}},
+            [
+                {
+                    "$set": {
+                        "balance": {"$add": [{"$ifNull": ["$balance", 0]}, amount]},
+                        "updatedAt": updated_at,
+                    },
+                },
+                {
+                    "$set": {
+                        "lastCreditStart": {
+                            "$cond": {
+                                "if": {"$lte": ["$balance", 0]},
+                                "then": updated_at,
+                                "else": "$lastCreditStart",
+                            }
+                        }
+                    }
+                },
+            ],
             upsert=True,
             session=session,
             return_document=ReturnDocument.AFTER,
