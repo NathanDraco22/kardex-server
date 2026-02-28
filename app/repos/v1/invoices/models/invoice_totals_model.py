@@ -3,5 +3,3 @@ from pydantic import BaseModel
 
 class InvoiceTotals(BaseModel):
     total: int
-    totalCost: int
-    count: int = 0

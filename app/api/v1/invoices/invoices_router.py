@@ -5,6 +5,7 @@ from repos.v1.invoices import (
     UpdateInvoice,
     InvoiceInDb,
     InvoiceTotals,
+    ProductSalesTotal,
 )
 
 from repos.v1.common.models.history_params import HistoryClientParams
@@ -33,6 +34,13 @@ async def get_all_invoices(
     query_params: InvoiceQueryParams = Depends(),
 ) -> ListResponse[InvoiceInDb]:
     return await invoices_controller.get_all_invoices(query_params)
+
+
+@invoices_router.get("/product-sales")
+async def get_all_product_sales(
+    query_params: InvoiceQueryParams = Depends(),
+) -> ListResponse[ProductSalesTotal]:
+    return await invoices_controller.get_all_product_sales(query_params)
 
 
 @invoices_router.get("/totals")
