@@ -8,6 +8,7 @@ from repos.v1.invoices import (
     InvoicesRepository,
     InvoicesDataSource,
     InvoiceTotals,
+    ProductSalesTotal,
 )
 from responses.v1 import ListResponse
 from repos.v1.common.models.history_params import HistoryClientParams
@@ -39,6 +40,13 @@ class InvoicesController:
         kargs = query_params.model_dump()
         invoices = await self.invoices_repo.get_all_invoices(**kargs)
         return ListResponse(count=len(invoices), data=invoices)
+
+    async def get_all_product_sales(
+        self, query_params: InvoiceQueryParams
+    ) -> ListResponse[ProductSalesTotal]:
+        kargs = query_params.model_dump()
+        product_sales = await self.invoices_repo.get_all_product_sales(**kargs)
+        return ListResponse(count=len(product_sales), data=product_sales)
 
     async def get_totals_from_invoices(
         self, query_params: InvoiceQueryParams

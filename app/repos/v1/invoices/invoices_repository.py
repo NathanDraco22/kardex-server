@@ -3,6 +3,7 @@ from repos.v1.common.models.history_params import HistoryClientParams
 from .data.invoices_datasource import InvoicesDataSource
 from .models.invoice_model import UpdateInvoice, InvoiceInDb
 from .models.invoice_totals_model import InvoiceTotals
+from .models.invoice_product_sale import ProductSalesTotal
 
 
 class InvoicesRepository:
@@ -12,6 +13,11 @@ class InvoicesRepository:
     async def get_all_invoices(self, **kargs) -> list[InvoiceInDb]:
         results = await self.invoices_ds.get_all_invoices(**kargs)
         models = [InvoiceInDb.model_validate(result) for result in results]
+        return models
+
+    async def get_all_product_sales(self, **kargs) -> list[ProductSalesTotal]:
+        results = await self.invoices_ds.get_all_product_sales(**kargs)
+        models = [ProductSalesTotal.model_validate(result) for result in results]
         return models
 
     async def get_all_invoices_stream(

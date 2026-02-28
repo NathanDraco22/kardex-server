@@ -59,6 +59,36 @@ class InvoicesCollection:
 
         return result
 
+    async def fetch_all_product_sales(self, **kargs) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        date_field = "paidAt" if kargs.get("byPaidAt") else "createdAt"
+
+        result = build_query(date_field, **kargs)
+
+        pipeline = [
+            {"$match": result.query},
+            {"$unwind": "$saleItems"},
+            {
+                "$group": {
+                    "_id": "$saleItems.product.id",
+                    "productId": {"$first": "$saleItems.product.id"},
+                    "productName": {"$first": "$saleItems.product.name"},
+                    "totalQuantity": {"$sum": "$saleItems.quantity"},
+                    "totalBonQuantity": {"$sum": "$saleItems.bonQuantity"},
+                    "total": {"$sum": "$saleItems.total"},
+                }
+            },
+            {"$sort": {"productName": 1}},
+        ]
+
+        cursor = collection.aggregate(pipeline)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def fetch_all_invoices_by(
         self,
         client_id: str,
