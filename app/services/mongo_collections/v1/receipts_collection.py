@@ -37,6 +37,11 @@ class ReceiptsCollection:
             del query["startDate"]
             del query["endDate"]
 
+        if kwargs.get("startDate") and not kwargs.get("endDate"):
+            query["createdAt"] = {"$gte": kwargs.get("startDate")}
+
+            del query["startDate"]
+
         cursor = collection.find(query).skip(offset).limit(limit).sort("createdAt", -1)
 
         result = await cursor.to_list(length=None)
