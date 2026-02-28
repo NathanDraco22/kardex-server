@@ -12,6 +12,7 @@ class BaseClient(BaseModel):
     balance: int = 0
     creditLimit: int = 0
     lastCreditStart: int | None = None
+    lastReceiptDate: int | None = None
     isCreditActive: bool = False
     isActive: bool = True
     group: str = ""

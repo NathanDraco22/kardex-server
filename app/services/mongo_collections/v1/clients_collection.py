@@ -202,12 +202,6 @@ class ClientsCollection:
             [
                 {
                     "$set": {
-                        "balance": {"$add": [{"$ifNull": ["$balance", 0]}, amount]},
-                        "updatedAt": updated_at,
-                    },
-                },
-                {
-                    "$set": {
                         "lastCreditStart": {
                             "$cond": {
                                 "if": {"$lte": ["$balance", 0]},
@@ -216,6 +210,23 @@ class ClientsCollection:
                             }
                         }
                     }
+                },
+                {
+                    "$set": {
+                        "lastReceiptDate": {
+                            "$cond": {
+                                "if": {"$lte": ["$balance", 0]},
+                                "then": None,
+                                "else": "$lastReceiptDate",
+                            }
+                        }
+                    }
+                },
+                {
+                    "$set": {
+                        "balance": {"$add": [{"$ifNull": ["$balance", 0]}, amount]},
+                        "updatedAt": updated_at,
+                    },
                 },
             ],
             upsert=True,
