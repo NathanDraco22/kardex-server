@@ -1,14 +1,15 @@
 from repos.v1.users.models.user_model import UserInDb
 from services.mongo_collections.v1 import UsersCollection
-
+from core.security import SysPasswordHasher
 from tools import TimeTools
 
 
 async def create_root_user():
+    hashed_password = SysPasswordHasher.hash_password("NeptunoRoot")
     root_user = UserInDb(
         id="root",
         username="Neptuno",
-        password="NeptunoRoot",
+        password=hashed_password,
         isActive=True,
         isInternal=True,
         role="Admin",
