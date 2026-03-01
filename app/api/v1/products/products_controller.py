@@ -2,6 +2,9 @@ from fastapi import HTTPException, status
 
 from responses.v1 import ListResponse
 
+from .query_params import ProductQueryParams
+
+
 from repos.v1.products import (
     CreateProduct,
     UpdateProduct,
@@ -65,6 +68,31 @@ class ProductsController:
             data=products,
             count=len(products),
         )
+
+    async def get_all_product_in_branch(
+        self, query: ProductQueryParams
+    ) -> ListResponse[ProductInDbInBranch]:
+        kwargs = query.model_dump(exclude_none=True)
+        products = await self.products_repo.get_all_product_in_branch(**kwargs)
+        return ListResponse(
+            data=products,
+            count=len(products),
+        )
+
+    async def get_product_in_branch_by_id(
+        self, product_id: str, branch_id: str
+    ) -> ProductInDbInBranch:
+        res = await self.products_repo.get_product_in_branch_by_id(
+            product_id, branch_id
+        )
+
+        if res is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Product not found",
+            )
+
+        return res
 
     async def update_product_by_id(
         self, product_id: str, body: UpdateProduct

@@ -49,6 +49,16 @@ class ProductsDataSource:
         collection = ProductsCollection()
         return await collection.searchProductInBranch(branch_id, text_query)
 
+    async def get_all_product_in_branch(self, **kwargs) -> list[dict[str, Any]]:
+        collection = ProductsCollection()
+        return await collection.get_all_product_in_branch(**kwargs)
+
+    async def get_product_in_branch_by_id(
+        self, product_id: str, branch_id: str
+    ) -> dict[str, Any] | None:
+        collection = ProductsCollection()
+        return await collection.get_product_in_branch_by_id(product_id, branch_id)
+
     async def get_product_by_ids(self, product_ids: list[str]) -> list[dict[str, Any]]:
         collection = ProductsCollection()
         return await collection.fetch_product_by_ids(product_ids)

@@ -78,6 +78,23 @@ class ProductsRepository:
         models = [ProductInDbInBranch.model_validate(result) for result in results]
         return models
 
+    async def get_all_product_in_branch(self, **kwargs) -> list[ProductInDbInBranch]:
+        results = await self.products_ds.get_all_product_in_branch(**kwargs)
+        models = [ProductInDbInBranch.model_validate(result) for result in results]
+        return models
+
+    async def get_product_in_branch_by_id(
+        self, product_id: str, branch_id: str
+    ) -> ProductInDbInBranch | None:
+        result = await self.products_ds.get_product_in_branch_by_id(
+            product_id, branch_id
+        )
+
+        if result is None:
+            return None
+
+        return ProductInDbInBranch.model_validate(result)
+
     async def update_product_by_id(
         self, product_id: str, product: UpdateProduct
     ) -> ProductInDb | None:

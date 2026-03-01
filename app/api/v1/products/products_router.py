@@ -10,7 +10,7 @@ from repos.v1.products import (
 
 from responses.v1 import ListResponse
 
-from .query_params import ProductQueruyParams
+from .query_params import ProductQueryParams
 from .products_controller import products_controller
 
 
@@ -29,9 +29,11 @@ async def get_all_products() -> ListResponse[ProductInDb]:
 
 @products_router.get("/paginated")
 async def get_paginated_products(
-    query_params: ProductQueruyParams = Depends(),
+    query_params: ProductQueryParams = Depends(),
 ) -> ListResponse[ProductInDb]:
-    return await products_controller.get_paginated_products(**query_params.model_dump())
+    return await products_controller.get_paginated_products(
+        **query_params.model_dump(exclude_none=True)
+    )
 
 
 @products_router.get("/{product_id}")
@@ -50,6 +52,22 @@ async def search_product_in_branch(
     text_query: str,
 ) -> ListResponse[ProductInDbInBranch]:
     return await products_controller.search_product_in_branch(branch_id, text_query)
+
+
+@products_router.get("/branch/{branch_id}")
+async def get_all_products_in_branch(
+    branch_id: str,
+    query: ProductQueryParams = Depends(),
+) -> ListResponse[ProductInDbInBranch]:
+    query.branchId = branch_id
+    return await products_controller.get_all_product_in_branch(query)
+
+
+@products_router.get("/{product_id}/branch/{branch_id}")
+async def get_product_in_branch_by_id(
+    product_id: str, branch_id: str
+) -> ProductInDbInBranch:
+    return await products_controller.get_product_in_branch_by_id(product_id, branch_id)
 
 
 @products_router.patch("/{product_id}")
