@@ -17,6 +17,7 @@ class ProductAccount(BaseModel):
     currentStock: int
     averageCost: int
     lastCost: int
+    maximumCost: int
 
 
 class Discount(BaseModel):
