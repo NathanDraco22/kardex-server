@@ -155,6 +155,7 @@ class ProductAccountsCollection:
                     "$set": {
                         "lastCost": item["last_cost"],
                         "averageCost": item["avg_cost"],
+                        "maximumCost": item["max_cost"],
                         "updatedAt": updated_at,
                     },
                     "$setOnInsert": {
