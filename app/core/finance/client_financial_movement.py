@@ -32,7 +32,10 @@ async def process_client_financial_movement(
     # Si request.amount es positivo, SUMA (Deuda).
     # Si request.amount es negativo, RESTA (Pago).
     updated_client_data = await client_col.add_to_client_balance(
-        client_id=request.client_id, amount=request.amount, session=session
+        client_id=request.client_id,
+        amount=request.amount,
+        timestamp=now,
+        session=session,
     )
 
     updated_client = ClientInDb.model_validate(updated_client_data)
