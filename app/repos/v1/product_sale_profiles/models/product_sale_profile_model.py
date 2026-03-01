@@ -48,6 +48,6 @@ class ProductSaleProfileInDb(BaseProductSaleProfile):
 
 
 class ProductSaleProfileInDbWithProduct(BaseProductSaleProfile):
-    updated_at: int | None = None
+    updatedAt: int | None = None
     product: InventoryProduct
     account: ProductAccount
