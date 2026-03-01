@@ -10,6 +10,7 @@ class BaseUser(BaseModel):
     username: str
     password: str
     isActive: bool = True
+    isInternal: bool = False
     role: str
     branches: list[str] = []
 
