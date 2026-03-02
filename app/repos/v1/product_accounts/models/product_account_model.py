@@ -8,6 +8,7 @@ class BaseProductAccount(BaseModel):
     promiseStock: int = 0
     averageCost: int
     lastCost: int
+    maximumCost: int = 0
 
 
 class ProductAccountInDb(BaseProductAccount):

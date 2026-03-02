@@ -18,6 +18,10 @@ class InvoicesDataSource:
         collection = InvoicesCollection()
         return await collection.fetch_all_invoices(**kargs)
 
+    async def get_all_product_sales(self, **kargs) -> list[dict[str, Any]]:
+        collection = InvoicesCollection()
+        return await collection.fetch_all_product_sales(**kargs)
+
     def get_all_invoices_stream(self, **kargs) -> AsyncGenerator[dict[str, Any], None]:
         collection = InvoicesCollection()
         return collection.fetch_all_invoices_stream(**kargs)

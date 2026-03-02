@@ -208,6 +208,124 @@ class ProductsCollection:
 
         return result
 
+    async def get_all_product_in_branch(self, **kwargs) -> list[dict[str, Any]]:
+        collection = self.__collection
+        branch_id = kwargs.get("branchId")
+        limit = kwargs.get("limit", 50)
+        offset = kwargs.get("offset", 0)
+
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "isDeleted": False,
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "ProductAccounts",
+                        "localField": "id",
+                        "foreignField": "productId",
+                        "as": "account",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "branchId": branch_id,
+                                }
+                            }
+                        ],
+                    }
+                },
+                {
+                    "$unwind": "$account",
+                },
+                {
+                    "$lookup": {
+                        "from": "ProductSaleProfiles",
+                        "localField": "id",
+                        "foreignField": "productId",
+                        "as": "saleProfile",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "branchId": branch_id,
+                                }
+                            }
+                        ],
+                    }
+                },
+                {
+                    "$unwind": "$saleProfile",
+                },
+                {
+                    "$sort": {"name": 1},
+                },
+                {
+                    "$skip": offset,
+                },
+                {
+                    "$limit": limit,
+                },
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
+    async def get_product_in_branch_by_id(
+        self, product_id: str, branch_id: str
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "id": product_id,
+                        "isDeleted": False,
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "ProductAccounts",
+                        "localField": "id",
+                        "foreignField": "productId",
+                        "as": "account",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "branchId": branch_id,
+                                }
+                            }
+                        ],
+                    }
+                },
+                {"$unwind": "$account"},
+                {
+                    "$lookup": {
+                        "from": "ProductSaleProfiles",
+                        "localField": "id",
+                        "foreignField": "productId",
+                        "as": "saleProfile",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "branchId": branch_id,
+                                }
+                            }
+                        ],
+                    }
+                },
+                {"$unwind": "$saleProfile"},
+            ]
+        )
+
+        result = await cursor.to_list(length=1)
+
+        return result[0] if result else None
+
     async def fetch_all_products_with_accounts(
         self, branch_id: str, page: int, limit: int
     ):

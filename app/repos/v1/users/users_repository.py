@@ -10,6 +10,12 @@ class UsersRepository:
     def __init__(self, users_ds: UsersDataSource):
         self.users_ds = users_ds
 
+    async def create_user_directly(self, new_user: UserInDb) -> UserInDb:
+        new_user.password = SysPasswordHasher.hash_password(new_user.password)
+        new_user_data = new_user.model_dump()
+        await self.users_ds.create_user(new_user_data)
+        return new_user
+
     async def create_user(self, create_user: CreateUser) -> UserInDb:
         create_user.password = SysPasswordHasher.hash_password(create_user.password)
 
