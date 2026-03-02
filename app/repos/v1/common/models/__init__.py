@@ -5,7 +5,7 @@ from .branch_detail import CommercialBranchDetail, InventoryBranchDetail
 from .transfer_item import TransferItem
 from .entry_item import EntryItem
 from .exit_item import ExitItem
-
+from .coordinate import Coordinates
 
 __all__ = [
     "ProductItem",
@@ -18,4 +18,5 @@ __all__ = [
     "TransferItem",
     "EntryItem",
     "ExitItem",
+    "Coordinates",
 ]

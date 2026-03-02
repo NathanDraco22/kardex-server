@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "argon2-cffi>=25.1.0",
     "cryptography>=46.0.2",
-    "fastapi[standard]>=0.118.3",
+    "fastapi[standard]>=0.130.0",
     "motor>=3.7.1",
     "onnxruntime>=1.23.2",
     "openpyxl>=3.1.5",

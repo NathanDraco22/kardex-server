@@ -1,4 +1,5 @@
 from params import PaginationParams
 
 
-class ProductQueruyParams(PaginationParams): ...
+class ProductQueryParams(PaginationParams):
+    branchId: str | None = None

@@ -136,8 +136,6 @@ class ProductAccountsCollection:
     async def bulk_update_product_account_balance_with_average_cost(
         self,
         branch_id: str,
-        # Recibimos una lista de diccionarios para mayor claridad dado que son varios datos
-        # Estructura esperada: {"product_id": str, "qty": int, "last_cost": int, "avg_cost": int}
         bulk_data: list[dict[str, Any]],
         session: Any,
     ) -> bool:
@@ -147,41 +145,34 @@ class ProductAccountsCollection:
         operations: list[UpdateOne] = []
 
         for item in bulk_data:
-            # Preparamos la operación individual
             update_op = UpdateOne(
                 {
                     "productId": item["product_id"],
                     "branchId": branch_id,
                 },
                 {
-                    # 1. Suma atómica (Equivalente a tu $add con $ifNull)
-                    # Si el doc no existe, crea currentStock con este valor.
                     "$inc": {"currentStock": item["qty"]},
-                    # 2. Sobrescribir costos y fecha de actualización
                     "$set": {
                         "lastCost": item["last_cost"],
                         "averageCost": item["avg_cost"],
+                        "maximumCost": item["max_cost"],
                         "updatedAt": updated_at,
                     },
-                    # 3. Solo si es un documento NUEVO (Equivalente a tu $ifNull en createdAt)
                     "$setOnInsert": {
                         "createdAt": updated_at,
                         "promiseStock": 0,
                     },
                 },
-                upsert=True,  # CRÍTICO: Crea el documento si no existe
+                upsert=True,
             )
             operations.append(update_op)
 
-        # Ejecutamos en lote
         result = await collection.bulk_write(
             operations,
             ordered=True,
             session=session,
         )
 
-        # Validación de Integridad para UPSERT
-        # En una entrada, éxito significa: o se actualizó (match) o se creó (upsert)
         total_processed = result.matched_count + result.upserted_count
 
         if total_processed < len(operations):
@@ -205,22 +196,17 @@ class ProductAccountsCollection:
         for update_element in bulk_to_substrack:
             product_id, substract_to_current_stock = update_element
 
-            # Usamos abs() por seguridad
             qty = abs(substract_to_current_stock)
 
             update_op = UpdateOne(
                 {
                     "productId": product_id,
                     "branchId": branch_id,
-                    # 🔥 AQUÍ ESTÁ LA MAGIA:
-                    # Usamos $expr para calcular (Current - Promise) >= Cantidad a sacar
                     "$expr": {
                         "$gte": [
                             {
                                 "$subtract": [
-                                    {
-                                        "$ifNull": ["$currentStock", 0]
-                                    },  # ifNull por seguridad
+                                    {"$ifNull": ["$currentStock", 0]},
                                     {"$ifNull": ["$promiseStock", 0]},
                                 ]
                             },
@@ -245,7 +231,6 @@ class ProductAccountsCollection:
             session=session,
         )
 
-        # Si matched_count < len, significa que alguno falló la condición $expr
         if result.matched_count < len(operations):
             raise OperationFailure(
                 f"No se pudieron actualizar todos los productos. "
@@ -293,7 +278,6 @@ class ProductAccountsCollection:
     async def bulk_add_to_promise_stock(
         self,
         branch_id: str,
-        # Lista de tuplas: (product_id, quantity_to_reserve)
         bulk_data: list[tuple[str, int]],
         session: Any,
     ) -> bool:
@@ -710,7 +694,6 @@ class ProductAccountsCollection:
     async def bulk_dispatch_promise_stock(
         self,
         branch_id: str,
-        # Lista de tuplas (product_id, quantity)
         bulk_data: list[tuple[str, int]],
         session: Any,
     ) -> bool:
@@ -727,7 +710,6 @@ class ProductAccountsCollection:
                 {
                     "productId": p_id,
                     "branchId": branch_id,
-                    # Validamos que exista stock prometido suficiente
                     "promiseStock": {"$gte": qty},
                 },
                 {
@@ -745,7 +727,6 @@ class ProductAccountsCollection:
 
         result = await collection.bulk_write(operations, session=session)
 
-        # Validación de seguridad
         if result.matched_count < len(operations):
             raise OperationFailure(
                 f"No se pudo despachar el stock prometido para todos los items. "

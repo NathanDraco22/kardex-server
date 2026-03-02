@@ -15,8 +15,10 @@ async def create_client(body: CreateClient) -> ClientInDb:
 
 
 @clients_router.get("")
-async def get_all_clients() -> ListResponse[ClientInDb]:
-    return await clients_controller.get_all_clients()
+async def get_all_clients(
+    params: ClientQueryParams = Depends(),
+) -> ListResponse[ClientInDb]:
+    return await clients_controller.get_all_clients(params)
 
 
 @clients_router.get("/balance")

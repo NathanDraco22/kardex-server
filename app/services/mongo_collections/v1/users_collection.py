@@ -20,13 +20,24 @@ class UsersCollection:
         collection = self.__collection
         await collection.insert_one(user)
 
+    async def create_user_if_absent(self, user_id: str, user: dict) -> None:
+        collection = self.__collection
+        await collection.find_one_and_update(
+            {"id": user_id},
+            {"$setOnInsert": user},
+            upsert=True,
+        )
+
     async def fetch_all_users(self) -> list[dict[str, Any]]:
         collection = self.__collection
 
         cursor = collection.aggregate(
             [
                 {
-                    "$match": {"isDeleted": False},
+                    "$match": {
+                        "isDeleted": False,
+                        "isInternal": False,
+                    },
                 },
                 {
                     "$lookup": {

@@ -17,6 +17,7 @@ class ProductAccount(BaseModel):
     currentStock: int
     averageCost: int
     lastCost: int
+    maximumCost: int
 
 
 class Discount(BaseModel):
@@ -47,6 +48,6 @@ class ProductSaleProfileInDb(BaseProductSaleProfile):
 
 
 class ProductSaleProfileInDbWithProduct(BaseProductSaleProfile):
-    updated_at: int | None = None
+    updatedAt: int | None = None
     product: InventoryProduct
     account: ProductAccount

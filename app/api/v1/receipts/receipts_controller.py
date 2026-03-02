@@ -34,7 +34,7 @@ class ReceiptsController:
             query_params.endDate = None
 
         receipts = await self.receipts_repo.get_all_receipts(
-            **query_params.model_dump()
+            **query_params.model_dump(exclude_none=True)
         )
 
         return ListResponse(

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class ClientInfo(BaseModel):
     name: str
+    group: str = ""
     cardId: str | None = None
     phone: str | None = None
     address: str | None = None

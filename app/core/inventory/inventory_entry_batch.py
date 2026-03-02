@@ -76,11 +76,13 @@ def prepare_inventory_entry_batch(
         # Estado actual
         current_qty = 0
         current_avg_cost = 0
+        current_max_cost = 0
 
         if p_id in existing_accounts_dict:
             acc = existing_accounts_dict[p_id]
             current_qty = acc.currentStock
             current_avg_cost = acc.averageCost
+            current_max_cost = acc.maximumCost
         else:
             # Es producto nuevo en la sucursal
             new_sale_profiles.append(
@@ -114,6 +116,8 @@ def prepare_inventory_entry_batch(
         else:
             new_avg_cost = inc_last_cost
 
+        new_max_cost = max(inc_last_cost, current_max_cost)
+
         # Preparar Data para Bulk Update
         bulk_update_accounts.append(
             {
@@ -121,6 +125,7 @@ def prepare_inventory_entry_batch(
                 "qty": inc_qty,
                 "last_cost": inc_last_cost,
                 "avg_cost": new_avg_cost,
+                "max_cost": new_max_cost,
             }
         )
 

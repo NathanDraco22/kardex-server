@@ -33,12 +33,19 @@ class ClientsCollection:
             upsert=True,
         )
 
-    async def fetch_all_clients(self) -> list[dict[str, Any]]:
+    async def fetch_all_clients(self, **kwargs) -> list[dict[str, Any]]:
         collection = self.__collection
+        group_param = kwargs.pop("group", None)
+
+        query = {}
+        if group_param:
+            query = {"group": group_param}
+
         cursor = collection.find(
             {
                 "isDeleted": False,
                 "isInternal": False,
+                **query,
             }
         )
 
@@ -49,10 +56,16 @@ class ClientsCollection:
 
     async def fetch_all_clients_with_balance(self, **kwargs) -> list[dict[str, Any]]:
         collection = self.__collection
+        group_param = kwargs.pop("group", None)
+
+        query = {}
+        if group_param:
+            query = {"group": group_param}
 
         query = {
             "isDeleted": False,
             "isInternal": False,
+            **query,
             "balance": {
                 "$ne": 0,
             },
@@ -144,6 +157,16 @@ class ClientsCollection:
 
         return result
 
+    async def update_group(
+        self,
+        old_group: str,
+        new_group: str,
+    ):
+        collection = self.__collection
+        await collection.update_many(
+            {"group": old_group}, {"$set": {"group": new_group}}
+        )
+
     async def create_indexes(self):
         collection = self.__collection
         await collection.create_indexes(
@@ -157,6 +180,11 @@ class ClientsCollection:
                 ),
                 IndexModel(
                     [
+                        ("group", 1),
+                    ],
+                ),
+                IndexModel(
+                    [
                         ("name", "text"),
                     ],
                 ),
@@ -164,14 +192,43 @@ class ClientsCollection:
         )
 
     async def add_to_client_balance(
-        self, client_id: str, amount: int, session: Any
+        self, client_id: str, amount: int, timestamp: int, session: Any
     ) -> dict[str, Any]:
         collection = self.__collection
-        updated_at = TimeTools.get_now_in_milliseconds()
+        updated_at = timestamp
 
         result = await collection.find_one_and_update(
             {"id": client_id},
-            {"$inc": {"balance": amount}, "$set": {"updatedAt": updated_at}},
+            [
+                {
+                    "$set": {
+                        "lastCreditStart": {
+                            "$cond": {
+                                "if": {"$lte": ["$balance", 0]},
+                                "then": updated_at,
+                                "else": "$lastCreditStart",
+                            }
+                        }
+                    }
+                },
+                {
+                    "$set": {
+                        "lastReceiptDate": {
+                            "$cond": {
+                                "if": {"$lte": ["$balance", 0]},
+                                "then": None,
+                                "else": "$lastReceiptDate",
+                            }
+                        }
+                    }
+                },
+                {
+                    "$set": {
+                        "balance": {"$add": [{"$ifNull": ["$balance", 0]}, amount]},
+                        "updatedAt": updated_at,
+                    },
+                },
+            ],
             upsert=True,
             session=session,
             return_document=ReturnDocument.AFTER,
