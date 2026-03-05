@@ -18,6 +18,10 @@ class OrdersDataSource:
         collection = OrdersCollection()
         return await collection.fetch_paginated_orders(**kwargs)
 
+    async def get_products_in_orders(self, **kwargs) -> list[dict[str, Any]]:
+        collection = OrdersCollection()
+        return await collection.fetch_products_in_orders(**kwargs)
+
     async def get_order_by_id(self, order_id: str) -> dict[str, Any] | None:
         collection = OrdersCollection()
         return await collection.fetch_order_by_id(order_id)
