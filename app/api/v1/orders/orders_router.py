@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from repos.v1.orders import CreateOrder, UpdateOrder, OrderInDb
+from repos.v1.common.models.invoice_product_sale import ProductSalesTotal
 from responses.v1 import ListResponse
 
 
@@ -28,6 +29,13 @@ async def get_paginated_orders(
     query_params: OrderQueryParams = Depends(),
 ) -> ListResponse[OrderInDb]:
     return await orders_controller.get_paginated_orders(query_params)
+
+
+@orders_router.get("/product-orders")
+async def get_product_in_orders(
+    query_params: OrderQueryParams = Depends(),
+) -> ListResponse[ProductSalesTotal]:
+    return await orders_controller.get_product_in_orders(query_params)
 
 
 @orders_router.get("/{order_id}")

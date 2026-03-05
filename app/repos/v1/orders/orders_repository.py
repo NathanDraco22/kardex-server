@@ -3,6 +3,9 @@ from .data.orders_datasource import OrdersDataSource
 from .models.order_model import CreateOrder, UpdateOrder, OrderInDb
 
 
+from repos.v1.common.models.invoice_product_sale import ProductSalesTotal
+
+
 class OrdersRepository:
     def __init__(self, orders_ds: OrdersDataSource):
         self.orders_ds = orders_ds
@@ -20,6 +23,10 @@ class OrdersRepository:
     async def get_paginated_orders(self, **kwargs) -> list[OrderInDb]:
         result = await self.orders_ds.get_paginated_orders(**kwargs)
         return [OrderInDb.model_validate(order) for order in result]
+
+    async def get_products_in_orders(self, **kwargs) -> list[ProductSalesTotal]:
+        result = await self.orders_ds.get_products_in_orders(**kwargs)
+        return [ProductSalesTotal.model_validate(order) for order in result]
 
     async def get_order_by_id(self, order_id: str) -> OrderInDb | None:
         result = await self.orders_ds.get_order_by_id(order_id)
