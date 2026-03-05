@@ -237,10 +237,10 @@ class ClientsCollection:
         return result
 
     async def substract_from_client_balance(
-        self, client_id: str, amount: int, session: Any
+        self, client_id: str, amount: int, session: Any, timestamp: int
     ) -> dict[str, Any]:
         collection = self.__collection
-        updated_at = TimeTools.get_now_in_milliseconds()
+        updated_at = timestamp
 
         result = await collection.find_one_and_update(
             {"id": client_id},
@@ -250,6 +250,7 @@ class ClientsCollection:
                 },
                 "$set": {
                     "updatedAt": updated_at,
+                    "lastReceiptDate": updated_at,
                 },
             },
             upsert=True,
