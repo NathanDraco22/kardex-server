@@ -31,6 +31,7 @@ async def process_receipt(
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
             # 1. Validar Cuadratura de Sumas (Total + Devoluciones == Facturas Aplicadas)
+            now_in_milliseconds = TimeTools.get_now_in_milliseconds()
             total_funds = create_receipt.total + sum(
                 d.amountApplied for d in create_receipt.appliedDevolutions
             )
@@ -45,7 +46,7 @@ async def process_receipt(
             # 2. Crear el documento de recibo
             new_receipt_data = create_receipt.model_dump()
             new_receipt_data["id"] = UuidTool.generate_uuid()
-            new_receipt_data["createdAt"] = TimeTools.get_now_in_milliseconds()
+            new_receipt_data["createdAt"] = now_in_milliseconds
 
             insert_result = await receipt_col.create_receipt_with_session(
                 new_receipt_data, session=session
@@ -106,6 +107,7 @@ async def process_receipt(
                         client_id=create_receipt.clientId,
                         amount=applied_devolution.amountApplied,
                         session=session,
+                        timestamp=now_in_milliseconds,
                     )
                 )
                 final_client_account = ClientInDb.model_validate(updated_client_data)
@@ -120,7 +122,7 @@ async def process_receipt(
                     type="credit",
                     subtype="devolution",
                     resultBalance=final_client_account.balance,
-                    createdAt=TimeTools.get_now_in_milliseconds(),
+                    createdAt=now_in_milliseconds,
                 )
                 await client_transaction_col.create_client_transaction_with_session(
                     devolution_transaction.model_dump(), session=session
@@ -134,6 +136,7 @@ async def process_receipt(
                         client_id=create_receipt.clientId,
                         amount=create_receipt.total,
                         session=session,
+                        timestamp=now_in_milliseconds,
                     )
                 )
                 final_client_account = ClientInDb.model_validate(updated_client_data)
@@ -148,7 +151,7 @@ async def process_receipt(
                     type="credit",
                     subtype="receipt",
                     resultBalance=final_client_account.balance,
-                    createdAt=TimeTools.get_now_in_milliseconds(),
+                    createdAt=now_in_milliseconds,
                 )
                 await client_transaction_col.create_client_transaction_with_session(
                     payment_transaction.model_dump(), session=session

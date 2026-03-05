@@ -3,7 +3,7 @@ from repos.v1.common.models.history_params import HistoryClientParams
 from .data.invoices_datasource import InvoicesDataSource
 from .models.invoice_model import UpdateInvoice, InvoiceInDb
 from .models.invoice_totals_model import InvoiceTotals
-from .models.invoice_product_sale import ProductSalesTotal
+from repos.v1.common.models.invoice_product_sale import ProductSalesTotal
 
 
 class InvoicesRepository:

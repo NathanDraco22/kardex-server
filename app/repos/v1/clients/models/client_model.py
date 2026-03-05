@@ -2,6 +2,14 @@ from pydantic import BaseModel
 from repos.v1.common.models import Coordinates
 
 
+class PersonalReference(BaseModel):
+    name: str
+    phone: str
+    address: str
+    location: str
+    email: str | None = None
+
+
 class BaseClient(BaseModel):
     name: str
     cardId: str | None = None
@@ -17,6 +25,7 @@ class BaseClient(BaseModel):
     isActive: bool = True
     group: str = ""
     coordinates: Coordinates | None = None
+    personalReferences: list[PersonalReference] = []
 
 
 class CreateClient(BaseClient):
@@ -35,6 +44,7 @@ class UpdateClient(BaseModel):
     creditLimit: int | None = None
     group: str | None = None
     coordinates: Coordinates | None = None
+    personalReferences: list[PersonalReference] | None = None
 
 
 class ClientInDb(BaseClient):
