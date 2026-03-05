@@ -9,3 +9,5 @@ class OrderQueryParams(BaseModel):
     neStatus: OrderStatus | None = None
     clientId: str | None = None
     branchId: str | None = None
+    startDate: int | None = None
+    endDate: int | None = None
