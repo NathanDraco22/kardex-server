@@ -16,6 +16,7 @@ class ProductItem(BaseModel):
 
 class SaleItem(BaseModel):
     product: ProductItem
+    selectedPrice: int = 1
     quantity: int
     bonQuantity: int = 0
     cost: int

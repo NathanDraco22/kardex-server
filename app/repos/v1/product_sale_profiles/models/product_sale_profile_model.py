@@ -31,6 +31,8 @@ class BaseProductSaleProfile(BaseModel):
     branchId: str
     productId: str
     salePrice: int
+    salePrice2: int = 0
+    salePrice3: int = 0
     discounts: list[Discount] = []
 
 
@@ -40,6 +42,8 @@ class CreateProductSaleProfile(BaseProductSaleProfile):
 
 class UpdateProductSaleProfile(BaseModel):
     salePrice: int | None = None
+    salePrice2: int | None = None
+    salePrice3: int | None = None
     discounts: list[Discount] | None = None
 
 

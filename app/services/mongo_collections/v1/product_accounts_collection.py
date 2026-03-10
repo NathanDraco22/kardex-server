@@ -26,6 +26,12 @@ class ProductAccountsCollection:
         collection = self.__collection
         await collection.insert_one(product_account)
 
+    async def create_many_product_accounts(
+        self, product_accounts: list[dict], session: Any
+    ) -> None:
+        collection = self.__collection
+        await collection.insert_many(product_accounts, session=session)
+
     async def get_product_account_by_product_and_branch_id(
         self, product_id: str, branch_id: str
     ) -> dict[str, Any] | None:

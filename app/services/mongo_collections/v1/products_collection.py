@@ -20,6 +20,10 @@ class ProductsCollection:
         collection = self.__collection
         await collection.insert_one(product)
 
+    async def create_many_products(self, products: list[dict], session: Any) -> None:
+        collection = self.__collection
+        await collection.insert_many(products, session=session)
+
     async def fetch_all_products(self) -> list[dict[str, Any]]:
         collection = self.__collection
         cursor = collection.find({"isDeleted": False})
