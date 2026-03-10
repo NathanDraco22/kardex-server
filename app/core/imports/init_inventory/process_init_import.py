@@ -7,7 +7,7 @@ from repos.v1.product_transactions import ProductTransactionInDb
 from repos.v1.product_sale_profiles import ProductSaleProfileInDb
 from repos.v1.product_stats import CreateProductStat
 from repos.v1.products import ProductInDb
-from repos.v1.entry_docs import EntryDocInDb
+from repos.v1.adjust_entries import AdjustEntryInDb
 from repos.v1.common.models import UserInfo, EntryItem
 
 from services import MongoService
@@ -19,13 +19,13 @@ from services.mongo_collections.v1 import (
     ProductSaleProfilesCollection,
     ProductStatsCollection,
     ProductTransactionsCollection,
-    EntryDocsCollection,
+    AdjustEntriesCollection,
 )
 
 
 async def process_init_import(branch_id: str, products: list[ProductImport]) -> None:
     product_col: ProductsCollection = ProductsCollection()
-    entry_doc_col: EntryDocsCollection = EntryDocsCollection()
+    adjust_entry_doc_col: AdjustEntriesCollection = AdjustEntriesCollection()
     account_col: ProductAccountsCollection = ProductAccountsCollection()
     profile_col: ProductSaleProfilesCollection = ProductSaleProfilesCollection()
     stats_col: ProductStatsCollection = ProductStatsCollection()
@@ -86,7 +86,7 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
         product_transaction = ProductTransactionInDb(
             id=UuidTool.generate_uuid(),
             type="entry",
-            subtype="entry",
+            subtype="adjustment",
             docNumber="0000",
             documentId="0000",
             quantity=import_product.quantity,
@@ -135,13 +135,11 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
         for product_transaction in new_product_transactions
     ]
 
-    new_init_entry_doc = EntryDocInDb(
+    new_init_entry_doc = AdjustEntryInDb(
         id="0000",
-        supplierId="Neptuno",
         branchId=branch_id,
         docNumber="0000",
         description="Inventario inicial",
-        docDate=now_milliseconds,
         createdAt=now_milliseconds,
         items=new_product_entry_items,
         createdBy=UserInfo(
@@ -154,7 +152,7 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
 
     async with await client.start_session() as session:
         async with session.start_transaction():
-            await entry_doc_col.create_entry_doc_with_session(
+            await adjust_entry_doc_col.create_adjust_entry_with_session(
                 entry_doc_data,
                 session=session,
             )
