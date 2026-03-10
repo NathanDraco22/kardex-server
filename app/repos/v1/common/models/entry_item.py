@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class EntryItem(BaseModel):
@@ -8,5 +8,5 @@ class EntryItem(BaseModel):
     brandName: str | None = None
     unitName: str | None = None
     cost: int
-    quantity: int = Field(..., gt=0)
+    quantity: int
     expirationDate: int | None = None
