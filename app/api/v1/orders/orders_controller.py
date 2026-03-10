@@ -5,6 +5,7 @@ from repos.v1.invoices.models.invoice_model import (
     CreateInvoice,
     InvoiceStatus,
 )
+from repos.v1.common.models.invoice_product_sale import ProductSalesTotal
 from core.order_register.order_register import OrderRegister
 from core.invoice_register.invoice_register import InvoiceRegister
 from core.order_register.cancel_order import cancel_order
@@ -105,6 +106,13 @@ class OrdersController:
             count=len(res),
             data=res,
         )
+
+    async def get_product_in_orders(
+        self, params: OrderQueryParams
+    ) -> ListResponse[ProductSalesTotal]:
+        raw_params = params.model_dump(exclude_none=True)
+        res = await self.orders_repo.get_products_in_orders(**raw_params)
+        return ListResponse(count=len(res), data=res)
 
     async def get_order_by_id(self, order_id: str) -> OrderInDb:
         order = await self.orders_repo.get_order_by_id(order_id)

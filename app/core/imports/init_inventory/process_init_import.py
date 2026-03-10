@@ -1,0 +1,178 @@
+from .model.product_import import ProductImport
+
+from tools import UuidTool, TimeTools
+
+from repos.v1.product_accounts import ProductAccountInDb
+from repos.v1.product_transactions import ProductTransactionInDb
+from repos.v1.product_sale_profiles import ProductSaleProfileInDb
+from repos.v1.product_stats import CreateProductStat
+from repos.v1.products import ProductInDb
+from repos.v1.entry_docs import EntryDocInDb
+from repos.v1.common.models import UserInfo, EntryItem
+
+from services import MongoService
+
+
+from services.mongo_collections.v1 import (
+    ProductsCollection,
+    ProductAccountsCollection,
+    ProductSaleProfilesCollection,
+    ProductStatsCollection,
+    ProductTransactionsCollection,
+    EntryDocsCollection,
+)
+
+
+async def process_init_import(branch_id: str, products: list[ProductImport]) -> None:
+    product_col: ProductsCollection = ProductsCollection()
+    entry_doc_col: EntryDocsCollection = EntryDocsCollection()
+    account_col: ProductAccountsCollection = ProductAccountsCollection()
+    profile_col: ProductSaleProfilesCollection = ProductSaleProfilesCollection()
+    stats_col: ProductStatsCollection = ProductStatsCollection()
+    transaction_col: ProductTransactionsCollection = ProductTransactionsCollection()
+
+    now_milliseconds = TimeTools.get_now_in_milliseconds()
+
+    new_products: list[ProductInDb] = []
+    new_product_accounts: list[ProductAccountInDb] = []
+    new_product_sale_profiles: list[ProductSaleProfileInDb] = []
+    new_product_stats: list[CreateProductStat] = []
+    new_product_transactions: list[ProductTransactionInDb] = []
+    new_product_entry_items: list[EntryItem] = []
+
+    for import_product in products:
+        import_product.id = UuidTool.generate_uuid()
+        product = ProductInDb(
+            **import_product.model_dump(),
+            createdAt=now_milliseconds,
+        )
+
+        new_products.append(product)
+
+        product_account = ProductAccountInDb(
+            productId=product.id,
+            branchId=branch_id,
+            currentStock=import_product.quantity,
+            averageCost=import_product.cost,
+            lastCost=import_product.cost,
+            maximumCost=import_product.cost,
+            createdAt=now_milliseconds,
+        )
+
+        new_product_accounts.append(product_account)
+
+        product_sale_profile = ProductSaleProfileInDb(
+            productId=product.id,
+            branchId=branch_id,
+            salePrice=import_product.price,
+            updatedAt=now_milliseconds,
+        )
+
+        new_product_sale_profiles.append(product_sale_profile)
+
+        product_stat = CreateProductStat(
+            productId=product.id,
+            branchId=branch_id,
+            startDate=now_milliseconds,
+            endDate=now_milliseconds,
+            totalUnits=0,
+            totalTransactions=0,
+            daysAnalyzed=0,
+            lastEstimation=now_milliseconds,
+        )
+
+        new_product_stats.append(product_stat)
+
+        product_transaction = ProductTransactionInDb(
+            id=UuidTool.generate_uuid(),
+            type="entry",
+            subtype="entry",
+            docNumber="0000",
+            documentId="0000",
+            quantity=import_product.quantity,
+            averageCost=import_product.cost,
+            resultStock=import_product.quantity,
+            productId=product.id,
+            branchId=branch_id,
+            createdAt=now_milliseconds,
+        )
+
+        new_product_transactions.append(product_transaction)
+
+        entry_item = EntryItem(
+            productId=product.id,
+            productName=product.name,
+            code=product.code,
+            brandName=product.brandName,
+            unitName=product.unitName,
+            cost=import_product.cost,
+            quantity=import_product.quantity,
+            expirationDate=None,
+        )
+
+        new_product_entry_items.append(entry_item)
+
+    # Mongo session
+    client = MongoService().client
+
+    new_product_data = [product.model_dump() for product in new_products]
+
+    new_product_accounts_data = [
+        product_account.model_dump() for product_account in new_product_accounts
+    ]
+
+    new_product_sale_profiles_data = [
+        product_sale_profile.model_dump()
+        for product_sale_profile in new_product_sale_profiles
+    ]
+
+    new_product_stats_data = [
+        product_stat.model_dump() for product_stat in new_product_stats
+    ]
+
+    new_product_transactions_data = [
+        product_transaction.model_dump()
+        for product_transaction in new_product_transactions
+    ]
+
+    new_init_entry_doc = EntryDocInDb(
+        id="0000",
+        supplierId="Neptuno",
+        branchId=branch_id,
+        docNumber="0000",
+        description="Inventario inicial",
+        docDate=now_milliseconds,
+        createdAt=now_milliseconds,
+        items=new_product_entry_items,
+        createdBy=UserInfo(
+            id="0000",
+            name="Inventario inicial",
+        ),
+    )
+
+    entry_doc_data = new_init_entry_doc.model_dump()
+
+    async with await client.start_session() as session:
+        async with session.start_transaction():
+            await entry_doc_col.create_entry_doc_with_session(
+                entry_doc_data,
+                session=session,
+            )
+            await product_col.create_many_products(
+                new_product_data,
+                session=session,
+            )
+            await account_col.create_many_product_accounts(
+                new_product_accounts_data,
+                session=session,
+            )
+            await profile_col.bulk_create_product_sale_profiles(
+                new_product_sale_profiles_data, session=session
+            )
+            await stats_col.bulk_create_product_stats_if_not_exist(
+                new_product_stats_data, session=session
+            )
+
+            await transaction_col.create_many_product_transactions_with_session(
+                new_product_transactions_data, session=session
+            )

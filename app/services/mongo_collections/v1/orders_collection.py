@@ -58,6 +58,50 @@ class OrdersCollection:
 
         return result
 
+    async def fetch_products_in_orders(self, **kwargs) -> list[dict[str, Any]]:
+        collection = self.__collection
+        branch_id = kwargs.pop("branchId", None)
+        start_date = kwargs.pop("startDate", None)
+        end_date = kwargs.pop("endDate", None)
+        neStatus = kwargs.pop("neStatus", None)
+
+        query = {}
+
+        if branch_id:
+            query["branchId"] = branch_id
+
+        if neStatus:
+            query["status"] = {"$ne": neStatus}
+
+        if start_date and end_date:
+            query["createdAt"] = {"$gte": start_date, "$lte": end_date}
+
+        if neStatus:
+            query["status"] = {"$ne": neStatus}
+
+        pipeline = [
+            {"$match": query},
+            {"$unwind": "$saleItems"},
+            {
+                "$group": {
+                    "_id": "$saleItems.product.id",
+                    "productId": {"$first": "$saleItems.product.id"},
+                    "productName": {"$first": "$saleItems.product.name"},
+                    "totalQuantity": {"$sum": "$saleItems.quantity"},
+                    "totalBonQuantity": {"$sum": "$saleItems.bonQuantity"},
+                    "total": {"$sum": "$saleItems.total"},
+                }
+            },
+            {"$sort": {"productName": 1}},
+        ]
+
+        cursor = collection.aggregate(pipeline)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def fetch_order_by_id(self, order_id: str) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one({"id": order_id})
