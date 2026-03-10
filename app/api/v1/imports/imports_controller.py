@@ -26,13 +26,14 @@ class ImportsController:
             current_price: str = str(row["price"])
             current_cost: str = str(row["cost"])
 
-            current_price = current_price.replace(",", "")
-            current_price = current_price.replace(".", "")
-            current_cost = current_cost.replace(",", "")
-            current_cost = current_cost.replace(".", "")
+            current_price = current_price.replace(",", ".")
+            current_cost = current_cost.replace(",", ".")
 
-            row["price"] = int(current_price) * 100
-            row["cost"] = int(current_cost) * 100
+            float_price = float(current_price)
+            float_cost = float(current_cost)
+
+            row["price"] = int(float_price * 100)
+            row["cost"] = int(float_cost * 100)
 
             parsed_data.append(row)
 

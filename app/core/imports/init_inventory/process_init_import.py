@@ -86,7 +86,7 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
         product_transaction = ProductTransactionInDb(
             id=UuidTool.generate_uuid(),
             type="entry",
-            subtype="entry",
+            subtype="adjustment",
             docNumber="0000",
             documentId="0000",
             quantity=import_product.quantity,
