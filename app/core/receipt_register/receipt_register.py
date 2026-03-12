@@ -9,7 +9,6 @@ from repos.v1.receipts import CreateReceipt, ReceiptInDb
 from repos.v1.receipts import ReceiptsRepository, ReceiptsDataSource
 from repos.v1.clients import ClientsRepository, ClientsDataSource, ClientInDb
 from repos.v1.branches import BranchesRepository, BranchesDataSource
-from core.counter_manager.counter_manager import CounterManager
 
 from .process_receipt import process_receipt
 
@@ -46,9 +45,6 @@ class ReceiptRegister:
         """
         Valida y registra un nuevo recibo de pago.
         """
-        # Genera un número de documento si no se proporciona uno.
-        if not create_receipt.docNumber:
-            create_receipt.docNumber = await CounterManager().next_receipt_number()
 
         # Comprueba si ya existe un recibo con ese número.
         receipt = await self.receipts_repo.get_receipt_by_doc_number(
