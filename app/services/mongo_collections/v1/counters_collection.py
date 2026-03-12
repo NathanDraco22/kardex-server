@@ -16,12 +16,15 @@ class CountersCollection:
         mongo_service = MongoService()
         self.__collection = mongo_service.get_collection(self.collection_name)
 
-    async def increment_counter(self, counter_name: str) -> dict[str, Any]:
+    async def increment_counter(
+        self, counter_name: str, session: Any
+    ) -> dict[str, Any]:
         collection = self.__collection
         result = await collection.find_one_and_update(
             {"name": counter_name},
             {"$inc": {"value": 1}},
             upsert=True,
+            session=session,
             return_document=ReturnDocument.AFTER,
         )
 
