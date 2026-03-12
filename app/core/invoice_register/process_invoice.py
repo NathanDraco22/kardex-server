@@ -216,6 +216,10 @@ async def process_anon_invoice(
         async with session.start_transaction():
             new_invoice_doc_id = UuidTool.generate_uuid()
             current_time = TimeTools.get_now_in_milliseconds()
+            if len(create_invoice.docNumber) == 0:
+                create_invoice.docNumber = await CounterManager().next_invoice_number(
+                    session=session
+                )
 
             # 1. PREPARAR DATOS DE SALIDA (Mapeo a InventoryExitBatchItem)
             # REGLA DE NEGOCIO: En ventas, descontamos Cantidad + Bonificación
