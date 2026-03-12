@@ -15,6 +15,8 @@ from services.mongo_collections.v1 import (
     ProductAccountsCollection,
 )
 
+from core.counter_manager.counter_manager import CounterManager
+
 
 async def process_outgoing_transfer(
     create_transfer: CreateTransfer,
@@ -30,6 +32,11 @@ async def process_outgoing_transfer(
         async with session.start_transaction():
             new_transfer_id = UuidTool.generate_uuid()
             current_time = TimeTools.get_now_in_milliseconds()
+
+            if not create_transfer.docNumber:
+                create_transfer.docNumber = await CounterManager().next_tranfer_number(
+                    session
+                )
 
             # 1. PREPARAR DATOS (Mapeo a InventoryExitBatchItem)
             # Convertimos los items del traslado al formato genérico de salida

@@ -19,22 +19,22 @@ class CounterManager:
         res = await self.counters_repository.increment_counter("receiptNumber", session)
         return str(res.value)
 
-    async def next_order_number(self, session: Any) -> str:
+    async def next_order_number(self, session: Any = None) -> str:
         res = await self.counters_repository.increment_counter("orderNumber", session)
         return str(res.value)
 
-    async def next_devolution_number(self, session: Any) -> str:
+    async def next_devolution_number(self, session: Any = None) -> str:
         res = await self.counters_repository.increment_counter(
             "devolutionNumber", session
         )
         return str(res.value)
 
-    async def next_user_number(self, session: Any) -> str:
+    async def next_user_number(self, session: Any = None) -> str:
         res = await self.counters_repository.increment_counter("userNumber", session)
         formatted = str(res.value).zfill(4)
         return formatted
 
-    async def next_client_number(self, session: Any) -> str:
+    async def next_client_number(self, session: Any = None) -> str:
         res = await self.counters_repository.increment_counter("clientNumber", session)
         formatted = str(res.value).zfill(4)
         return formatted

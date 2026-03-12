@@ -13,6 +13,8 @@ from repos.v1.clients import ClientInDb
 from tools import UuidTool, TimeTools
 from services import MongoService
 
+from core.counter_manager.counter_manager import CounterManager
+
 
 async def process_receipt(
     create_receipt: CreateReceipt,
@@ -36,6 +38,11 @@ async def process_receipt(
                 d.amountApplied for d in create_receipt.appliedDevolutions
             )
             total_applied = sum(i.amountApplied for i in create_receipt.appliedInvoices)
+
+            if not create_receipt.docNumber:
+                create_receipt.docNumber = await CounterManager().next_receipt_number(
+                    session
+                )
 
             if total_funds != total_applied:
                 raise Exception(
