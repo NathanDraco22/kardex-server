@@ -6,7 +6,7 @@ from core.inventory import (
     prepare_inventory_exit_batch,
     InventoryExitBatchItem,
 )
-
+from core.counter_manager.counter_manager import CounterManager
 from core.finance import process_client_financial_movement, FinanceTransactionRequest
 from repos.v1.clients import ClientInDb
 
@@ -38,6 +38,11 @@ async def process_invoice(
         async with session.start_transaction():
             new_invoice_id = UuidTool.generate_uuid()
             current_time = TimeTools.get_now_in_milliseconds()
+
+            if len(create_invoice.docNumber) == 0:
+                create_invoice.docNumber = await CounterManager().next_invoice_number(
+                    session=session
+                )
 
             # ==========================================
             # 1. PREPARACIÓN DE INVENTARIO
