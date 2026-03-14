@@ -32,6 +32,10 @@ class ClientsDataSource:
         collection = ClientsCollection()
         return await collection.fetch_client_by_id(client_id)
 
+    async def get_client_by_card_id(self, card_id: str) -> dict[str, Any] | None:
+        collection = ClientsCollection()
+        return await collection.get_client_by_card_id(card_id)
+
     async def search_client_by_text(self, text_query: str) -> list[dict[str, Any]]:
         collection = ClientsCollection()
         return await collection.search_client_by_text(text_query)

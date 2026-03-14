@@ -6,8 +6,6 @@ from services import MongoService
 
 from pymongo import IndexModel
 
-from tools import TimeTools
-
 
 class ClientsCollection:
     collection_name = "Clients"
@@ -121,6 +119,11 @@ class ClientsCollection:
         result = await collection.find_one({"id": client_id, "isDeleted": False})
         return result
 
+    async def get_client_by_card_id(self, card_id: str) -> dict[str, Any] | None:
+        collection = self.__collection
+        result = await collection.find_one({"cardId": card_id, "isDeleted": False})
+        return result
+
     async def search_client_by_text(self, text_query: str) -> list[dict[str, Any]]:
         collection = self.__collection
 
@@ -186,6 +189,11 @@ class ClientsCollection:
                 IndexModel(
                     [
                         ("name", "text"),
+                    ],
+                ),
+                IndexModel(
+                    [
+                        ("cardId", 1),
                     ],
                 ),
             ]

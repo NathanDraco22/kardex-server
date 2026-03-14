@@ -39,6 +39,14 @@ class ClientsRepository:
 
         return ClientInDb.model_validate(result)
 
+    async def get_client_by_card_id(self, card_id: str) -> ClientInDb | None:
+        result = await self.clients_ds.get_client_by_card_id(card_id)
+
+        if result is None:
+            return None
+
+        return ClientInDb.model_validate(result)
+
     async def search_client_by_text(self, text_query: str) -> list[ClientInDb]:
         results = await self.clients_ds.search_client_by_text(text_query)
         models = [ClientInDb.model_validate(result) for result in results]
