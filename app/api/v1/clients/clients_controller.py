@@ -18,7 +18,7 @@ class ClientsController:
         self.clients_repo = clients_repo
 
     async def create_client(self, body: CreateClient) -> ClientInDb:
-        if body.cardId is not None:
+        if body.cardId is not None and body.cardId != "":
             res = await self.get_client_by_card_id(body.cardId)
             if res is not None:
                 raise HTTPException(
