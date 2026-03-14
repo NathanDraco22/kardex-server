@@ -19,7 +19,7 @@ class ClientsController:
 
     async def create_client(self, body: CreateClient) -> ClientInDb:
         if body.cardId is not None and body.cardId != "":
-            res = await self.get_client_by_card_id(body.cardId)
+            res = await self.clients_repo.get_client_by_card_id(body.cardId)
             if res is not None:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
