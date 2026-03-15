@@ -26,6 +26,12 @@ class ReceiptsDataSource:
         collection = ReceiptsCollection()
         return await collection.get_totals_from_receipts(**kwargs)
 
+    async def get_totals_from_receipts_by_payment_method(
+        self, **kwargs
+    ) -> list[dict[str, Any]]:
+        collection = ReceiptsCollection()
+        return await collection.get_totals_from_receipts_by_payment_method(**kwargs)
+
     async def get_receipt_by_id(self, receipt_id: str) -> dict[str, Any] | None:
         collection = ReceiptsCollection()
         return await collection.fetch_receipt_by_id(receipt_id)

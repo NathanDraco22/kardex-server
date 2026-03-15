@@ -50,6 +50,13 @@ async def get_totals_from_invoices(
     return await invoices_controller.get_totals_from_invoices(query_params)
 
 
+@invoices_router.get("/totals/byPaymentType")
+async def get_totals_invoices_by_payment_type(
+    query_params: InvoiceQueryParams = Depends(),
+) -> ListResponse[InvoiceTotals]:
+    return await invoices_controller.get_totals_invoices_by_payment_type(query_params)
+
+
 @invoices_router.get("/history")
 async def get_invoices_history(
     params: HistoryClientParams = Depends(),

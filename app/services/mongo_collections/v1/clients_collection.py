@@ -97,9 +97,10 @@ class ClientsCollection:
         safe_query = re.escape(text_query)
 
         query = {
-            "name": {
-                "$regex": safe_query,
-                "$options": "i",
+            "$text": {
+                "$search": safe_query,
+                "$caseSensitive": False,
+                "$diacriticSensitive": False,
             },
             "isDeleted": False,
             "isInternal": False,
@@ -130,9 +131,10 @@ class ClientsCollection:
         safe_query = re.escape(text_query)
 
         query = {
-            "name": {
-                "$regex": safe_query,
-                "$options": "i",  # 'i' para case-insensitive
+            "$text": {
+                "$search": safe_query,
+                "$caseSensitive": False,
+                "$diacriticSensitive": False,
             },
             "isDeleted": False,
             "isInternal": False,
@@ -189,6 +191,12 @@ class ClientsCollection:
                 IndexModel(
                     [
                         ("name", "text"),
+                        ("searchPrefixes", "text"),
+                        ("location", "text"),
+                        ("group", "text"),
+                        ("cardId", "text"),
+                        ("phone", "text"),
+                        ("id", "text"),
                     ],
                 ),
                 IndexModel(

@@ -36,6 +36,15 @@ async def get_totals_from_receipts(
     return await receipts_controller.get_totals_from_receipts(query_params)
 
 
+@receipts_router.get("/totals/byPaymentMethod")
+async def get_totals_from_receipts_by_payment_method(
+    query_params: ReceiptQueryParams = Depends(),
+) -> ListResponse[ReceiptTotal]:
+    return await receipts_controller.get_totals_from_receipts_by_payment_method(
+        query_params
+    )
+
+
 @receipts_router.get("/history")
 async def get_receipt_history(
     query_params: HistoryClientParams = Depends(),
