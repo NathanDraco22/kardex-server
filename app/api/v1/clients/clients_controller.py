@@ -23,7 +23,7 @@ class ClientsController:
             if res is not None:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail="Cliente con esta Cedula ya existe",
+                    detail=f"Esta cedula fue registrada: {res.name}",
                 )
 
         return await self.clients_repo.create_client(body)

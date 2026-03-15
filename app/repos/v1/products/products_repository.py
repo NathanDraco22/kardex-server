@@ -59,6 +59,14 @@ class ProductsRepository:
 
         return ProductInDb.model_validate(result)
 
+    async def get_product_by_code(self, product_code: str) -> ProductInDb | None:
+        result = await self.products_ds.get_product_by_code(product_code)
+
+        if result is None:
+            return None
+
+        return ProductInDb.model_validate(result)
+
     async def search_product_by_text(self, text_query: str) -> list[ProductInDb]:
         results = await self.products_ds.search_product_by_text(text_query)
         models = [ProductInDb.model_validate(result) for result in results]
