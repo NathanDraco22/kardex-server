@@ -54,6 +54,19 @@ class InvoicesController:
         kargs = query_params.model_dump()
         return await self.invoices_repo.get_totals_from_invoices(**kargs)
 
+    async def get_totals_invoices_by_payment_type(
+        self, query_params: InvoiceQueryParams
+    ) -> ListResponse[InvoiceTotals]:
+        kargs = query_params.model_dump(
+            exclude_none=True,
+        )
+        kargs.pop("byPaidAt", None)
+        kargs.pop("offset", None)
+        kargs.pop("limit", None)
+
+        res = await self.invoices_repo.get_totals_invoices_by_payment_type(**kargs)
+        return ListResponse(count=len(res), data=res)
+
     async def get_invoice_by_id(self, invoice_id: str) -> InvoiceInDb:
         invoice = await self.invoices_repo.get_invoice_by_id(invoice_id)
         if invoice is None:

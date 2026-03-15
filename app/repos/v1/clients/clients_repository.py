@@ -1,4 +1,5 @@
 from tools import TimeTools
+from tools.search_tools import generate_prefixes
 from core.counter_manager.counter_manager import CounterManager
 
 from .data.clients_datasource import ClientsDataSource
@@ -17,7 +18,13 @@ class ClientsRepository:
             **create_client.model_dump(),
         )
 
-        result = await self.clients_ds.create_client(new_client_in_db.model_dump())
+        new_client_in_db_data = new_client_in_db.model_dump()
+
+        new_client_in_db_data["searchPrefixes"] = generate_prefixes(
+            new_client_in_db.name
+        )
+
+        result = await self.clients_ds.create_client(new_client_in_db_data)
 
         return ClientInDb.model_validate(result)
 
@@ -33,6 +40,14 @@ class ClientsRepository:
 
     async def get_client_by_id(self, client_id: str) -> ClientInDb | None:
         result = await self.clients_ds.get_client_by_id(client_id)
+
+        if result is None:
+            return None
+
+        return ClientInDb.model_validate(result)
+
+    async def get_client_by_card_id(self, card_id: str) -> ClientInDb | None:
+        result = await self.clients_ds.get_client_by_card_id(card_id)
 
         if result is None:
             return None

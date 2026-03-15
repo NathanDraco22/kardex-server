@@ -61,6 +61,24 @@ class ReceiptsController:
             **query_params.model_dump()
         )
 
+    async def get_totals_from_receipts_by_payment_method(
+        self, query_params: ReceiptQueryParams
+    ) -> ListResponse[ReceiptTotal]:
+        if query_params.endDate is None or query_params.startDate is None:
+            query_params.startDate = None
+            query_params.endDate = None
+
+        kwargs = query_params.model_dump(exclude_none=True)
+
+        kwargs.pop("offset", None)
+        kwargs.pop("limit", None)
+
+        res = await self.receipts_repo.get_totals_from_receipts_by_payment_method(
+            **kwargs
+        )
+
+        return ListResponse(count=len(res), data=res)
+
     async def get_receipt_by_id(self, receipt_id: str) -> ReceiptInDb:
         receipt = await self.receipts_repo.get_receipt_by_id(receipt_id)
         if receipt is None:

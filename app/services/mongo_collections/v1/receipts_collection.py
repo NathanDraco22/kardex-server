@@ -81,6 +81,7 @@ class ReceiptsCollection:
                     "$group": {
                         "_id": None,
                         "total": {"$sum": "$total"},
+                        "count": {"$sum": 1},
                     }
                 },
             ]
@@ -95,6 +96,58 @@ class ReceiptsCollection:
             return data
 
         return {"total": 0}
+
+    async def get_totals_from_receipts_by_payment_method(
+        self, **kwargs
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        query = {key: value for key, value in kwargs.items() if value is not None}
+
+        if kwargs.get("paymentMethod"):
+            query["paymentMethod"] = kwargs.get("paymentMethod")
+
+        if kwargs.get("nePaymentMethod"):
+            query["paymentMethod"] = {"$ne": kwargs.get("nePaymentMethod")}
+
+        if kwargs.get("startDate") and kwargs.get("endDate"):
+            query["createdAt"] = {
+                "$gte": kwargs.get("startDate"),
+                "$lte": kwargs.get("endDate"),
+            }
+
+            del query["startDate"]
+            del query["endDate"]
+
+        cursor = collection.aggregate(
+            [
+                {"$match": query},
+                {
+                    "$group": {
+                        "_id": "$paymentMethod",
+                        "total": {"$sum": "$total"},
+                        "count": {"$sum": 1},
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 0,
+                        "paymentMethod": "$_id",
+                        "total": 1,
+                        "count": 1,
+                    }
+                },
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+
+        await cursor.close()
+
+        if result:
+            return result
+
+        return []
 
     async def fetch_receipt_by_id(self, receipt_id: str) -> dict[str, Any] | None:
         collection = self.__collection
@@ -162,5 +215,6 @@ class ReceiptsCollection:
                 IndexModel([("branchId", 1), ("createdAt", -1)]),
                 IndexModel([("appliedInvoices.invoiceId", 1)]),
                 IndexModel([("createdBy.id", 1)]),
+                IndexModel([("paymentMethod", 1)]),
             ]
         )

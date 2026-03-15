@@ -12,7 +12,7 @@ from repos.v1.invoices import (
 
 from pymongo.errors import OperationFailure
 
-from core.counter_manager.counter_manager import CounterManager
+
 from core.default_values import SALE_CLIENT_ID
 from core.inventory import InsufficientBalanceError
 
@@ -26,6 +26,8 @@ from .process_invoice import (
     process_anon_invoice,
 )
 
+invoice_mutex = asyncio.Lock()
+
 
 class InvoiceRegister:
     def __init__(self) -> None:
@@ -38,9 +40,6 @@ class InvoiceRegister:
         create_invoice: CreateInvoice,
         process_function: Callable[[CreateInvoice], Coroutine],
     ):
-        if len(create_invoice.docNumber) == 0:
-            create_invoice.docNumber = await CounterManager().next_invoice_number()
-
         invoice = await self.invoices_repo.get_invoice_by_doc_number(
             create_invoice.docNumber
         )
@@ -77,7 +76,14 @@ class InvoiceRegister:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Use the anonymous invoice endpoint for this client.",
             )
-        return await self._register_transaction(create_invoice, process_invoice)
+        looked = False
+        try:
+            await asyncio.wait_for(invoice_mutex.acquire(), timeout=7)
+            looked = True
+            return await self._register_transaction(create_invoice, process_invoice)
+        finally:
+            if looked:
+                invoice_mutex.release()
 
     async def regis_anon_invoice(
         self, create_invoice: CreateInvoice
@@ -87,7 +93,16 @@ class InvoiceRegister:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid client ID for anonymous invoice.",
             )
-        return await self._register_transaction(create_invoice, process_anon_invoice)
+        looked = False
+        try:
+            await asyncio.wait_for(invoice_mutex.acquire(), timeout=7)
+            looked = True
+            return await self._register_transaction(
+                create_invoice, process_anon_invoice
+            )
+        finally:
+            if looked:
+                invoice_mutex.release()
 
     async def _validate_document(self, doc: CreateInvoice):
         branch = BranchesTool().get_branch_by_id(doc.branchId)

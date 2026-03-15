@@ -18,6 +18,14 @@ class ClientsController:
         self.clients_repo = clients_repo
 
     async def create_client(self, body: CreateClient) -> ClientInDb:
+        if body.cardId is not None and body.cardId != "":
+            res = await self.clients_repo.get_client_by_card_id(body.cardId)
+            if res is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Esta cedula fue registrada: {res.name}",
+                )
+
         return await self.clients_repo.create_client(body)
 
     async def get_all_clients(
@@ -44,6 +52,15 @@ class ClientsController:
 
     async def get_client_by_id(self, client_id: str) -> ClientInDb:
         client = await self.clients_repo.get_client_by_id(client_id)
+        if client is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Client not found",
+            )
+        return client
+
+    async def get_client_by_card_id(self, card_id: str) -> ClientInDb:
+        client = await self.clients_repo.get_client_by_card_id(card_id)
         if client is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

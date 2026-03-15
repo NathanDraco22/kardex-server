@@ -20,6 +20,15 @@ class ProductsController:
         self.products_repo = products_repo
 
     async def create_product(self, body: CreateProduct) -> ProductInDb:
+        if body.code is not None and body.code != "":
+            body.code = body.code.upper()
+            result = await self.products_repo.get_product_by_code(body.code)
+            if result is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"{result.name} ya tiene el codigo {body.code}",
+                )
+
         return await self.products_repo.create_product(body)
 
     async def get_all_products(self) -> ListResponse[ProductInDb]:

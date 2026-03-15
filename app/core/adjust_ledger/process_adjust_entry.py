@@ -15,6 +15,7 @@ from services.mongo_collections.v1 import (
     ProductSaleProfilesCollection,
     ProductStatsCollection,
 )
+from core.counter_manager.counter_manager import CounterManager
 
 
 async def process_adjust_entry(
@@ -35,6 +36,11 @@ async def process_adjust_entry(
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
             now_in_milliseconds = TimeTools.get_now_in_milliseconds()
+
+            if not adjust_entry.docNumber:
+                adjust_entry.docNumber = await CounterManager().next_adjust_number(
+                    session
+                )
 
             # 1. CREAR DOCUMENTO DE AJUSTE
             new_adjust_data = adjust_entry.model_dump()
