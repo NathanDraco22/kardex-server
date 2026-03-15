@@ -30,6 +30,10 @@ class InvoicesRepository:
         res = await self.invoices_ds.get_totals_from_invoices(**kargs)
         return InvoiceTotals(**res)
 
+    async def get_totals_invoices_by_payment_type(self, **kargs) -> list[InvoiceTotals]:
+        res = await self.invoices_ds.get_totals_invoices_by_payment_type(**kargs)
+        return [InvoiceTotals(**result) for result in res]
+
     async def get_invoice_by_id(self, invoice_id: str) -> InvoiceInDb | None:
         result = await self.invoices_ds.get_invoice_by_id(invoice_id)
 

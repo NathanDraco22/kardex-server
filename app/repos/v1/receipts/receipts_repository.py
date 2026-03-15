@@ -26,6 +26,15 @@ class ReceiptsRepository:
         res = await self.receipts_ds.get_totals_from_receipts(**kwargs)
         return ReceiptTotal.model_validate(res)
 
+    async def get_totals_from_receipts_by_payment_method(
+        self, **kwargs
+    ) -> list[ReceiptTotal]:
+        res = await self.receipts_ds.get_totals_from_receipts_by_payment_method(
+            **kwargs
+        )
+        models = [ReceiptTotal.model_validate(result) for result in res]
+        return models
+
     async def get_receipt_by_id(self, receipt_id: str) -> ReceiptInDb | None:
         result = await self.receipts_ds.get_receipt_by_id(receipt_id)
 
