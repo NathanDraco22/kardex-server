@@ -51,6 +51,11 @@ class ProductsCollection:
         result = await collection.find_one({"id": product_id, "isDeleted": False})
         return result
 
+    async def fetch_product_by_code(self, product_code: str) -> dict[str, Any] | None:
+        collection = self.__collection
+        result = await collection.find_one({"code": product_code, "isDeleted": False})
+        return result
+
     async def fetch_product_by_ids(
         self, product_ids: list[str]
     ) -> list[dict[str, Any]]:
@@ -396,6 +401,7 @@ class ProductsCollection:
             [
                 IndexModel([("id", 1)], unique=True),
                 IndexModel([("name", 1)]),
+                IndexModel([("code", 1)]),
                 IndexModel(
                     [
                         ("name", "text"),
