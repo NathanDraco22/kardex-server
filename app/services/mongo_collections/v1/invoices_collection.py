@@ -259,6 +259,66 @@ class InvoicesCollection:
             "total": 0,
         }
 
+    async def get_totals_from_invoices_by_payment_type(
+        self,
+        **kwargs,
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        query = {}
+
+        payment_type = kwargs.pop("paymentType", None)
+        ne_type = kwargs.pop("nePaymentType", None)
+
+        start_date = kwargs.pop("startDate", None)
+        end_date = kwargs.pop("endDate", None)
+
+        query = kwargs
+
+        if not start_date or not end_date:
+            return []
+
+        query["createdAt"] = {"$gte": start_date, "$lte": end_date}
+
+        if payment_type:
+            query["paymentType"] = payment_type
+
+        if ne_type:
+            query["paymentType"] = {"$ne": ne_type}
+
+        query = {key: value for key, value in query.items() if value is not None}
+
+        cursor = collection.aggregate(
+            [
+                {"$match": query},
+                {
+                    "$group": {
+                        "_id": "$paymentType",
+                        "totalCost": {"$sum": "$totalCost"},
+                        "total": {"$sum": "$total"},
+                        "count": {"$sum": 1},
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 0,
+                        "paymentType": "$_id",
+                        "totalCost": 1,
+                        "total": 1,
+                        "count": 1,
+                    }
+                },
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        if result:
+            return result
+
+        return []
+
     async def fetch_invoice_history(self, **kwargs) -> list[dict[str, Any]]:
         collection = self.__collection
 

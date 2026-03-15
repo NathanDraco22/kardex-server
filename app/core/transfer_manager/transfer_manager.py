@@ -2,7 +2,7 @@ import asyncio
 from fastapi import HTTPException, status
 from pymongo.errors import OperationFailure
 
-from core.counter_manager.counter_manager import CounterManager
+
 from tools import BranchesTool
 
 from repos.v1.transfers import (
@@ -49,8 +49,6 @@ class TransferManager:
         self, create_transfer: CreateTransfer
     ) -> TransferInDb:
         # A. Validar Duplicidad (Opcional, si usas docNumber único)
-        if not create_transfer.docNumber:
-            create_transfer.docNumber = await CounterManager().next_tranfer_number()
         if create_transfer.docNumber:
             existing_transfer = await self.transfers_repo.get_transfer_by_doc_number(
                 create_transfer.docNumber

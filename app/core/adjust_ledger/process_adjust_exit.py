@@ -15,6 +15,7 @@ from services.mongo_collections.v1 import (
     ProductTransactionsCollection,
     ProductAccountsCollection,
 )
+from core.counter_manager.counter_manager import CounterManager
 
 
 async def process_adjust_exit(
@@ -42,6 +43,11 @@ async def process_adjust_exit(
         async with session.start_transaction():
             new_adjust_id = UuidTool.generate_uuid()
             now_in_milliseconds = TimeTools.get_now_in_milliseconds()
+
+            if not adjust_exit.docNumber:
+                adjust_exit.docNumber = await CounterManager().next_adjust_number(
+                    session
+                )
 
             # 1. VALIDAR BRANCH
             current_branch_in_db = branches_tool.get_branch_by_id(adjust_exit.branchId)
