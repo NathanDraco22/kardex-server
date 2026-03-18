@@ -130,6 +130,9 @@ async def process_invoice(
                 {
                     "id": new_invoice_id,
                     "createdAt": current_time,
+                    "status": "paid"
+                    if create_invoice.paymentType == "cash"
+                    else "open",
                     "amountPaid": create_invoice.total
                     if create_invoice.paymentType == "cash"
                     else 0,
