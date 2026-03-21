@@ -159,7 +159,7 @@ Periodo: {date_range}
 💰 Utilidad: {(utility / 100):,.2f}
 
 📥 *RECAUDACIÓN DETALLADA* 📥
-💵 Ingresos a Caja (Contado + Abonos): {(ingreso_caja / 100):,.2f}
+💵 Ingresos a Caja: {(ingreso_caja / 100):,.2f}
   ├ Contado: {(executive_summary.cashSales / 100):,.2f}
   └ Abonos: {(executive_summary.totalReceiptCash / 100):,.2f}
 

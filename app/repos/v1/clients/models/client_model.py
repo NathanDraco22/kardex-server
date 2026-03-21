@@ -29,6 +29,7 @@ class BaseClient(BaseModel):
 
 
 class CreateClient(BaseClient):
+    initialBalance: int = 0
     pass
 
 
@@ -51,5 +52,6 @@ class ClientInDb(BaseClient):
     id: str
     isDeleted: bool = False
     isInternal: bool = False
+    hasMovements: bool = False
     createdAt: int
     updatedAt: int | None = None
