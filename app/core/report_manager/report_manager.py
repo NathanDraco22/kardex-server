@@ -6,6 +6,7 @@ from repos.v1.invoices import (
     InvoicesDataSource,
     InvoiceTotals,
     BranchPortfolioSummary,
+    PendingInvoiceTotalsByBranch,
 )
 from repos.v1.receipts import ReceiptsRepository, ReceiptsDataSource
 from repos.v1.receipts.models.branch_receipt_amount_total import (
@@ -185,3 +186,8 @@ class ReportManager:
             results=paired_results,
             total=total,
         )
+
+    async def get_pending_invoice_totals_by_branch(
+        self, **kwargs
+    ) -> list[PendingInvoiceTotalsByBranch]:
+        return await self.invoices_repo.get_pending_invoice_totals_by_branch(**kwargs)

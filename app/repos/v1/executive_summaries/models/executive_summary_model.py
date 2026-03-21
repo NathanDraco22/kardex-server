@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from repos.v1.common.models import CommercialBranchDetail
 from repos.v1.common.models import InventoryBranchDetail
+from repos.v1.invoices import PendingInvoiceTotalsByBranch
 
 SummaryType = Literal["weekly", "monthly", "yearly", "custom"]
 
@@ -19,6 +20,8 @@ class BaseExecutiveSummary(BaseModel):
     cashSales: int = 0
     salesTotalCost: int
     totalInvoices: int
+    totalPendingInvoices: int
+    totalPendingBranches: list[PendingInvoiceTotalsByBranch]
     totalReceiptCash: int = 0
     totalReceiptDevolutions: int = 0
     totalReceipts: int = 0

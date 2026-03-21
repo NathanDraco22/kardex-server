@@ -184,6 +184,13 @@ class WeeklyReportMaker:
 
         inventory_result = await self.report_maker.get_total_inventory_all_branches()
 
+        pending_totals = await self.report_maker.get_pending_invoice_totals_by_branch()
+
+        total_pending_invoice = 0
+
+        for pending_total in pending_totals:
+            total_pending_invoice += pending_total.totalOwed
+
         inventory_branches = [
             InventoryBranchDetail(
                 branchId=branch.id,
@@ -204,6 +211,8 @@ class WeeklyReportMaker:
             creditSales=weekly_summary.creditSales,
             salesTotalCost=weekly_summary.totalCost,
             totalInvoices=weekly_summary.totalInvoices,
+            totalPendingInvoices=total_pending_invoice,
+            totalPendingBranches=pending_totals,
             totalReceiptCash=weekly_summary.totalReceiptCash,
             totalReceiptDevolutions=weekly_summary.totalReceiptDevolutions,
             totalReceipts=weekly_summary.totalReceipts,
@@ -299,6 +308,13 @@ class MonthlyReportMaker:
             for branch, total in inventory_result.results
         ]
 
+        pending_totals = await self.report_maker.get_pending_invoice_totals_by_branch()
+
+        total_pending_invoice = 0
+
+        for pending_total in pending_totals:
+            total_pending_invoice += pending_total.totalOwed
+
         create_monthly_summary = CreateExecutiveSummary(
             dateId=date_id,
             type="monthly",
@@ -311,6 +327,8 @@ class MonthlyReportMaker:
             creditSales=monthly_summary.creditSales,
             salesTotalCost=monthly_summary.totalCost,
             totalInvoices=monthly_summary.totalInvoices,
+            totalPendingInvoices=total_pending_invoice,
+            totalPendingBranches=pending_totals,
             totalReceiptCash=monthly_summary.totalReceiptCash,
             totalReceiptDevolutions=monthly_summary.totalReceiptDevolutions,
             totalReceipts=monthly_summary.totalReceipts,
@@ -398,6 +416,13 @@ class YearlyReportMaker:
             for branch, total in inventory_result.results
         ]
 
+        pending_totals = await self.report_maker.get_pending_invoice_totals_by_branch()
+
+        total_pending_invoice = 0
+
+        for pending_total in pending_totals:
+            total_pending_invoice += pending_total.totalOwed
+
         create_yearly_summary = CreateExecutiveSummary(
             dateId=date_id,
             type="yearly",
@@ -410,6 +435,8 @@ class YearlyReportMaker:
             creditSales=yearly_summary.creditSales,
             cashSales=yearly_summary.cashSales,
             totalInvoices=yearly_summary.totalInvoices,
+            totalPendingInvoices=total_pending_invoice,
+            totalPendingBranches=pending_totals,
             totalReceiptCash=yearly_summary.totalReceiptCash,
             totalReceiptDevolutions=yearly_summary.totalReceiptDevolutions,
             totalReceipts=yearly_summary.totalReceipts,
