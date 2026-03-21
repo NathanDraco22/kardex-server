@@ -20,8 +20,8 @@ class BaseExecutiveSummary(BaseModel):
     cashSales: int = 0
     salesTotalCost: int
     totalInvoices: int
-    totalPendingInvoices: int
-    totalPendingBranches: list[PendingInvoiceTotalsByBranch]
+    totalPendingInvoices: int = 0
+    totalPendingBranches: list[PendingInvoiceTotalsByBranch] = []
     totalReceiptCash: int = 0
     totalReceiptDevolutions: int = 0
     totalReceipts: int = 0
