@@ -319,6 +319,74 @@ class InvoicesCollection:
 
         return []
 
+    async def get_invoice_resume(self, **kwargs) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        query = {}
+
+        start_date = kwargs.pop("startDate", None)
+        end_date = kwargs.pop("endDate", None)
+
+        if not start_date or not end_date:
+            return []
+
+        query["createdAt"] = {"$gte": start_date, "$lte": end_date}
+
+        query["status"] = {"$in": ["open", "paid", "partiallyPaid"]}
+
+        pipeline = [
+            # 1. Filtramos solo las ventas reales (ignoramos borradores y canceladas)
+            {"$match": query},
+            # 2. Agrupamos por sucursal y hacemos los cálculos condicionales
+            {
+                "$group": {
+                    "_id": "$branchId",
+                    "totalSales": {"$sum": "$total"},
+                    "totalCost": {"$sum": "$totalCost"},
+                    "totalPaid": {"$sum": "$amountPaid"},
+                    # Cartera: Lo que falta por pagar
+                    "totalOwed": {"$sum": {"$subtract": ["$total", "$amountPaid"]}},
+                    # Crédito: Suma solo si es "credit"
+                    "creditSales": {
+                        "$sum": {
+                            "$cond": [{"$eq": ["$paymentType", "credit"]}, "$total", 0]
+                        }
+                    },
+                    # Contado: Suma todo lo que NO sea "credit"
+                    "cashSales": {
+                        "$sum": {
+                            "$cond": [{"$ne": ["$paymentType", "credit"]}, "$total", 0]
+                        }
+                    },
+                    "totalInvoices": {"$sum": 1},
+                }
+            },
+            # 3. Limpiamos la salida para el formato final
+            {
+                "$project": {
+                    "_id": 0,
+                    "branchId": "$_id",
+                    "totalSales": 1,
+                    "totalCost": 1,
+                    "totalPaid": 1,
+                    "totalOwed": 1,
+                    "creditSales": 1,
+                    "cashSales": 1,
+                    "totalInvoices": 1,
+                }
+            },
+        ]
+
+        cursor = collection.aggregate(pipeline)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        if result:
+            return result
+
+        return []
+
     async def fetch_invoice_history(self, **kwargs) -> list[dict[str, Any]]:
         collection = self.__collection
 
@@ -339,6 +407,7 @@ class InvoicesCollection:
         await collection.create_indexes(
             [
                 IndexModel([("docNumber", 1)], unique=True),
+                IndexModel([("status", 1)]),
                 IndexModel([("id", 1)], unique=True),
                 IndexModel([("clientId", 1), ("status", 1), ("docDate", -1)]),
                 IndexModel([("paymentType", 1)]),
