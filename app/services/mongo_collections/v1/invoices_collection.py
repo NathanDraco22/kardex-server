@@ -387,6 +387,38 @@ class InvoicesCollection:
 
         return []
 
+    async def get_pending_invoice_totals_by_branch(
+        self, **kwargs
+    ) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        query = {}
+        query["status"] = {"$in": ["open", "partiallyPaid"]}
+
+        pipeline = [
+            {"$match": query},
+            {
+                "$group": {
+                    "_id": "$branchId",
+                    "total": {"$sum": "$total"},
+                    "totalCost": {"$sum": "$totalCost"},
+                    "amountPaid": {"$sum": "$amountPaid"},
+                    "totalOwed": {"$sum": {"$subtract": ["$total", "$amountPaid"]}},
+                    "count": {"$sum": 1},
+                }
+            },
+        ]
+
+        cursor = collection.aggregate(pipeline)
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        if result:
+            return result
+
+        return []
+
     async def fetch_invoice_history(self, **kwargs) -> list[dict[str, Any]]:
         collection = self.__collection
 

@@ -105,8 +105,10 @@ Resultados para {formatted_datetime}
 💵 Ingresos a Caja: {(ingreso_caja / 100):,.2f}
   ├ Contado: {(daily_summary.cashSales / 100):,.2f}
   └ Abonos: {(daily_summary.totalReceiptCash / 100):,.2f}
-💳 Devoluciones Aplicadas: {(daily_summary.totalReceiptDevolutions / 100):,.2f}
-🧾 Cant. de Recibos: {daily_summary.receiptCount}
+
+🔙 Devoluciones: {(daily_summary.totalReceiptDevolutions / 100):,.2f}
+
+🧾 #Recibos: {daily_summary.receiptCount}
 
 ⚠️ Nuevas Cuentas por Cobrar: {(daily_summary.totalOwed / 100):,.2f}
 """
@@ -148,6 +150,7 @@ Resultados para {formatted_datetime}
 Periodo: {date_range}
 
 📦 Inventario: {(executive_summary.inventoryTotalCost / 100):,.2f}
+⚠️ Cuentas por Cobrar: {(executive_summary.totalPendingInvoices / 100):,.2f}
 
 📝 Facturas: {executive_summary.totalInvoices}
 💲 Ventas Totales: {(executive_summary.salesTotal / 100):,.2f}
@@ -155,14 +158,16 @@ Periodo: {date_range}
   └ Crédito: {(executive_summary.creditSales / 100):,.2f}
 📈 Costo de Ventas: {(executive_summary.salesTotalCost / 100):,.2f}
 ---------------------------------------------
-💰 Utilidad Bruta: {(utility / 100):,.2f}
+💰 Utilidad: {(utility / 100):,.2f}
 
 📥 *RECAUDACIÓN DETALLADA* 📥
 💵 Ingresos a Caja (Contado + Abonos): {(ingreso_caja / 100):,.2f}
   ├ Contado: {(executive_summary.cashSales / 100):,.2f}
   └ Abonos: {(executive_summary.totalReceiptCash / 100):,.2f}
-💳 Devoluciones Aplicadas: {(executive_summary.totalReceiptDevolutions / 100):,.2f}
-🧾 Cant. de Recibos: {executive_summary.receiptCount}
+
+🔙 Devoluciones: {(executive_summary.totalReceiptDevolutions / 100):,.2f}
+
+🧾 #Recibos: {executive_summary.receiptCount}
 """
 
         await TelegramService().send_message(report_channel, message)
