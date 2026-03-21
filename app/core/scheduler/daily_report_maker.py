@@ -48,27 +48,68 @@ class DailyReportMaker:
         current_timestamp = int(selected_time.timestamp() * 1000)
         yesterday_timestamp = int(yesterday.timestamp() * 1000)
 
-        res = await self.report_maker.get_total_invoices_by_date_range(
-            yesterday_timestamp, current_timestamp
+        res = await self.report_maker.get_invoice_summary(
+            startDate=yesterday_timestamp, endDate=current_timestamp
         )
 
-        branch_details = [
-            CommercialBranchDetail(
-                branchId=branch.id,
-                total=totals.total,
-                totalCost=totals.totalCost,
-                totalInvoices=totals.count,
+        if not res:
+            return
+
+        branch_details: list[CommercialBranchDetail] = []
+
+        for branch_id, summary in res.results:
+            current_receipt_summary = None
+
+            for _, receipt_summary in res.receiptResults:
+                if receipt_summary.branchId == branch_id:
+                    current_receipt_summary = receipt_summary
+                    break
+
+            total_receipt_cash = 0
+            total_receipt_devolutions = 0
+            total_receipts = 0
+            receipt_count = 0
+
+            if current_receipt_summary:
+                total_receipt_cash = current_receipt_summary.totalAppliedInvoices
+                total_receipt_devolutions = (
+                    current_receipt_summary.totalAppliedDevolutions
+                )
+                total_receipts = current_receipt_summary.totalReceipts
+                receipt_count = current_receipt_summary.receiptCount
+
+            branch_details.append(
+                CommercialBranchDetail(
+                    branchId=branch_id,
+                    total=summary.totalSales,
+                    totalCost=summary.totalCost,
+                    totalInvoices=summary.totalInvoices,
+                    totalPaid=summary.totalPaid,
+                    totalOwed=summary.totalOwed,
+                    creditSales=summary.creditSales,
+                    cashSales=summary.cashSales,
+                    totalReceiptCash=total_receipt_cash,
+                    totalReceiptDevolutions=total_receipt_devolutions,
+                    totalReceipts=total_receipts,
+                    receiptCount=receipt_count,
+                )
             )
-            for branch, totals in res.results
-        ]
 
         create_daily = CreateDailySummary(
             dateId=date_id,
             startDate=yesterday_timestamp,
             endDate=current_timestamp,
-            total=res.total,
+            total=res.totalSales,
             totalCost=res.totalCost,
+            totalPaid=res.totalPaid,
+            totalOwed=res.totalOwed,
+            creditSales=res.creditSales,
+            cashSales=res.cashSales,
             totalInvoices=res.totalInvoices,
+            totalReceiptCash=res.totalReceiptCash,
+            totalReceiptDevolutions=res.totalReceiptDevolutions,
+            totalReceipts=res.totalReceipts,
+            receiptCount=res.receiptCount,
             branches=branch_details,
         )
 

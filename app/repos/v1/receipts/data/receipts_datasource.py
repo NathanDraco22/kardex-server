@@ -53,3 +53,7 @@ class ReceiptsDataSource:
     async def fetch_receipt_history(self, **kwargs) -> list[dict[str, Any]]:
         collection = ReceiptsCollection()
         return await collection.fetch_receipt_history(**kwargs)
+
+    async def get_applied_amounts_by_branch(self, **kwargs) -> list[dict[str, Any]]:
+        collection = ReceiptsCollection()
+        return await collection.get_applied_amounts_by_branch(**kwargs)
