@@ -14,6 +14,17 @@ async def create_client(body: CreateClient) -> ClientInDb:
     return await clients_controller.create_client(body)
 
 
+@clients_router.post("/initial-balance")
+async def create_initial_balance(
+    client_id: str,
+    initial_balance: int,
+    branch_id: str,
+) -> ClientInDb | None:
+    return await clients_controller.create_initial_balance(
+        client_id, initial_balance, branch_id
+    )
+
+
 @clients_router.get("")
 async def get_all_clients(
     params: ClientQueryParams = Depends(),

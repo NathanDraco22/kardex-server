@@ -23,6 +23,10 @@ class ClientsCollection:
         collection = self.__collection
         await collection.insert_one(client)
 
+    async def create_client_with_session(self, client: dict, session: Any) -> None:
+        collection = self.__collection
+        await collection.insert_one(client, session=session)
+
     async def create_client_if_absent(self, client_id: str, client: dict) -> None:
         collection = self.__collection
         await collection.update_one(
@@ -242,6 +246,7 @@ class ClientsCollection:
                     "$set": {
                         "balance": {"$add": [{"$ifNull": ["$balance", 0]}, amount]},
                         "updatedAt": updated_at,
+                        "hasMovements": True,
                     },
                 },
             ],
@@ -267,6 +272,7 @@ class ClientsCollection:
                 "$set": {
                     "updatedAt": updated_at,
                     "lastReceiptDate": updated_at,
+                    "hasMovements": True,
                 },
             },
             upsert=True,
