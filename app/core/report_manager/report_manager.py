@@ -90,6 +90,8 @@ class ReportManager:
         if not start_date or not end_date:
             return None
 
+        all_branches = await self.branches_repo.get_all_commerce_branches()
+
         result = await self.invoices_repo.get_invoice_summary(
             startDate=start_date, endDate=end_date
         )
@@ -97,6 +99,9 @@ class ReportManager:
         total_receipt = await self.receipts_repo.get_branch_receipt_amounts_summary(
             startDate=start_date, endDate=end_date
         )
+
+        invoices_by_branch = {model.branchId: model for model in result}
+        receipts_by_branch = {model.branchId: model for model in total_receipt}
 
         current_result = DailySummaryReportResult(
             results=[],
@@ -114,28 +119,50 @@ class ReportManager:
             receiptCount=0,
         )
 
-        for model in result:
-            current_result.totalSales += model.totalSales
-            current_result.totalCost += model.totalCost
-            current_result.totalPaid += model.totalPaid
-            current_result.totalOwed += model.totalOwed
-            current_result.creditSales += model.creditSales
-            current_result.cashSales += model.cashSales
-            current_result.totalInvoices += model.totalInvoices
+        for branch in all_branches:
+            branch_id = branch.id
 
-            current_result.results.append((model.branchId, model))
+            invoice_model = invoices_by_branch.get(branch_id)
+            if invoice_model:
+                current_result.totalSales += invoice_model.totalSales
+                current_result.totalCost += invoice_model.totalCost
+                current_result.totalPaid += invoice_model.totalPaid
+                current_result.totalOwed += invoice_model.totalOwed
+                current_result.creditSales += invoice_model.creditSales
+                current_result.cashSales += invoice_model.cashSales
+                current_result.totalInvoices += invoice_model.totalInvoices
+                current_result.results.append((branch_id, invoice_model))
+            else:
+                empty_invoice = BranchPortfolioSummary(
+                    branchId=branch_id,
+                    totalSales=0,
+                    totalCost=0,
+                    totalPaid=0,
+                    totalOwed=0,
+                    creditSales=0,
+                    cashSales=0,
+                    totalInvoices=0,
+                )
+                current_result.results.append((branch_id, empty_invoice))
 
-        for receiptSummary in total_receipt:
-            current_result.totalReceiptDevolutions += (
-                receiptSummary.totalAppliedDevolutions
-            )
-            current_result.totalReceiptCash += receiptSummary.totalAppliedInvoices
-            current_result.totalReceipts += receiptSummary.totalReceipts
-            current_result.receiptCount += receiptSummary.receiptCount
-
-            current_result.receiptResults.append(
-                (receiptSummary.branchId, receiptSummary)
-            )
+            receipt_model = receipts_by_branch.get(branch_id)
+            if receipt_model:
+                current_result.totalReceiptDevolutions += (
+                    receipt_model.totalAppliedDevolutions
+                )
+                current_result.totalReceiptCash += receipt_model.totalAppliedInvoices
+                current_result.totalReceipts += receipt_model.totalReceipts
+                current_result.receiptCount += receipt_model.receiptCount
+                current_result.receiptResults.append((branch_id, receipt_model))
+            else:
+                empty_receipt = BranchAppliedReceiptsAmountsSummary(
+                    branchId=branch_id,
+                    totalAppliedInvoices=0,
+                    totalAppliedDevolutions=0,
+                    totalReceipts=0,
+                    receiptCount=0,
+                )
+                current_result.receiptResults.append((branch_id, empty_receipt))
 
         return current_result
 
