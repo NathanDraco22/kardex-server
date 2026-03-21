@@ -15,8 +15,14 @@ class BaseExecutiveSummary(BaseModel):
     startDate: int
     endDate: int
     salesTotal: int
+    creditSales: int = 0
+    cashSales: int = 0
     salesTotalCost: int
     totalInvoices: int
+    totalReceiptCash: int = 0
+    totalReceiptDevolutions: int = 0
+    totalReceipts: int = 0
+    receiptCount: int = 0
     commercialBranches: list[CommercialBranchDetail]
     inventoryTotalCost: int
     inventoryBranches: list[InventoryBranchDetail]
