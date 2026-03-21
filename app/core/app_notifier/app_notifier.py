@@ -108,8 +108,6 @@ Resultados para {formatted_datetime}
 
 🔙 Devoluciones: {(daily_summary.totalReceiptDevolutions / 100):,.2f}
 
-🧾 #Recibos: {daily_summary.receiptCount}
-
 ⚠️ Nuevas Cuentas por Cobrar: {(daily_summary.totalOwed / 100):,.2f}
 """
 
@@ -166,8 +164,6 @@ Periodo: {date_range}
   └ Abonos: {(executive_summary.totalReceiptCash / 100):,.2f}
 
 🔙 Devoluciones: {(executive_summary.totalReceiptDevolutions / 100):,.2f}
-
-🧾 #Recibos: {executive_summary.receiptCount}
 """
 
         await TelegramService().send_message(report_channel, message)
