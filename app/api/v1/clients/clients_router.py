@@ -5,6 +5,7 @@ from responses.v1 import ListResponse
 
 from app_middleware import auth_middleware
 
+from .bodies import CreateInitialBalance
 from .clients_controller import clients_controller
 from .query_params import ClientQueryParams
 
@@ -17,11 +18,10 @@ async def create_client(body: CreateClient) -> ClientInDb:
 
 
 @clients_router.post("/initial-balance")
-async def create_initial_balance(
-    client_id: str,
-    initial_balance: int,
-    branch_id: str,
-) -> ClientInDb | None:
+async def create_initial_balance(body: CreateInitialBalance) -> ClientInDb | None:
+    client_id = body.clientId
+    initial_balance = body.initialBalance
+    branch_id = body.branchId
     return await clients_controller.create_initial_balance(
         client_id, initial_balance, branch_id
     )
