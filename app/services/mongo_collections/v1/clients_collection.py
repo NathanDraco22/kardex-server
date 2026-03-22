@@ -38,10 +38,14 @@ class ClientsCollection:
     async def fetch_all_clients(self, **kwargs) -> list[dict[str, Any]]:
         collection = self.__collection
         group_param = kwargs.pop("group", None)
+        hasMovements = kwargs.pop("hasMovements", None)
 
         query = {}
         if group_param:
             query = {"group": group_param}
+
+        if hasMovements:
+            query = {"hasMovements": hasMovements}
 
         cursor = collection.find(
             {
