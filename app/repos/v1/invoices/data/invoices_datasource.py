@@ -68,3 +68,13 @@ class InvoicesDataSource:
     async def get_invoice_history(self, **kargs) -> list[dict[str, Any]]:
         collection = InvoicesCollection()
         return await collection.fetch_invoice_history(**kargs)
+
+    async def get_invoice_resume(self, **kargs) -> list[dict[str, Any]]:
+        collection = InvoicesCollection()
+        return await collection.get_invoice_resume(**kargs)
+
+    async def get_pending_invoice_totals_by_branch(
+        self, **kwargs
+    ) -> list[dict[str, Any]]:
+        collection = InvoicesCollection()
+        return await collection.get_pending_invoice_totals_by_branch(**kwargs)

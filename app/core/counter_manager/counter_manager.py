@@ -29,6 +29,11 @@ class CounterManager:
         )
         return str(res.value)
 
+    async def next_product_number(self, session: Any = None) -> str:
+        res = await self.counters_repository.increment_counter("productNumber", session)
+        formatted = str(res.value).zfill(5)
+        return formatted
+
     async def next_user_number(self, session: Any = None) -> str:
         res = await self.counters_repository.increment_counter("userNumber", session)
         formatted = str(res.value).zfill(4)

@@ -4,6 +4,8 @@ from .data.invoices_datasource import InvoicesDataSource
 from .models.invoice_model import UpdateInvoice, InvoiceInDb
 from .models.invoice_totals_model import InvoiceTotals
 from repos.v1.common.models.invoice_product_sale import ProductSalesTotal
+from repos.v1.invoices.models.invoice_summary import BranchPortfolioSummary
+from repos.v1.invoices.models.pending_invoice_total import PendingInvoiceTotalsByBranch
 
 
 class InvoicesRepository:
@@ -74,4 +76,22 @@ class InvoicesRepository:
         params_data = params.to_query_params()
         results = await self.invoices_ds.get_invoice_history(**params_data)
         models = [InvoiceInDb.model_validate(result) for result in results]
+        return models
+
+    async def get_invoice_summary(self, **kwargs) -> list[BranchPortfolioSummary]:
+        result = await self.invoices_ds.get_invoice_resume(**kwargs)
+
+        models = [BranchPortfolioSummary.model_validate(result) for result in result]
+
+        return models
+
+    async def get_pending_invoice_totals_by_branch(
+        self, **kwargs
+    ) -> list[PendingInvoiceTotalsByBranch]:
+        result = await self.invoices_ds.get_pending_invoice_totals_by_branch(**kwargs)
+
+        models = [
+            PendingInvoiceTotalsByBranch.model_validate(result) for result in result
+        ]
+
         return models
