@@ -2,12 +2,15 @@ from fastapi import APIRouter, Depends
 
 from responses.v1.list_response import ListResponse
 from repos.v1.exit_docs import CreateExitDoc, ExitDocInDb
+from app_middleware import auth_middleware
 
 from .query_params import ExitDocQueryParams
 from .exit_docs_controller import exit_docs_controller
 
 
-exit_docs_router = APIRouter(tags=["exit_docsV1"])
+exit_docs_router = APIRouter(
+    tags=["exit_docsV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @exit_docs_router.post("")

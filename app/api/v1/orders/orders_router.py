@@ -4,13 +4,17 @@ from repos.v1.orders import CreateOrder, UpdateOrder, OrderInDb
 from repos.v1.common.models.invoice_product_sale import ProductSalesTotal
 from responses.v1 import ListResponse
 
+from app_middleware import auth_middleware
 
 from .orders_controller import orders_controller
 from .responses import ConvertOrderToInvoiceResponse
 from .orders_query_params import OrderQueryParams
 
 
-orders_router = APIRouter(tags=["ordersV1"])
+orders_router = APIRouter(
+    tags=["ordersV1"],
+    dependencies=[Depends(auth_middleware)],
+)
 
 
 @orders_router.post("")

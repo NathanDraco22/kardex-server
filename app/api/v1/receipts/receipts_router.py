@@ -4,12 +4,17 @@ from repos.v1.receipts import CreateReceipt, UpdateReceipt, ReceiptInDb, Receipt
 from repos.v1.common.models.history_params import HistoryClientParams
 from responses.v1 import ListResponse
 
+from app_middleware import auth_middleware
+
 from .receipts_controller import receipts_controller
 
 from .query_params import ReceiptQueryParams
 
 
-receipts_router = APIRouter(tags=["receiptsV1"])
+receipts_router = APIRouter(
+    tags=["receiptsV1"],
+    dependencies=[Depends(auth_middleware)],
+)
 
 
 @receipts_router.post("")
