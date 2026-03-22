@@ -190,4 +190,29 @@ class ReportManager:
     async def get_pending_invoice_totals_by_branch(
         self, **kwargs
     ) -> list[PendingInvoiceTotalsByBranch]:
-        return await self.invoices_repo.get_pending_invoice_totals_by_branch(**kwargs)
+        all_branches = await self.branches_repo.get_all_commerce_branches()
+
+        pending_invoice_total = (
+            await self.invoices_repo.get_pending_invoice_totals_by_branch(**kwargs)
+        )
+
+        total_by_branch = {total.branchId: total for total in pending_invoice_total}
+
+        paired_results: list[PendingInvoiceTotalsByBranch] = []
+
+        for branch in all_branches:
+            current_branch = total_by_branch.get(branch.id)
+            if current_branch:
+                paired_results.append(current_branch)
+            else:
+                paired_results.append(
+                    PendingInvoiceTotalsByBranch(
+                        branchId=branch.id,
+                        total=0,
+                        totalCost=0,
+                        amountPaid=0,
+                        totalOwed=0,
+                        count=0,
+                    )
+                )
+        return paired_results
