@@ -44,7 +44,7 @@ class ClientsCollection:
         if group_param:
             query = {"group": group_param}
 
-        if hasMovements:
+        if hasMovements is not None:
             query = {"hasMovements": hasMovements}
 
         cursor = collection.find(
