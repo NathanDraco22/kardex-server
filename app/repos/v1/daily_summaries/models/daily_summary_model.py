@@ -9,7 +9,15 @@ class BaseDailySummary(BaseModel):
     endDate: int
     total: int
     totalCost: int
-    totalInvoices: int
+    totalPaid: int = 0
+    totalOwed: int = 0
+    creditSales: int = 0
+    cashSales: int = 0
+    totalInvoices: int = 0
+    totalReceiptCash: int = 0
+    totalReceiptDevolutions: int = 0
+    totalReceipts: int = 0
+    receiptCount: int = 0
     branches: list[CommercialBranchDetail]
 
     def __add__(self, other: "BaseDailySummary") -> "BaseDailySummary":
@@ -35,6 +43,13 @@ class BaseDailySummary(BaseModel):
             totalCost=self.totalCost + other.totalCost,
             totalInvoices=self.totalInvoices + other.totalInvoices,
             branches=list(branches_map.values()),
+            creditSales=self.creditSales + other.creditSales,
+            cashSales=self.cashSales + other.cashSales,
+            totalReceiptCash=self.totalReceiptCash + other.totalReceiptCash,
+            totalReceiptDevolutions=self.totalReceiptDevolutions
+            + other.totalReceiptDevolutions,
+            totalReceipts=self.totalReceipts + other.totalReceipts,
+            receiptCount=self.receiptCount + other.receiptCount,
         )
 
 

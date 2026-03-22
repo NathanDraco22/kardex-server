@@ -149,6 +149,65 @@ class ReceiptsCollection:
 
         return []
 
+    async def get_applied_amounts_by_branch(self, **kwargs) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        # 1. Extracción de variables seguras
+        start_date = kwargs.pop("startDate", None)
+        end_date = kwargs.pop("endDate", None)
+
+        if not start_date or not end_date:
+            return []
+
+        query = kwargs
+        query["createdAt"] = {"$gte": start_date, "$lte": end_date}
+
+        pipeline = [
+            # 1. Filtramos por fechas (y sucursal si viene en kwargs)
+            {"$match": query},
+            # 2. EL TRUCO MAGNÍFICO: Sumamos los arreglos dentro de cada recibo primero
+            # "$appliedInvoices.amountApplied" extrae todos los montos en una lista plana [100, 200]
+            # y el "$sum" externo los suma obteniendo 300 para ese documento.
+            {
+                "$addFields": {
+                    "docTotalInvoices": {"$sum": "$appliedInvoices.amountApplied"},
+                    "docTotalDevolutions": {
+                        "$sum": "$appliedDevolutions.amountApplied"
+                    },
+                }
+            },
+            # 3. Ahora sí, agrupamos por sucursal de forma segura
+            {
+                "$group": {
+                    "_id": "$branchId",
+                    # Sumamos lo que calculamos en el addFields
+                    "totalAppliedInvoices": {"$sum": "$docTotalInvoices"},
+                    "totalAppliedDevolutions": {"$sum": "$docTotalDevolutions"},
+                    # BONUS: También te sumo el "total" general del recibo y la cantidad de recibos
+                    "totalReceipts": {"$sum": "$total"},
+                    "receiptCount": {"$sum": 1},
+                }
+            },
+            # 4. Limpiamos para el frontend y Pydantic
+            {
+                "$project": {
+                    "_id": 0,
+                    "branchId": "$_id",
+                    "totalAppliedInvoices": 1,
+                    "totalAppliedDevolutions": 1,
+                    "totalReceipts": 1,
+                    "receiptCount": 1,
+                }
+            },
+            # 5. Ordenamos por método de pago alfabéticamente
+            {"$sort": {"branchId": 1}},
+        ]
+
+        cursor = collection.aggregate(pipeline)
+        result = await cursor.to_list(length=None)
+
+        return result
+
     async def fetch_receipt_by_id(self, receipt_id: str) -> dict[str, Any] | None:
         collection = self.__collection
         result = await collection.find_one({"id": receipt_id})

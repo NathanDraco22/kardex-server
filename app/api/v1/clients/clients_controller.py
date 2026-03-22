@@ -28,6 +28,28 @@ class ClientsController:
 
         return await self.clients_repo.create_client(body)
 
+    async def create_initial_balance(
+        self,
+        client_id: str,
+        initial_balance: int,
+        branch_id: str,
+    ) -> ClientInDb | None:
+        client = await self.clients_repo.get_client_by_id(client_id)
+        if client is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Client not found",
+            )
+
+        if client.hasMovements:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Client already has movements",
+            )
+        return await self.clients_repo.create_initial_balance(
+            client, initial_balance, branch_id
+        )
+
     async def get_all_clients(
         self, params: ClientQueryParams
     ) -> ListResponse[ClientInDb]:

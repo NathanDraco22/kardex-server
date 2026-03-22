@@ -82,6 +82,7 @@ sera un placer trabajar contigo.
         report_channel = telegram.reportId
 
         utility = daily_summary.total - daily_summary.totalCost
+        ingreso_caja = daily_summary.cashSales + daily_summary.totalReceiptCash
 
         datetime_obj = datetime.strptime(daily_summary.dateId, "%Y-%m-%d")
 
@@ -92,10 +93,22 @@ sera un placer trabajar contigo.
         message = f"""📊 *Reporte Diario* 📊
 Resultados para {formatted_datetime}
 
-💲 Ventas: {(daily_summary.total / 100):,}
-📈 Costos: {(daily_summary.totalCost / 100):,}
----------------------------------------------
-💰 Utilidad: {(utility / 100):,}
+📝 Facturas: {daily_summary.totalInvoices}
+💲 Ventas Totales: {(daily_summary.total / 100):,.2f}
+  ├ Contado: {(daily_summary.cashSales / 100):,.2f}
+  └ Crédito: {(daily_summary.creditSales / 100):,.2f}
+📈 Costo de Ventas: {(daily_summary.totalCost / 100):,.2f}
+-----------------------------------------------
+💰 Utilidad Bruta: {(utility / 100):,.2f}
+
+📥 *RECAUDACIÓN DETALLADA* 📥
+💵 Ingresos a Caja: {(ingreso_caja / 100):,.2f}
+  ├ Contado: {(daily_summary.cashSales / 100):,.2f}
+  └ Abonos: {(daily_summary.totalReceiptCash / 100):,.2f}
+
+🔙 Devoluciones: {(daily_summary.totalReceiptDevolutions / 100):,.2f}
+
+⚠️ Nuevas Cuentas por Cobrar: {(daily_summary.totalOwed / 100):,.2f}
 """
 
         await TelegramService().send_message(report_channel, message)
@@ -127,18 +140,30 @@ Resultados para {formatted_datetime}
         date_range = f"{start_date.day}/{month_es[start_date.month]} - {end_date.day}/{month_es[end_date.month]}"
 
         utility = executive_summary.salesTotal - executive_summary.salesTotalCost
+        ingreso_caja = executive_summary.cashSales + executive_summary.totalReceiptCash
 
         report_channel = telegram.reportId
 
         message = f"""*Reporte {title_type}*
 Periodo: {date_range}
 
-📦 Inventario: {(executive_summary.inventoryTotalCost / 100):,}
+📦 Inventario: {(executive_summary.inventoryTotalCost / 100):,.2f}
+⚠️ Cuentas por Cobrar: {(executive_summary.totalPendingInvoices / 100):,.2f}
 
-💲 Ventas: {(executive_summary.salesTotal / 100):,}
-📈 Costos: {(executive_summary.salesTotalCost / 100):,}
+📝 Facturas: {executive_summary.totalInvoices}
+💲 Ventas Totales: {(executive_summary.salesTotal / 100):,.2f}
+  ├ Contado: {(executive_summary.cashSales / 100):,.2f}
+  └ Crédito: {(executive_summary.creditSales / 100):,.2f}
+📈 Costo de Ventas: {(executive_summary.salesTotalCost / 100):,.2f}
 ---------------------------------------------
-💰 Utilidad: {(utility / 100):,}
+💰 Utilidad: {(utility / 100):,.2f}
+
+📥 *RECAUDACIÓN DETALLADA* 📥
+💵 Ingresos a Caja: {(ingreso_caja / 100):,.2f}
+  ├ Contado: {(executive_summary.cashSales / 100):,.2f}
+  └ Abonos: {(executive_summary.totalReceiptCash / 100):,.2f}
+
+🔙 Devoluciones: {(executive_summary.totalReceiptDevolutions / 100):,.2f}
 """
 
         await TelegramService().send_message(report_channel, message)

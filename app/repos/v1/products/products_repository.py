@@ -6,7 +6,7 @@ from .models.product_model import (
     ProductInDbWithAccounts,
     ProductInDbInBranch,
 )
-
+from core.counter_manager.counter_manager import CounterManager
 from tools import UuidTool, TimeTools, generate_prefixes
 
 
@@ -15,6 +15,9 @@ class ProductsRepository:
         self.products_ds = products_ds
 
     async def create_product(self, create_product: CreateProduct) -> ProductInDb:
+        if not create_product.code:
+            create_product.code = await CounterManager().next_product_number()
+
         new_product = ProductInDb(
             id=UuidTool.generate_uuid(),
             createdAt=TimeTools.get_now_in_milliseconds(),
@@ -110,7 +113,8 @@ class ProductsRepository:
 
         updated_data["updatedAt"] = TimeTools.get_now_in_milliseconds()
 
-        updated_data["searchPrefixes"] = generate_prefixes(updated_data["name"])
+        if "name" in updated_data:
+            updated_data["searchPrefixes"] = generate_prefixes(updated_data["name"])
 
         result = await self.products_ds.update_product_by_id(product_id, updated_data)
 

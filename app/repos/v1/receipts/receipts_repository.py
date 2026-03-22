@@ -2,6 +2,7 @@ from repos.v1.common.models.history_params import HistoryClientParams
 from .data.receipts_datasource import ReceiptsDataSource
 from .models.receipt_model import CreateReceipt, UpdateReceipt, ReceiptInDb
 from .models.receipt_total import ReceiptTotal
+from .models.branch_receipt_amount_total import BranchAppliedReceiptsAmountsSummary
 
 
 class ReceiptsRepository:
@@ -71,4 +72,14 @@ class ReceiptsRepository:
         params_data = params.to_query_params()
         results = await self.receipts_ds.fetch_receipt_history(**params_data)
         models = [ReceiptInDb.model_validate(result) for result in results]
+        return models
+
+    async def get_branch_receipt_amounts_summary(
+        self, **kwargs
+    ) -> list[BranchAppliedReceiptsAmountsSummary]:
+        results = await self.receipts_ds.get_applied_amounts_by_branch(**kwargs)
+        models = [
+            BranchAppliedReceiptsAmountsSummary.model_validate(result)
+            for result in results
+        ]
         return models

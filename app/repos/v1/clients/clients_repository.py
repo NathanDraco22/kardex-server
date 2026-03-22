@@ -1,6 +1,7 @@
 from tools import TimeTools
 from tools.search_tools import generate_prefixes
 from core.counter_manager.counter_manager import CounterManager
+from core.client.process_create_client import create_initial_balance
 
 from .data.clients_datasource import ClientsDataSource
 from .models.client_model import CreateClient, UpdateClient, ClientInDb
@@ -27,6 +28,18 @@ class ClientsRepository:
         result = await self.clients_ds.create_client(new_client_in_db_data)
 
         return ClientInDb.model_validate(result)
+
+    async def create_initial_balance(
+        self,
+        client: ClientInDb,
+        initial_balance: int,
+        branch_id: str,
+    ) -> ClientInDb:
+        return await create_initial_balance(
+            client,
+            initial_balance,
+            branch_id,
+        )
 
     async def get_all_clients(self, **kwargs) -> list[ClientInDb]:
         results = await self.clients_ds.get_all_clients(**kwargs)
