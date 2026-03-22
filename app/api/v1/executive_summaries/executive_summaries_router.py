@@ -5,12 +5,15 @@ from repos.v1.executive_summaries import CreateExecutiveSummary, ExecutiveSummar
 from responses.v1 import ListResponse
 
 from app_middleware import cache_header_response_midnight
+from app_middleware import auth_middleware
 
 from .query_params import ExecutiveSummaryQueryParams
 from .executive_summaries_controller import executive_summaries_controller
 
 
-executive_summaries_router = APIRouter(tags=["executive_summariesV1"])
+executive_summaries_router = APIRouter(
+    tags=["executive_summariesV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @executive_summaries_router.post(

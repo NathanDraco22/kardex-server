@@ -3,10 +3,12 @@ from fastapi import APIRouter, Depends
 from repos.v1.clients import CreateClient, UpdateClient, ClientInDb
 from responses.v1 import ListResponse
 
+from app_middleware import auth_middleware
+
 from .clients_controller import clients_controller
 from .query_params import ClientQueryParams
 
-clients_router = APIRouter(tags=["clientsV1"])
+clients_router = APIRouter(tags=["clientsV1"], dependencies=[Depends(auth_middleware)])
 
 
 @clients_router.post("")

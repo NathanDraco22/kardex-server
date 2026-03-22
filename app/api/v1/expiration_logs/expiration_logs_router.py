@@ -5,6 +5,7 @@ from repos.v1.expiration_logs import (
     ExpirationLogInDb,
 )
 
+from app_middleware import auth_middleware
 
 from responses.v1 import ListResponse
 
@@ -12,7 +13,9 @@ from .expiration_logs_controller import expiration_logs_controller
 from .query_params import ExpirationLogQueryParams
 
 
-expiration_logs_router = APIRouter(tags=["expiration_logsV1"])
+expiration_logs_router = APIRouter(
+    tags=["expiration_logsV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @expiration_logs_router.post("")

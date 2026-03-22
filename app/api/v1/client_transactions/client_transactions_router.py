@@ -4,11 +4,14 @@ from repos.v1.client_transactions import ClientTransactionInDb
 
 from responses.v1 import ListResponse
 
+from app_middleware import auth_middleware
 
 from .client_transactions_controller import client_transactions_controller
 from .query_params import ClientTransactionQueryParams
 
-client_transactions_router = APIRouter(tags=["client_transactionsV1"])
+client_transactions_router = APIRouter(
+    tags=["client_transactionsV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @client_transactions_router.get("")

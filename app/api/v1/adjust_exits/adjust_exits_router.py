@@ -2,12 +2,16 @@ from fastapi import APIRouter, Depends, BackgroundTasks
 from api.common.query_params import AdjustQueryParams
 from repos.v1.adjust_exits import CreateAdjustExit, AdjustExitInDb
 
+from app_middleware import auth_middleware
+
 from responses.v1 import ListResponse
 
 from .adjust_exits_controller import adjust_exits_controller
 
 
-adjust_exits_router = APIRouter(tags=["adjust_exitsV1"])
+adjust_exits_router = APIRouter(
+    tags=["adjust_exitsV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @adjust_exits_router.post("")

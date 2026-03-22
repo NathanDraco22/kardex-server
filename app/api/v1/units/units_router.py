@@ -1,4 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+
+from app_middleware import auth_middleware
 
 from repos.v1.units import CreateUnit, UpdateUnit, UnitInDb
 
@@ -7,7 +10,7 @@ from responses.v1 import ListResponse
 from .units_controller import units_controller
 
 
-units_router = APIRouter(tags=["unitsV1"])
+units_router = APIRouter(tags=["unitsV1"], dependencies=[Depends(auth_middleware)])
 
 
 @units_router.post("")

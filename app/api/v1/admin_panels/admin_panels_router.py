@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends
 
 from app_middleware import cache_header_response_midnight
+from app_middleware import auth_middleware
 
 from .admin_panels_controller import admin_panels_controller
 from .responses import AdminChartsResponses
 
-admin_panels_router = APIRouter(tags=["admin_panelsV1"])
+admin_panels_router = APIRouter(
+    tags=["admin_panelsV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @admin_panels_router.get(
