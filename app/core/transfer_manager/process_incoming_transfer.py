@@ -17,6 +17,10 @@ from services.mongo_collections.v1 import (
     ProductStatsCollection,
 )
 
+from services.mongo_collections.v1.product_sale_profiles_collection import (
+    UpdateSaleProfileOperation,
+)
+
 
 class TransferNotFoundError(Exception):
     pass
@@ -72,12 +76,19 @@ async def process_incoming_transfer(
 
             # 2. PREPARAR DATOS DE ENTRADA (Mapeo a tu nuevo modelo InventoryEntryBatchItem)
             # Convertimos los items del traslado al formato genérico que espera tu función lógica
-            batch_items = [
-                InventoryEntryBatchItem(
-                    product_id=item.id, quantity=item.quantity, unit_cost=item.cost
-                )
-                for item in transfer_doc.items
-            ]
+            consolidated_items_dict: dict[str, InventoryEntryBatchItem] = {}
+
+            for item in transfer_doc.items:
+                if item.id in consolidated_items_dict:
+                    consolidated_items_dict[item.id].quantity += item.quantity
+                else:
+                    consolidated_items_dict[item.id] = InventoryEntryBatchItem(
+                        product_id=item.id,
+                        quantity=item.quantity,
+                        unit_cost=item.cost,
+                    )
+
+            batch_items = list(consolidated_items_dict.values())
 
             # 3. OBTENER CUENTAS ACTUALES (Snapshot Read)
             # Solo buscamos las cuentas de los productos involucrados
@@ -119,6 +130,29 @@ async def process_incoming_transfer(
                 stats_col=product_stats_col,
                 transaction_col=prd_transaction_col,
             )
+
+            # ACTUALIZAR LOS PRECIOS
+            items_ids: set[str] = set()
+
+            update_operations: list[UpdateSaleProfileOperation] = []
+            for item in transfer_doc.items:
+                if item.id not in items_ids:
+                    new_update_op = UpdateSaleProfileOperation(
+                        branchId=destination_branch,
+                        productId=item.id,
+                        data={
+                            "salePrice": item.salePrice,
+                            "salePrice2": item.salePrice2,
+                            "salePrice3": item.salePrice3,
+                        },
+                    )
+                    update_operations.append(new_update_op)
+                    items_ids.add(item.id)
+
+            if update_operations:
+                await product_prof_col.bulk_update_product_sale_profiles(
+                    update_operations=update_operations, session=session
+                )
 
             # 6. ACTUALIZAR ESTADO DEL TRASLADO
             update_data = intent.model_dump()

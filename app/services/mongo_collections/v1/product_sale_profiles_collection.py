@@ -1,7 +1,15 @@
+from dataclasses import dataclass
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel, UpdateOne
 from services import MongoService
+
+
+@dataclass
+class UpdateSaleProfileOperation:
+    branchId: str
+    productId: str
+    data: dict
 
 
 class ProductSaleProfilesCollection:
@@ -113,6 +121,29 @@ class ProductSaleProfilesCollection:
         )
 
         return result
+
+    async def bulk_update_product_sale_profiles(
+        self, update_operations: list[UpdateSaleProfileOperation], session: Any
+    ):
+        if not update_operations:
+            return
+
+        collection = self.__collection
+
+        update_ops: list[UpdateOne] = []
+
+        for update_operation in update_operations:
+            update_ops.append(
+                UpdateOne(
+                    {
+                        "branchId": update_operation.branchId,
+                        "productId": update_operation.productId,
+                    },
+                    {"$set": update_operation.data},
+                )
+            )
+
+        await collection.bulk_write(update_ops, session=session)
 
     async def delete_product_sale_profile_by_id(
         self, product_sale_profile_id: str
