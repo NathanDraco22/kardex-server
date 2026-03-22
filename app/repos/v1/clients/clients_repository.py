@@ -34,11 +34,10 @@ class ClientsRepository:
         client: ClientInDb,
         initial_balance: int,
         branch_id: str,
+        product_name: str,
     ) -> ClientInDb:
         return await create_initial_balance(
-            client,
-            initial_balance,
-            branch_id,
+            client, initial_balance, branch_id, product_name
         )
 
     async def get_all_clients(self, **kwargs) -> list[ClientInDb]:

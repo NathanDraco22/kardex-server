@@ -22,8 +22,13 @@ async def create_initial_balance(body: CreateInitialBalance) -> ClientInDb | Non
     client_id = body.clientId
     initial_balance = body.initialBalance
     branch_id = body.branchId
+    product_name = body.productName
+
     return await clients_controller.create_initial_balance(
-        client_id, initial_balance, branch_id
+        client_id,
+        initial_balance,
+        branch_id,
+        product_name,
     )
 
 

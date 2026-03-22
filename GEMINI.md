@@ -33,3 +33,15 @@ Análisis profundo y optimización de los nuevos totales en `daily_report_maker.
 1. **Reportes Diarios y Cajas**: Se revisó la recolección de métricas transaccionales (facturas y recibos) asegurando que todas las sucursales, incluso con cero ventas, queden mapeadas.
 2. **Cálculo de Deuda (Owed)**: Se identificó teóricamente que sumar la cartera viva (`totalOwed`) de los días con `__add__` genera "datos fantasma". Se validó el "Snapshot en Vivo" usando una nueva consulta `get_pending_invoice_totals_by_branch`.
 3. **App Notifier (Telegram)**: Se refactorizó la alerta ejecutiva, desglosando limpiamente "Ingresos a Caja (Contado + Abonos)" y utilizando el término inequívoco "Nuevas Cuentas por Cobrar".
+
+## Fecha: 2026-03-22
+### Objetivo
+Revisión profunda del flujo del endpoint `/initial-balance` en `app\api\v1\clients\clients_router.py`.
+
+### Resumen de Revisión
+1. **Flujo Verificado**: Desde Router -> Controller -> Repository -> `process_create_client.py` -> `client_financial_movement.py`.
+2. **Hallazgos**:
+   - Validación robusta en el controller con `client.hasMovements` para evadir saldos iniciales dobles.
+   - Atomicidad garantizada vía transacción de sesión en MongoDB.
+   - Generación controlada de factura de saldo inicial sin afectación de inventario (usando etiqueta `INITIAL_BALANCE`).
+   - El movimiento se registra adecuadamente como `debit` (cargo) en la cuenta del cliente para mantener coherencia financiera.
