@@ -33,6 +33,7 @@ class ClientsController:
         client_id: str,
         initial_balance: int,
         branch_id: str,
+        product_name: str,
     ) -> ClientInDb | None:
         client = await self.clients_repo.get_client_by_id(client_id)
         if client is None:
@@ -47,7 +48,10 @@ class ClientsController:
                 detail="Client already has movements",
             )
         return await self.clients_repo.create_initial_balance(
-            client, initial_balance, branch_id
+            client,
+            initial_balance,
+            branch_id,
+            product_name,
         )
 
     async def get_all_clients(
