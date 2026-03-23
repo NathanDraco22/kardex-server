@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from repos.v1.product_sale_profiles import (
     UpdateProductSaleProfile,
@@ -6,12 +6,16 @@ from repos.v1.product_sale_profiles import (
     ProductSaleProfileInDbWithProduct,
 )
 
+from app_middleware import auth_middleware
+
 from responses.v1 import ListResponse
 
 from .product_sale_profiles_controller import product_sale_profiles_controller
 
 
-sale_prof_router = APIRouter(tags=["product_sale_profilesV1"])
+sale_prof_router = APIRouter(
+    tags=["product_sale_profilesV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @sale_prof_router.get("/{branch_id}")

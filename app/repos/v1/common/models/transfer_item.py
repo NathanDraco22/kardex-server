@@ -11,3 +11,6 @@ class TransferItem(BaseModel):
     quantity: int
     cost: int
     expirationDate: int | None = None
+    salePrice: int = 0
+    salePrice2: int = 0
+    salePrice3: int = 0

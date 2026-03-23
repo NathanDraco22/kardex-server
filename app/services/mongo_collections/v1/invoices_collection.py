@@ -407,6 +407,17 @@ class InvoicesCollection:
                     "count": {"$sum": 1},
                 }
             },
+            {
+                "$project": {
+                    "_id": 0,
+                    "branchId": "$_id",
+                    "total": 1,
+                    "totalCost": 1,
+                    "amountPaid": 1,
+                    "totalOwed": 1,
+                    "count": 1,
+                }
+            },
         ]
 
         cursor = collection.aggregate(pipeline)

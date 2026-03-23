@@ -1,13 +1,15 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from repos.v1.users import CreateUser, UpdateUser, UserInDb, UserInDbWithRole
+
+from app_middleware import auth_middleware
 
 from responses.v1 import ListResponse
 
 from .users_controller import users_controller
 
 
-users_router = APIRouter(tags=["usersV1"])
+users_router = APIRouter(tags=["usersV1"], dependencies=[Depends(auth_middleware)])
 
 
 @users_router.post("")

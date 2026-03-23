@@ -4,11 +4,15 @@ from fastapi import APIRouter, Depends, BackgroundTasks
 from responses.v1.list_response import ListResponse
 from repos.v1.entry_docs import CreateEntryDoc, EntryDocInDb
 
+from app_middleware import auth_middleware
+
 from .entry_docs_controller import entry_docs_controller
 from .query_params import EntryDocQueryParams
 
 
-entry_docs_router = APIRouter(tags=["entry_docsV1"])
+entry_docs_router = APIRouter(
+    tags=["entry_docsV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @entry_docs_router.post("")

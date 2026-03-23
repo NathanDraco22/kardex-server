@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from repos.v1.integrations import UpdateIntegration, IntegrationInDb
 from responses.v1 import ListResponse
 
+
 from .integrations_controller import integrations_controller
 
 

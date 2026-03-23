@@ -1,10 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app_middleware import auth_middleware
 
 from .invoice_devolutions_controller import invoice_devolutions_controller
 from .responses import InvoiceDevolutionsResponse
 
 
-invoice_devolutions_router = APIRouter(tags=["invoice_devolutionsV1"])
+invoice_devolutions_router = APIRouter(
+    tags=["invoice_devolutionsV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @invoice_devolutions_router.get("/invoice-doc-number/{invoice_doc_number}")
