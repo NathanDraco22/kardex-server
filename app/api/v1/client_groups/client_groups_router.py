@@ -1,12 +1,15 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from repos.v1.client_groups import CreateClientGroup, UpdateClientGroup, ClientGroupInDb
+from app_middleware import auth_middleware
 
 from .client_groups_controller import client_groups_controller
 
 from responses.v1 import ListResponse
 
-c_groups_router = APIRouter(tags=["client_groupsV1"])
+c_groups_router = APIRouter(
+    tags=["client_groupsV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @c_groups_router.post("")

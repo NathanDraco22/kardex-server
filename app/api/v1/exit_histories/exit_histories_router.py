@@ -3,10 +3,14 @@ from fastapi import APIRouter, Depends
 from repos.v1.exit_histories import ExitHistoryInDb
 from responses.v1.list_response import ListResponse
 
+from app_middleware import auth_middleware
+
 from .exit_histories_controller import exit_histories_controller
 from .query_params import ExitHistoryQueryParams
 
-exit_histories_router = APIRouter(tags=["exit_historiesV1"])
+exit_histories_router = APIRouter(
+    tags=["exit_historiesV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @exit_histories_router.get("")

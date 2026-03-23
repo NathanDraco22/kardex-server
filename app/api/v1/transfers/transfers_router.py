@@ -6,14 +6,16 @@ from repos.v1.transfers import (
     ReceiveTransferIntent,
     CancelTransferIntent,
 )
-
+from app_middleware import auth_middleware
 from responses.v1 import ListResponse
 
 from .transfers_controller import transfers_controller
 from .query_params import TransferQueryParams
 
 
-transfers_router = APIRouter(tags=["transfersV1"])
+transfers_router = APIRouter(
+    tags=["transfersV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @transfers_router.post("")

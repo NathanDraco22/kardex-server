@@ -1,12 +1,16 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from responses.v1.list_response import ListResponse
 from repos.v1.suppliers import CreateSupplier, UpdateSupplier, SupplierInDb
 
+from app_middleware import auth_middleware
+
 from .suppliers_controller import suppliers_controller
 
 
-suppliers_router = APIRouter(tags=["suppliersV1"])
+suppliers_router = APIRouter(
+    tags=["suppliersV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @suppliers_router.post("")

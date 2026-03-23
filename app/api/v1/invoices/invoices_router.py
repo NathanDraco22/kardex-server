@@ -8,6 +8,8 @@ from repos.v1.invoices import (
     ProductSalesTotal,
 )
 
+from app_middleware import auth_middleware
+
 from repos.v1.common.models.history_params import HistoryClientParams
 
 from responses.v1 import ListResponse
@@ -16,7 +18,9 @@ from .invoices_controller import invoices_controller
 from .responses import InvoiceResponse, InvoiceAnonResponse
 from api.common.query_params import InvoiceQueryParams
 
-invoices_router = APIRouter(tags=["invoicesV1"])
+invoices_router = APIRouter(
+    tags=["invoicesV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @invoices_router.post("")

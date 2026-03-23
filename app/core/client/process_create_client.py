@@ -144,9 +144,7 @@ async def process_create_client_with_balance(
 
 
 async def create_initial_balance(
-    client: ClientInDb,
-    initial_balance: int,
-    branch_id: str,
+    client: ClientInDb, initial_balance: int, branch_id: str, product_name: str
 ) -> ClientInDb:
     """
     Agrega un saldo inicial a un cliente existente mediante la creación
@@ -174,10 +172,12 @@ async def create_initial_balance(
                 cardId=client.cardId or "",
             )
 
+            sale_item_name = product_name if product_name else "SALDO INICIAL"
+
             initial_balance_item = SaleItem(
                 product=ProductItem(
                     id="INITIAL_BALANCE",
-                    name="SALDO INICIAL",
+                    name=sale_item_name,
                     unitName="UNIDAD",
                     brandName="SISTEMA",
                     categoryName="SISTEMA",
@@ -201,7 +201,7 @@ async def create_initial_balance(
                 clientInfo=client_info,
                 docNumber=invoice_doc_number,
                 saleItems=[initial_balance_item],
-                description="Saldo Inicial",
+                description="APERTURA DE CUENTA",
                 amountPaid=0,
                 status="open",
                 paymentType="credit",

@@ -4,11 +4,14 @@ from repos.v1.devolutions import CreateDevolution, DevolutionInDb
 from repos.v1.common.models.history_params import HistoryClientParams
 from responses.v1 import ListResponse
 
+from app_middleware import auth_middleware
 
 from .devolutions_controller import devolutions_controller
 from .devolution_query_param import DevolutionQueryParams
 
-devolutions_router = APIRouter(tags=["devolutionsV1"])
+devolutions_router = APIRouter(
+    tags=["devolutionsV1"], dependencies=[Depends(auth_middleware)]
+)
 
 
 @devolutions_router.post("")
