@@ -24,16 +24,31 @@ class ImportsController:
         parsed_data = []
         for row in csv_reader:
             current_price: str = str(row["price"])
+            current_price2: str = str(row.get("price2", "0"))
+            current_price3: str = str(row.get("price3", "0"))
             current_cost: str = str(row["cost"])
 
             current_price = current_price.replace(",", ".")
+            current_price2 = current_price2.replace(",", ".")
+            current_price3 = current_price3.replace(",", ".")
             current_cost = current_cost.replace(",", ".")
 
             float_price = float(current_price)
+            float_price2 = float(current_price2)
+            float_price3 = float(current_price3)
             float_cost = float(current_cost)
 
             row["price"] = int(float_price * 100)
+            row["price2"] = int(float_price2 * 100)
+            row["price3"] = int(float_price3 * 100)
             row["cost"] = int(float_cost * 100)
+
+            raw_code = row.get("code") or ""
+
+            clean_code = str(raw_code).strip()
+
+            if clean_code:
+                row["code"] = clean_code
 
             parsed_data.append(row)
 
