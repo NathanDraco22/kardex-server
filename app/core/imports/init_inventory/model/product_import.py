@@ -15,3 +15,5 @@ class ProductImport(BaseModel):
     quantity: int
     cost: int
     price: int
+    price2: int = 0
+    price3: int = 0
