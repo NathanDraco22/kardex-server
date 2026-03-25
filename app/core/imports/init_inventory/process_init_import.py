@@ -125,6 +125,7 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
     for product in new_products:
         data = product.model_dump()
         data["searchPrefixes"] = generate_prefixes(product.name)
+        new_product_data.append(data)
 
     new_product_accounts_data = [
         product_account.model_dump() for product_account in new_product_accounts
@@ -292,6 +293,7 @@ async def process_inventory_import(
     for product in new_products:
         data = product.model_dump()
         data["searchPrefixes"] = generate_prefixes(product.name)
+        new_product_data.append(data)
 
     new_product_accounts_data = [
         product_account.model_dump() for product_account in new_product_accounts
