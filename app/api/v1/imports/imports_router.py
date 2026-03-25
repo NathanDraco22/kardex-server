@@ -12,3 +12,11 @@ async def create_import(
     file: UploadFile = File(...),
 ) -> Any:
     return await imports_controller.create_import(branch_id, file)
+
+
+@imports_router.post("/inventory")
+async def create_inventory_import(
+    branch_id: str = Header(...),
+    file: UploadFile = File(...),
+) -> Any:
+    return await imports_controller.create_inventory_import(branch_id, file)
