@@ -4,12 +4,14 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import UpdateOne, ReturnDocument
 
 
-MONGO_URL = "mongodb://mongo:gkMCqLnJLuQUVgRCNsEMoHFyLXQchjda@yamabiko.proxy.rlwy.net:28317/?directConnection=true&retryWrites=false"
+# MONGO_URL = "mongodb://mongo:gkMCqLnJLuQUVgRCNsEMoHFyLXQchjda@yamabiko.proxy.rlwy.net:28317/?directConnection=true&retryWrites=false"
+
+MONGO_URL = "mongodb+srv://nathandraco22:nathandraco22db@cluster0.l8grx3u.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 
 async def auto_code_products():
     mongo_client = AsyncIOMotorClient(MONGO_URL)
-    db = mongo_client.get_database("LedgerDB")
+    db = mongo_client.get_database("variedades_etel")
     product_col = db.get_collection("Products")
     product_counter_col = db.get_collection("Counters")
 
