@@ -5,7 +5,10 @@ import codecs
 from fastapi import UploadFile, HTTPException
 
 from core.imports.init_inventory.model.product_import import ProductImport
-from core.imports.init_inventory.process_init_import import process_init_import
+from core.imports.init_inventory.process_init_import import (
+    process_init_import,
+    process_inventory_import,
+)
 
 
 class ImportsController:
@@ -21,6 +24,45 @@ class ImportsController:
             )
         csv_reader = csv.DictReader(codecs.iterdecode(file.file, "utf-8"))
 
+        parsed_data = self.parse_dict(csv_reader)
+
+        product_imports = [
+            ProductImport.model_validate(product) for product in parsed_data
+        ]
+
+        await process_init_import(branch_id, product_imports)
+
+        return {
+            "status": "success",
+            "message": "Importación exitosa",
+        }
+
+    async def create_inventory_import(self, branch_id: str, file: UploadFile) -> Any:
+        filename = file.filename
+        if not filename:
+            raise HTTPException(
+                status_code=400, detail="No se ha proporcionado un archivo"
+            )
+        if not filename.endswith(".csv"):
+            raise HTTPException(
+                status_code=400, detail="El archivo debe ser de formato .csv"
+            )
+        csv_reader = csv.DictReader(codecs.iterdecode(file.file, "utf-8"))
+
+        parsed_data = self.parse_dict(csv_reader)
+
+        product_imports = [
+            ProductImport.model_validate(product) for product in parsed_data
+        ]
+
+        await process_inventory_import(branch_id, product_imports)
+
+        return {
+            "status": "success",
+            "message": "Importación exitosa",
+        }
+
+    def parse_dict(self, csv_reader: csv.DictReader) -> list:
         parsed_data = []
         for row in csv_reader:
             current_price: str = str(row["price"])
@@ -52,16 +94,7 @@ class ImportsController:
 
             parsed_data.append(row)
 
-        product_imports = [
-            ProductImport.model_validate(product) for product in parsed_data
-        ]
-
-        await process_init_import(branch_id, product_imports)
-
-        return {
-            "status": "success",
-            "message": "Importación exitosa",
-        }
+        return parsed_data
 
 
 imports_controller = ImportsController()
