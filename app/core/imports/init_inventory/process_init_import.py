@@ -1,7 +1,9 @@
 import random
+
 from .model.product_import import ProductImport
 
 from tools import UuidTool, TimeTools
+from tools.search_tools import generate_prefixes
 
 from repos.v1.product_accounts import ProductAccountInDb
 from repos.v1.product_transactions import ProductTransactionInDb
@@ -118,7 +120,11 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
     # Mongo session
     client = MongoService().client
 
-    new_product_data = [product.model_dump() for product in new_products]
+    new_product_data = []
+
+    for product in new_products:
+        data = product.model_dump()
+        data["searchPrefixes"] = generate_prefixes(product.name)
 
     new_product_accounts_data = [
         product_account.model_dump() for product_account in new_product_accounts
@@ -281,7 +287,11 @@ async def process_inventory_import(
     # Mongo session
     client = MongoService().client
 
-    new_product_data = [product.model_dump() for product in new_products]
+    new_product_data = []
+
+    for product in new_products:
+        data = product.model_dump()
+        data["searchPrefixes"] = generate_prefixes(product.name)
 
     new_product_accounts_data = [
         product_account.model_dump() for product_account in new_product_accounts
