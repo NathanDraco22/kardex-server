@@ -1,8 +1,4 @@
 import random
-<<<<<<< HEAD
-=======
-
->>>>>>> b4e756cd9e122b9f80ce924cecd573893b88f261
 from .model.product_import import ProductImport
 
 from tools import UuidTool, TimeTools
