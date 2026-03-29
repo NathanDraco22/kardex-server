@@ -76,6 +76,7 @@ class UsersCollection:
                     "$match": {
                         "isDeleted": False,
                         "isActive": True,
+                        "isInternal": False,
                         **branch_query,
                     },
                 },
