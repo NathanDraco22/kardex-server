@@ -625,6 +625,13 @@ class ProductAccountsCollection:
                         "from": "Products",
                         "localField": "productId",
                         "foreignField": "id",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "isDeleted": False,
+                                }
+                            }
+                        ],
                         "as": "product",
                     }
                 },

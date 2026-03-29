@@ -392,7 +392,11 @@ class ProductsCollection:
 
     async def delete_product_by_id(self, product_id: str) -> dict[str, Any] | None:
         collection = self.__collection
-        result = await collection.find_one_and_delete({"id": product_id})
+        result = await collection.find_one_and_update(
+            {"id": product_id},
+            {"$set": {"isDeleted": True}},
+            return_document=ReturnDocument.AFTER,
+        )
         return result
 
     async def create_indexes(self):
