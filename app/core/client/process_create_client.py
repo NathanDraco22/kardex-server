@@ -298,7 +298,7 @@ async def create_multiple_initial_balance(
                 # Nota: Si docNumber tiene un índice único en DB, asegúrate de que
                 # client.id no cause colisiones si a un mismo cliente se le
                 # aplican dos saldos iniciales distintos en el futuro.
-                invoice_doc_number = client.id
+                invoice_doc_number = new_invoice_id
 
                 client_info = ClientInfo(
                     name=client.name,
@@ -352,7 +352,7 @@ async def create_multiple_initial_balance(
                 new_invoice_data = create_invoice_data.model_dump()
                 new_invoice_data.update(
                     {
-                        "id": new_invoice_id,
+                        "id": UuidTool.generate_uuid(),
                         "createdAt": current_time,
                         "paidAt": None,
                     }
