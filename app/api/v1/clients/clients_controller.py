@@ -9,8 +9,10 @@ from repos.v1.clients import (
     ClientsRepository,
     ClientsDataSource,
 )
+from repos.v1.clients.clients_repository import InitialBalanceClient
 
 from .query_params import ClientQueryParams
+from .bodies import CreateMultipleInitialBalance
 
 
 class ClientsController:
@@ -53,6 +55,38 @@ class ClientsController:
             branch_id,
             product_name,
         )
+
+    async def create_multiple_initial_balance(
+        self, body: CreateMultipleInitialBalance
+    ) -> ListResponse[ClientInDb]:
+        client = await self.clients_repo.get_client_by_id(body.clientId)
+        if client is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Client not found",
+            )
+
+        if client.hasMovements:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Client already has movements",
+            )
+
+        balances = body.initialBalances
+
+        new_balances = []
+        for balance in balances:
+            new_balance = InitialBalanceClient(
+                client=client,
+                branch_id=body.branchId,
+                product_name=balance.productName,
+                initial_balance=balance.initialBalance,
+            )
+
+            new_balances.append(new_balance)
+
+        res = await self.clients_repo.create_multiple_initial_balance(new_balances)
+        return ListResponse(count=len(res), data=res)
 
     async def get_all_clients(
         self, params: ClientQueryParams
