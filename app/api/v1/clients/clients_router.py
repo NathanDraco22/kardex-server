@@ -5,7 +5,7 @@ from responses.v1 import ListResponse
 
 from app_middleware import auth_middleware
 
-from .bodies import CreateInitialBalance
+from .bodies import CreateInitialBalance, CreateMultipleInitialBalance
 from .clients_controller import clients_controller
 from .query_params import ClientQueryParams
 
@@ -30,6 +30,13 @@ async def create_initial_balance(body: CreateInitialBalance) -> ClientInDb | Non
         branch_id,
         product_name,
     )
+
+
+@clients_router.post("/multi-initial-balance")
+async def create_multiple_initial_balance(
+    body: CreateMultipleInitialBalance,
+) -> ListResponse[ClientInDb]:
+    return await clients_controller.create_multiple_initial_balance(body)
 
 
 @clients_router.get("")
