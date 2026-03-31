@@ -1,6 +1,5 @@
 import random
 from typing import Tuple
-from dataclasses import dataclass
 from tools import UuidTool, TimeTools
 from tools.search_tools import generate_prefixes
 from core.counter_manager.counter_manager import CounterManager
