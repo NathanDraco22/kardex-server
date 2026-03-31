@@ -64,7 +64,9 @@ class OrdersCollection:
         start_date = kwargs.pop("startDate", None)
         end_date = kwargs.pop("endDate", None)
         neStatus = kwargs.pop("neStatus", None)
+        created_by_param = kwargs.pop("createdBy", None)
 
+     
         query = {}
 
         if branch_id:
@@ -76,8 +78,9 @@ class OrdersCollection:
         if start_date and end_date:
             query["createdAt"] = {"$gte": start_date, "$lte": end_date}
 
-        if neStatus:
-            query["status"] = {"$ne": neStatus}
+        if created_by_param:
+            query["createdBy.id"] = created_by_param
+
 
         pipeline = [
             {"$match": query},

@@ -11,3 +11,4 @@ class OrderQueryParams(BaseModel):
     branchId: str | None = None
     startDate: int | None = None
     endDate: int | None = None
+    createdBy: str | None = None
