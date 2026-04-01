@@ -75,6 +75,7 @@ class OrdersCollection:
 
         if start_date and end_date:
             query["createdAt"] = {"$gte": start_date, "$lte": end_date}
+            
 
         if neStatus:
             query["status"] = {"$ne": neStatus}
