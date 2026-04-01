@@ -261,6 +261,7 @@ class ProductAccountsCollection:
         branch_id: str,
         bulk_to_substrack: list[tuple[str, int]],
         session: Any,
+        allow_negative_stock: bool = False,
     ) -> bool:
         collection = self.__collection
         updated_at = TimeTools.get_now_in_milliseconds()
@@ -271,22 +272,25 @@ class ProductAccountsCollection:
 
             qty = abs(substract_to_current_stock)
 
+            query_filter = {
+                "productId": product_id,
+                "branchId": branch_id,
+            }
+            if not allow_negative_stock:
+                query_filter["$expr"] = {
+                    "$gte": [
+                        {
+                            "$subtract": [
+                                {"$ifNull": ["$currentStock", 0]},
+                                {"$ifNull": ["$promiseStock", 0]},
+                            ]
+                        },
+                        qty,
+                    ]
+                }
+
             update_op = UpdateOne(
-                {
-                    "productId": product_id,
-                    "branchId": branch_id,
-                    "$expr": {
-                        "$gte": [
-                            {
-                                "$subtract": [
-                                    {"$ifNull": ["$currentStock", 0]},
-                                    {"$ifNull": ["$promiseStock", 0]},
-                                ]
-                            },
-                            qty,
-                        ]
-                    },
-                },
+                query_filter,
                 {
                     "$inc": {
                         "currentStock": -qty,
@@ -776,6 +780,7 @@ class ProductAccountsCollection:
         branch_id: str,
         bulk_data: list[tuple[str, int]],
         session: Any,
+        allow_negative_stock: bool = False,
     ) -> bool:
         """
         Versión masiva de dispatch_promise_stock.
@@ -786,12 +791,15 @@ class ProductAccountsCollection:
 
         operations = []
         for p_id, qty in bulk_data:
+            query_filter = {
+                "productId": p_id,
+                "branchId": branch_id,
+            }
+            if not allow_negative_stock:
+                query_filter["promiseStock"] = {"$gte": qty}
+
             op = UpdateOne(
-                {
-                    "productId": p_id,
-                    "branchId": branch_id,
-                    "promiseStock": {"$gte": qty},
-                },
+                query_filter,
                 {
                     "$inc": {
                         "promiseStock": -qty,

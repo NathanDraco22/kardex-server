@@ -82,6 +82,7 @@ async def process_invoice(
                 document_id=new_invoice_id,
                 doc_number=create_invoice.docNumber,
                 is_order_fulfillment=is_order_fulfillment,
+                allow_negative_stock=True,
             )
 
             # Asignar Costos Reales a la Factura
@@ -98,6 +99,7 @@ async def process_invoice(
                     branch_id=create_invoice.branchId,
                     bulk_data=batch_result.stock_subtractions,
                     session=session,
+                    allow_negative_stock=True,
                 )
 
                 # Remove kardex manual
@@ -109,6 +111,7 @@ async def process_invoice(
                     batch_result=batch_result,
                     session=session,
                     account_col=product_account_col,
+                    allow_negative_stock=True,
                 )
 
             if create_invoice.status == "draft":
@@ -251,6 +254,7 @@ async def process_anon_invoice(
                 # Metadata de la Factura
                 document_id=new_invoice_doc_id,
                 doc_number=create_invoice.docNumber,
+                allow_negative_stock=True,
             )
 
             # 4. ENRIQUECER ITEMS DE LA FACTURA CON EL COSTO REAL
@@ -265,6 +269,7 @@ async def process_anon_invoice(
                 batch_result=batch_result,
                 session=session,
                 account_col=product_account_col,
+                allow_negative_stock=True,
             )
 
             # 6. GUARDAR LA FACTURA

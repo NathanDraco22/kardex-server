@@ -34,6 +34,7 @@ def prepare_inventory_exit_batch(
     document_id: str,
     doc_number: str,
     is_order_fulfillment: bool = False,
+    allow_negative_stock: bool = False,
 ) -> ExitBatchResult:
     # 1. Consolidar y Crear Mapa de Nombres
     consolidated_req: dict[str, int] = {}
@@ -68,7 +69,7 @@ def prepare_inventory_exit_batch(
         if not is_order_fulfillment:
             limit_stock = account.currentStock - promise_stock
 
-        if total_qty_needed > limit_stock:
+        if not allow_negative_stock and total_qty_needed > limit_stock:
             stock_type_msg = "FÍSICO" if is_order_fulfillment else "DISPONIBLE"
             raise InsufficientBalanceError(
                 f"Stock {stock_type_msg} insuficiente para '{p_name}'. "
@@ -100,6 +101,7 @@ async def execute_inventory_exit_db_operations(
     session: Any,
     # Inyección de dependencias
     account_col: ProductAccountsCollection,
+    allow_negative_stock: bool = False,
 ) -> None:
     """
     Ejecuta la resta de inventario.
@@ -112,4 +114,5 @@ async def execute_inventory_exit_db_operations(
             branch_id=branch_id,
             bulk_to_substrack=batch_result.stock_subtractions,
             session=session,
+            allow_negative_stock=allow_negative_stock,
         )
