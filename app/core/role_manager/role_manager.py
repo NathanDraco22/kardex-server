@@ -4,7 +4,6 @@ from repos.v1.users.models.user_model import UserRole
 class Modules:
     ALL = "all"
     CLIENTS = "clients"
-    SUPPLIERS = "suppliers"
     PRODUCTS = "products"
     COMMERCIAL = "commercial"
     FINANCE = "finance"
@@ -53,7 +52,6 @@ default_roles = [
             CommercialSubModules.CREATE_DEVOLUTION,
             CommercialSubModules.DEVOLUTION_HISTORY,
             CommercialSubModules.PROCESS_DEVOLUTION,
-            Modules.SUPPLIERS,
             Modules.CLIENTS,
             Modules.PRODUCTS,
             Modules.INVENTORY,
@@ -72,7 +70,6 @@ default_roles = [
             CommercialSubModules.CREATE_DEVOLUTION,
             CommercialSubModules.DEVOLUTION_HISTORY,
             CommercialSubModules.PROCESS_DEVOLUTION,
-            Modules.SUPPLIERS,
             Modules.CLIENTS,
             Modules.PRODUCTS,
             Modules.INVENTORY,

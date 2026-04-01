@@ -11,7 +11,6 @@ from repos.v1.product_accounts import ProductAccountInDb
 from services import MongoService
 from services.mongo_collections.v1 import (
     TransfersCollection,
-    ProductTransactionsCollection,
     ProductAccountsCollection,
 )
 
@@ -24,7 +23,6 @@ async def process_outgoing_transfer(
     mongo_client = MongoService().client
 
     # Colecciones
-    prd_transaction_col = ProductTransactionsCollection()
     product_account_col = ProductAccountsCollection()
     transfers_col = TransfersCollection()
 
@@ -76,8 +74,6 @@ async def process_outgoing_transfer(
                 # Metadata
                 document_id=new_transfer_id,
                 doc_number=create_transfer.docNumber,
-                tx_type="exit",
-                tx_subtype="transfer",
             )
 
             # 4. ACTUALIZAR COSTOS EN EL OBJETO DE TRASLADO
@@ -93,7 +89,6 @@ async def process_outgoing_transfer(
                 batch_result=batch_result,
                 session=session,
                 account_col=product_account_col,
-                transaction_col=prd_transaction_col,
             )
 
             # 6. CREAR DOCUMENTO DE TRASLADO

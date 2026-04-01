@@ -3,21 +3,16 @@ from services.mongo_collections.v1 import (
     CountersCollection,
     ClientsCollection,
     ClientTransactionsCollection,
-    SuppliersCollection,
     ProductCategoriesCollection,
     ProductPricesCollection,
-    EntryDocsCollection,
-    ExitDocsCollection,
     ProductAccountsCollection,
     ProductSaleProfilesCollection,
-    ProductTransactionsCollection,
     InvoicesCollection,
     OrdersCollection,
     ExpirationLogsCollection,
     DevolutionsCollection,
     DailySummariesCollection,
     ExecutiveSummariesCollection,
-    ProductStatsCollection,
     TransfersCollection,
     AdjustEntriesCollection,
     AdjustExitsCollection,
@@ -37,20 +32,11 @@ async def create_indexes():
     collection = ClientTransactionsCollection()
     await collection.create_indexes()
 
-    collection = SuppliersCollection()
-    await collection.create_indexes()
-
     collection = ProductCategoriesCollection()
     await collection.create_indexes()
 
     collection = ProductPricesCollection()
     await collection.create_indexes()
-
-    collection = EntryDocsCollection()
-    await collection.create_index()
-
-    collection = ExitDocsCollection()
-    await collection.create_index()
 
     collection = ProductAccountsCollection()
     await collection.create_index()
@@ -58,8 +44,6 @@ async def create_indexes():
     collection = ProductSaleProfilesCollection()
     await collection.create_index()
 
-    collection = ProductTransactionsCollection()
-    await collection.create_index()
 
     collection = InvoicesCollection()
     await collection.create_indexes()
@@ -77,9 +61,6 @@ async def create_indexes():
     await collection.create_indexes()
 
     collection = ExecutiveSummariesCollection()
-    await collection.create_indexes()
-
-    collection = ProductStatsCollection()
     await collection.create_indexes()
 
     collection = TransfersCollection()

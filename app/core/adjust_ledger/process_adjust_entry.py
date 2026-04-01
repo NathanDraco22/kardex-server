@@ -10,10 +10,8 @@ from repos.v1.product_accounts import ProductAccountInDb
 from services import MongoService
 from services.mongo_collections.v1 import (
     AdjustEntriesCollection,
-    ProductTransactionsCollection,
     ProductAccountsCollection,
     ProductSaleProfilesCollection,
-    ProductStatsCollection,
 )
 from core.counter_manager.counter_manager import CounterManager
 
@@ -25,9 +23,7 @@ async def process_adjust_entry(
 
     # Colecciones
     adjust_col = AdjustEntriesCollection()
-    prd_transaction_col = ProductTransactionsCollection()
     product_account_col = ProductAccountsCollection()
-    product_stats_col = ProductStatsCollection()
     product_prof_col = ProductSaleProfilesCollection()
 
     # Tools
@@ -97,9 +93,6 @@ async def process_adjust_entry(
                 # Metadata
                 document_id=new_adjust_in_db.id,
                 doc_number=new_adjust_in_db.docNumber,
-                # Tipos
-                tx_type="entry",
-                tx_subtype="adjustment",  # Subtipo específico "adjustment"
             )
 
             # 6. PERSISTENCIA MASIVA 💾
@@ -109,8 +102,6 @@ async def process_adjust_entry(
                 session=session,
                 account_col=product_account_col,
                 profile_col=product_prof_col,
-                stats_col=product_stats_col,
-                transaction_col=prd_transaction_col,
             )
 
             return new_adjust_in_db, batch_result.simulated_accounts

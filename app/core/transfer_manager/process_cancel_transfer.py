@@ -9,10 +9,8 @@ from repos.v1.product_accounts import ProductAccountInDb
 from services import MongoService
 from services.mongo_collections.v1 import (
     TransfersCollection,
-    ProductTransactionsCollection,
     ProductAccountsCollection,
     ProductSaleProfilesCollection,
-    ProductStatsCollection,
 )
 
 
@@ -33,9 +31,8 @@ async def process_cancel_transfer(
     # Colecciones
     transfers_col = TransfersCollection()
     product_account_col = ProductAccountsCollection()
-    product_stats_col = ProductStatsCollection()
     product_prof_col = ProductSaleProfilesCollection()
-    prd_transaction_col = ProductTransactionsCollection()
+    product_prof_col = ProductSaleProfilesCollection()
 
     # Tools
     branches_tool = BranchesTool()
@@ -103,9 +100,6 @@ async def process_cancel_transfer(
                 # Metadata
                 document_id=transfer_doc.id,
                 doc_number=transfer_doc.docNumber,
-                # Definimos el tipo de movimiento en el Kardex
-                tx_type="entry",  # Es una entrada (retorno)
-                tx_subtype="transfer",  # O podrías crear TransactionSubType.CANCEL_RETURN
             )
 
             # 7. PERSISTENCIA MASIVA 💾
@@ -115,8 +109,6 @@ async def process_cancel_transfer(
                 session=session,
                 account_col=product_account_col,
                 profile_col=product_prof_col,
-                stats_col=product_stats_col,
-                transaction_col=prd_transaction_col,
             )
 
             # 8. ACTUALIZAR ESTADO DEL TRASLADO A "CANCELLED"

@@ -24,6 +24,30 @@ class ProductAccountsDataSource:
             product_id, branch_id
         )
 
+    async def update_product_account_stock_and_cost(
+        self, product_id: str, branch_id: str, **kwargs
+    ) -> dict[str, Any] | None:
+        collection = ProductAccountsCollection()
+        return await collection.update_product_account_stock_and_cost(
+            product_id, branch_id, **kwargs
+        )
+
+    async def add_product_account_stock(
+        self, product_id: str, branch_id: str, **kwargs
+    ) -> dict[str, Any] | None:
+        collection = ProductAccountsCollection()
+        return await collection.add_product_account_stock(
+            product_id, branch_id, **kwargs
+        )
+
+    async def substract_product_account_stock(
+        self, product_id: str, branch_id: str, **kwargs
+    ) -> dict[str, Any] | None:
+        collection = ProductAccountsCollection()
+        return await collection.substract_product_account_stock(
+            product_id, branch_id, **kwargs
+        )
+
     async def get_product_accounts_by_product(
         self, product_id: str
     ) -> list[dict[str, Any]]:

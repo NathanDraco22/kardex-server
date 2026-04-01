@@ -14,7 +14,6 @@ from services import MongoService
 
 from services.mongo_collections.v1 import (
     InvoicesCollection,
-    ProductTransactionsCollection,
     ProductAccountsCollection,
     ClientsCollection,
     ClientTransactionsCollection,
@@ -27,7 +26,6 @@ async def process_invoice(
 ) -> tuple[InvoiceInDb, ClientInDb]:
     mongo_client = MongoService().client
 
-    prd_transaction_col = ProductTransactionsCollection()
     product_account_col = ProductAccountsCollection()
     invoice_col = InvoicesCollection()
     order_col = OrdersCollection()
@@ -83,8 +81,6 @@ async def process_invoice(
                 existing_accounts_dict=accounts_dict,
                 document_id=new_invoice_id,
                 doc_number=create_invoice.docNumber,
-                tx_type="exit",
-                tx_subtype="invoice",
                 is_order_fulfillment=is_order_fulfillment,
             )
 
@@ -104,13 +100,7 @@ async def process_invoice(
                     session=session,
                 )
 
-                # Guardar Kardex manualmente (porque no usamos execute_inventory_exit...)
-                created_transactions_data = [
-                    t.model_dump() for t in batch_result.transactions
-                ]
-                await prd_transaction_col.create_many_product_transactions_with_session(
-                    created_transactions_data, session=session
-                )
+                # Remove kardex manual
 
             else:
                 # CAMINO B: VENTA DIRECTA -> Usamos el método estándar
@@ -119,7 +109,6 @@ async def process_invoice(
                     batch_result=batch_result,
                     session=session,
                     account_col=product_account_col,
-                    transaction_col=prd_transaction_col,
                 )
 
             if create_invoice.status == "draft":
@@ -211,7 +200,6 @@ async def process_anon_invoice(
     """
     mongo_client = MongoService().client
 
-    prd_transaction_col = ProductTransactionsCollection()
     product_account_col = ProductAccountsCollection()
     invoice_col = InvoicesCollection()
 
@@ -263,9 +251,6 @@ async def process_anon_invoice(
                 # Metadata de la Factura
                 document_id=new_invoice_doc_id,
                 doc_number=create_invoice.docNumber,
-                # Tipo de Transacción
-                tx_type="exit",
-                tx_subtype="invoice",  # "invoice"
             )
 
             # 4. ENRIQUECER ITEMS DE LA FACTURA CON EL COSTO REAL
@@ -280,7 +265,6 @@ async def process_anon_invoice(
                 batch_result=batch_result,
                 session=session,
                 account_col=product_account_col,
-                transaction_col=prd_transaction_col,
             )
 
             # 6. GUARDAR LA FACTURA

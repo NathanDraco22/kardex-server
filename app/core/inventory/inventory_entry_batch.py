@@ -1,21 +1,13 @@
 from typing import Any
 from pydantic import BaseModel
 
-from tools import UuidTool, TimeTools
+from tools import TimeTools
 from repos.v1.product_accounts import ProductAccountInDb
-from repos.v1.product_transactions import (
-    ProductTransactionInDb,
-    TransactionType,
-    TransactionSubType,
-)
 from repos.v1.product_sale_profiles import CreateProductSaleProfile
-from repos.v1.product_stats import CreateProductStat
 
 from services.mongo_collections.v1 import (
-    ProductTransactionsCollection,
     ProductAccountsCollection,
     ProductSaleProfilesCollection,
-    ProductStatsCollection,
 )
 
 
@@ -28,8 +20,6 @@ class InventoryEntryBatchItem(BaseModel):
 class EntryBatchResult(BaseModel):
     accounts_update: list[dict[str, Any]]
     new_profiles: list[CreateProductSaleProfile]
-    new_stats: list[CreateProductStat]
-    transactions: list[ProductTransactionInDb]
     simulated_accounts: list[ProductAccountInDb]
 
 
@@ -41,8 +31,6 @@ def prepare_inventory_entry_batch(
     # Metadata para el Kardex
     document_id: str,
     doc_number: str,
-    tx_type: TransactionType,  # ej: "entry", "buy"
-    tx_subtype: TransactionSubType,  # ej: "transfer", "provider"
 ) -> EntryBatchResult:
     now = TimeTools.get_now_in_milliseconds()
 
@@ -63,8 +51,6 @@ def prepare_inventory_entry_batch(
     # Listas de resultados
     bulk_update_accounts: list[dict[str, Any]] = []
     new_sale_profiles: list[CreateProductSaleProfile] = []
-    new_product_stats: list[CreateProductStat] = []
-    new_transactions: list[ProductTransactionInDb] = []
     simulated_accounts: list[ProductAccountInDb] = []
 
     # 2. Loop de Cálculo
@@ -90,19 +76,6 @@ def prepare_inventory_entry_batch(
                     branchId=branch_id, productId=p_id, salePrice=0
                 )
             )
-            if is_commerce_branch:
-                new_product_stats.append(
-                    CreateProductStat(
-                        branchId=branch_id,
-                        productId=p_id,
-                        startDate=now,
-                        endDate=now,
-                        totalUnits=0,
-                        totalTransactions=0,
-                        daysAnalyzed=0,
-                        lastEstimation=now,
-                    )
-                )
 
         # Cálculo de Promedio Ponderado
         current_asset_value = current_qty * current_avg_cost
@@ -129,22 +102,6 @@ def prepare_inventory_entry_batch(
             }
         )
 
-        # Preparar Transacción
-        transaction = ProductTransactionInDb(
-            id=UuidTool.generate_uuid(),
-            documentId=document_id,
-            docNumber=doc_number,
-            type=tx_type,
-            subtype=tx_subtype,
-            productId=p_id,
-            branchId=branch_id,
-            quantity=abs(inc_qty),
-            averageCost=new_avg_cost,
-            createdAt=now,
-            resultStock=total_new_qty,
-        )
-        new_transactions.append(transaction)
-
         # Simular cuenta (para retorno API)
         simulated_accounts.append(
             ProductAccountInDb(
@@ -162,8 +119,6 @@ def prepare_inventory_entry_batch(
     return EntryBatchResult(
         accounts_update=bulk_update_accounts,
         new_profiles=new_sale_profiles,
-        new_stats=new_product_stats,
-        transactions=new_transactions,
         simulated_accounts=simulated_accounts,
     )
 
@@ -175,8 +130,6 @@ async def execute_inventory_entry_db_operations(
     # Inyección de dependencias
     account_col: ProductAccountsCollection,
     profile_col: ProductSaleProfilesCollection,
-    stats_col: ProductStatsCollection,
-    transaction_col: ProductTransactionsCollection,
 ):
     """
     Ejecuta las operaciones de escritura masiva preparadas por la lógica de negocio.
@@ -198,16 +151,3 @@ async def execute_inventory_entry_db_operations(
             raw_profiles, session=session
         )
 
-    # 3. Crear Stats (Si hay)
-    if batch_result.new_stats:
-        raw_stats = [s.model_dump() for s in batch_result.new_stats]
-        await stats_col.bulk_create_product_stats_if_not_exist(
-            raw_stats, session=session
-        )
-
-    # 4. Crear Transacciones
-    if batch_result.transactions:
-        raw_txs = [t.model_dump() for t in batch_result.transactions]
-        await transaction_col.create_many_product_transactions_with_session(
-            raw_txs, session=session
-        )

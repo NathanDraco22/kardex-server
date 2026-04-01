@@ -30,7 +30,7 @@ class Discount(BaseModel):
 class BaseProductSaleProfile(BaseModel):
     branchId: str
     productId: str
-    salePrice: int
+    salePrice: int = 0
     salePrice2: int = 0
     salePrice3: int = 0
     discounts: list[Discount] = []

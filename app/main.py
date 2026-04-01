@@ -14,7 +14,7 @@ if current_mode == "PROD":
     open_api_url = None
 
 app = FastAPI(
-    title="Ledger Server",
+    title="Kardex Server Lite",
     openapi_url=open_api_url,
     lifespan=lifespan,
 )

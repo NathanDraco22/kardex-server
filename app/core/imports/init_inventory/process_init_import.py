@@ -6,9 +6,7 @@ from tools import UuidTool, TimeTools
 from tools.search_tools import generate_prefixes
 
 from repos.v1.product_accounts import ProductAccountInDb
-from repos.v1.product_transactions import ProductTransactionInDb
 from repos.v1.product_sale_profiles import ProductSaleProfileInDb
-from repos.v1.product_stats import CreateProductStat
 from repos.v1.products import ProductInDb
 from repos.v1.adjust_entries import AdjustEntryInDb
 from repos.v1.common.models import UserInfo, EntryItem
@@ -20,8 +18,6 @@ from services.mongo_collections.v1 import (
     ProductsCollection,
     ProductAccountsCollection,
     ProductSaleProfilesCollection,
-    ProductStatsCollection,
-    ProductTransactionsCollection,
     AdjustEntriesCollection,
 )
 
@@ -31,16 +27,12 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
     adjust_entry_doc_col: AdjustEntriesCollection = AdjustEntriesCollection()
     account_col: ProductAccountsCollection = ProductAccountsCollection()
     profile_col: ProductSaleProfilesCollection = ProductSaleProfilesCollection()
-    stats_col: ProductStatsCollection = ProductStatsCollection()
-    transaction_col: ProductTransactionsCollection = ProductTransactionsCollection()
 
     now_milliseconds = TimeTools.get_now_in_milliseconds()
 
     new_products: list[ProductInDb] = []
     new_product_accounts: list[ProductAccountInDb] = []
     new_product_sale_profiles: list[ProductSaleProfileInDb] = []
-    new_product_stats: list[CreateProductStat] = []
-    new_product_transactions: list[ProductTransactionInDb] = []
     new_product_entry_items: list[EntryItem] = []
 
     for import_product in products:
@@ -75,35 +67,6 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
 
         new_product_sale_profiles.append(product_sale_profile)
 
-        product_stat = CreateProductStat(
-            productId=product.id,
-            branchId=branch_id,
-            startDate=now_milliseconds,
-            endDate=now_milliseconds,
-            totalUnits=0,
-            totalTransactions=0,
-            daysAnalyzed=0,
-            lastEstimation=now_milliseconds,
-        )
-
-        new_product_stats.append(product_stat)
-
-        product_transaction = ProductTransactionInDb(
-            id=UuidTool.generate_uuid(),
-            type="entry",
-            subtype="adjustment",
-            docNumber="0000",
-            documentId="0000",
-            quantity=import_product.quantity,
-            averageCost=import_product.cost,
-            resultStock=import_product.quantity,
-            productId=product.id,
-            branchId=branch_id,
-            createdAt=now_milliseconds,
-        )
-
-        new_product_transactions.append(product_transaction)
-
         entry_item = EntryItem(
             productId=product.id,
             productName=product.name,
@@ -136,14 +99,7 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
         for product_sale_profile in new_product_sale_profiles
     ]
 
-    new_product_stats_data = [
-        product_stat.model_dump() for product_stat in new_product_stats
-    ]
 
-    new_product_transactions_data = [
-        product_transaction.model_dump()
-        for product_transaction in new_product_transactions
-    ]
 
     new_init_entry_doc = AdjustEntryInDb(
         id="0000",
@@ -177,13 +133,7 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
             await profile_col.bulk_create_product_sale_profiles(
                 new_product_sale_profiles_data, session=session
             )
-            await stats_col.bulk_create_product_stats_if_not_exist(
-                new_product_stats_data, session=session
-            )
 
-            await transaction_col.create_many_product_transactions_with_session(
-                new_product_transactions_data, session=session
-            )
 
 
 async def process_inventory_import(
@@ -193,16 +143,12 @@ async def process_inventory_import(
     adjust_entry_doc_col: AdjustEntriesCollection = AdjustEntriesCollection()
     account_col: ProductAccountsCollection = ProductAccountsCollection()
     profile_col: ProductSaleProfilesCollection = ProductSaleProfilesCollection()
-    stats_col: ProductStatsCollection = ProductStatsCollection()
-    transaction_col: ProductTransactionsCollection = ProductTransactionsCollection()
 
     now_milliseconds = TimeTools.get_now_in_milliseconds()
 
     new_products: list[ProductInDb] = []
     new_product_accounts: list[ProductAccountInDb] = []
     new_product_sale_profiles: list[ProductSaleProfileInDb] = []
-    new_product_stats: list[CreateProductStat] = []
-    new_product_transactions: list[ProductTransactionInDb] = []
     new_product_entry_items: list[EntryItem] = []
 
     adjust_doc_id = ""
@@ -243,35 +189,6 @@ async def process_inventory_import(
 
         new_product_sale_profiles.append(product_sale_profile)
 
-        product_stat = CreateProductStat(
-            productId=product.id,
-            branchId=branch_id,
-            startDate=now_milliseconds,
-            endDate=now_milliseconds,
-            totalUnits=0,
-            totalTransactions=0,
-            daysAnalyzed=0,
-            lastEstimation=now_milliseconds,
-        )
-
-        new_product_stats.append(product_stat)
-
-        product_transaction = ProductTransactionInDb(
-            id=UuidTool.generate_uuid(),
-            type="entry",
-            subtype="adjustment",
-            docNumber=adjust_doc_id,
-            documentId=adjust_doc_id,
-            quantity=import_product.quantity,
-            averageCost=import_product.cost,
-            resultStock=import_product.quantity,
-            productId=product.id,
-            branchId=branch_id,
-            createdAt=now_milliseconds,
-        )
-
-        new_product_transactions.append(product_transaction)
-
         entry_item = EntryItem(
             productId=product.id,
             productName=product.name,
@@ -304,14 +221,7 @@ async def process_inventory_import(
         for product_sale_profile in new_product_sale_profiles
     ]
 
-    new_product_stats_data = [
-        product_stat.model_dump() for product_stat in new_product_stats
-    ]
 
-    new_product_transactions_data = [
-        product_transaction.model_dump()
-        for product_transaction in new_product_transactions
-    ]
 
     new_init_entry_doc = AdjustEntryInDb(
         id=adjust_doc_id,
@@ -345,10 +255,4 @@ async def process_inventory_import(
             await profile_col.bulk_create_product_sale_profiles(
                 new_product_sale_profiles_data, session=session
             )
-            await stats_col.bulk_create_product_stats_if_not_exist(
-                new_product_stats_data, session=session
-            )
 
-            await transaction_col.create_many_product_transactions_with_session(
-                new_product_transactions_data, session=session
-            )

@@ -4,7 +4,6 @@ from responses.v1 import ListResponse
 
 from .query_params import ProductQueryParams
 
-
 from repos.v1.products import (
     CreateProduct,
     UpdateProduct,
@@ -14,9 +13,14 @@ from repos.v1.products import (
     ProductsDataSource,
 )
 
+from core.product_register.process_create_product import process_create_product
+
 
 class ProductsController:
-    def __init__(self, products_repo: ProductsRepository) -> None:
+    def __init__(
+        self,
+        products_repo: ProductsRepository,
+    ) -> None:
         self.products_repo = products_repo
 
     async def create_product(self, body: CreateProduct) -> ProductInDb:
@@ -29,7 +33,9 @@ class ProductsController:
                     detail=f"{result.name} ya tiene el codigo {body.code}",
                 )
 
-        return await self.products_repo.create_product(body)
+        product = await process_create_product(body)
+
+        return product
 
     async def get_all_products(self) -> ListResponse[ProductInDb]:
         products = await self.products_repo.get_all_products()

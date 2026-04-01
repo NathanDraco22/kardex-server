@@ -1,17 +1,9 @@
 from typing import Any
 from pydantic import BaseModel
-from repos.v1.product_transactions import (
-    ProductTransactionInDb,
-    TransactionType,
-    TransactionSubType,
-)
 from repos.v1.product_accounts import ProductAccountInDb
-from tools import UuidTool, TimeTools
-
 
 from services.mongo_collections.v1 import (
     ProductAccountsCollection,
-    ProductTransactionsCollection,
 )
 
 
@@ -30,9 +22,6 @@ class ExitBatchResult(BaseModel):
     # La lista de pares (id, qty) que espera tu función bulk_substract
     stock_subtractions: list[tuple[str, int]]
 
-    # Las transacciones generadas (una por cada item de salida)
-    transactions: list[ProductTransactionInDb]
-
     # Lista de costos asignados en el mismo orden de los items de entrada
     # (Útil para que el orquestador actualice el documento original con el costo real de salida)
     assigned_costs: list[int]
@@ -44,12 +33,8 @@ def prepare_inventory_exit_batch(
     existing_accounts_dict: dict[str, ProductAccountInDb],
     document_id: str,
     doc_number: str,
-    tx_type: TransactionType,
-    tx_subtype: TransactionSubType,
     is_order_fulfillment: bool = False,
 ) -> ExitBatchResult:
-    now = TimeTools.get_now_in_milliseconds()
-
     # 1. Consolidar y Crear Mapa de Nombres
     consolidated_req: dict[str, int] = {}
     id_name_map: dict[str, str] = {}  # <--- Mapa para errores
@@ -94,35 +79,17 @@ def prepare_inventory_exit_batch(
         pair_op.append((p_id, total_qty_needed))
 
     # 3. Generar Transacciones (Igual que antes...)
-    transactions: list[ProductTransactionInDb] = []
     assigned_costs: list[int] = []
 
     for item in items:
         current_account = existing_accounts_dict[item.product_id]
         cost_at_exit = current_account.averageCost
         assigned_costs.append(cost_at_exit)
-
         new_stock_level = current_account.currentStock - item.quantity
-
-        new_tx = ProductTransactionInDb(
-            id=UuidTool.generate_uuid(),
-            documentId=document_id,
-            docNumber=doc_number,
-            type=tx_type,
-            subtype=tx_subtype,
-            productId=item.product_id,
-            branchId=branch_id,
-            quantity=-abs(item.quantity),
-            averageCost=cost_at_exit,
-            createdAt=now,
-            resultStock=new_stock_level,
-        )
-        transactions.append(new_tx)
         current_account.currentStock = new_stock_level
 
     return ExitBatchResult(
         stock_subtractions=pair_op,
-        transactions=transactions,
         assigned_costs=assigned_costs,
     )
 
@@ -133,10 +100,9 @@ async def execute_inventory_exit_db_operations(
     session: Any,
     # Inyección de dependencias
     account_col: ProductAccountsCollection,
-    transaction_col: ProductTransactionsCollection,
 ) -> None:
     """
-    Ejecuta la resta de inventario y creación de historial de salida.
+    Ejecuta la resta de inventario.
     """
 
     # 1. Restar Stock (Bulk)
@@ -146,11 +112,4 @@ async def execute_inventory_exit_db_operations(
             branch_id=branch_id,
             bulk_to_substrack=batch_result.stock_subtractions,
             session=session,
-        )
-
-    # 2. Insertar Transacciones (Bulk)
-    if batch_result.transactions:
-        raw_txs = [t.model_dump() for t in batch_result.transactions]
-        await transaction_col.create_many_product_transactions_with_session(
-            raw_txs, session=session
         )

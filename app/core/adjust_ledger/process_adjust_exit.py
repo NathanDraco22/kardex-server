@@ -7,12 +7,10 @@ from core.inventory import (
 
 from repos.v1.adjust_exits import AdjustExitInDb, CreateAdjustExit
 from repos.v1.product_accounts import ProductAccountInDb
-from repos.v1.product_transactions import TransactionSubType
 
 from services import MongoService
 from services.mongo_collections.v1 import (
     AdjustExitsCollection,
-    ProductTransactionsCollection,
     ProductAccountsCollection,
 )
 from core.counter_manager.counter_manager import CounterManager
@@ -25,19 +23,10 @@ async def process_adjust_exit(
 
     # Colecciones
     adjust_col = AdjustExitsCollection()
-    prd_transaction_col = ProductTransactionsCollection()
     product_account_col = ProductAccountsCollection()
 
     # Tools
     branches_tool = BranchesTool()
-
-    # Determinar el Subtipo de Transacción
-    # Mapeamos el string del input al Enum del sistema
-    tx_subtype: TransactionSubType = "adjustment"
-    if adjust_exit.type == "devolution":
-        tx_subtype = "devolution"
-    elif adjust_exit.type == "loss":
-        tx_subtype = "loss"
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
@@ -91,9 +80,6 @@ async def process_adjust_exit(
                 # Metadata
                 document_id=new_adjust_id,
                 doc_number=adjust_exit.docNumber,
-                # Tipos
-                tx_type="exit",
-                tx_subtype=tx_subtype,  # "adjustment", "loss", "devolution"
             )
 
             # 5. ACTUALIZAR COSTOS EN EL DOCUMENTO ORIGINAL
@@ -107,7 +93,6 @@ async def process_adjust_exit(
                 batch_result=batch_result,
                 session=session,
                 account_col=product_account_col,
-                transaction_col=prd_transaction_col,
             )
 
             # 7. CREAR DOCUMENTO DE AJUSTE
