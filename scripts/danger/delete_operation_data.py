@@ -3,7 +3,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 MONGO_URL = "mongodb://mongo:gkMCqLnJLuQUVgRCNsEMoHFyLXQchjda@yamabiko.proxy.rlwy.net:28317/?directConnection=true&retryWrites=false"
 
-
 async def delete_operation_data():
     mongo_client = AsyncIOMotorClient(MONGO_URL)
     db = mongo_client.get_database("LedgerDB")
