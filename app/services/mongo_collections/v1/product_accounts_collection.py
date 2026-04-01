@@ -689,6 +689,7 @@ class ProductAccountsCollection:
                 {
                     "$match": {
                         "branchId": branch_id,
+                        "currentStock": {"$ne": 0},
                     }
                 },
                 {
