@@ -54,6 +54,19 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
             createdAt=now_milliseconds,
         )
 
+        if branch_id != "ORIGIN_BRANCH":
+            origin_product_account = ProductAccountInDb(
+                productId=product.id,
+                branchId="ORIGIN_BRANCH",
+                currentStock=0,
+                averageCost=import_product.cost,
+                lastCost=import_product.cost,
+                maximumCost=import_product.cost,
+                createdAt=now_milliseconds,
+            )
+
+            new_product_accounts.append(origin_product_account)
+
         new_product_accounts.append(product_account)
 
         product_sale_profile = ProductSaleProfileInDb(
@@ -64,6 +77,18 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
             salePrice3=import_product.price3,
             updatedAt=now_milliseconds,
         )
+
+        if branch_id != "ORIGIN_BRANCH":
+            origin_product_sale_profile = ProductSaleProfileInDb(
+                productId=product.id,
+                branchId="ORIGIN_BRANCH",
+                salePrice=import_product.price,
+                salePrice2=import_product.price2,
+                salePrice3=import_product.price3,
+                updatedAt=now_milliseconds,
+            )
+
+            new_product_sale_profiles.append(origin_product_sale_profile)
 
         new_product_sale_profiles.append(product_sale_profile)
 
@@ -176,6 +201,19 @@ async def process_inventory_import(
             createdAt=now_milliseconds,
         )
 
+        if branch_id != "ORIGIN_BRANCH":
+            origin_product_account = ProductAccountInDb(
+                productId=product.id,
+                branchId="ORIGIN_BRANCH",
+                currentStock=0,
+                averageCost=import_product.cost,
+                lastCost=import_product.cost,
+                maximumCost=import_product.cost,
+                createdAt=now_milliseconds,
+            )
+
+            new_product_accounts.append(origin_product_account)
+
         new_product_accounts.append(product_account)
 
         product_sale_profile = ProductSaleProfileInDb(
@@ -186,6 +224,18 @@ async def process_inventory_import(
             salePrice3=import_product.price3,
             updatedAt=now_milliseconds,
         )
+
+        if branch_id != "ORIGIN_BRANCH":
+            origin_product_sale_profile = ProductSaleProfileInDb(
+                productId=product.id,
+                branchId="ORIGIN_BRANCH",
+                salePrice=import_product.price,
+                salePrice2=import_product.price2,
+                salePrice3=import_product.price3,
+                updatedAt=now_milliseconds,
+            )
+
+            new_product_sale_profiles.append(origin_product_sale_profile)
 
         new_product_sale_profiles.append(product_sale_profile)
 
