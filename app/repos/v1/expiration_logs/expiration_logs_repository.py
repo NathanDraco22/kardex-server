@@ -8,8 +8,16 @@ from .models.expiration_log_model import (
 
 
 class ExpirationLogsRepository:
+    _instance: "ExpirationLogsRepository|None" = None
+
     def __init__(self, expiration_logs_ds: ExpirationLogsDataSource):
         self.expiration_logs_ds = expiration_logs_ds
+
+    @classmethod
+    def get_instance(cls) -> "ExpirationLogsRepository":
+        if cls._instance is None:
+            cls._instance = cls(ExpirationLogsDataSource())
+        return cls._instance
 
     async def create_expiration_log(
         self, create_expiration_log: CreateExpirationLog

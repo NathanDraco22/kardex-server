@@ -9,6 +9,14 @@ from repos.v1.product_accounts import (
     SubstractToProductAccount,
 )
 
+from repos.v1.expiration_logs import (
+    ExpirationLogsRepository,
+    ExpirationLogsDataSource,
+    CreateExpirationLog,
+    ProductInfo,
+)
+from repos.v1.products import ProductsRepository
+
 
 class ProductAccountsController:
     def __init__(self, product_account_repo: ProductAccountsRepository) -> None:
@@ -34,7 +42,9 @@ class ProductAccountsController:
             product_id, branch_id, **kwargs
         )
         if res is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Account not found"
+            )
         return res
 
     async def add_product_account(
@@ -45,7 +55,33 @@ class ProductAccountsController:
             product_id, branch_id, **kwargs
         )
         if res is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Account not found"
+            )
+
+        try:
+            if add_data.expirationDate is not None:
+                product_repo = ProductsRepository.get_instance()
+                product = await product_repo.get_product_by_id(res.productId)
+
+                if product is not None:
+                    create_log = CreateExpirationLog(
+                        product=ProductInfo(
+                            id=product.id,
+                            name=product.name,
+                            brandName=product.brandName,
+                            categoryName=product.categoryName,
+                            code=product.code,
+                            unitName=product.unitName,
+                        ),
+                        branchId=res.branchId,
+                        expirationDate=add_data.expirationDate,
+                    )
+                    expiration_log_repo = ExpirationLogsRepository.get_instance()
+                    await expiration_log_repo.create_expiration_log(create_log)
+        except Exception as e:
+            print(e)
+
         return res
 
     async def substract_product_account(
@@ -56,7 +92,9 @@ class ProductAccountsController:
             product_id, branch_id, **kwargs
         )
         if res is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Account not found"
+            )
         return res
 
 

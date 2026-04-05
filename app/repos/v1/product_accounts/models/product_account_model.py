@@ -15,12 +15,16 @@ class UpdateProductAccount(BaseModel):
     currentStock: int | None = None
     averageCost: int | None = None
 
+
 class AddToProductAccount(BaseModel):
     currentStock: int
-    averageCost: int 
+    averageCost: int
+    expirationDate: int | None = None
+
 
 class SubstractToProductAccount(BaseModel):
     currentStock: int
+
 
 class ProductAccountInDb(BaseProductAccount):
     createdAt: int

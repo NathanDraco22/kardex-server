@@ -11,8 +11,16 @@ from tools import UuidTool, TimeTools, generate_prefixes
 
 
 class ProductsRepository:
+    _instance: "ProductsRepository|None" = None
+
     def __init__(self, products_ds: ProductsDataSource):
         self.products_ds = products_ds
+
+    @classmethod
+    def get_instance(cls) -> "ProductsRepository":
+        if cls._instance is None:
+            cls._instance = cls(ProductsDataSource())
+        return cls._instance
 
     async def create_product(self, create_product: CreateProduct) -> ProductInDb:
         if not create_product.code:
