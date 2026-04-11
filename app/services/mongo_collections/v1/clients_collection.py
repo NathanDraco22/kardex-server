@@ -104,19 +104,45 @@ class ClientsCollection:
 
         safe_query = re.escape(text_query)
 
-        query = {
-            "$text": {
-                "$search": safe_query,
-                "$caseSensitive": False,
-                "$diacriticSensitive": False,
+        pipeline = [
+            {
+                "$match": {
+                    "$text": {
+                        "$search": safe_query,
+                        "$caseSensitive": False,
+                        "$diacriticSensitive": False,
+                    },
+                    "isDeleted": False,
+                    "isInternal": False,
+                    "balance": {
+                        "$ne": 0,
+                    },
+                }
             },
-            "isDeleted": False,
-            "isInternal": False,
-            "balance": {
-                "$ne": 0,
+            {
+                "$addFields": {
+                    "baseScore": {"$meta": "textScore"},
+                    "positionBoost": {
+                        "$cond": [
+                            {
+                                "$regexMatch": {
+                                    "input": "$name",
+                                    "regex": f"^{safe_query}",
+                                    "options": "i",
+                                }
+                            },
+                            100,
+                            0,
+                        ]
+                    },
+                }
             },
-        }
-        cursor = collection.find(query).sort("name", 1).limit(10)
+            {"$addFields": {"finalScore": {"$add": ["$baseScore", "$positionBoost"]}}},
+            {"$sort": {"finalScore": -1, "name": 1}},
+            {"$limit": 20},
+            {"$project": {"baseScore": 0, "positionBoost": 0, "finalScore": 0}},
+        ]
+        cursor = collection.aggregate(pipeline)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -200,12 +226,19 @@ class ClientsCollection:
                     [
                         ("name", "text"),
                         ("searchPrefixes", "text"),
-                        ("location", "text"),
                         ("group", "text"),
                         ("cardId", "text"),
                         ("phone", "text"),
                         ("id", "text"),
                     ],
+                    weights={
+                        "name": 10,
+                        "searchPrefixes": 5,
+                        "cardId": 1,
+                        "phone": 1,
+                        "id": 1,
+                    },
+                    name="TextSearchIndex",
                 ),
                 IndexModel(
                     [
