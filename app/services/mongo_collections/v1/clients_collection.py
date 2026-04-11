@@ -164,17 +164,42 @@ class ClientsCollection:
 
         safe_query = re.escape(text_query)
 
-        query = {
-            "$text": {
-                "$search": safe_query,
-                "$caseSensitive": False,
-                "$diacriticSensitive": False,
+        pipeline = [
+            {
+                "$match": {
+                    "$text": {
+                        "$search": safe_query,
+                        "$caseSensitive": False,
+                        "$diacriticSensitive": False,
+                    },
+                    "isDeleted": False,
+                    "isInternal": False,
+                }
             },
-            "isDeleted": False,
-            "isInternal": False,
-        }
-
-        cursor = collection.find(query).limit(7)
+            {
+                "$addFields": {
+                    "baseScore": {"$meta": "textScore"},
+                    "positionBoost": {
+                        "$cond": [
+                            {
+                                "$regexMatch": {
+                                    "input": "$name",
+                                    "regex": f"^{safe_query}",
+                                    "options": "i",
+                                }
+                            },
+                            100,
+                            0,
+                        ]
+                    },
+                }
+            },
+            {"$addFields": {"finalScore": {"$add": ["$baseScore", "$positionBoost"]}}},
+            {"$sort": {"finalScore": -1, "name": 1}},
+            {"$limit": 20},
+            {"$project": {"baseScore": 0, "positionBoost": 0, "finalScore": 0}},
+        ]
+        cursor = collection.aggregate(pipeline)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
