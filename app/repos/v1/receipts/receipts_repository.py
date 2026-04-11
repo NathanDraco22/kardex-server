@@ -6,8 +6,16 @@ from .models.branch_receipt_amount_total import BranchAppliedReceiptsAmountsSumm
 
 
 class ReceiptsRepository:
+    _instance: "ReceiptsRepository|None" = None
+
     def __init__(self, receipts_ds: ReceiptsDataSource):
         self.receipts_ds = receipts_ds
+
+    @classmethod
+    def get_instance(cls) -> "ReceiptsRepository":
+        if cls._instance is None:
+            cls._instance = ReceiptsRepository(ReceiptsDataSource())
+        return cls._instance
 
     async def create_receipt(self, create_receipt: CreateReceipt) -> ReceiptInDb:
         # TODO: implement create

@@ -6,6 +6,7 @@ from .transfer_item import TransferItem
 from .entry_item import EntryItem
 from .exit_item import ExitItem
 from .coordinate import Coordinates
+from .product_stock_demant import ProductStockDemand
 
 __all__ = [
     "ProductItem",
@@ -19,4 +20,5 @@ __all__ = [
     "EntryItem",
     "ExitItem",
     "Coordinates",
+    "ProductStockDemand",
 ]
