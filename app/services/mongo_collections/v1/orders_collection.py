@@ -37,6 +37,8 @@ class OrdersCollection:
         cliend_id = kwargs.pop("clientId", None)
         branch_id = kwargs.pop("branchId", None)
 
+        created_by = kwargs.pop("createdBy", None)
+
         query = {}
 
         if branch_id:
@@ -50,6 +52,9 @@ class OrdersCollection:
 
         if ne_status:
             query["status"] = {"$ne": ne_status}
+
+        if created_by:
+            query["createdBy.id"] = created_by
 
         cursor = collection.find(query).sort("createdAt", -1).skip(skip).limit(limit)
 
