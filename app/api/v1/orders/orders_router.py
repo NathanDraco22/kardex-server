@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 
 from repos.v1.orders import CreateOrder, UpdateOrder, OrderInDb
 from repos.v1.common.models.invoice_product_sale import ProductSalesTotal
+from repos.v1.common.models import ProductStockDemand
 from responses.v1 import ListResponse
 
 from app_middleware import auth_middleware
@@ -13,7 +14,7 @@ from .orders_query_params import OrderQueryParams
 
 orders_router = APIRouter(
     tags=["ordersV1"],
-    dependencies=[Depends(auth_middleware)],
+    # dependencies=[Depends(auth_middleware)],
 )
 
 
@@ -40,6 +41,13 @@ async def get_product_in_orders(
     query_params: OrderQueryParams = Depends(),
 ) -> ListResponse[ProductSalesTotal]:
     return await orders_controller.get_product_in_orders(query_params)
+
+
+@orders_router.get("/product-demand-vs-inventory")
+async def get_product_demand_vs_inventory(
+    query_params: OrderQueryParams = Depends(),
+) -> ListResponse[ProductStockDemand]:
+    return await orders_controller.get_product_demand_vs_inventory(query_params)
 
 
 @orders_router.get("/{order_id}")

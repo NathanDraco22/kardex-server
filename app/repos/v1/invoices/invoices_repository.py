@@ -9,8 +9,16 @@ from repos.v1.invoices.models.pending_invoice_total import PendingInvoiceTotalsB
 
 
 class InvoicesRepository:
+    _instance: "InvoicesRepository|None" = None
+
     def __init__(self, invoices_ds: InvoicesDataSource):
         self.invoices_ds = invoices_ds
+
+    @classmethod
+    def get_instance(cls) -> "InvoicesRepository":
+        if not cls._instance:
+            cls._instance = cls(InvoicesDataSource())
+        return cls._instance
 
     async def get_all_invoices(self, **kargs) -> list[InvoiceInDb]:
         results = await self.invoices_ds.get_all_invoices(**kargs)

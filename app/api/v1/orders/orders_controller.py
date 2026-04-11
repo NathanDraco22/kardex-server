@@ -114,6 +114,13 @@ class OrdersController:
         res = await self.orders_repo.get_products_in_orders(**raw_params)
         return ListResponse(count=len(res), data=res)
 
+    async def get_product_demand_vs_inventory(
+        self, params: OrderQueryParams
+    ) -> ListResponse[ProductSalesTotal]:
+        raw_params = params.model_dump(exclude_none=True)
+        res = await self.orders_repo.get_demand_vs_stock(**raw_params)
+        return ListResponse(count=len(res), data=res)
+
     async def get_order_by_id(self, order_id: str) -> OrderInDb:
         order = await self.orders_repo.get_order_by_id(order_id)
         if order is None:

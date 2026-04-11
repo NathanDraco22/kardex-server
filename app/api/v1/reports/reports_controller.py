@@ -8,10 +8,14 @@ from repos.v1.executive_summaries import (
     ExecutiveSummariesDataSource,
     ExecutiveSummaryInDb,
 )
+from repos.v1.receipts import ReceiptsRepository
+from repos.v1.invoices import InvoicesRepository
+
 from repos.v1.common.models import InventoryBranchDetail
 from core.report_manager.report_manager import ReportManager
 
-from .query_params import ReportQueryParams
+from .query_params import ReportQueryParams, TotalsQueryParams
+from .responses import TotalsResult
 
 
 class ReportsController:
@@ -23,7 +27,8 @@ class ReportsController:
         self.daily_summaries_repo = daily_summaries_repo
         self.executive_summaries_repo = executive_summaries_repo
         self.report_manager = ReportManager()
-        pass
+        self.receipts_repo = ReceiptsRepository.get_instance()
+        self.invoices_repo = InvoicesRepository.get_instance()
 
     async def get_general_report(
         self, params: ReportQueryParams
@@ -63,6 +68,23 @@ class ReportsController:
             createdAt=TimeTools.get_now_in_milliseconds(),
         )
         return executive_summary
+
+    async def get_total_results_by_date_range(
+        self, params: TotalsQueryParams
+    ) -> TotalsResult:
+        query = params.model_dump(exclude_none=True)
+        invoices_totals = await self.invoices_repo.get_totals_invoices_by_payment_type(
+            **query
+        )
+        receipts = await self.receipts_repo.get_totals_from_receipts_by_payment_method(
+            **query
+        )
+
+        return TotalsResult(
+            branchId=params.branchId,
+            invoices=invoices_totals,
+            receipts=receipts,
+        )
 
 
 reports_controller = ReportsController(

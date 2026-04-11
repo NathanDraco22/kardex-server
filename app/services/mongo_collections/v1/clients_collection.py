@@ -206,6 +206,16 @@ class ClientsCollection:
                         ("phone", "text"),
                         ("id", "text"),
                     ],
+                    weights={
+                        "name": 10,
+                        "searchPrefixes": 5,
+                        "location": 1,
+                        "group": 1,
+                        "cardId": 1,
+                        "phone": 1,
+                        "id": 1,
+                    },
+                    name="TextSearchIndex",
                 ),
                 IndexModel(
                     [
