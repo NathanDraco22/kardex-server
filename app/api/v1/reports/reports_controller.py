@@ -80,10 +80,15 @@ class ReportsController:
             **query
         )
 
+        detail_invoices = await self.invoices_repo.get_all_invoices(**query)
+        detail_receipts = await self.receipts_repo.get_all_receipts(**query)
+
         return TotalsResult(
             branchId=params.branchId,
             invoices=invoices_totals,
             receipts=receipts,
+            detailInvoices=detail_invoices,
+            detailReceipts=detail_receipts,
         )
 
 
