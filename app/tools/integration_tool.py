@@ -1,4 +1,3 @@
-from typing import Self
 from repos.v1.integrations import (
     IntegrationsRepository,
     IntegrationsDataSource,
@@ -7,10 +6,12 @@ from repos.v1.integrations import (
 
 
 class IntegrationTool:
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
+    _instance: "IntegrationTool|None" = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(cls, cls).__new__(cls)
+        return cls._instance
 
     __current_integration: IntegrationInDb | None = None
 

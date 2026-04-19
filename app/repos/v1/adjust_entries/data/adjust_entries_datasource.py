@@ -1,14 +1,8 @@
 from typing import Any
-from typing_extensions import Self
 from services.mongo_collections.v1 import AdjustEntriesCollection
 
 
 class AdjustEntriesDataSource:
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
-
     async def create_adjust_entry(self, adjust_entry: dict[str, Any]) -> dict[str, Any]:
         collection = AdjustEntriesCollection()
         await collection.create_adjust_entry(adjust_entry)

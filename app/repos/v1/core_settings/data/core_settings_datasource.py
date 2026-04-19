@@ -1,14 +1,8 @@
 from typing import Any
-from typing_extensions import Self
 from services.mongo_collections.v1 import CoreSettingsCollection
 
 
 class CoreSettingsDataSource:
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
-
     async def create_core_setting(self, core_setting: dict[str, Any]) -> dict[str, Any]:
         collection = CoreSettingsCollection()
         await collection.create_core_setting(core_setting)
