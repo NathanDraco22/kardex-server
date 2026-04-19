@@ -1,14 +1,8 @@
 from typing import Any
-from typing_extensions import Self
 from services.mongo_collections.v1 import ProductAccountsCollection
 
 
 class ProductAccountsDataSource:
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
-
     async def create_product_account(
         self, product_account: dict[str, Any]
     ) -> dict[str, Any]:
