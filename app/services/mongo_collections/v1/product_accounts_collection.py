@@ -46,12 +46,14 @@ class ProductAccountsCollection:
         self, product_id: str, branch_id: str, **kwargs
     ) -> dict[str, Any] | None:
         collection = self.__collection
-            
+
         if not kwargs:
-            return await self.get_product_account_by_product_and_branch_id(product_id, branch_id)
-            
+            return await self.get_product_account_by_product_and_branch_id(
+                product_id, branch_id
+            )
+
         kwargs["updatedAt"] = TimeTools.get_now_in_milliseconds()
-        
+
         result = await collection.find_one_and_update(
             {"productId": product_id, "branchId": branch_id},
             {"$set": kwargs},
@@ -63,20 +65,22 @@ class ProductAccountsCollection:
         self, product_id: str, branch_id: str, **kwargs
     ) -> dict[str, Any] | None:
         collection = self.__collection
-            
+
         if not kwargs:
-            return await self.get_product_account_by_product_and_branch_id(product_id, branch_id)
-            
+            return await self.get_product_account_by_product_and_branch_id(
+                product_id, branch_id
+            )
+
         inc_set = {}
         if "currentStock" in kwargs:
             inc_set["currentStock"] = kwargs.pop("currentStock")
-            
+
         kwargs["updatedAt"] = TimeTools.get_now_in_milliseconds()
-        
+
         update_query = {"$set": kwargs}
         if inc_set:
             update_query["$inc"] = inc_set
-        
+
         result = await collection.find_one_and_update(
             {"productId": product_id, "branchId": branch_id},
             update_query,
@@ -88,20 +92,22 @@ class ProductAccountsCollection:
         self, product_id: str, branch_id: str, **kwargs
     ) -> dict[str, Any] | None:
         collection = self.__collection
-            
+
         if not kwargs:
-            return await self.get_product_account_by_product_and_branch_id(product_id, branch_id)
-            
+            return await self.get_product_account_by_product_and_branch_id(
+                product_id, branch_id
+            )
+
         inc_set = {}
         if "currentStock" in kwargs:
             inc_set["currentStock"] = -abs(kwargs.pop("currentStock"))
-            
+
         kwargs["updatedAt"] = TimeTools.get_now_in_milliseconds()
-        
+
         update_query = {"$set": kwargs}
         if inc_set:
             update_query["$inc"] = inc_set
-        
+
         result = await collection.find_one_and_update(
             {"productId": product_id, "branchId": branch_id},
             update_query,
@@ -273,7 +279,7 @@ class ProductAccountsCollection:
 
             qty = abs(substract_to_current_stock)
 
-            query_filter = {
+            query_filter: dict = {
                 "productId": product_id,
                 "branchId": branch_id,
             }
@@ -793,7 +799,7 @@ class ProductAccountsCollection:
 
         operations = []
         for p_id, qty in bulk_data:
-            query_filter = {
+            query_filter: dict = {
                 "productId": p_id,
                 "branchId": branch_id,
             }
