@@ -2,12 +2,13 @@ from repos.v1.users import UsersRepository, UsersDataSource, UserInDb
 
 
 class UsersTool:
+    _instance: "UsersTool|None" = None
     __users_repo = UsersRepository(UsersDataSource())
 
     def __new__(cls):
-        if not hasattr(cls, "instance"):
-            cls.instance = super(UsersTool, cls).__new__(cls)
-        return cls.instance
+        if cls._instance is None:
+            cls._instance = super(UsersTool, cls).__new__(cls)
+        return cls._instance
 
     _inactive_users: list[UserInDb] = []
 

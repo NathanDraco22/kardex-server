@@ -1,14 +1,8 @@
 from typing import Any
-from typing_extensions import Self
 from services.mongo_collections.v1 import ClientsCollection
 
 
 class ClientsDataSource:
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
-
     async def create_client(self, client: dict[str, Any]) -> dict[str, Any]:
         collection = ClientsCollection()
         await collection.create_client(client)

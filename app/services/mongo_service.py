@@ -7,10 +7,12 @@ DatabaseName = Literal["LedgerDB"]
 
 
 class MongoService:
+    _instance = None
+
     def __new__(cls):
-        if not hasattr(cls, "instance"):
-            cls.instance = super(MongoService, cls).__new__(cls)
-        return cls.instance
+        if cls._instance is None:
+            cls._instance = super(cls, cls).__new__(cls)
+        return cls._instance
 
     client: AsyncIOMotorClient[dict[str, Any]]
 

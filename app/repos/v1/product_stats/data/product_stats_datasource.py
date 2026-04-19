@@ -1,14 +1,8 @@
 from typing import Any
-from typing_extensions import Self
 from services.mongo_collections.v1 import ProductStatsCollection
 
 
 class ProductStatsDataSource:
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
-
     async def get_all_product_stats(self, **kwargs) -> list[dict[str, Any]]:
         collection = ProductStatsCollection()
         return await collection.fetch_all_product_stats(**kwargs)

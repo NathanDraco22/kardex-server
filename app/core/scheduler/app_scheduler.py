@@ -1,6 +1,5 @@
 import asyncio
 from datetime import datetime, timedelta
-from typing import Self
 
 from core.scheduler.daily_report_maker import (
     DailyReportMaker,
@@ -13,10 +12,12 @@ from tools import TimeTools
 
 
 class AppScheduler:
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
+    _instance: "AppScheduler|None" = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(cls, cls).__new__(cls)
+        return cls._instance
 
     _started = False
 

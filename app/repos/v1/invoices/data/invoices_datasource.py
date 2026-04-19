@@ -1,14 +1,8 @@
 from typing import Any, AsyncGenerator
-from typing_extensions import Self
 from services.mongo_collections.v1 import InvoicesCollection
 
 
 class InvoicesDataSource:
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
-
     async def create_invoice(self, invoice: dict[str, Any]) -> dict[str, Any]:
         collection = InvoicesCollection()
         await collection.create_invoice(invoice)

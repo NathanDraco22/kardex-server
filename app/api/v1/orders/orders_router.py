@@ -14,7 +14,7 @@ from .orders_query_params import OrderQueryParams
 
 orders_router = APIRouter(
     tags=["ordersV1"],
-    # dependencies=[Depends(auth_middleware)],
+    dependencies=[Depends(auth_middleware)],
 )
 
 

@@ -7,11 +7,12 @@ from pymongo import IndexModel
 
 class ProductCategoriesCollection:
     collection_name = "ProductCategories"
+    _instance: "ProductCategoriesCollection|None" = None
 
     def __new__(cls):
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
+        if cls._instance is None:
+            cls._instance = super(cls, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self):
         mongo_service = MongoService()
