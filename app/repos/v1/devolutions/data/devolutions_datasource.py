@@ -1,14 +1,8 @@
 from typing import Any
-from typing_extensions import Self
 from services.mongo_collections.v1 import DevolutionsCollection
 
 
 class DevolutionsDataSource:
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
-
     async def create_devolution(self, devolution: dict[str, Any]) -> dict[str, Any]:
         collection = DevolutionsCollection()
         await collection.create_devolution(devolution)

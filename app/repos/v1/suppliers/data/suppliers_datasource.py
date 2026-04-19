@@ -1,14 +1,8 @@
 from typing import Any
-from typing_extensions import Self
 from services.mongo_collections.v1 import SuppliersCollection
 
 
 class SuppliersDataSource:
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
-
     async def create_supplier(self, supplier: dict[str, Any]) -> dict[str, Any]:
         collection = SuppliersCollection()
         await collection.create_supplier(supplier)

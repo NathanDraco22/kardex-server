@@ -1,14 +1,8 @@
 from typing import Any
-from typing_extensions import Self
 from services.mongo_collections.v1 import EntryDocsCollection
 
 
 class EntryDocsDataSource:
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
-
     async def create_entry_doc(self, entry_doc: dict[str, Any]) -> dict[str, Any]:
         collection = EntryDocsCollection()
         await collection.create_entry_doc(entry_doc)

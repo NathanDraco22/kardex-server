@@ -20,6 +20,7 @@ from repos.v1.orders import (
 
 from responses.v1 import ListResponse
 from .orders_query_params import OrderQueryParams
+from repos.v1.common.models import ProductStockDemand
 
 
 class OrdersController:
@@ -116,7 +117,7 @@ class OrdersController:
 
     async def get_product_demand_vs_inventory(
         self, params: OrderQueryParams
-    ) -> ListResponse[ProductSalesTotal]:
+    ) -> ListResponse[ProductStockDemand]:
         raw_params = params.model_dump(exclude_none=True)
         res = await self.orders_repo.get_demand_vs_stock(**raw_params)
         return ListResponse(count=len(res), data=res)

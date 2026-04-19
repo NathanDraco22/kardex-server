@@ -1,4 +1,3 @@
-from typing import Self
 from dataclasses import dataclass
 from services import ProductClassifierService
 
@@ -19,10 +18,12 @@ class ProductEstimationResult:
 
 
 class ProductClassifier:
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
+    _instance: "ProductClassifier|None" = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(cls, cls).__new__(cls)
+        return cls._instance
 
     def estimate_classification(
         self, products_stat: list[ProductDataStat]
