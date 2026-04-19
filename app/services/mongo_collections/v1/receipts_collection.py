@@ -6,11 +6,12 @@ from services import MongoService
 
 class ReceiptsCollection:
     collection_name = "Receipts"
+    _instance: "ReceiptsCollection|None" = None
 
     def __new__(cls):
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
+        if cls._instance is None:
+            cls._instance = super(cls, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self):
         mongo_service = MongoService()

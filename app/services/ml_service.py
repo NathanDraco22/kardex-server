@@ -1,4 +1,4 @@
-from typing import Any, Self
+from typing import Any
 import onnxruntime as ort
 from onnxruntime import InferenceSession
 
@@ -12,10 +12,12 @@ class MLService:
 
 
 class ProductClassifierService(MLService):
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
+    _instance: "ProductClassifierService|None" = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(cls, cls).__new__(cls)
+        return cls._instance
 
     _model_session: InferenceSession
 

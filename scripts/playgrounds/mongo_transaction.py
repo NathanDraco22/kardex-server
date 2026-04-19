@@ -1,10 +1,11 @@
 import asyncio
+from typing import Any
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import errors
 
 # Configuración (Requiere Replica Set o MongoDB Atlas)
 URI = ""
-client = AsyncIOMotorClient(URI)
+client = AsyncIOMotorClient[dict[Any, Any]](URI)
 db = client["test_db"]
 collection = db["productos"]
 
@@ -27,8 +28,12 @@ async def transaccion_lenta_t1(nuevo_costo):
     async with await client.start_session() as session:
         try:
             async with session.start_transaction():
-                print(f"[T1] Iniciando... leyendo datos.")
                 doc = await collection.find_one({"_id": "refresco_1"}, session=session)
+                if doc is None:
+                    print(
+                        "[T1] ERROR: No se pudo encontrar el producto en la base de datos."
+                    )
+                    return
                 print(f"[T1] Leído -> Stock: {doc['stock']}, Costo: {doc['costo']}")
 
                 print(
@@ -77,6 +82,9 @@ async def main():
     )
 
     final_doc = await collection.find_one({"_id": "refresco_1"})
+    if final_doc is None:
+        print("No se pudo encontrar el producto en la base de datos.")
+        return
     print("\n--- ESTADO FINAL EN DB ---")
     print(f"Stock: {final_doc['stock']}")
     print(f"Costo: {final_doc['costo']}")
