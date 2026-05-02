@@ -210,6 +210,48 @@ class InvoicesCollection:
 
         return result
 
+    async def subtract_from_amount_paid(
+        self, invoice_id: str, amount_paid: int, session: Any
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+
+        pipeline = [
+            {
+                "$set": {
+                    "amountPaid": {
+                        "$subtract": ["$amountPaid", amount_paid],
+                    },
+                },
+            },
+            {
+                "$set": {
+                    "status": {
+                        "$cond": {
+                            "if": {"$lte": ["$amountPaid", 0]},
+                            "then": "open",
+                            "else": "partiallyPaid",
+                        }
+                    },
+                    "paidAt": {
+                        "$cond": {
+                            "if": {"$lte": ["$amountPaid", 0]},
+                            "then": None,
+                            "else": "$paidAt",
+                        }
+                    },
+                }
+            },
+        ]
+
+        result = await collection.find_one_and_update(
+            {"id": invoice_id},
+            pipeline,
+            return_document=ReturnDocument.AFTER,
+            session=session,
+        )
+
+        return result
+
     async def update_invoice_by_id_with_session(
         self,
         invoice_id: str,

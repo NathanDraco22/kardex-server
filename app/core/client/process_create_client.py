@@ -1,5 +1,5 @@
 import random
-from typing import Tuple
+from typing import Tuple, Any
 from tools import UuidTool, TimeTools
 from tools.search_tools import generate_prefixes
 from core.counter_manager.counter_manager import CounterManager
@@ -260,10 +260,12 @@ class InitialBalanceClient:
 
 async def create_multiple_initial_balance(
     balance_requests: list[InitialBalanceClient],
+    external_session: Any = None,
 ) -> list[ClientInDb]:
     """
     Agrega un saldo inicial a múltiples clientes existentes mediante la creación
     de facturas y movimientos financieros en una sola transacción de base de datos.
+    Si se proporciona una sesión externa, se utilizará esa en lugar de iniciar una nueva.
     """
     mongo_client = MongoService().client
 
@@ -271,116 +273,121 @@ async def create_multiple_initial_balance(
     invoice_col = InvoicesCollection()
     client_tx_col = ClientTransactionsCollection()
 
-    updated_clients: list[ClientInDb] = []
+    if external_session:
+        return await _execute_multiple_initial_balance(
+            balance_requests, external_session, client_col, invoice_col, client_tx_col
+        )
 
     # Iniciamos la sesión y la transacción UNA sola vez para todo el lote
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
-            current_time = TimeTools.get_now_in_milliseconds()
+            return await _execute_multiple_initial_balance(
+                balance_requests, session, client_col, invoice_col, client_tx_col
+            )
 
-            for req in balance_requests:
-                client = req.client
-                initial_balance = req.initial_balance
-                branch_id = req.branch_id
-                product_name = req.product_name
 
-                first_letter = client.name[0].upper()
+async def _execute_multiple_initial_balance(
+    balance_requests: list[InitialBalanceClient],
+    session: Any,
+    client_col: ClientsCollection,
+    invoice_col: InvoicesCollection,
+    client_tx_col: ClientTransactionsCollection,
+) -> list[ClientInDb]:
+    updated_clients: list[ClientInDb] = []
+    current_time = TimeTools.get_now_in_milliseconds()
 
-                suffix = random.randint(0, 1000000)
+    for req in balance_requests:
+        client = req.client
+        initial_balance = req.initial_balance
+        branch_id = req.branch_id
+        product_name = req.product_name
 
-                new_invoice_id = (
-                    first_letter
-                    + str(TimeTools.get_now_in_milliseconds())
-                    + str(suffix)
-                )
+        first_letter = client.name[0].upper()
 
-                # Nota: Si docNumber tiene un índice único en DB, asegúrate de que
-                # client.id no cause colisiones si a un mismo cliente se le
-                # aplican dos saldos iniciales distintos en el futuro.
-                invoice_doc_number = new_invoice_id
+        suffix = random.randint(0, 1000000)
 
-                client_info = ClientInfo(
-                    name=client.name,
-                    phone=client.phone or "",
-                    address=client.address or "",
-                    email=client.email or "",
-                    cardId=client.cardId or "",
-                )
+        new_invoice_id = (
+            first_letter + str(TimeTools.get_now_in_milliseconds()) + str(suffix)
+        )
+        invoice_doc_number = new_invoice_id
 
-                sale_item_name = product_name if product_name else "SALDO INICIAL"
+        client_info = ClientInfo(
+            name=client.name,
+            phone=client.phone or "",
+            address=client.address or "",
+            email=client.email or "",
+            cardId=client.cardId or "",
+        )
 
-                initial_balance_item = SaleItem(
-                    product=ProductItem(
-                        id="INITIAL_BALANCE",
-                        name=sale_item_name,
-                        unitName="UNIDAD",
-                        brandName="SISTEMA",
-                        categoryName="SISTEMA",
-                        tags=["INITIAL_BALANCE"],
-                    ),
-                    selectedPrice=1,
-                    quantity=1,
-                    bonQuantity=0,
-                    cost=initial_balance,
-                    price=initial_balance,
-                    subTotal=initial_balance,
-                    discountPercentage=0,
-                    totalDiscount=0,
-                    iva=0,
-                    total=initial_balance,
-                )
+        sale_item_name = product_name if product_name else "SALDO INICIAL"
 
-                create_invoice_data = CreateInvoice(
-                    branchId=branch_id,
-                    clientId=client.id,
-                    clientInfo=client_info,
-                    docNumber=invoice_doc_number,
-                    saleItems=[initial_balance_item],
-                    description="APERTURA DE CUENTA",
-                    amountPaid=0,
-                    status="open",
-                    paymentType="credit",
-                    totalCost=initial_balance,
-                    total=initial_balance,
-                    createdBy=UserInfo(
-                        id="system",
-                        name="SISTEMA",
-                    ),
-                )
+        initial_balance_item = SaleItem(
+            product=ProductItem(
+                id="INITIAL_BALANCE",
+                name=sale_item_name,
+                unitName="UNIDAD",
+                brandName="SISTEMA",
+                categoryName="SISTEMA",
+                tags=["INITIAL_BALANCE"],
+            ),
+            selectedPrice=1,
+            quantity=1,
+            bonQuantity=0,
+            cost=initial_balance,
+            price=initial_balance,
+            subTotal=initial_balance,
+            discountPercentage=0,
+            totalDiscount=0,
+            iva=0,
+            total=initial_balance,
+        )
 
-                new_invoice_data = create_invoice_data.model_dump()
-                new_invoice_data.update(
-                    {
-                        "id": UuidTool.generate_uuid(),
-                        "createdAt": current_time,
-                        "paidAt": None,
-                    }
-                )
+        create_invoice_data = CreateInvoice(
+            branchId=branch_id,
+            clientId=client.id,
+            clientInfo=client_info,
+            docNumber=invoice_doc_number,
+            saleItems=[initial_balance_item],
+            description="APERTURA DE CUENTA",
+            amountPaid=0,
+            status="open",
+            paymentType="credit",
+            totalCost=initial_balance,
+            total=initial_balance,
+            createdBy=UserInfo(
+                id="system",
+                name="SISTEMA",
+            ),
+        )
 
-                # 1. Creamos la factura
-                await invoice_col.create_invoice_with_session(
-                    new_invoice_data, session=session
-                )
-                new_invoice_in_db = InvoiceInDb.model_validate(new_invoice_data)
+        new_invoice_data = create_invoice_data.model_dump()
+        new_invoice_data.update(
+            {
+                "id": UuidTool.generate_uuid(),
+                "createdAt": current_time,
+                "paidAt": None,
+            }
+        )
 
-                # 2. Procesamos el movimiento financiero
-                updated_client = await process_client_financial_movement(
-                    request=FinanceTransactionRequest(
-                        client_id=client.id,
-                        amount=new_invoice_in_db.total,
-                        document_id=new_invoice_id,
-                        doc_number=new_invoice_in_db.docNumber,
-                        subtype="invoice",
-                    ),
-                    session=session,
-                    client_col=client_col,
-                    client_tx_col=client_tx_col,
-                )
+        # 1. Creamos la factura
+        await invoice_col.create_invoice_with_session(new_invoice_data, session=session)
+        new_invoice_in_db = InvoiceInDb.model_validate(new_invoice_data)
 
-                # Agregamos el cliente actualizado a nuestra lista de respuesta
-                updated_clients.append(updated_client)
+        # 2. Procesamos el movimiento financiero
+        updated_client = await process_client_financial_movement(
+            request=FinanceTransactionRequest(
+                client_id=client.id,
+                amount=new_invoice_in_db.total,
+                document_id=new_invoice_id,
+                doc_number=new_invoice_in_db.docNumber,
+                subtype="invoice",
+            ),
+            session=session,
+            client_col=client_col,
+            client_tx_col=client_tx_col,
+        )
 
-        # Si el bloque async with session.start_transaction() termina sin errores,
-        # MongoDB hace el "commit" automático de todas las operaciones juntas.
+        # Agregamos el cliente actualizado a nuestra lista de respuesta
+        updated_clients.append(updated_client)
 
-        return updated_clients
+    return updated_clients

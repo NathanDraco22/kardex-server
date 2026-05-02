@@ -28,6 +28,11 @@ class ClientsCollection:
         collection = self.__collection
         await collection.insert_one(client, session=session)
 
+    async def create_many_clients_with_session(self, clients: list[dict], session: Any) -> None:
+        collection = self.__collection
+        if clients:
+            await collection.insert_many(clients, session=session)
+
     async def create_client_if_absent(self, client_id: str, client: dict) -> None:
         collection = self.__collection
         await collection.update_one(

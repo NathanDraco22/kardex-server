@@ -11,6 +11,7 @@ from repos.v1.clients import ClientsRepository, ClientsDataSource, ClientInDb
 from repos.v1.branches import BranchesRepository, BranchesDataSource
 
 from .process_receipt import process_receipt
+from .reverse_receipt import reverse_receipt
 
 
 class ReceiptRegister:
@@ -66,6 +67,48 @@ class ReceiptRegister:
                 return await process_receipt(create_receipt)
             except OperationFailure as e:
                 if e.code == 112:  # WriteConflict
+                    await asyncio.sleep(0.3)
+                else:
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=f"Database operation failed: {e}",
+                    )
+            except Exception as e:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"An unexpected error occurred: {e}",
+                )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server is too busy, please try again later",
+        )
+
+    async def delete_receipt(
+        self, receipt_id: str
+    ) -> tuple[ReceiptInDb, ClientInDb]:
+        """
+        Elimina un recibo revertiendo las transacciones asociadas.
+        """
+        receipt = await self.receipts_repo.get_receipt_by_id(receipt_id)
+        if receipt is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Receipt not found",
+            )
+
+        if receipt.isDeleted:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Receipt already deleted",
+            )
+
+        max_retries = 3
+        for _ in range(max_retries):
+            try:
+                return await reverse_receipt(receipt)
+            except OperationFailure as e:
+                if e.code == 112:
                     await asyncio.sleep(0.3)
                 else:
                     raise HTTPException(
