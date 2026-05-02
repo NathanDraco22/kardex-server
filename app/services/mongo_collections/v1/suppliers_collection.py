@@ -24,6 +24,11 @@ class SuppliersCollection:
         collection = self.__collection
         await collection.insert_one(supplier)
 
+    async def create_many_suppliers_with_session(self, suppliers: list[dict], session: Any) -> None:
+        collection = self.__collection
+        if suppliers:
+            await collection.insert_many(suppliers, session=session)
+
     async def fetch_all_suppliers(self) -> list[dict[str, Any]]:
         collection = self.__collection
         cursor = collection.find({"isDeleted": False})
