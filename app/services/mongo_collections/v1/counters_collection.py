@@ -6,11 +6,12 @@ from services import MongoService
 
 class CountersCollection:
     collection_name = "Counters"
+    _instance: "CountersCollection|None" = None
 
     def __new__(cls):
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
+        if cls._instance is None:
+            cls._instance = super(cls, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self):
         mongo_service = MongoService()
@@ -23,6 +24,20 @@ class CountersCollection:
         result = await collection.find_one_and_update(
             {"name": counter_name},
             {"$inc": {"value": 1}},
+            upsert=True,
+            session=session,
+            return_document=ReturnDocument.AFTER,
+        )
+
+        return result
+
+    async def set_counter(
+        self, counter_name: str, value: int, session: Any
+    ) -> dict[str, Any]:
+        collection = self.__collection
+        result = await collection.find_one_and_update(
+            {"name": counter_name},
+            {"$set": {"value": value}},
             upsert=True,
             session=session,
             return_document=ReturnDocument.AFTER,

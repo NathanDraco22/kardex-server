@@ -45,3 +45,12 @@ Revisión profunda del flujo del endpoint `/initial-balance` en `app\api\v1\clie
    - Atomicidad garantizada vía transacción de sesión en MongoDB.
    - Generación controlada de factura de saldo inicial sin afectación de inventario (usando etiqueta `INITIAL_BALANCE`).
    - El movimiento se registra adecuadamente como `debit` (cargo) en la cuenta del cliente para mantener coherencia financiera.
+
+## Fecha: 2026-04-24
+### Objetivo
+Estandarización de reglas para Agentes AI y creación de `AGENTS.md`.
+
+### Resumen de Sesión
+1. **Manual para IAs**: Se generó el archivo `AGENTS.md` que centraliza la arquitectura (Onion), convenciones de nombrado (`camelCase` para campos de modelos) y tipos de datos (fechas y dinero como `int`).
+2. **Consistencia de Tooling**: Se documentó el flujo obligatorio de uso de `onion-cli` para la creación de nuevos módulos, asegurando que cualquier agente mantenga la integridad estructural del proyecto.
+3. **Protocolo de Contexto**: Se reafirmó el uso de `GEMINI.md` para el historial de sesiones y `AGENTS.md` como guía técnica permanente.

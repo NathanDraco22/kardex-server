@@ -7,11 +7,12 @@ from tools import TimeTools, build_query
 
 class InvoicesCollection:
     collection_name = "Invoices"
+    _instance: "InvoicesCollection|None" = None
 
     def __new__(cls):
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
+        if cls._instance is None:
+            cls._instance = super(cls, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self):
         mongo_service = MongoService()
@@ -194,6 +195,48 @@ class InvoicesCollection:
                             "if": {"$gte": ["$amountPaid", "$total"]},
                             "then": TimeTools.get_now_in_milliseconds(),
                             "else": None,
+                        }
+                    },
+                }
+            },
+        ]
+
+        result = await collection.find_one_and_update(
+            {"id": invoice_id},
+            pipeline,
+            return_document=ReturnDocument.AFTER,
+            session=session,
+        )
+
+        return result
+
+    async def subtract_from_amount_paid(
+        self, invoice_id: str, amount_paid: int, session: Any
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+
+        pipeline = [
+            {
+                "$set": {
+                    "amountPaid": {
+                        "$subtract": ["$amountPaid", amount_paid],
+                    },
+                },
+            },
+            {
+                "$set": {
+                    "status": {
+                        "$cond": {
+                            "if": {"$lte": ["$amountPaid", 0]},
+                            "then": "open",
+                            "else": "partiallyPaid",
+                        }
+                    },
+                    "paidAt": {
+                        "$cond": {
+                            "if": {"$lte": ["$amountPaid", 0]},
+                            "then": None,
+                            "else": "$paidAt",
                         }
                     },
                 }

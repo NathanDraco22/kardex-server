@@ -9,11 +9,12 @@ from pymongo import IndexModel
 
 class SuppliersCollection:
     collection_name = "Suppliers"
+    _instance: "SuppliersCollection|None" = None
 
     def __new__(cls):
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
+        if cls._instance is None:
+            cls._instance = super(cls, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self):
         mongo_service = MongoService()
@@ -22,6 +23,11 @@ class SuppliersCollection:
     async def create_supplier(self, supplier: dict) -> None:
         collection = self.__collection
         await collection.insert_one(supplier)
+
+    async def create_many_suppliers_with_session(self, suppliers: list[dict], session: Any) -> None:
+        collection = self.__collection
+        if suppliers:
+            await collection.insert_many(suppliers, session=session)
 
     async def fetch_all_suppliers(self) -> list[dict[str, Any]]:
         collection = self.__collection

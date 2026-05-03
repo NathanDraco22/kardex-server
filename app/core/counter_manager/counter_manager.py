@@ -3,10 +3,12 @@ from repos.v1.counters import CountersRepository, CountersDataSource
 
 
 class CounterManager:
+    _instance: "CounterManager|None" = None
+
     def __new__(cls):
-        if not hasattr(cls, "instance"):
-            cls.instance = super(cls, cls).__new__(cls)
-        return cls.instance
+        if cls._instance is None:
+            cls._instance = super(cls, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self) -> None:
         self.counters_repository = CountersRepository(CountersDataSource())
@@ -44,11 +46,30 @@ class CounterManager:
         formatted = str(res.value).zfill(4)
         return formatted
 
+    async def set_client_number(self, number: int, session: Any = None) -> str:
+        res = await self.counters_repository.set_counter(
+            "clientNumber", number, session
+        )
+        formatted = str(res.value).zfill(4)
+        return formatted
+
     async def next_tranfer_number(self, session: Any) -> str:
         res = await self.counters_repository.increment_counter(
             "transferNumber", session
         )
         formatted = str(res.value)
+        return formatted
+
+    async def next_supplier_number(self, session: Any = None) -> str:
+        res = await self.counters_repository.increment_counter("supplierNumber", session)
+        formatted = str(res.value).zfill(4)
+        return formatted
+
+    async def set_supplier_number(self, number: int, session: Any = None) -> str:
+        res = await self.counters_repository.set_counter(
+            "supplierNumber", number, session
+        )
+        formatted = str(res.value).zfill(4)
         return formatted
 
     async def next_adjust_number(self, session: Any) -> str:
