@@ -164,11 +164,7 @@ class ReceiptsCollection:
         query["createdAt"] = {"$gte": start_date, "$lte": end_date}
 
         pipeline = [
-            # 1. Filtramos por fechas (y sucursal si viene en kwargs)
             {"$match": query},
-            # 2. EL TRUCO MAGNÍFICO: Sumamos los arreglos dentro de cada recibo primero
-            # "$appliedInvoices.amountApplied" extrae todos los montos en una lista plana [100, 200]
-            # y el "$sum" externo los suma obteniendo 300 para ese documento.
             {
                 "$addFields": {
                     "docTotalInvoices": {"$sum": "$appliedInvoices.amountApplied"},
@@ -177,19 +173,15 @@ class ReceiptsCollection:
                     },
                 }
             },
-            # 3. Ahora sí, agrupamos por sucursal de forma segura
             {
                 "$group": {
                     "_id": "$branchId",
-                    # Sumamos lo que calculamos en el addFields
                     "totalAppliedInvoices": {"$sum": "$docTotalInvoices"},
                     "totalAppliedDevolutions": {"$sum": "$docTotalDevolutions"},
-                    # BONUS: También te sumo el "total" general del recibo y la cantidad de recibos
                     "totalReceipts": {"$sum": "$total"},
                     "receiptCount": {"$sum": 1},
                 }
             },
-            # 4. Limpiamos para el frontend y Pydantic
             {
                 "$project": {
                     "_id": 0,
@@ -241,7 +233,33 @@ class ReceiptsCollection:
         result = await collection.find_one_and_delete({"id": receipt_id})
         return result
 
+    async def delete_receipt_by_id_with_session(
+        self, receipt_id: str, deleted_at: int, session: Any
+    ) -> dict[str, Any] | None:
+        collection = self.__collection
+        result = await collection.find_one_and_update(
+            {"id": receipt_id},
+            {
+                "$set": {
+                    "isDeleted": True,
+                    "deletedAt": deleted_at,
+                }
+            },
+            return_document=ReturnDocument.AFTER,
+            session=session,
+        )
+        return result
+
     async def create_receipt_with_session(
+        self,
+        receipt: dict,
+        session: Any,
+    ) -> dict[str, Any]:
+        collection = self.__collection
+        await collection.insert_one(receipt, session=session)
+        return receipt
+
+    async def fetch_receipt_by_id_with_session(
         self,
         receipt: dict,
         session: Any,

@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -9,5 +10,6 @@ from core.scheduler.app_scheduler import AppScheduler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_services()
-    await AppScheduler().start_task()
+    if os.getenv("MODE") != "DEV":
+        await AppScheduler().start_task()
     yield

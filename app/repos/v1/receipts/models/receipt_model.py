@@ -48,3 +48,5 @@ class ReceiptInDb(BaseReceipt):
     id: str
     createdAt: int
     updatedAt: int | None = None
+    isDeleted: bool = False
+    deletedAt: int | None = None
