@@ -1,4 +1,4 @@
-FROM python:3.12.13-alpine
+FROM python:3.12.13-slim-bookworm
 
 RUN mkdir -p /home/server
 
