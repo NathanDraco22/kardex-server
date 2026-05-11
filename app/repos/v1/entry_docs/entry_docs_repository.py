@@ -1,6 +1,5 @@
 from .data.entry_docs_datasource import EntryDocsDataSource
-from .models.entry_doc_model import EntryDocInDb
-from repos.v1.entry_histories.models.entry_history_model import EntryHistoryInDb
+from .models.entry_doc_model import EntryDocInDb, EntryHistoryInDb
 
 
 class EntryDocsRepository:

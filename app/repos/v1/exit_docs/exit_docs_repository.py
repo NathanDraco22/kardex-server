@@ -1,5 +1,5 @@
 from .data.exit_docs_datasource import ExitDocsDataSource
-from .models.exit_doc_model import ExitDocInDb
+from .models.exit_doc_model import ExitDocInDb, ExitHistoryInDb
 
 
 class ExitDocsRepository:
@@ -49,3 +49,27 @@ class ExitDocsRepository:
             return None
 
         return ExitDocInDb.model_validate(result)
+
+    async def get_exit_history(self, **kwargs) -> list[ExitHistoryInDb]:
+        results = await self.exit_docs_ds.get_exit_history(**kwargs)
+        return [ExitHistoryInDb.model_validate(result) for result in results]
+
+    async def get_exit_history_by_id_with_client(
+        self, exit_doc_id: str
+    ) -> ExitHistoryInDb | None:
+        result = await self.exit_docs_ds.get_exit_history_by_id_with_client(
+            exit_doc_id
+        )
+        if result is None:
+            return None
+        return ExitHistoryInDb.model_validate(result)
+
+    async def get_exit_history_by_doc_number_and_branch_id(
+        self, doc_number: str, branch_id: str
+    ) -> ExitHistoryInDb | None:
+        result = await self.exit_docs_ds.get_exit_history_by_doc_number_and_branch_id(
+            doc_number, branch_id
+        )
+        if result is None:
+            return None
+        return ExitHistoryInDb.model_validate(result)

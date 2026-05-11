@@ -14,8 +14,8 @@ from repos.v1.entry_docs import (
     EntryDocInDb,
     EntryDocsRepository,
     EntryDocsDataSource,
+    EntryHistoryInDb,
 )
-from repos.v1.entry_histories.models.entry_history_model import EntryHistoryInDb
 
 
 class EntryDocsController:
@@ -89,7 +89,15 @@ class EntryDocsController:
     async def get_entry_history(
         self, **kwargs
     ) -> ListResponse[EntryHistoryInDb]:
-        entry_histories = await self.entry_docs_repo.get_entry_history(**kwargs)
+        mapped_kwargs = {
+            "branch_id": kwargs.get("branch_id"),
+            "supplier_id": kwargs.get("supplierId"),
+            "offset": kwargs.get("offset"),
+            "limit": kwargs.get("limit"),
+            "start_date": kwargs.get("startDate"),
+            "end_date": kwargs.get("endDate"),
+        }
+        entry_histories = await self.entry_docs_repo.get_entry_history(**mapped_kwargs)
         return ListResponse(count=len(entry_histories), data=entry_histories)
 
     async def get_history_by_id_with_supplier(

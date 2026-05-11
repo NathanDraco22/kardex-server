@@ -63,3 +63,11 @@ Migración de endpoints de historiales de entradas de `entry_histories` hacia `e
 1. **Migración Controlada**: Se copiaron las funciones de consulta de historiales (con información de proveedores) desde `entry_histories` hacia las capas Datasource, Repository, Controller y Router de `entry_docs`.
 2. **Uso de Kwargs**: Se implementó el uso de `**kwargs` para el endpoint paginado, facilitando el traspaso limpio de todos los query params (incluyendo `startDate`, `endDate`, `supplierId`) hacia la colección de MongoDB sin ensuciar las firmas.
 3. **Prevención de Conflictos**: Los nuevos endpoints se expusieron bajo el prefijo `/history` dentro de `/entry-docs` para evitar colisiones. Se conservó el módulo `entry_histories` intacto para permitir una transición segura y retrocompatible desde el frontend.
+
+## Fecha: 2026-05-10 (Parte 2)
+### Objetivo
+Migración de endpoints de historiales de salidas (`exit_histories`) hacia `exit_docs`.
+
+### Resumen de Sesión
+1. **Migración Exit Docs**: Se replicó el patrón para las salidas, moviendo las consultas de `exit_histories` hacia `exit_docs`.
+2. **Mapeo Explícito**: Se corrigió un potencial bug de la migración de `entry_docs` donde los parámetros `camelCase` (`supplierId`, `clientId`) generaban error al enviarse como `**kwargs` a Mongo que esperaba `snake_case`. Se implementó un mapeo explícito en ambos controladores (`entry_docs` y `exit_docs`) garantizando compatibilidad.
