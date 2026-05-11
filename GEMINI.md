@@ -54,3 +54,12 @@ Estandarización de reglas para Agentes AI y creación de `AGENTS.md`.
 1. **Manual para IAs**: Se generó el archivo `AGENTS.md` que centraliza la arquitectura (Onion), convenciones de nombrado (`camelCase` para campos de modelos) y tipos de datos (fechas y dinero como `int`).
 2. **Consistencia de Tooling**: Se documentó el flujo obligatorio de uso de `onion-cli` para la creación de nuevos módulos, asegurando que cualquier agente mantenga la integridad estructural del proyecto.
 3. **Protocolo de Contexto**: Se reafirmó el uso de `GEMINI.md` para el historial de sesiones y `AGENTS.md` como guía técnica permanente.
+
+## Fecha: 2026-05-10
+### Objetivo
+Migración de endpoints de historiales de entradas de `entry_histories` hacia `entry_docs` para centralización.
+
+### Resumen de Sesión
+1. **Migración Controlada**: Se copiaron las funciones de consulta de historiales (con información de proveedores) desde `entry_histories` hacia las capas Datasource, Repository, Controller y Router de `entry_docs`.
+2. **Uso de Kwargs**: Se implementó el uso de `**kwargs` para el endpoint paginado, facilitando el traspaso limpio de todos los query params (incluyendo `startDate`, `endDate`, `supplierId`) hacia la colección de MongoDB sin ensuciar las firmas.
+3. **Prevención de Conflictos**: Los nuevos endpoints se expusieron bajo el prefijo `/history` dentro de `/entry-docs` para evitar colisiones. Se conservó el módulo `entry_histories` intacto para permitir una transición segura y retrocompatible desde el frontend.
