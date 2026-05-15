@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
 
-
 from repos.v1.products import (
     CreateProduct,
     UpdateProduct,

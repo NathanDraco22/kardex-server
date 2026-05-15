@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, AsyncIterable
 from services.mongo_collections.v1 import ProductsCollection
 
 
@@ -50,6 +50,12 @@ class ProductsDataSource:
     async def get_all_product_in_branch(self, **kwargs) -> list[dict[str, Any]]:
         collection = ProductsCollection()
         return await collection.get_all_product_in_branch(**kwargs)
+
+    async def get_all_product_in_branch_streamed(
+        self, **kwargs
+    ) -> AsyncIterable[dict[str, Any]]:
+        collection = ProductsCollection()
+        return collection.get_all_product_in_branch_streamed(**kwargs)
 
     async def get_product_in_branch_by_id(
         self, product_id: str, branch_id: str

@@ -17,6 +17,7 @@ from .executive_summaries.executive_summaries_router import executive_summaries_
 from .exit_docs.exit_docs_router import exit_docs_router
 from .exit_histories.exit_histories_router import exit_histories_router
 from .expiration_logs.expiration_logs_router import expiration_logs_router
+from .exports.exports_router import exports_router
 from .imports.imports_router import imports_router
 from .integrations.integrations_router import integrations_router
 from .inventories.inventories_router import inventories_router
@@ -57,6 +58,7 @@ router_v1.include_router(executive_summaries_router, prefix="/executive-summarie
 router_v1.include_router(exit_docs_router, prefix="/exit-docs")
 router_v1.include_router(exit_histories_router, prefix="/exit-histories")
 router_v1.include_router(expiration_logs_router, prefix="/expiration-logs")
+router_v1.include_router(exports_router, prefix="/exports")
 router_v1.include_router(imports_router, prefix='/imports')
 router_v1.include_router(integrations_router, prefix="/integrations")
 router_v1.include_router(inventories_router, prefix="/inventories")

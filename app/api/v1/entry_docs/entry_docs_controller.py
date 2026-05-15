@@ -14,6 +14,7 @@ from repos.v1.entry_docs import (
     EntryDocInDb,
     EntryDocsRepository,
     EntryDocsDataSource,
+    EntryHistoryInDb,
 )
 
 
@@ -84,6 +85,46 @@ class EntryDocsController:
                 detail="EntryDoc not found",
             )
         return entry_doc
+
+    async def get_entry_history(
+        self, **kwargs
+    ) -> ListResponse[EntryHistoryInDb]:
+        mapped_kwargs = {
+            "branch_id": kwargs.get("branch_id"),
+            "supplier_id": kwargs.get("supplierId"),
+            "offset": kwargs.get("offset"),
+            "limit": kwargs.get("limit"),
+            "start_date": kwargs.get("startDate"),
+            "end_date": kwargs.get("endDate"),
+        }
+        entry_histories = await self.entry_docs_repo.get_entry_history(**mapped_kwargs)
+        return ListResponse(count=len(entry_histories), data=entry_histories)
+
+    async def get_history_by_id_with_supplier(
+        self, entry_doc_id: str
+    ) -> EntryHistoryInDb:
+        entry_history = await self.entry_docs_repo.get_entry_history_by_id_with_supplier(
+            entry_doc_id
+        )
+        if not entry_history:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Entry history not found",
+            )
+        return entry_history
+
+    async def get_entry_history_by_doc_number_and_branch_id(
+        self, doc_number: str, branch_id: str
+    ) -> EntryHistoryInDb:
+        entry_history = await self.entry_docs_repo.get_entry_history_by_doc_number_and_branch_id(
+            doc_number, branch_id
+        )
+        if not entry_history:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Entry history not found",
+            )
+        return entry_history
 
 
 entry_docs_controller = EntryDocsController(

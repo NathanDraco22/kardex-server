@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, AsyncIterable
 
 from pymongo import ReturnDocument, IndexModel
 from services import MongoService
@@ -283,6 +283,64 @@ class ProductsCollection:
         await cursor.close()
 
         return result
+
+    async def get_all_product_in_branch_streamed(
+        self, **kwargs
+    ) -> AsyncIterable[dict[str, Any]]:
+        collection = self.__collection
+        branch_id = kwargs.get("branchId")
+
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "isDeleted": False,
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "ProductAccounts",
+                        "localField": "id",
+                        "foreignField": "productId",
+                        "as": "account",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "branchId": branch_id,
+                                }
+                            }
+                        ],
+                    }
+                },
+                {
+                    "$unwind": "$account",
+                },
+                {
+                    "$lookup": {
+                        "from": "ProductSaleProfiles",
+                        "localField": "id",
+                        "foreignField": "productId",
+                        "as": "saleProfile",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "branchId": branch_id,
+                                }
+                            }
+                        ],
+                    }
+                },
+                {
+                    "$unwind": "$saleProfile",
+                },
+                {
+                    "$sort": {"name": 1},
+                },
+            ]
+        )
+
+        async for document in cursor:
+            yield document
 
     async def get_product_in_branch_by_id(
         self, product_id: str, branch_id: str

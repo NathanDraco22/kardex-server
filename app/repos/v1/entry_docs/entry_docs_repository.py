@@ -1,5 +1,5 @@
 from .data.entry_docs_datasource import EntryDocsDataSource
-from .models.entry_doc_model import EntryDocInDb
+from .models.entry_doc_model import EntryDocInDb, EntryHistoryInDb
 
 
 class EntryDocsRepository:
@@ -47,3 +47,27 @@ class EntryDocsRepository:
             return None
 
         return EntryDocInDb.model_validate(result)
+
+    async def get_entry_history(self, **kwargs) -> list[EntryHistoryInDb]:
+        results = await self.entry_docs_ds.get_entry_history(**kwargs)
+        return [EntryHistoryInDb.model_validate(result) for result in results]
+
+    async def get_entry_history_by_id_with_supplier(
+        self, entry_doc_id: str
+    ) -> EntryHistoryInDb | None:
+        result = await self.entry_docs_ds.get_entry_history_by_id_with_supplier(
+            entry_doc_id
+        )
+        if result is None:
+            return None
+        return EntryHistoryInDb.model_validate(result)
+
+    async def get_entry_history_by_doc_number_and_branch_id(
+        self, doc_number: str, branch_id: str
+    ) -> EntryHistoryInDb | None:
+        result = await self.entry_docs_ds.get_entry_history_by_doc_number_and_branch_id(
+            doc_number, branch_id
+        )
+        if result is None:
+            return None
+        return EntryHistoryInDb.model_validate(result)

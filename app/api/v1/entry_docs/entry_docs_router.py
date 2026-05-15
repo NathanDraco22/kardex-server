@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, BackgroundTasks
 
 
 from responses.v1.list_response import ListResponse
-from repos.v1.entry_docs import CreateEntryDoc, EntryDocInDb
+from repos.v1.entry_docs import CreateEntryDoc, EntryDocInDb, EntryHistoryInDb
 
 from app_middleware import auth_middleware
 
@@ -39,3 +39,24 @@ async def get_paginated_entry_docs(
 @entry_docs_router.get("/{entry_doc_id}")
 async def get_entry_doc_by_id(entry_doc_id: str) -> EntryDocInDb:
     return await entry_docs_controller.get_entry_doc_by_id(entry_doc_id)
+
+
+@entry_docs_router.get("/history")
+async def get_entry_history(
+    query_params: EntryDocQueryParams = Depends(),
+) -> ListResponse[EntryHistoryInDb]:
+    return await entry_docs_controller.get_entry_history(**query_params.model_dump())
+
+
+@entry_docs_router.get("/history/{entry_doc_id}")
+async def get_history_by_id_with_supplier(entry_doc_id: str) -> EntryHistoryInDb:
+    return await entry_docs_controller.get_history_by_id_with_supplier(entry_doc_id)
+
+
+@entry_docs_router.get("/history/{doc_number}/{branch_id}")
+async def get_entry_history_by_doc_number_and_branch_id(
+    doc_number: str, branch_id: str
+) -> EntryHistoryInDb:
+    return await entry_docs_controller.get_entry_history_by_doc_number_and_branch_id(
+        doc_number, branch_id
+    )
