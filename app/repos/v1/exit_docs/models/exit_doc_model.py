@@ -12,6 +12,10 @@ class ExitItem(BaseModel):
     quantity: int = Field(..., lt=0)
 
 
+class Client(BaseModel):
+    name: str
+
+
 class BaseExitDoc(BaseModel):
     clientId: str
     docNumber: str
@@ -22,10 +26,19 @@ class BaseExitDoc(BaseModel):
     createdBy: UserInfo
 
 
+class BaseExitHistory(BaseExitDoc):
+    client: Client
+
+
 class CreateExitDoc(BaseExitDoc):
     pass
 
 
 class ExitDocInDb(BaseExitDoc):
+    id: str
+    createdAt: int
+
+
+class ExitHistoryInDb(BaseExitHistory):
     id: str
     createdAt: int

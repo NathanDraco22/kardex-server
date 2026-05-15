@@ -1,5 +1,5 @@
 from .data.entry_docs_datasource import EntryDocsDataSource
-from .models.entry_doc_model import CreateEntryDoc, EntryDocInDb
+from .models.entry_doc_model import CreateEntryDoc, EntryDocInDb, EntryHistoryInDb
 from .entry_docs_repository import EntryDocsRepository
 
 __all__ = [
@@ -7,4 +7,5 @@ __all__ = [
     "CreateEntryDoc",
     "EntryDocInDb",
     "EntryDocsRepository",
+    "EntryHistoryInDb",
 ]

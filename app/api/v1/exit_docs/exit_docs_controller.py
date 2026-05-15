@@ -6,6 +6,7 @@ from repos.v1.exit_docs import (
     ExitDocInDb,
     ExitDocsRepository,
     ExitDocsDataSource,
+    ExitHistoryInDb,
 )
 
 
@@ -42,6 +43,46 @@ class ExitDocsController:
                 detail="ExitDoc not found",
             )
         return exit_doc
+
+    async def get_exit_history(
+        self, **kwargs
+    ) -> ListResponse[ExitHistoryInDb]:
+        mapped_kwargs = {
+            "branch_id": kwargs.get("branch_id"),
+            "client_id": kwargs.get("clientId"),
+            "offset": kwargs.get("offset"),
+            "limit": kwargs.get("limit"),
+            "start_date": kwargs.get("startDate"),
+            "end_date": kwargs.get("endDate"),
+        }
+        exit_histories = await self.exit_docs_repo.get_exit_history(**mapped_kwargs)
+        return ListResponse(count=len(exit_histories), data=exit_histories)
+
+    async def get_history_by_id_with_client(
+        self, exit_doc_id: str
+    ) -> ExitHistoryInDb:
+        exit_history = await self.exit_docs_repo.get_exit_history_by_id_with_client(
+            exit_doc_id
+        )
+        if not exit_history:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Exit history not found",
+            )
+        return exit_history
+
+    async def get_exit_history_by_doc_number_and_branch_id(
+        self, doc_number: str, branch_id: str
+    ) -> ExitHistoryInDb:
+        exit_history = await self.exit_docs_repo.get_exit_history_by_doc_number_and_branch_id(
+            doc_number, branch_id
+        )
+        if not exit_history:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Exit history not found",
+            )
+        return exit_history
 
 
 exit_docs_controller = ExitDocsController(
