@@ -13,6 +13,7 @@ from .daily_summaries.daily_summaries_router import daily_summaries_router
 from .devolutions.devolutions_router import devolutions_router
 from .executive_summaries.executive_summaries_router import executive_summaries_router
 from .expiration_logs.expiration_logs_router import expiration_logs_router
+from .exports.exports_router import exports_router
 from .imports.imports_router import imports_router
 from .integrations.integrations_router import integrations_router
 from .inventories.inventories_router import inventories_router
@@ -46,6 +47,7 @@ router_v1.include_router(daily_summaries_router, prefix="/daily-summaries")
 router_v1.include_router(devolutions_router, prefix="/devolutions")
 router_v1.include_router(executive_summaries_router, prefix="/executive-summaries")
 router_v1.include_router(expiration_logs_router, prefix="/expiration-logs")
+router_v1.include_router(exports_router, prefix="/exports")
 router_v1.include_router(imports_router, prefix='/imports')
 router_v1.include_router(integrations_router, prefix="/integrations")
 router_v1.include_router(inventories_router, prefix="/inventories")

@@ -1,3 +1,4 @@
+from typing import AsyncIterable
 from .data.products_datasource import ProductsDataSource
 from .models.product_model import (
     CreateProduct,
@@ -101,6 +102,14 @@ class ProductsRepository:
         results = await self.products_ds.get_all_product_in_branch(**kwargs)
         models = [ProductInDbInBranch.model_validate(result) for result in results]
         return models
+
+    async def get_all_product_in_branch_streamed(
+        self, **kwargs
+    ) -> AsyncIterable[ProductInDbInBranch]:
+        async for result in await self.products_ds.get_all_product_in_branch_streamed(
+            **kwargs
+        ):
+            yield ProductInDbInBranch.model_validate(result)
 
     async def get_product_in_branch_by_id(
         self, product_id: str, branch_id: str
