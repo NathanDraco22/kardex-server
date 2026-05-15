@@ -22,6 +22,11 @@ def read_agreggation_entry_docs_with_supplier(
             "$lte": end_date,
         }
 
+    if not start_date and end_date:
+        match_pipeline["docDate"] = {
+            "$lte": end_date,
+        }
+
     return [
         {
             "$match": match_pipeline,

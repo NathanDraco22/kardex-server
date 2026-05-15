@@ -87,3 +87,73 @@ class ProjectionExcelService:
 
     def get_projection_xslx(self) -> Path:
         return STATIC_PATH / "projection.xlsx"
+
+
+@dataclass
+class PriceListRow:
+    code: str | None
+    productName: str
+    brandName: str
+    unitName: str
+    salePrice: float
+    salePrice2: float
+    salePrice3: float
+
+    def to_sheet_row(self):
+        return [
+            self.code,
+            self.productName,
+            self.brandName,
+            self.unitName,
+            self.salePrice,
+            self.salePrice2,
+            self.salePrice3,
+        ]
+
+
+@dataclass
+class PriceListSheet:
+    name: str
+    title: str
+    subtitle: str
+    rows: list[PriceListRow]
+
+
+class PriceListService:
+    def __init__(self):
+        pass
+
+    def create_price_list_xslx(self, sheets: list[PriceListSheet]) -> Path:
+        workbook: Workbook = Workbook()
+
+        for sheet in sheets:
+            worksheet: Worksheet = workbook.create_sheet(sheet.name)
+            worksheet.title = sheet.title
+            worksheet.append(sheet.title.split("\n"))
+            worksheet.append(sheet.subtitle.split("\n"))
+            worksheet.append(
+                [
+                    "Código",
+                    "Producto",
+                    "Marca",
+                    "Unidad",
+                    "Precio 1",
+                    "Precio 2",
+                    "Precio 3",
+                ]
+            )
+            for row in sheet.rows:
+                worksheet.append(row.to_sheet_row())
+
+        if "Sheet1" in workbook.sheetnames:
+            workbook.remove(workbook["Sheet1"])
+
+        if "Sheet" in workbook.sheetnames:
+            workbook.remove(workbook["Sheet"])
+
+        workbook.save(STATIC_PATH / "price_list.xlsx")
+
+        return STATIC_PATH / "price_list.xlsx"
+
+    def get_price_list_xslx(self) -> Path:
+        return STATIC_PATH / "price_list.xlsx"
