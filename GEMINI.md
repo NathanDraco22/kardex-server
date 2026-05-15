@@ -70,4 +70,25 @@ Migración de endpoints de historiales de salidas (`exit_histories`) hacia `exit
 
 ### Resumen de Sesión
 1. **Migración Exit Docs**: Se replicó el patrón para las salidas, moviendo las consultas de `exit_histories` hacia `exit_docs`.
-2. **Mapeo Explícito**: Se corrigió un potencial bug de la migración de `entry_docs` donde los parámetros `camelCase` (`supplierId`, `clientId`) generaban error al enviarse como `**kwargs` a Mongo que esperaba `snake_case`. Se implementó un mapeo explícito en ambos controladores (`entry_docs` y `exit_docs`) garantizando compatibilidad.
+## Fecha: 2026-05-14
+### Objetivo
+Implementación de endpoint de streaming para productos (`get_all_products_in_branch_streamed`).
+
+### Resumen de Sesión
+1. **Endpoint de Streaming**: Se implementó el flujo completo para el endpoint de obtención de productos mediante Server-Sent Events / NDJSON, permitiendo manejar grandes volúmenes de datos.
+2. **Capas Actualizadas**:
+    - **Router (`products_router.py`)**: Se corrigió el error del parámetro `query` faltante y se devolvió una instancia correcta de `StreamingResponse` con `media_type="application/x-ndjson"`.
+    - **Controller (`products_controller.py`)**: Se implementó un generador asíncrono que retorna los objetos `ProductInDbInBranch` serializados como cadenas JSON.
+    - **Repository y DataSource**: Se propagó el generador asíncrono respetando las validaciones del modelo Pydantic.
+    - **Collection (`products_collection.py`)**: Se implementó la iteración sobre el cursor de la agregación de MongoDB (`async for document in cursor: yield document`), excluyendo los filtros de paginación limit/offset para volcar todo el inventario de la sucursal de manera eficiente.
+
+## Fecha: 2026-05-14 (Parte 2)
+### Objetivo
+Creación de endpoint de exportación de lista de precios en Excel.
+
+### Resumen de Sesión
+1. **Nuevo Módulo Exports**: Se crearon `exports_router.py` y `exports_controller.py` bajo `app/api/v1/exports/` para centralizar descargas de archivos.
+2. **Endpoint `/exports/price-list`**: Se implementó un endpoint `GET` que genera una lista de precios en formato `.xlsx`.
+3. **Consumo de Stream**: El controlador consume eficientemente el método `get_all_product_in_branch_streamed` (creado en la sesión anterior) para evitar cargar todo el inventario en memoria.
+4. **PriceListService**: Se agregó `PriceListService` y sus dataclasses (`PriceListRow`, `PriceListSheet`) en `excel_service.py` para abstraer la creación del Excel usando `openpyxl`. Los montos de dinero se dividen entre 100 para convertirlos de centavos a decimales.
+5. **Retorno**: El endpoint utiliza `FileResponse` de FastAPI para entregar el archivo directamente al cliente.
