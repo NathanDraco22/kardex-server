@@ -87,8 +87,26 @@ Implementación de endpoint de streaming para productos (`get_all_products_in_br
 Creación de endpoint de exportación de lista de precios en Excel.
 
 ### Resumen de Sesión
-1. **Nuevo Módulo Exports**: Se crearon `exports_router.py` y `exports_controller.py` bajo `app/api/v1/exports/` para centralizar descargas de archivos.
-2. **Endpoint `/exports/price-list`**: Se implementó un endpoint `GET` que genera una lista de precios en formato `.xlsx`.
-3. **Consumo de Stream**: El controlador consume eficientemente el método `get_all_product_in_branch_streamed` (creado en la sesión anterior) para evitar cargar todo el inventario en memoria.
-4. **PriceListService**: Se agregó `PriceListService` y sus dataclasses (`PriceListRow`, `PriceListSheet`) en `excel_service.py` para abstraer la creación del Excel usando `openpyxl`. Los montos de dinero se dividen entre 100 para convertirlos de centavos a decimales.
-5. **Retorno**: El endpoint utiliza `FileResponse` de FastAPI para entregar el archivo directamente al cliente.
+1.  **Nuevo Módulo Exports**: Se crearon `exports_router.py` y `exports_controller.py` bajo `app/api/v1/exports/` para centralizar descargas de archivos.
+2.  **Endpoint `/exports/price-list`**: Se implementó un endpoint `GET` que genera una lista de precios en formato `.xlsx`.
+3.  **Consumo de Stream**: El controlador consume eficientemente el método `get_all_product_in_branch_streamed` (creado en la sesión anterior) para evitar cargar todo el inventario en memoria.
+4.  **PriceListService**: Se agregó `PriceListService` y sus dataclasses (`PriceListRow`, `PriceListSheet`) en `excel_service.py` para abstraer la creación del Excel usando `openpyxl`. Los montos de dinero se dividen entre 100 para convertirlos de centavos a decimales.
+5.  **Retorno**: El endpoint utiliza `FileResponse` de FastAPI para entregar el archivo directamente al cliente.
+
+## Fecha: 2026-05-16
+### Objetivo
+Extracción de la capa de negocio (`repos`, `core`, `tools`, `services/mongo`) a un paquete Python instalable (`kardex-business`) en monorepo local.
+
+### Resumen de Implementación
+1. **Creación del Paquete**: Se creó `packages/kardex-business/` con `pyproject.toml` propio y namespace `kardex.business.*`.
+2. **Archivos Movidos**: ~151 archivos de `repos/v1/`, 20+ módulos de `core/`, 9 herramientas de `tools/`, 33 colecciones de `services/mongo_collections/v1/` y `mongo_service.py`/`mongo_indexes.py` fueron copiados al paquete.
+3. **Importaciones Actualizadas**: Todos los imports internos en el paquete se actualizaron de `repos.`, `core.`, `tools.`, `services.` a `kardex.business.repos.`, etc.
+4. **Shims de Retrocompatibilidad**: Se crearon shims en `app/repos/__init__.py`, `app/tools/__init__.py` (con `sys.modules` redirect) y `app/core/__init__.py` (imports locales) para que los imports antiguos sigan funcionando durante la migración gradual.
+5. **Servicios No-Mongo**: `excel_service.py`, `ml_service.py`, `telgram_service.py` se quedan en `app/services/` junto con sus dependencias (openpyxl, onnxruntime, httpx). `MongoService` y `create_indexes` se re-exportan desde el paquete vía `app/services/__init__.py`.
+6. **Dependencias del Paquete**: `fastapi`, `motor`, `pydantic`, `pytz`, `argon2-cffi`, `pyjwt`.
+7. **Dependencia Local**: `kardex-business` se agregó como dependencia path editable en `pyproject.toml`.
+8. **Fix de Circularidad**: Se resolvió dependencia circular entre `clients_repository` ↔ `core.client.process_create_client` usando lazy imports (vía `from __future__ import annotations` e imports dentro de métodos).
+9. **Verificación**: La app FastAPI se importa correctamente con 187 rutas, 34 repositorios, y todas las capas de `core`, `tools` y `services`.
+
+### Estado
+Completado y verificado. Los shims permiten migración gradual de imports de `repos.v1.*` → `kardex.business.repos.v1.*` (y аналогично para core, tools, services).

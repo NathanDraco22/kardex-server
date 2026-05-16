@@ -1,6 +1,6 @@
 from pydantic import BaseModel
-from repos.v1.invoices import InvoiceInDb
-from repos.v1.clients import ClientInDb
+from kardex.repos.v1.invoices import InvoiceInDb
+from kardex.repos.v1.clients import ClientInDb
 
 
 class InvoiceResponse(BaseModel):

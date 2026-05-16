@@ -1,10 +1,9 @@
 from fastapi import HTTPException, status, BackgroundTasks
 
-from core.transfer_manager.transfer_manager import TransferManager
+from kardex.core.transfer_manager.transfer_manager import TransferManager
 
 from responses.v1 import ListResponse
-
-from repos.v1.transfers import (
+from kardex.repos.v1.transfers import (
     CreateTransfer,
     TransferInDb,
     TransfersRepository,
@@ -12,7 +11,7 @@ from repos.v1.transfers import (
     ReceiveTransferIntent,
     CancelTransferIntent,
 )
-from repos.v1.expiration_logs import (
+from kardex.repos.v1.expiration_logs import (
     ExpirationLogsRepository,
     ExpirationLogsDataSource,
     CreateExpirationLog,

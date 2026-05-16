@@ -1,18 +1,19 @@
 from functools import reduce
 from datetime import datetime
-from tools import TimeTools
-
-from repos.v1.daily_summaries import DailySummariesRepository, DailySummariesDataSource
-from repos.v1.executive_summaries import (
+from kardex.tools import TimeTools
+from kardex.repos.v1.daily_summaries import (
+    DailySummariesRepository,
+    DailySummariesDataSource,
+)
+from kardex.repos.v1.executive_summaries import (
     ExecutiveSummariesRepository,
     ExecutiveSummariesDataSource,
     ExecutiveSummaryInDb,
 )
-from repos.v1.receipts import ReceiptsRepository
-from repos.v1.invoices import InvoicesRepository
-
-from repos.v1.common.models import InventoryBranchDetail
-from core.report_manager.report_manager import ReportManager
+from kardex.repos.v1.receipts import ReceiptsRepository
+from kardex.repos.v1.invoices import InvoicesRepository
+from kardex.repos.v1.common.models import InventoryBranchDetail
+from kardex.core.report_manager.report_manager import ReportManager
 
 from .query_params import ReportQueryParams, TotalsQueryParams
 from .responses import TotalsResult

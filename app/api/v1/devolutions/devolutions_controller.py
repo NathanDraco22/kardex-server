@@ -1,13 +1,11 @@
 from fastapi import HTTPException, status
 
-from core.devolution_register.devolution_register import DevolutionRegister
-
-from repos.v1.branches import BranchesRepository, BranchesDataSource
-from repos.v1.clients import ClientsRepository, ClientsDataSource
-from repos.v1.products import ProductsRepository, ProductsDataSource
-from repos.v1.common.models.history_params import HistoryClientParams
-
-from repos.v1.devolutions import (
+from kardex.core.devolution_register.devolution_register import DevolutionRegister
+from kardex.repos.v1.branches import BranchesRepository, BranchesDataSource
+from kardex.repos.v1.clients import ClientsRepository, ClientsDataSource
+from kardex.repos.v1.products import ProductsRepository, ProductsDataSource
+from kardex.repos.v1.common.models.history_params import HistoryClientParams
+from kardex.repos.v1.devolutions import (
     CreateDevolution,
     UpdateDevolution,
     DevolutionInDb,

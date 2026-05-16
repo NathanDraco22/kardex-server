@@ -1,6 +1,5 @@
 from fastapi import APIRouter
-
-from repos.v1.integrations import UpdateIntegration, IntegrationInDb
+from kardex.repos.v1.integrations import UpdateIntegration, IntegrationInDb
 from responses.v1 import ListResponse
 
 

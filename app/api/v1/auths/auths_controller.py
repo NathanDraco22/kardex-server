@@ -3,9 +3,9 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
 
-from core.security import SysPasswordHasher, TokenManager
-from repos.v1.users import UsersRepository, UsersDataSource
-from repos.v1.core_settings import (
+from kardex.core.security import SysPasswordHasher, TokenManager
+from kardex.repos.v1.users import UsersRepository, UsersDataSource
+from kardex.repos.v1.core_settings import (
     CoreSettingsRepository,
     CoreSettingsDataSource,
     DecodedCoreSetting,

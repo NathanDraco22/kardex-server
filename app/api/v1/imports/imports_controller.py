@@ -4,15 +4,15 @@ import codecs
 
 from fastapi import UploadFile, HTTPException
 
-from core.imports.init_inventory.model.product_import import ProductImport
-from core.imports.init_inventory.process_init_import import (
+from kardex.core.imports.init_inventory.model.product_import import ProductImport
+from kardex.core.imports.init_inventory.process_init_import import (
     process_init_import,
     process_inventory_import,
 )
-from core.imports.clients.model.client_import import ClientImport
-from core.imports.clients.process_clients_import import process_clients_import
-from core.imports.suppliers.model.supplier_import import SupplierImport
-from core.imports.suppliers.process_suppliers_import import process_suppliers_import
+from kardex.core.imports.clients.model.client_import import ClientImport
+from kardex.core.imports.clients.process_clients_import import process_clients_import
+from kardex.core.imports.suppliers.model.supplier_import import SupplierImport
+from kardex.core.imports.suppliers.process_suppliers_import import process_suppliers_import
 
 class ImportsController:
     async def create_import(self, branch_id: str, file: UploadFile) -> Any:
