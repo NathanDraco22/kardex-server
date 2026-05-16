@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
-
-from repos.v1.exit_histories import ExitHistoryInDb
+from kardex.repos.v1.exit_histories import ExitHistoryInDb
 from responses.v1.list_response import ListResponse
 
 from app_middleware import auth_middleware

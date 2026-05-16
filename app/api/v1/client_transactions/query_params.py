@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from repos.v1.client_transactions.models.client_transaction_model import (
+from kardex.repos.v1.client_transactions.models.client_transaction_model import (
     TransactionType,
     TransactionSubType,
 )

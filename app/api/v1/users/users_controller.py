@@ -1,6 +1,5 @@
 from fastapi import HTTPException, status
-
-from repos.v1.users import (
+from kardex.repos.v1.users import (
     CreateUser,
     UpdateUser,
     UserInDb,
@@ -10,7 +9,7 @@ from repos.v1.users import (
 )
 
 from responses.v1 import ListResponse
-from tools.users_tool import UsersTool
+from kardex.tools.users_tool import UsersTool
 
 
 class UsersController:

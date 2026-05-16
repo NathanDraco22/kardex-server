@@ -1,6 +1,5 @@
 from fastapi import HTTPException, status
-
-from repos.v1.client_transactions import (
+from kardex.repos.v1.client_transactions import (
     ClientTransactionInDb,
     ClientTransactionsRepository,
     ClientTransactionsDataSource,

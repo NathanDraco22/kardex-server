@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from api.v1.router import router_v1
 from app_lifespan import lifespan
-from tools import NotModified, not_modified_exception_handler
+from kardex.tools import NotModified, not_modified_exception_handler
 from scalar_fastapi import get_scalar_api_reference
 
 load_dotenv()

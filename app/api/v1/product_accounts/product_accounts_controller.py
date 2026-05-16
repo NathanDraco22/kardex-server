@@ -1,5 +1,5 @@
 from responses.v1 import ListResponse
-from repos.v1.product_accounts import (
+from kardex.repos.v1.product_accounts import (
     ProductAccountsRepository,
     ProductAccountsDataSource,
     ProductAccountInDb,

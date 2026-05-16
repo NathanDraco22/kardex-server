@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Request, Response, Depends
-
-from repos.v1.branches import CreateBranch, UpdateBranch, BranchInDb
+from kardex.repos.v1.branches import CreateBranch, UpdateBranch, BranchInDb
 from responses.v1 import ListResponse
 
 from app_middleware import auth_middleware
 
-from tools import EtagTool, NotModified
+from kardex.tools import EtagTool, NotModified
 
 from .branches_controller import branches_controller
 

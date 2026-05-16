@@ -1,8 +1,7 @@
 from typing import Any
 from fastapi import APIRouter, Depends, Response
 from fastapi.responses import FileResponse
-
-from repos.v1.product_stats import (
+from kardex.repos.v1.product_stats import (
     ProductStatInDb,
     ProductStatInDbWithInfo,
     ProductStatInDbWithAccount,

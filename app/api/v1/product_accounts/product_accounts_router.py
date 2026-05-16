@@ -1,6 +1,5 @@
 from fastapi import APIRouter
-
-from repos.v1.product_accounts import ProductAccountInDb
+from kardex.repos.v1.product_accounts import ProductAccountInDb
 from responses.v1 import ListResponse
 
 from .product_accounts_controller import product_accounts_controller

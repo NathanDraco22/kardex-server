@@ -1,21 +1,21 @@
 from datetime import datetime, timedelta
 from functools import reduce
 
-from core.report_manager.report_manager import ReportManager
-from repos.v1.daily_summaries import (
+from kardex.core.report_manager.report_manager import ReportManager
+from kardex.repos.v1.daily_summaries import (
     DailySummariesRepository,
     DailySummariesDataSource,
     CommercialBranchDetail,
     CreateDailySummary,
     DailySummaryInDb,
 )
-from repos.v1.executive_summaries import (
+from kardex.repos.v1.executive_summaries import (
     ExecutiveSummariesRepository,
     ExecutiveSummariesDataSource,
     CreateExecutiveSummary,
     ExecutiveSummaryInDb,
 )
-from repos.v1.common.models import InventoryBranchDetail
+from kardex.repos.v1.common.models import InventoryBranchDetail
 
 
 class DailyReportMaker:

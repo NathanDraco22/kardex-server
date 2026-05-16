@@ -1,6 +1,5 @@
 from fastapi import HTTPException, status
-
-from repos.v1.units import (
+from kardex.repos.v1.units import (
     CreateUnit,
     UpdateUnit,
     UnitInDb,

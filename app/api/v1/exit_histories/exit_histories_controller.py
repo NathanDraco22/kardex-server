@@ -1,6 +1,5 @@
 from fastapi import HTTPException
-
-from repos.v1.exit_histories import (
+from kardex.repos.v1.exit_histories import (
     ExitHistoryInDb,
     ExitHistoriesRepository,
     ExitHistoriesDataSource,
