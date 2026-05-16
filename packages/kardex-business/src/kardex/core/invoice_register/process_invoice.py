@@ -2,9 +2,9 @@ from kardex.tools import UuidTool, TimeTools
 from kardex.repos.v1.invoices import CreateInvoice, InvoiceInDb
 from kardex.repos.v1.product_accounts import ProductAccountInDb
 from kardex.core.inventory import (
-    execute_inventory_exit_db_operations,
-    prepare_inventory_exit_batch,
+    InventoryBatchTransformer,
     InventoryExitBatchItem,
+    InventoryEngine,
 )
 from kardex.core.counter_manager.counter_manager import CounterManager
 from kardex.core.finance import process_client_financial_movement, FinanceTransactionRequest
@@ -77,7 +77,7 @@ async def process_invoice(
 
             # Ejecutar cálculos (Validación de stock + Costos + Kardex)
             # Pasamos is_order_fulfillment para que la validación en memoria sea correcta
-            batch_result = prepare_inventory_exit_batch(
+            batch_result = InventoryBatchTransformer.prepare_exit(
                 branch_id=create_invoice.branchId,
                 items=batch_items,
                 existing_accounts_dict=accounts_dict,
@@ -114,7 +114,7 @@ async def process_invoice(
 
             else:
                 # CAMINO B: VENTA DIRECTA -> Usamos el método estándar
-                await execute_inventory_exit_db_operations(
+                await InventoryEngine.execute_exit(
                     branch_id=create_invoice.branchId,
                     batch_result=batch_result,
                     session=session,
@@ -256,7 +256,7 @@ async def process_anon_invoice(
 
             # 3. EJECUTAR LÓGICA PURA REUTILIZABLE 🧠
             # Valida stock, calcula costos de salida y prepara transacciones
-            batch_result = prepare_inventory_exit_batch(
+            batch_result = InventoryBatchTransformer.prepare_exit(
                 branch_id=create_invoice.branchId,
                 items=batch_items,
                 existing_accounts_dict=accounts_dict,
@@ -275,7 +275,7 @@ async def process_anon_invoice(
                 invoice_item.cost = batch_result.assigned_costs[i]
 
             # 5. PERSISTENCIA MASIVA EN BD 💾
-            await execute_inventory_exit_db_operations(
+            await InventoryEngine.execute_exit(
                 branch_id=create_invoice.branchId,
                 batch_result=batch_result,
                 session=session,
