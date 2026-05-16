@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import Any
 from pydantic import BaseModel
 from kardex.tools import UuidTool, TimeTools
 
-if TYPE_CHECKING:
-    from kardex.repos.v1.clients import ClientInDb
+from kardex.repos.v1.clients import ClientInDb
 
 from kardex.repos.v1.client_transactions import (
     ClientTransactionInDb,
