@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from responses.v1.list_response import ListResponse
-from repos.v1.suppliers import CreateSupplier, UpdateSupplier, SupplierInDb
+from kardex.repos.v1.suppliers import CreateSupplier, UpdateSupplier, SupplierInDb
 
 from app_middleware import auth_middleware
 

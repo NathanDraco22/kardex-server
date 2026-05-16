@@ -8,6 +8,7 @@ dependencies = [
     "argon2-cffi>=25.1.0",
     "cryptography>=46.0.2",
     "fastapi[standard]>=0.135.2",
+    "kardex-business",
     "motor>=3.7.1",
     "onnxruntime>=1.24.4",
     "openpyxl>=3.1.5",
@@ -18,6 +19,10 @@ dependencies = [
     "scalar-fastapi>=1.8.1",
 ]
 
+[tool.uv.sources]
+kardex-business = { path = "./packages/kardex-business", editable = true }
+onion = { git = "https://github.com/NathanDraco22/onion-cli.git" }
+
 [dependency-groups]
 dev = [
     "onion",
@@ -27,10 +32,7 @@ dev = [
     "ty>=0.0.31",
 ]
 
-[tool.uv.sources]
-onion = { git = "https://github.com/NathanDraco22/onion-cli.git" }
-
 [tool.ty.environment]
 extra-paths = [
-    "./app", ".venv/Lib/site-packages"
+    "./app", ".venv/Lib/site-packages", "./packages/kardex-business/src"
 ]

@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import APIKeyHeader
-from core.security import TokenManager
+from kardex.core.security import TokenManager
 
 
 header_schema = APIKeyHeader(name="Authorization", auto_error=True)

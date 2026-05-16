@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from responses.v1 import ListResponse
-from repos.v1.product_transactions import ProductTransactionInDb
+from kardex.repos.v1.product_transactions import ProductTransactionInDb
 
 
 from .product_transactions_controller import product_transactions_controller

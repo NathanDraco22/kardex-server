@@ -1,13 +1,12 @@
 from fastapi import HTTPException, status
-
-from repos.v1.client_groups import (
+from kardex.repos.v1.client_groups import (
     CreateClientGroup,
     UpdateClientGroup,
     ClientGroupInDb,
     ClientGroupsRepository,
     ClientGroupsDataSource,
 )
-from repos.v1.clients import ClientsRepository, ClientsDataSource
+from kardex.repos.v1.clients import ClientsRepository, ClientsDataSource
 from responses.v1 import ListResponse
 
 

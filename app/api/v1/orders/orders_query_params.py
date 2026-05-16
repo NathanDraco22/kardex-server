@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from repos.v1.orders.models.order_model import OrderStatus
+from kardex.repos.v1.orders.models.order_model import OrderStatus
 
 class OrderQueryParams(BaseModel):
     skip: int = 0

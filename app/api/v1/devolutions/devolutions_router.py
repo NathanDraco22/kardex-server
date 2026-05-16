@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends
-
-from repos.v1.devolutions import CreateDevolution, DevolutionInDb
-from repos.v1.common.models.history_params import HistoryClientParams
+from kardex.repos.v1.devolutions import CreateDevolution, DevolutionInDb
+from kardex.repos.v1.common.models.history_params import HistoryClientParams
 from responses.v1 import ListResponse
 
 from app_middleware import auth_middleware

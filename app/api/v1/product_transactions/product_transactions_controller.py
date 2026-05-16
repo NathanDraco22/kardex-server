@@ -1,4 +1,4 @@
-from repos.v1.product_transactions import (
+from kardex.repos.v1.product_transactions import (
     ProductTransactionsDataSource,
     ProductTransactionsRepository,
     ProductTransactionInDb,

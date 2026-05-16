@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends
-
-from repos.v1.orders import CreateOrder, UpdateOrder, OrderInDb
-from repos.v1.common.models.invoice_product_sale import ProductSalesTotal
-from repos.v1.common.models import ProductStockDemand
+from kardex.repos.v1.orders import CreateOrder, UpdateOrder, OrderInDb
+from kardex.repos.v1.common.models.invoice_product_sale import ProductSalesTotal
+from kardex.repos.v1.common.models import ProductStockDemand
 from responses.v1 import ListResponse
 
 from app_middleware import auth_middleware

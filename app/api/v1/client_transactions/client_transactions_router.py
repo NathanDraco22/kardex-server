@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
-
-from repos.v1.client_transactions import ClientTransactionInDb
+from kardex.repos.v1.client_transactions import ClientTransactionInDb
 
 from responses.v1 import ListResponse
 

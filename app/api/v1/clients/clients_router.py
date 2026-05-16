@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
-
-from repos.v1.clients import CreateClient, UpdateClient, ClientInDb
+from kardex.repos.v1.clients import CreateClient, UpdateClient, ClientInDb
 from responses.v1 import ListResponse
 
 from app_middleware import auth_middleware

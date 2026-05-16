@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
-
-from repos.v1.inventories import InventoryInDb
+from kardex.repos.v1.inventories import InventoryInDb
 from responses.v1 import ListResponse
 
 from app_middleware import auth_middleware

@@ -1,15 +1,14 @@
 from fastapi import HTTPException, status, BackgroundTasks
 
 from responses.v1.list_response import ListResponse
-from core.product_ledger.product_ledger_manager import ProductLedgerManager
-
-from repos.v1.expiration_logs import (
+from kardex.core.product_ledger.product_ledger_manager import ProductLedgerManager
+from kardex.repos.v1.expiration_logs import (
     ExpirationLogsRepository,
     ExpirationLogsDataSource,
     CreateExpirationLog,
     ProductInfo,
 )
-from repos.v1.entry_docs import (
+from kardex.repos.v1.entry_docs import (
     CreateEntryDoc,
     EntryDocInDb,
     EntryDocsRepository,

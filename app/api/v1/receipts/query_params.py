@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from repos.v1.receipts.models.receipt_model import PaymentMethod
+from kardex.repos.v1.receipts.models.receipt_model import PaymentMethod
 
 
 class ReceiptQueryParams(BaseModel):

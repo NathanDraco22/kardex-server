@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from responses.v1.list_response import ListResponse
-from core.product_ledger.product_ledger_manager import ProductLedgerManager
-from repos.v1.exit_docs import (
+from kardex.core.product_ledger.product_ledger_manager import ProductLedgerManager
+from kardex.repos.v1.exit_docs import (
     CreateExitDoc,
     ExitDocInDb,
     ExitDocsRepository,
