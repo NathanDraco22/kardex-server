@@ -7,7 +7,7 @@ from kardex.core.inventory import (
     InventoryEngine,
 )
 from kardex.core.counter_manager.counter_manager import CounterManager
-from kardex.core.finance import process_client_financial_movement, FinanceTransactionRequest
+from kardex.core.finance import ClientFinanceEngine, FinanceTransactionRequest
 from kardex.repos.v1.clients import ClientInDb
 
 from kardex.services import MongoService
@@ -172,7 +172,7 @@ async def process_invoice(
             # ==========================================
 
             # A. Cargo (Deuda)
-            client_account = await process_client_financial_movement(
+            client_account = await ClientFinanceEngine.process_movement(
                 request=FinanceTransactionRequest(
                     client_id=create_invoice.clientId,
                     amount=new_invoice_in_db.total,
@@ -187,7 +187,7 @@ async def process_invoice(
 
             # B. Pago Contado (Abono)
             if new_invoice_in_db.paymentType == "cash":
-                client_account = await process_client_financial_movement(
+                client_account = await ClientFinanceEngine.process_movement(
                     request=FinanceTransactionRequest(
                         client_id=create_invoice.clientId,
                         amount=-(new_invoice_in_db.total),
