@@ -1,12 +1,21 @@
-from kardex.tools import TimeTools, UuidTool, EtagTool
+﻿from kardex.tools import TimeTools, UuidTool, EtagTool
 
 from .data.branches_datasource import BranchesDataSource
 from .models.branch_model import CreateBranch, UpdateBranch, BranchInDb
 
-
 class BranchesRepository:
+    _instance: "BranchesRepository | None" = None
+
     def __init__(self, branches_ds: BranchesDataSource):
         self.branches_ds = branches_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = BranchesRepository(
+                branches_ds=BranchesDataSource()
+            )
+        return cls._instance
 
     async def create_branch(self, create_branch: CreateBranch) -> BranchInDb:
         new_branch = BranchInDb(

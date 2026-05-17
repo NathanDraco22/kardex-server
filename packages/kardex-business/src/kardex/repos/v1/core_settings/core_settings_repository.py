@@ -1,4 +1,4 @@
-from kardex.tools import TimeTools, UuidTool
+﻿from kardex.tools import TimeTools, UuidTool
 from kardex.core.security import TokenManager
 
 from .data.core_settings_datasource import CoreSettingsDataSource
@@ -9,10 +9,19 @@ from .models.core_setting_model import (
     CoreSettingInDb,
 )
 
-
 class CoreSettingsRepository:
+    _instance: "CoreSettingsRepository | None" = None
+
     def __init__(self, core_settings_ds: CoreSettingsDataSource):
         self.core_settings_ds = core_settings_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = CoreSettingsRepository(
+                core_settings_ds=CoreSettingsDataSource()
+            )
+        return cls._instance
 
     async def create_core_setting(
         self, create_core_setting: CreateCoreSetting

@@ -1,12 +1,21 @@
-from kardex.tools import UuidTool, TimeTools
+﻿from kardex.tools import UuidTool, TimeTools
 
 from .data.units_datasource import UnitsDataSource
 from .models.unit_model import CreateUnit, UpdateUnit, UnitInDb
 
-
 class UnitsRepository:
+    _instance: "UnitsRepository | None" = None
+
     def __init__(self, units_ds: UnitsDataSource):
         self.units_ds = units_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = UnitsRepository(
+                units_ds=UnitsDataSource()
+            )
+        return cls._instance
 
     async def create_unit(self, create_unit: CreateUnit) -> UnitInDb:
         new_unit = UnitInDb(

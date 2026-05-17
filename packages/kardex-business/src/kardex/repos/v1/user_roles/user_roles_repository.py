@@ -1,13 +1,21 @@
-from kardex.tools import TimeTools, UuidTool
-
+﻿from kardex.tools import TimeTools, UuidTool
 
 from .data.user_roles_datasource import UserRolesDataSource
 from .models.user_role_model import CreateUserRole, UpdateUserRole, UserRoleInDb
 
-
 class UserRolesRepository:
+    _instance: "UserRolesRepository | None" = None
+
     def __init__(self, user_roles_ds: UserRolesDataSource):
         self.user_roles_ds = user_roles_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = UserRolesRepository(
+                user_roles_ds=UserRolesDataSource()
+            )
+        return cls._instance
 
     async def create_user_role(self, create_user_role: CreateUserRole) -> UserRoleInDb:
         new_user_role = UserRoleInDb(

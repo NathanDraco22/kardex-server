@@ -1,10 +1,19 @@
-from .data.adjust_exits_datasource import AdjustExitsDataSource
+﻿from .data.adjust_exits_datasource import AdjustExitsDataSource
 from .models.adjust_exit_model import CreateAdjustExit, UpdateAdjustExit, AdjustExitInDb
 
-
 class AdjustExitsRepository:
+    _instance: "AdjustExitsRepository | None" = None
+
     def __init__(self, adjust_exits_ds: AdjustExitsDataSource):
         self.adjust_exits_ds = adjust_exits_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = AdjustExitsRepository(
+                adjust_exits_ds=AdjustExitsDataSource()
+            )
+        return cls._instance
 
     async def create_adjust_exit(
         self, create_adjust_exit: CreateAdjustExit

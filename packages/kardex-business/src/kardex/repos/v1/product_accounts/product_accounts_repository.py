@@ -1,12 +1,21 @@
-from .data.product_accounts_datasource import ProductAccountsDataSource
+﻿from .data.product_accounts_datasource import ProductAccountsDataSource
 from .models.product_account_model import (
     ProductAccountInDb,
 )
 
-
 class ProductAccountsRepository:
+    _instance: "ProductAccountsRepository | None" = None
+
     def __init__(self, product_accounts_ds: ProductAccountsDataSource):
         self.product_accounts_ds = product_accounts_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = ProductAccountsRepository(
+                product_accounts_ds=ProductAccountsDataSource()
+            )
+        return cls._instance
 
     async def create_product_account(
         self, product_account: ProductAccountInDb

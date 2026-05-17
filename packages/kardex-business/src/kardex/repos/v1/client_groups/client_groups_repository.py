@@ -1,4 +1,4 @@
-from .data.client_groups_datasource import ClientGroupsDataSource
+﻿from .data.client_groups_datasource import ClientGroupsDataSource
 from .models.client_group_model import (
     CreateClientGroup,
     UpdateClientGroup,
@@ -7,10 +7,19 @@ from .models.client_group_model import (
 
 from kardex.tools import UuidTool, TimeTools
 
-
 class ClientGroupsRepository:
+    _instance: "ClientGroupsRepository | None" = None
+
     def __init__(self, client_groups_ds: ClientGroupsDataSource):
         self.client_groups_ds = client_groups_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = ClientGroupsRepository(
+                client_groups_ds=ClientGroupsDataSource()
+            )
+        return cls._instance
 
     async def create_client_group(
         self, create_client_group: CreateClientGroup

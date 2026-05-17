@@ -1,4 +1,4 @@
-from .data.executive_summaries_datasource import ExecutiveSummariesDataSource
+﻿from .data.executive_summaries_datasource import ExecutiveSummariesDataSource
 from .models.executive_summary_model import (
     CreateExecutiveSummary,
     ExecutiveSummaryInDb,
@@ -7,10 +7,19 @@ from .models.executive_summary_model import (
 
 from kardex.tools import UuidTool, TimeTools
 
-
 class ExecutiveSummariesRepository:
+    _instance: "ExecutiveSummariesRepository | None" = None
+
     def __init__(self, executive_summaries_ds: ExecutiveSummariesDataSource):
         self.executive_summaries_ds = executive_summaries_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = ExecutiveSummariesRepository(
+                executive_summaries_ds=ExecutiveSummariesDataSource()
+            )
+        return cls._instance
 
     async def create_executive_summary(
         self, create_executive_summary: CreateExecutiveSummary

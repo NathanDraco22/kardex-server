@@ -1,14 +1,23 @@
-from kardex.tools import TimeTools, UuidTool
+﻿from kardex.tools import TimeTools, UuidTool
 from kardex.core.counter_manager.counter_manager import CounterManager
 from kardex.repos.v1.common.models.history_params import HistoryClientParams
 
 from .data.devolutions_datasource import DevolutionsDataSource
 from .models.devolution_model import CreateDevolution, UpdateDevolution, DevolutionInDb
 
-
 class DevolutionsRepository:
+    _instance: "DevolutionsRepository | None" = None
+
     def __init__(self, devolutions_ds: DevolutionsDataSource):
         self.devolutions_ds = devolutions_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = DevolutionsRepository(
+                devolutions_ds=DevolutionsDataSource()
+            )
+        return cls._instance
 
     async def create_devolution(
         self, create_devolution: CreateDevolution
