@@ -1,5 +1,4 @@
 import asyncio
-from fastapi import HTTPException, status
 from pymongo.errors import OperationFailure
 from typing import List, Tuple
 
@@ -16,9 +15,7 @@ from kardex.repos.v1.products import ProductsRepository, ProductsDataSource
 from kardex.core.counter_manager.counter_manager import CounterManager
 
 from .process_order import process_order
-from kardex.tools import InsufficientBalanceError
-
-from kardex.tools import BranchesTool
+from kardex.tools import InsufficientBalanceError, BranchesTool, BranchNotFound, DocumentAlreadyExists, InvalidOperation
 
 
 class OrderRegister:
@@ -30,9 +27,7 @@ class OrderRegister:
     async def validate_document(self, doc: CreateOrder):
         branch = BranchesTool().get_branch_by_id(doc.branchId)
         if branch is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="BRANCH_NOT_FOUND"
-            )
+            raise BranchNotFound("BRANCH_NOT_FOUND", branch_id=doc.branchId)
 
     async def regis_order(
         self, create_order: CreateOrder
@@ -42,10 +37,7 @@ class OrderRegister:
 
         order = await self.orders_repo.get_order_by_doc_number(create_order.docNumber)
         if order is not None:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Order with this document number already exists",
-            )
+            raise DocumentAlreadyExists("Order with this document number already exists")
 
         await self.validate_document(create_order)
 
@@ -54,28 +46,16 @@ class OrderRegister:
             try:
                 return await process_order(create_order)
 
-            except InsufficientBalanceError as e:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"INSUFFICIENT_STOCK: {e}",
-                )
+            except InsufficientBalanceError:
+                raise InsufficientBalanceError("INSUFFICIENT_STOCK")
 
             except OperationFailure as e:
                 if e.code == 112:  # WriteConflict
                     await asyncio.sleep(0.3)
                 else:
-                    raise HTTPException(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail=f"Database operation failed: {e}",
-                    )
+                    raise InvalidOperation(f"Database operation failed: {e}")
 
             except Exception as e:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"An unexpected error occurred: {e}",
-                )
+                raise InvalidOperation(f"An unexpected error occurred: {e}")
 
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Server is too busy, please try again later",
-        )
+        raise InvalidOperation("Server is too busy, please try again later")

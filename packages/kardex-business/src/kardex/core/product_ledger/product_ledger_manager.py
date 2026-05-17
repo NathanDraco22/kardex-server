@@ -1,5 +1,4 @@
 import asyncio
-from fastapi import HTTPException, status
 
 from kardex.repos.v1.entry_docs import (
     EntryDocsRepository,
@@ -24,12 +23,11 @@ from kardex.repos.v1.product_accounts import (
 )
 from kardex.repos.v1.products import ProductsRepository, ProductsDataSource
 
-from kardex.tools import BranchesTool
+from kardex.tools import BranchesTool, InsufficientBalanceError, DocumentAlreadyExists, BranchNotFound, ProductNotFound, InvalidOperation
 
 
 from .process_entry_doc import process_entry_doc
 from .process_exit_doc import process_exit_doc
-from kardex.tools import InsufficientBalanceError
 
 
 class ProductLedgerManager:
@@ -55,10 +53,7 @@ class ProductLedgerManager:
         )
 
         if entry_doc is not None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="DOCUMENT_EXISTS",
-            )
+            raise DocumentAlreadyExists("DOCUMENT_EXISTS")
 
         await self._validate_document(create_entry_doc)
 
@@ -76,21 +71,12 @@ class ProductLedgerManager:
                     await asyncio.sleep(0.3)
 
                 else:
-                    raise HTTPException(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail="Error processing account entry transaction \n" + str(e),
-                    )
+                    raise InvalidOperation("Error processing account entry transaction \n" + str(e))
 
             except Exception as e:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Error processing account entry transaction \n" + str(e),
-                )
+                raise InvalidOperation("Error processing account entry transaction \n" + str(e))
 
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Server is too busy, try again later",
-        )
+        raise InvalidOperation("Server is too busy, try again later")
 
     async def regis_exit_doc(self, create_exit_doc: CreateExitDoc) -> ExitDocInDb:
         exit_doc = await self.exit_docs_repo.get_exit_doc_by_doc_number_and_client(
@@ -98,10 +84,7 @@ class ProductLedgerManager:
         )
 
         if exit_doc is not None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="DOCUMENT_EXISTS",
-            )
+            raise DocumentAlreadyExists("DOCUMENT_EXISTS")
 
         await self._validate_document(create_exit_doc)
 
@@ -114,42 +97,26 @@ class ProductLedgerManager:
                 return result
 
             except InsufficientBalanceError:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="INSUFFICIENT_STOCK_FOR_ONE_OR_MORE_PRODUCTS",
-                )
+                raise InsufficientBalanceError("INSUFFICIENT_STOCK_FOR_ONE_OR_MORE_PRODUCTS")
 
             except OperationFailure as e:
                 if e.code == 112:
                     await asyncio.sleep(0.3)
 
                 else:
-                    raise HTTPException(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail="Error processing account exit transaction \n" + str(e),
-                    )
+                    raise InvalidOperation("Error processing account exit transaction \n" + str(e))
 
             except Exception as e:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Error processing account exit transaction \n" + str(e),
-                )
+                raise InvalidOperation("Error processing account exit transaction \n" + str(e))
 
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Server is too busy, try again later",
-        )
+        raise InvalidOperation("Server is too busy, try again later")
 
     async def _validate_document(self, doc):
         branch = BranchesTool().get_branch_by_id(doc.branchId)
         if branch is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="BRANCH_NOT_FOUND"
-            )
+            raise BranchNotFound("BRANCH_NOT_FOUND", branch_id=doc.branchId)
 
         product_ids = list(set(item.productId for item in doc.items))
         products = await self.products_repo.get_product_by_ids(product_ids)
         if len(products) != len(product_ids):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="PRODUCT_NOT_FOUND"
-            )
+            raise ProductNotFound("PRODUCT_NOT_FOUND")

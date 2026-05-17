@@ -3,7 +3,7 @@ from kardex.core.inventory import (
     InventoryBatchTransformer,
     InventoryEngine,
 )
-from kardex.tools import UuidTool, TimeTools, BranchesTool, InsufficientBalanceError, BranchNotFound
+from kardex.tools import UuidTool, TimeTools, BranchesTool, BranchNotFound
 from kardex.repos.v1.exit_docs import ExitDocInDb, CreateExitDoc
 from kardex.repos.v1.product_accounts import ProductAccountInDb
 

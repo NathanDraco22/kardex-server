@@ -3,9 +3,20 @@ from .uuid_tool import UuidTool
 from .search_tools import generate_prefixes
 from .query_builder import build_query
 from .etag_tool import EtagTool
-from .app_exceptions import NotModified, not_modified_exception_handler
+from .app_exceptions import NotModified
 from .branches_tool import BranchesTool
-from .kardex_exceptions import KardexException, InsufficientBalanceError, BranchNotFound
+from .kardex_exceptions import (
+    KardexException,
+    InsufficientBalanceError,
+    BranchNotFound,
+    DocumentAlreadyExists,
+    ProductNotFound,
+    ClientNotFound,
+    ReceiptNotFound,
+    ReceiptAlreadyDeleted,
+    SameBranchTransferError,
+    InvalidOperation,
+)
 
 
 __all__ = [
@@ -15,9 +26,15 @@ __all__ = [
     "build_query",
     "EtagTool",
     "NotModified",
-    "not_modified_exception_handler",
     "BranchesTool",
     "KardexException",
     "InsufficientBalanceError",
     "BranchNotFound",
+    "DocumentAlreadyExists",
+    "ProductNotFound",
+    "ClientNotFound",
+    "ReceiptNotFound",
+    "ReceiptAlreadyDeleted",
+    "SameBranchTransferError",
+    "InvalidOperation",
 ]

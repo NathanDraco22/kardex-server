@@ -1,4 +1,4 @@
-from kardex.tools import UuidTool, TimeTools, BranchesTool
+from kardex.tools import UuidTool, TimeTools, BranchesTool, BranchNotFound
 from kardex.core.inventory import (
     InventoryBatchTransformer,
     InventoryEntryBatchItem,
@@ -40,7 +40,7 @@ async def process_entry_doc(
             current_branch_in_db = branches_tool.get_branch_by_id(entry_doc.branchId)
 
             if current_branch_in_db is None:
-                raise Exception("Branch not found in process")
+                raise BranchNotFound("Branch not found in process")
 
             now_in_milliseconds = TimeTools.get_now_in_milliseconds()
 

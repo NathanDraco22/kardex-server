@@ -113,12 +113,12 @@ Completado y verificado. Los shims permiten migración gradual de imports de `re
 
 ## Fecha: 2026-05-17
 ### Objetivo
-Code Review exhaustivo del módulo de control de stock y kardex `product_ledger` del paquete `kardex-business`.
+Code Review y validación de la refactorización del módulo de control de stock y kardex `product_ledger` en `kardex-business`.
 
 ### Resumen de Revisión
 1. **Estructura y Atomicidad**: Se verificó la excelente separación de responsabilidades y el flujo atómico basado en sesiones de MongoDB con reintentos transaccionales para conflictos concurrentes (código 112).
-2. **Bug Crítico Encontrado**: Se detectó una colisión y desalineación de clases de la excepción `InsufficientBalanceError` entre `process_exit_doc.py` e `inventory_batch_transformer.py`. Esto causa que las excepciones por stock insuficiente no coincidan en `product_ledger_manager.py`, propagándose erróneamente como HTTP 500 en lugar de un HTTP 400 controlado.
-3. **Oportunidades de Mejora**:
-    * **Sanitización de Errores**: Evitar concatenar `str(e)` en las respuestas HTTP 500 para prevenir la fuga de detalles internos de infraestructura.
-    * **Consistencia de Timestamps**: Propagar un único timestamp milisegundos (`createdAt`) en lugar de recalcularlo asíncronamente en el transformador de inventario.
+2. **Refactorización de Excepciones (Éxito)**: El usuario resolvió de forma magistral el bug de desalineación de `InsufficientBalanceError` centralizando las excepciones en `packages/kardex-business/src/kardex/tools/kardex_exceptions.py`.
+3. **Desacoplamiento de FastAPI**: Se eliminó la dependencia de `fastapi.HTTPException` dentro del paquete de negocio `kardex-business`. Las excepciones se propagan de manera nativa y son mapeadas limpiamente a nivel global mediante Exception Handlers en `app/regis_exception_handlers.py`. Esto respeta perfectamente la Onion Architecture.
+4. **Oportunidad Detectada**: Alinear la excepción de sucursal no encontrada en el flujo de entradas (`process_entry_doc.py`) usando la nueva excepción `BranchNotFound` para total consistencia.
+
 
