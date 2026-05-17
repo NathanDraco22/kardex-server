@@ -41,6 +41,11 @@ class DevolutionsRepository:
         models = [DevolutionInDb.model_validate(result) for result in results]
         return models
 
+    async def get_all_active_devolutions(self, **kwargs) -> list[DevolutionInDb]:
+        results = await self.devolutions_ds.get_all_active_devolutions(**kwargs)
+        models = [DevolutionInDb.model_validate(result) for result in results]
+        return models
+
     async def get_devolution_by_id(self, devolution_id: str) -> DevolutionInDb | None:
         result = await self.devolutions_ds.get_devolution_by_id(devolution_id)
 

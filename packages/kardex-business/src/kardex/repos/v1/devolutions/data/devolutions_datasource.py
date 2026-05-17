@@ -12,6 +12,10 @@ class DevolutionsDataSource:
         collection = DevolutionsCollection()
         return await collection.fetch_all_devolutions(**kwargs)
 
+    async def get_all_active_devolutions(self, **kwargs) -> list[dict[str, Any]]:
+        collection = DevolutionsCollection()
+        return await collection.fetch_all_active_devolutions(**kwargs)
+
     async def get_devolutions_by_invoice_id(
         self, invoice_id: str, client_id: str | None
     ) -> list[dict[str, Any]]:

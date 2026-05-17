@@ -39,6 +39,14 @@ class DevolutionsController:
         )
         return ListResponse(count=len(devolutions), data=devolutions)
 
+    async def get_all_active_devolutions(
+        self, params: DevolutionQueryParams
+    ) -> ListResponse[DevolutionInDb]:
+        devolutions = await self.devolutions_repo.get_all_active_devolutions(
+            **params.model_dump()
+        )
+        return ListResponse(count=len(devolutions), data=devolutions)
+
     async def get_devolution_by_id(self, devolution_id: str) -> DevolutionInDb:
         devolution = await self.devolutions_repo.get_devolution_by_id(devolution_id)
         if devolution is None:
