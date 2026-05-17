@@ -60,7 +60,7 @@ class AdjustLedgerManager:
     # ---------------------------------------------------------
     async def regis_adjust_entry(
         self, create_adjust_doc: CreateAdjustEntry
-    ) -> tuple[AdjustEntryInDb, list[ProductAccountInDb]]:
+    ) -> AdjustEntryInDb:
         existing_doc = await self.adjust_entries_repo.get_adjust_entry_by_doc_number(
             doc_number=create_adjust_doc.docNumber,
             branch_id=create_adjust_doc.branchId,

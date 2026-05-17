@@ -23,7 +23,6 @@ class EntryBatchResult(BaseModel):
     new_profiles: list[CreateProductSaleProfile]
     new_stats: list[CreateProductStat]
     transactions: list[ProductTransactionInDb]
-    simulated_accounts: list[ProductAccountInDb]
 
 
 class InventoryExitBatchItem(BaseModel):
@@ -43,7 +42,6 @@ class InsufficientBalanceError(Exception):
 
 
 class InventoryBatchTransformer:
-
     @staticmethod
     def prepare_entry(
         branch_id: str,
@@ -74,7 +72,6 @@ class InventoryBatchTransformer:
         new_sale_profiles: list[CreateProductSaleProfile] = []
         new_product_stats: list[CreateProductStat] = []
         new_transactions: list[ProductTransactionInDb] = []
-        simulated_accounts: list[ProductAccountInDb] = []
 
         for p_id, data in consolidated.items():
             inc_qty = data["qty"]
@@ -148,25 +145,11 @@ class InventoryBatchTransformer:
             )
             new_transactions.append(transaction)
 
-            simulated_accounts.append(
-                ProductAccountInDb(
-                    productId=p_id,
-                    branchId=branch_id,
-                    currentStock=total_new_qty,
-                    averageCost=new_avg_cost,
-                    lastCost=inc_last_cost,
-                    createdAt=now,
-                    updatedAt=now,
-                    promiseStock=0,
-                )
-            )
-
         return EntryBatchResult(
             accounts_update=bulk_update_accounts,
             new_profiles=new_sale_profiles,
             new_stats=new_product_stats,
             transactions=new_transactions,
-            simulated_accounts=simulated_accounts,
         )
 
     @staticmethod

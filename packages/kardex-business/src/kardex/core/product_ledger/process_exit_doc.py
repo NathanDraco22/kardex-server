@@ -1,7 +1,11 @@
-from kardex.tools import UuidTool, TimeTools
+from kardex.core.inventory import (
+    InventoryExitBatchItem,
+    InventoryBatchTransformer,
+    InventoryEngine,
+)
+from kardex.tools import UuidTool, TimeTools, BranchesTool
 from kardex.repos.v1.exit_docs import ExitDocInDb, CreateExitDoc
 from kardex.repos.v1.product_accounts import ProductAccountInDb
-from kardex.repos.v1.product_transactions import ProductTransactionInDb
 
 from kardex.services import MongoService
 from kardex.services.mongo_collections.v1 import (
@@ -17,71 +21,78 @@ class InsufficientBalanceError(Exception):
 
 async def process_exit_doc(
     create_exit_doc: CreateExitDoc,
-) -> tuple[ExitDocInDb, list[ProductAccountInDb]]:
+    follow_transactions: bool,
+) -> ExitDocInDb:
     mongo_client = MongoService().client
     prd_transaction_col = ProductTransactionsCollection()
     product_account_col = ProductAccountsCollection()
 
-    exit_items = create_exit_doc.items
+    branches_tool = BranchesTool()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
+            current_branch_in_db = branches_tool.get_branch_by_id(
+                create_exit_doc.branchId
+            )
+
+            if current_branch_in_db is None:
+                raise Exception("Branch not found in process")
+
+            now_in_milliseconds = TimeTools.get_now_in_milliseconds()
             new_exit_doc_generated_id = UuidTool.generate_uuid()
-
-            updated_product_accounts: list[ProductAccountInDb] = []
-
-            created_transactions: list[ProductTransactionInDb] = []
-
-            for index, exit_item in enumerate(exit_items):
-                result = await product_account_col.substract_product_account_data(
-                    exit_item.productId,
-                    create_exit_doc.branchId,
-                    exit_item.quantity,
-                    session=session,
-                )
-
-                if result is None:
-                    raise InsufficientBalanceError()
-
-                updated_product_account = ProductAccountInDb.model_validate(result)
-
-                exit_item.cost = updated_product_account.averageCost
-
-                updated_product_accounts.append(updated_product_account)
-
-                new_transaction = ProductTransactionInDb(
-                    id=UuidTool.generate_uuid(),
-                    documentId=new_exit_doc_generated_id,
-                    docNumber=create_exit_doc.docNumber,
-                    type="exit",
-                    subtype="exit",
-                    productId=exit_item.productId,
-                    branchId=create_exit_doc.branchId,
-                    quantity=exit_item.quantity,
-                    averageCost=updated_product_account.averageCost,
-                    createdAt=TimeTools.get_now_in_milliseconds(),
-                    resultStock=updated_product_account.currentStock,
-                )
-
-                created_transactions.append(new_transaction)
 
             new_exit_data = create_exit_doc.model_dump()
             new_exit_data["id"] = new_exit_doc_generated_id
-            new_exit_data["createdAt"] = TimeTools.get_now_in_milliseconds()
+            new_exit_data["createdAt"] = now_in_milliseconds
 
             insert_result = await ExitDocsCollection().create_exit_doc_with_session(
                 new_exit_data,
                 session=session,
             )
 
-            created_transactions_data = [
-                transaction.model_dump() for transaction in created_transactions
-            ]
-            await prd_transaction_col.create_many_product_transactions_with_session(
-                created_transactions_data,
-                session=session,
-            )
-
             new_exit_doc_in_db = ExitDocInDb.model_validate(insert_result)
 
-            return new_exit_doc_in_db, updated_product_accounts
+            batch_items = [
+                InventoryExitBatchItem(
+                    product_id=item.productId,
+                    product_name=item.productName,
+                    quantity=item.quantity,
+                )
+                for item in create_exit_doc.items
+            ]
+
+            product_ids = [item.product_id for item in batch_items]
+
+            existing_accounts_data = (
+                await product_account_col.get_accounts_by_branch_id(
+                    branch_id=create_exit_doc.branchId,
+                    product_ids=product_ids,
+                    session=session,
+                )
+            )
+
+            accounts_dict = {
+                acc["productId"]: ProductAccountInDb.model_validate(acc)
+                for acc in existing_accounts_data
+            }
+
+            batch_result = InventoryBatchTransformer.prepare_exit(
+                branch_id=create_exit_doc.branchId,
+                items=batch_items,
+                existing_accounts_dict=accounts_dict,
+                document_id=new_exit_doc_in_db.id,
+                doc_number=new_exit_doc_in_db.docNumber,
+                tx_type="exit",
+                tx_subtype="exit",
+            )
+
+            await InventoryEngine.execute_exit(
+                branch_id=create_exit_doc.branchId,
+                batch_result=batch_result,
+                session=session,
+                account_col=product_account_col,
+                transaction_col=prd_transaction_col,
+                follow_transactions=follow_transactions,
+            )
+
+            return new_exit_doc_in_db

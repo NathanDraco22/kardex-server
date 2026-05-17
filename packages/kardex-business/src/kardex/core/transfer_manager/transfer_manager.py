@@ -16,7 +16,6 @@ from kardex.repos.v1.transfers import (
 from kardex.repos.v1.branches import BranchesRepository, BranchesDataSource
 from kardex.repos.v1.product_accounts import (
     ProductAccountsRepository,
-    ProductAccountInDb,
     ProductAccountsDataSource,
 )
 from kardex.repos.v1.products import ProductsRepository, ProductsDataSource
@@ -99,7 +98,7 @@ class TransferManager:
     # ---------------------------------------------------------
     async def regis_incoming_transfer(
         self, transfer_id: str, intent: ReceiveTransferIntent
-    ) -> tuple[TransferInDb, list[ProductAccountInDb]]:
+    ) -> TransferInDb:
         # A. Validaciones básicas previas
         # (Nota: process_incoming_transfer valida si ya existe el ID o si ya fue recibido)
 

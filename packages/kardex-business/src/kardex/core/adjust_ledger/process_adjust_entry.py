@@ -20,7 +20,7 @@ from kardex.core.counter_manager.counter_manager import CounterManager
 
 async def process_adjust_entry(
     adjust_entry: CreateAdjustEntry,
-) -> tuple[AdjustEntryInDb, list[ProductAccountInDb]]:
+) -> AdjustEntryInDb:
     mongo_client = MongoService().client
 
     # Colecciones
@@ -113,4 +113,4 @@ async def process_adjust_entry(
                 transaction_col=prd_transaction_col,
             )
 
-            return new_adjust_in_db, batch_result.simulated_accounts
+            return new_adjust_in_db

@@ -110,3 +110,15 @@ Extracción de la capa de negocio (`repos`, `core`, `tools`, `services/mongo`) a
 
 ### Estado
 Completado y verificado. Los shims permiten migración gradual de imports de `repos.v1.*` → `kardex.business.repos.v1.*` (y аналогично para core, tools, services).
+
+## Fecha: 2026-05-17
+### Objetivo
+Code Review exhaustivo del módulo de control de stock y kardex `product_ledger` del paquete `kardex-business`.
+
+### Resumen de Revisión
+1. **Estructura y Atomicidad**: Se verificó la excelente separación de responsabilidades y el flujo atómico basado en sesiones de MongoDB con reintentos transaccionales para conflictos concurrentes (código 112).
+2. **Bug Crítico Encontrado**: Se detectó una colisión y desalineación de clases de la excepción `InsufficientBalanceError` entre `process_exit_doc.py` e `inventory_batch_transformer.py`. Esto causa que las excepciones por stock insuficiente no coincidan en `product_ledger_manager.py`, propagándose erróneamente como HTTP 500 en lugar de un HTTP 400 controlado.
+3. **Oportunidades de Mejora**:
+    * **Sanitización de Errores**: Evitar concatenar `str(e)` en las respuestas HTTP 500 para prevenir la fuga de detalles internos de infraestructura.
+    * **Consistencia de Timestamps**: Propagar un único timestamp milisegundos (`createdAt`) en lugar de recalcularlo asíncronamente en el transformador de inventario.
+

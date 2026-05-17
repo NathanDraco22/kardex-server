@@ -33,7 +33,7 @@ class TransferAlreadyProcessedError(Exception):
 async def process_incoming_transfer(
     transfer_id: str,
     intent: ReceiveTransferIntent,
-) -> tuple[TransferInDb, list[ProductAccountInDb]]:
+) -> TransferInDb:
     mongo_client = MongoService().client
 
     # Colecciones
@@ -164,4 +164,4 @@ async def process_incoming_transfer(
             updated_transfer_in_db = TransferInDb.model_validate(updated_transfer_dict)
 
             # Retornamos el traslado actualizado y las cuentas simuladas que generó tu lógica
-            return updated_transfer_in_db, batch_result.simulated_accounts
+            return updated_transfer_in_db
