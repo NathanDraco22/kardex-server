@@ -3,7 +3,7 @@ from kardex.core.inventory import (
     InventoryBatchTransformer,
     InventoryEngine,
 )
-from kardex.tools import UuidTool, TimeTools, BranchesTool
+from kardex.tools import UuidTool, TimeTools, BranchesTool, InsufficientBalanceError, BranchNotFound
 from kardex.repos.v1.exit_docs import ExitDocInDb, CreateExitDoc
 from kardex.repos.v1.product_accounts import ProductAccountInDb
 
@@ -13,10 +13,6 @@ from kardex.services.mongo_collections.v1 import (
     ProductTransactionsCollection,
     ProductAccountsCollection,
 )
-
-
-class InsufficientBalanceError(Exception):
-    pass
 
 
 async def process_exit_doc(
@@ -36,7 +32,7 @@ async def process_exit_doc(
             )
 
             if current_branch_in_db is None:
-                raise Exception("Branch not found in process")
+                raise BranchNotFound("Branch not found in process", branch_id=create_exit_doc.branchId)
 
             now_in_milliseconds = TimeTools.get_now_in_milliseconds()
             new_exit_doc_generated_id = UuidTool.generate_uuid()

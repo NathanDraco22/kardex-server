@@ -14,7 +14,7 @@ from pymongo.errors import OperationFailure
 
 
 from kardex.core.default_values import SALE_CLIENT_ID
-from kardex.core.inventory import InsufficientBalanceError
+from kardex.tools import InsufficientBalanceError
 
 from kardex.repos.v1.clients import ClientInDb
 from kardex.repos.v1.product_accounts import ProductAccountInDb

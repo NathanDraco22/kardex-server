@@ -1,7 +1,7 @@
 from typing import Any
 from pydantic import BaseModel
 
-from kardex.tools import UuidTool, TimeTools
+from kardex.tools import UuidTool, TimeTools, InsufficientBalanceError
 from kardex.repos.v1.product_accounts import ProductAccountInDb
 from kardex.repos.v1.product_transactions import (
     ProductTransactionInDb,
@@ -35,10 +35,6 @@ class ExitBatchResult(BaseModel):
     stock_subtractions: list[tuple[str, int]]
     transactions: list[ProductTransactionInDb]
     assigned_costs: list[int]
-
-
-class InsufficientBalanceError(Exception):
-    pass
 
 
 class InventoryBatchTransformer:
@@ -182,7 +178,8 @@ class InventoryBatchTransformer:
 
             if p_id not in existing_accounts_dict:
                 raise InsufficientBalanceError(
-                    f"El producto '{p_name}' no tiene cuenta en esta sucursal."
+                    f"El producto '{p_name}' no tiene cuenta en esta sucursal.",
+                    product_id=p_id, product_name=p_name,
                 )
 
             account = existing_accounts_dict[p_id]
@@ -198,7 +195,8 @@ class InventoryBatchTransformer:
                 raise InsufficientBalanceError(
                     f"Stock {stock_type_msg} insuficiente para '{p_name}'. "
                     f"Requerido: {total_qty_needed}, "
-                    f"Disponible: {limit_stock}"
+                    f"Disponible: {limit_stock}",
+                    product_id=p_id, product_name=p_name,
                 )
 
             pair_op.append((p_id, total_qty_needed))

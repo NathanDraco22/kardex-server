@@ -15,7 +15,8 @@ from kardex.repos.v1.branches import BranchesRepository, BranchesDataSource
 from kardex.repos.v1.products import ProductsRepository, ProductsDataSource
 from kardex.core.counter_manager.counter_manager import CounterManager
 
-from .process_order import process_order, InsufficientBalanceError
+from .process_order import process_order
+from kardex.tools import InsufficientBalanceError
 
 from kardex.tools import BranchesTool
 

@@ -1,10 +1,11 @@
+from kardex.tools.kardex_exceptions import InsufficientBalanceError
+
 from .inventory_batch_transformer import (
     InventoryBatchTransformer,
     InventoryEntryBatchItem,
     EntryBatchResult,
     InventoryExitBatchItem,
     ExitBatchResult,
-    InsufficientBalanceError,
 )
 
 from .inventory_engine import InventoryEngine

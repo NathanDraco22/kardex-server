@@ -5,6 +5,7 @@ from .query_builder import build_query
 from .etag_tool import EtagTool
 from .app_exceptions import NotModified, not_modified_exception_handler
 from .branches_tool import BranchesTool
+from .kardex_exceptions import KardexException, InsufficientBalanceError, BranchNotFound
 
 
 __all__ = [
@@ -16,4 +17,7 @@ __all__ = [
     "NotModified",
     "not_modified_exception_handler",
     "BranchesTool",
+    "KardexException",
+    "InsufficientBalanceError",
+    "BranchNotFound",
 ]

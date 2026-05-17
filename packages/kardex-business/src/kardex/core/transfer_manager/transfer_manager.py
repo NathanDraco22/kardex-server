@@ -21,9 +21,7 @@ from kardex.repos.v1.product_accounts import (
 from kardex.repos.v1.products import ProductsRepository, ProductsDataSource
 
 
-from kardex.core.inventory import (
-    InsufficientBalanceError,
-)
+from kardex.tools import InsufficientBalanceError
 
 from .process_out_transfer import (
     process_outgoing_transfer,

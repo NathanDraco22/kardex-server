@@ -28,7 +28,8 @@ from kardex.tools import BranchesTool
 
 
 from .process_entry_doc import process_entry_doc
-from .process_exit_doc import process_exit_doc, InsufficientBalanceError
+from .process_exit_doc import process_exit_doc
+from kardex.tools import InsufficientBalanceError
 
 
 class ProductLedgerManager:
