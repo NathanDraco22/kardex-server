@@ -1,7 +1,7 @@
 from typing import Any
 from pydantic import BaseModel
 
-from kardex.tools import UuidTool, TimeTools
+from kardex.tools import UuidTool, TimeTools, InsufficientBalanceError
 from kardex.repos.v1.product_accounts import ProductAccountInDb
 from kardex.repos.v1.product_transactions import (
     ProductTransactionInDb,
@@ -23,7 +23,6 @@ class EntryBatchResult(BaseModel):
     new_profiles: list[CreateProductSaleProfile]
     new_stats: list[CreateProductStat]
     transactions: list[ProductTransactionInDb]
-    simulated_accounts: list[ProductAccountInDb]
 
 
 class InventoryExitBatchItem(BaseModel):
@@ -38,12 +37,7 @@ class ExitBatchResult(BaseModel):
     assigned_costs: list[int]
 
 
-class InsufficientBalanceError(Exception):
-    pass
-
-
 class InventoryBatchTransformer:
-
     @staticmethod
     def prepare_entry(
         branch_id: str,
@@ -74,7 +68,6 @@ class InventoryBatchTransformer:
         new_sale_profiles: list[CreateProductSaleProfile] = []
         new_product_stats: list[CreateProductStat] = []
         new_transactions: list[ProductTransactionInDb] = []
-        simulated_accounts: list[ProductAccountInDb] = []
 
         for p_id, data in consolidated.items():
             inc_qty = data["qty"]
@@ -148,25 +141,11 @@ class InventoryBatchTransformer:
             )
             new_transactions.append(transaction)
 
-            simulated_accounts.append(
-                ProductAccountInDb(
-                    productId=p_id,
-                    branchId=branch_id,
-                    currentStock=total_new_qty,
-                    averageCost=new_avg_cost,
-                    lastCost=inc_last_cost,
-                    createdAt=now,
-                    updatedAt=now,
-                    promiseStock=0,
-                )
-            )
-
         return EntryBatchResult(
             accounts_update=bulk_update_accounts,
             new_profiles=new_sale_profiles,
             new_stats=new_product_stats,
             transactions=new_transactions,
-            simulated_accounts=simulated_accounts,
         )
 
     @staticmethod
@@ -199,7 +178,8 @@ class InventoryBatchTransformer:
 
             if p_id not in existing_accounts_dict:
                 raise InsufficientBalanceError(
-                    f"El producto '{p_name}' no tiene cuenta en esta sucursal."
+                    f"El producto '{p_name}' no tiene cuenta en esta sucursal.",
+                    product_id=p_id, product_name=p_name,
                 )
 
             account = existing_accounts_dict[p_id]
@@ -215,7 +195,8 @@ class InventoryBatchTransformer:
                 raise InsufficientBalanceError(
                     f"Stock {stock_type_msg} insuficiente para '{p_name}'. "
                     f"Requerido: {total_qty_needed}, "
-                    f"Disponible: {limit_stock}"
+                    f"Disponible: {limit_stock}",
+                    product_id=p_id, product_name=p_name,
                 )
 
             pair_op.append((p_id, total_qty_needed))

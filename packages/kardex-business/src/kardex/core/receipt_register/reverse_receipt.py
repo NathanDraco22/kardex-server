@@ -1,5 +1,4 @@
 from typing import Tuple
-from fastapi import HTTPException, status as http_status
 from kardex.services import MongoService
 from kardex.services.mongo_collections.v1 import (
     ReceiptsCollection,
@@ -12,7 +11,7 @@ from kardex.repos.v1.invoices import InvoiceInDb
 from kardex.repos.v1.receipts import ReceiptInDb
 from kardex.repos.v1.client_transactions import ClientTransactionInDb
 from kardex.repos.v1.clients import ClientInDb
-from kardex.tools import UuidTool, TimeTools
+from kardex.tools import UuidTool, TimeTools, InvalidOperation
 
 
 async def reverse_receipt(
@@ -42,30 +41,18 @@ async def reverse_receipt(
                 )
 
                 if current_invoice_data is None:
-                    raise HTTPException(
-                        status_code=http_status.HTTP_400_BAD_REQUEST,
-                        detail=f"Invoice {applied_invoice.invoiceId} not found",
-                    )
+                    raise InvalidOperation(f"Invoice {applied_invoice.invoiceId} not found")
 
                 current_invoice = InvoiceInDb.model_validate(current_invoice_data)
 
                 if current_invoice.status == "paid":
-                    raise HTTPException(
-                        status_code=http_status.HTTP_400_BAD_REQUEST,
-                        detail=f"Invoice {current_invoice.docNumber} is already paid, cannot reverse",
-                    )
+                    raise InvalidOperation(f"Invoice {current_invoice.docNumber} is already paid, cannot reverse")
 
                 if current_invoice.status == "cancelled":
-                    raise HTTPException(
-                        status_code=http_status.HTTP_400_BAD_REQUEST,
-                        detail=f"Invoice {current_invoice.docNumber} is cancelled, cannot reverse",
-                    )
+                    raise InvalidOperation(f"Invoice {current_invoice.docNumber} is cancelled, cannot reverse")
 
                 if current_invoice.status == "draft":
-                    raise HTTPException(
-                        status_code=http_status.HTTP_400_BAD_REQUEST,
-                        detail=f"Invoice {current_invoice.docNumber} is still in draft, cannot reverse",
-                    )
+                    raise InvalidOperation(f"Invoice {current_invoice.docNumber} is still in draft, cannot reverse")
 
                 await invoice_col.subtract_from_amount_paid(
                     invoice_id=applied_invoice.invoiceId,

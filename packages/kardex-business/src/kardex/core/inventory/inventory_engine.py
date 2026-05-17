@@ -23,6 +23,7 @@ class InventoryEngine:
         profile_col: ProductSaleProfilesCollection,
         stats_col: ProductStatsCollection,
         transaction_col: ProductTransactionsCollection,
+        follow_transactions: bool = True,
     ):
         if batch_result.accounts_update:
             await account_col.bulk_update_product_account_balance_with_average_cost(
@@ -37,13 +38,13 @@ class InventoryEngine:
                 raw_profiles, session=session
             )
 
-        if batch_result.new_stats:
+        if batch_result.new_stats and follow_transactions:
             raw_stats = [s.model_dump() for s in batch_result.new_stats]
             await stats_col.bulk_create_product_stats_if_not_exist(
                 raw_stats, session=session
             )
 
-        if batch_result.transactions:
+        if batch_result.transactions and follow_transactions:
             raw_txs = [t.model_dump() for t in batch_result.transactions]
             await transaction_col.create_many_product_transactions_with_session(
                 raw_txs, session=session
@@ -56,6 +57,7 @@ class InventoryEngine:
         session: Any,
         account_col: ProductAccountsCollection,
         transaction_col: ProductTransactionsCollection,
+        follow_transactions: bool = True,
     ):
         if batch_result.stock_subtractions:
             await account_col.bulk_substract_product_account_data(
@@ -64,7 +66,7 @@ class InventoryEngine:
                 session=session,
             )
 
-        if batch_result.transactions:
+        if batch_result.transactions and follow_transactions:
             raw_txs = [t.model_dump() for t in batch_result.transactions]
             await transaction_col.create_many_product_transactions_with_session(
                 raw_txs,

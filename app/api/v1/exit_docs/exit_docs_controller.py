@@ -20,7 +20,7 @@ class ExitDocsController:
         self.product_ledger_manager = product_ledger_manager
 
     async def create_exit_doc(self, body: CreateExitDoc) -> ExitDocInDb:
-        exit_doc, _ = await self.product_ledger_manager.regis_exit_doc(body)
+        exit_doc = await self.product_ledger_manager.regis_exit_doc(body)
         return exit_doc
 
     async def get_all_exit_docs(self) -> list[ExitDocInDb]:
@@ -44,9 +44,7 @@ class ExitDocsController:
             )
         return exit_doc
 
-    async def get_exit_history(
-        self, **kwargs
-    ) -> ListResponse[ExitHistoryInDb]:
+    async def get_exit_history(self, **kwargs) -> ListResponse[ExitHistoryInDb]:
         mapped_kwargs = {
             "branch_id": kwargs.get("branch_id"),
             "client_id": kwargs.get("clientId"),
@@ -58,9 +56,7 @@ class ExitDocsController:
         exit_histories = await self.exit_docs_repo.get_exit_history(**mapped_kwargs)
         return ListResponse(count=len(exit_histories), data=exit_histories)
 
-    async def get_history_by_id_with_client(
-        self, exit_doc_id: str
-    ) -> ExitHistoryInDb:
+    async def get_history_by_id_with_client(self, exit_doc_id: str) -> ExitHistoryInDb:
         exit_history = await self.exit_docs_repo.get_exit_history_by_id_with_client(
             exit_doc_id
         )
@@ -74,8 +70,10 @@ class ExitDocsController:
     async def get_exit_history_by_doc_number_and_branch_id(
         self, doc_number: str, branch_id: str
     ) -> ExitHistoryInDb:
-        exit_history = await self.exit_docs_repo.get_exit_history_by_doc_number_and_branch_id(
-            doc_number, branch_id
+        exit_history = (
+            await self.exit_docs_repo.get_exit_history_by_doc_number_and_branch_id(
+                doc_number, branch_id
+            )
         )
         if not exit_history:
             raise HTTPException(

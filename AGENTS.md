@@ -61,7 +61,23 @@ This project uses a custom CLI called `onion` to automate boilerplate creation.
 
 ## 🤖 Agent Session Protocol
 - **`GEMINI.md`**: After every session or major feature completion, YOU MUST update the `GEMINI.md` file at the root. Record the date, the objective, and a summary of the technical implementation.
-- **Aesthetics**: When asked for Web App or UI changes, prioritize premium aesthetics, dynamic designs, and rich UX.
+- **Aesthetics**: When asked for Web App or UI changes, prioritize premium aesthetics, dynamic designs, rich UX.
+
+---
+
+## ✅ Pre-commit Verification
+
+After every modification, run these checks and fix any issues:
+
+```powershell
+# Lint (ruff)
+$env:PYTHONPATH = "app;$env:PYTHONPATH"; .venv\Scripts\ruff.exe check packages/kardex-business/src/kardex/ app/
+
+# Type check (ty)
+$env:PYTHONPATH = "app;$env:PYTHONPATH"; .venv\Scripts\ty.exe check
+```
+
+Both must pass before finishing a task.
 
 ---
 
