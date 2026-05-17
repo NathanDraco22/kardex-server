@@ -1,4 +1,4 @@
-from kardex.tools import UuidTool, TimeTools, BranchesTool
+from kardex.tools import UuidTool, TimeTools, BranchesTool, BranchNotFound
 from kardex.core.inventory import (
     InventoryBatchTransformer,
     InventoryEntryBatchItem,
@@ -21,7 +21,8 @@ from kardex.services.mongo_collections.v1 import (
 
 async def process_entry_doc(
     entry_doc: CreateEntryDoc,
-) -> tuple[EntryDocInDb, list[ProductAccountInDb]]:
+    follow_transactions: bool,
+) -> EntryDocInDb:
     mongo_client = MongoService().client
 
     # Colecciones
@@ -36,6 +37,11 @@ async def process_entry_doc(
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
+            current_branch_in_db = branches_tool.get_branch_by_id(entry_doc.branchId)
+
+            if current_branch_in_db is None:
+                raise BranchNotFound("Branch not found in process")
+
             now_in_milliseconds = TimeTools.get_now_in_milliseconds()
 
             new_entry_data = entry_doc.model_dump()
@@ -48,10 +54,6 @@ async def process_entry_doc(
             )
             new_entry_doc_in_db = EntryDocInDb.model_validate(insert_result)
 
-            current_branch_in_db = branches_tool.get_branch_by_id(entry_doc.branchId)
-
-            if current_branch_in_db is None:
-                raise Exception("Branch not found in process")
             batch_items = [
                 InventoryEntryBatchItem(
                     product_id=item.productId,
@@ -96,6 +98,7 @@ async def process_entry_doc(
                 profile_col=product_prof_col,
                 stats_col=product_stats_col,
                 transaction_col=prd_transaction_col,
+                follow_transactions=follow_transactions,
             )
 
-            return new_entry_doc_in_db, batch_result.simulated_accounts
+            return new_entry_doc_in_db

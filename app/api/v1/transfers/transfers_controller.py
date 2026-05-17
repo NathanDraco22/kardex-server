@@ -96,7 +96,7 @@ class TransfersController:
     async def receive_transfer(
         self, transfer_id: str, intent: ReceiveTransferIntent, bg_tasks: BackgroundTasks
     ) -> TransferInDb:
-        transfer, _ = await self.transfer_manager.regis_incoming_transfer(
+        transfer = await self.transfer_manager.regis_incoming_transfer(
             transfer_id, intent
         )
 

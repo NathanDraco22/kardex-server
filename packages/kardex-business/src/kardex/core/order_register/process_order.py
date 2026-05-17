@@ -5,12 +5,8 @@ from kardex.services.mongo_collections.v1 import (
 )
 from kardex.repos.v1.orders import CreateOrder, OrderInDb
 from kardex.repos.v1.product_accounts import ProductAccountInDb
-from kardex.tools import UuidTool, TimeTools
+from kardex.tools import UuidTool, TimeTools, InsufficientBalanceError
 from kardex.services import MongoService
-
-
-class InsufficientBalanceError(Exception):
-    pass
 
 
 async def process_order(
@@ -63,7 +59,8 @@ async def process_order(
 
                 if p_id not in accounts_dict:
                     raise InsufficientBalanceError(
-                        f"El producto '{p_name}' no tiene cuenta en esta sucursal."
+                        f"El producto '{p_name}' no tiene cuenta en esta sucursal.",
+                        product_id=p_id, product_name=p_name,
                     )
 
                 account = accounts_dict[p_id]
@@ -80,7 +77,8 @@ async def process_order(
                         f"Requerido: {qty_needed}, "
                         f"Físico: {current}, "
                         f"Comprometido: {promised}, "
-                        f"Disponible: {available}"
+                        f"Disponible: {available}",
+                        product_id=p_id, product_name=p_name,
                     )
 
                 # Preparamos datos para el Bulk Write

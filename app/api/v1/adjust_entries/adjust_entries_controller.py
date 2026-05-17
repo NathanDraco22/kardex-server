@@ -22,7 +22,7 @@ class AdjustEntriesController:
     async def create_adjust_entry(
         self, body: CreateAdjustEntry, bg_tasks: BackgroundTasks
     ) -> AdjustEntryInDb:
-        res, _ = await self.adjust_ledger_manager.regis_adjust_entry(body)
+        res = await self.adjust_ledger_manager.regis_adjust_entry(body)
 
         doc_branch = BranchesTool().get_branch_by_id(res.branchId)
 
