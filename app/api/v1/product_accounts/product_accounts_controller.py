@@ -11,7 +11,6 @@ from kardex.repos.v1.product_accounts import (
 
 from kardex.repos.v1.expiration_logs import (
     ExpirationLogsRepository,
-    ExpirationLogsDataSource,
     CreateExpirationLog,
     ProductInfo,
 )
