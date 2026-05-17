@@ -8,5 +8,6 @@ class LoginResponse(BaseModel):
 
 
 class ServinStatusResponese(BaseModel):
+    nickname: str
     isActive: bool
     isMultiBranch: bool
