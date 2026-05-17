@@ -1,11 +1,20 @@
-from typing import AsyncGenerator
+﻿from typing import AsyncGenerator
 from .data.inventories_datasource import InventoriesDataSource
 from .models.inventory_model import InventoryInDb
 
-
 class InventoriesRepository:
+    _instance: "InventoriesRepository | None" = None
+
     def __init__(self, inventories_ds: InventoriesDataSource):
         self.inventories_ds = inventories_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = InventoriesRepository(
+                inventories_ds=InventoriesDataSource()
+            )
+        return cls._instance
 
     async def get_all_inventories_by_branch(
         self, branch_id: str

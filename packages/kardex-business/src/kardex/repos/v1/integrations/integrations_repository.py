@@ -1,4 +1,4 @@
-from .data.integrations_datasource import IntegrationsDataSource
+﻿from .data.integrations_datasource import IntegrationsDataSource
 from .models.integration_model import (
     CreateIntegration,
     UpdateIntegration,
@@ -7,10 +7,19 @@ from .models.integration_model import (
 
 from kardex.tools import TimeTools
 
-
 class IntegrationsRepository:
+    _instance: "IntegrationsRepository | None" = None
+
     def __init__(self, integrations_ds: IntegrationsDataSource):
         self.integrations_ds = integrations_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = IntegrationsRepository(
+                integrations_ds=IntegrationsDataSource()
+            )
+        return cls._instance
 
     async def create_integration_if_absent(
         self, create_integration: CreateIntegration

@@ -1,11 +1,20 @@
-from kardex.tools import UuidTool, TimeTools
+﻿from kardex.tools import UuidTool, TimeTools
 from .data.suppliers_datasource import SuppliersDataSource
 from .models.supplier_model import CreateSupplier, UpdateSupplier, SupplierInDb
 
-
 class SuppliersRepository:
+    _instance: "SuppliersRepository | None" = None
+
     def __init__(self, suppliers_ds: SuppliersDataSource):
         self.suppliers_ds = suppliers_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = SuppliersRepository(
+                suppliers_ds=SuppliersDataSource()
+            )
+        return cls._instance
 
     async def create_supplier(self, create_supplier: CreateSupplier) -> SupplierInDb:
         new_supplier_in_db = SupplierInDb(

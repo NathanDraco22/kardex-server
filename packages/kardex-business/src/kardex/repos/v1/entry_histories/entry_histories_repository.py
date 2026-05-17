@@ -1,11 +1,20 @@
-from .data.entry_histories_datasource import EntryHistoriesDataSource
+﻿from .data.entry_histories_datasource import EntryHistoriesDataSource
 from .models.entry_history_model import EntryHistoryInDb
 from .params.get_entry_history_params import GetEntryHistoryParams
 
-
 class EntryHistoriesRepository:
+    _instance: "EntryHistoriesRepository | None" = None
+
     def __init__(self, entry_histories_ds: EntryHistoriesDataSource):
         self.entry_histories_ds = entry_histories_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = EntryHistoriesRepository(
+                entry_histories_ds=EntryHistoriesDataSource()
+            )
+        return cls._instance
 
     async def get_entry_history(
         self, params: GetEntryHistoryParams

@@ -1,4 +1,4 @@
-from .data.product_prices_datasource import ProductPricesDataSource
+﻿from .data.product_prices_datasource import ProductPricesDataSource
 from .models.product_price_model import (
     CreateProductPrice,
     UpdateProductPrice,
@@ -7,10 +7,19 @@ from .models.product_price_model import (
 
 from kardex.tools import TimeTools, UuidTool
 
-
 class ProductPricesRepository:
+    _instance: "ProductPricesRepository | None" = None
+
     def __init__(self, product_prices_ds: ProductPricesDataSource):
         self.product_prices_ds = product_prices_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = ProductPricesRepository(
+                product_prices_ds=ProductPricesDataSource()
+            )
+        return cls._instance
 
     async def create_product_price(
         self, create_product_price: CreateProductPrice

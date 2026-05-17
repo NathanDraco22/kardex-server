@@ -1,15 +1,23 @@
-from kardex.tools import TimeTools, UuidTool
+﻿from kardex.tools import TimeTools, UuidTool
 from .data.orders_datasource import OrdersDataSource
 from .models.order_model import CreateOrder, UpdateOrder, OrderInDb
-
 
 from kardex.repos.v1.common.models.invoice_product_sale import ProductSalesTotal
 from kardex.repos.v1.common.models import ProductStockDemand
 
-
 class OrdersRepository:
+    _instance: "OrdersRepository | None" = None
+
     def __init__(self, orders_ds: OrdersDataSource):
         self.orders_ds = orders_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = OrdersRepository(
+                orders_ds=OrdersDataSource()
+            )
+        return cls._instance
 
     async def create_draft_order(self, order: CreateOrder) -> OrderInDb:
         newDraftOrder = OrderInDb(

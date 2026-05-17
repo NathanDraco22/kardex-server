@@ -1,4 +1,4 @@
-from kardex.tools import TimeTools, UuidTool
+﻿from kardex.tools import TimeTools, UuidTool
 
 from .data.product_categories_datasource import ProductCategoriesDataSource
 from .models.product_category_model import (
@@ -7,10 +7,19 @@ from .models.product_category_model import (
     ProductCategoryInDb,
 )
 
-
 class ProductCategoriesRepository:
+    _instance: "ProductCategoriesRepository | None" = None
+
     def __init__(self, product_categories_ds: ProductCategoriesDataSource):
         self.product_categories_ds = product_categories_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = ProductCategoriesRepository(
+                product_categories_ds=ProductCategoriesDataSource()
+            )
+        return cls._instance
 
     async def create_product_category(
         self, create_product_category: CreateProductCategory

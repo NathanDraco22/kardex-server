@@ -1,11 +1,9 @@
-from __future__ import annotations
-
+﻿from __future__ import annotations
 
 from kardex.core.client.process_create_client import InitialBalanceClient
 from kardex.tools import TimeTools
 from kardex.tools.search_tools import generate_prefixes
 from kardex.core.counter_manager.counter_manager import CounterManager
-
 
 from kardex.core.client.process_create_client import (
     create_multiple_initial_balance,
@@ -14,14 +12,22 @@ from kardex.core.client.process_create_client import (
     create_initial_balance,
 )
 
-
 from .data.clients_datasource import ClientsDataSource
 from .models.client_model import CreateClient, UpdateClient, ClientInDb
 
-
 class ClientsRepository:
+    _instance: "ClientsRepository | None" = None
+
     def __init__(self, clients_ds: ClientsDataSource):
         self.clients_ds = clients_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = ClientsRepository(
+                clients_ds=ClientsDataSource()
+            )
+        return cls._instance
 
     async def create_client(self, create_client: CreateClient) -> ClientInDb:
         client_number = await CounterManager().next_client_number()

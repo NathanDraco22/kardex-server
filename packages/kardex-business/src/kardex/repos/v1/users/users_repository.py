@@ -1,14 +1,23 @@
-from kardex.tools import TimeTools
+﻿from kardex.tools import TimeTools
 from kardex.core.security import SysPasswordHasher
 from kardex.core.counter_manager.counter_manager import CounterManager
 
 from .data.users_datasource import UsersDataSource
 from .models.user_model import CreateUser, UpdateUser, UserInDb, UserInDbWithRole
 
-
 class UsersRepository:
+    _instance: "UsersRepository | None" = None
+
     def __init__(self, users_ds: UsersDataSource):
         self.users_ds = users_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = UsersRepository(
+                users_ds=UsersDataSource()
+            )
+        return cls._instance
 
     async def create_user_directly(self, new_user: UserInDb) -> UserInDb:
         new_user.password = SysPasswordHasher.hash_password(new_user.password)

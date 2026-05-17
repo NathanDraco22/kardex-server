@@ -1,10 +1,19 @@
-from .data.client_transactions_datasource import ClientTransactionsDataSource
+﻿from .data.client_transactions_datasource import ClientTransactionsDataSource
 from .models.client_transaction_model import ClientTransactionInDb
 
-
 class ClientTransactionsRepository:
+    _instance: "ClientTransactionsRepository | None" = None
+
     def __init__(self, client_transactions_ds: ClientTransactionsDataSource):
         self.client_transactions_ds = client_transactions_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = ClientTransactionsRepository(
+                client_transactions_ds=ClientTransactionsDataSource()
+            )
+        return cls._instance
 
     async def get_all_client_transactions(
         self, **kwargs

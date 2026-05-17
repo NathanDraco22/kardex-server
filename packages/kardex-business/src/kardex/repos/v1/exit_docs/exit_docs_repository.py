@@ -1,10 +1,19 @@
-from .data.exit_docs_datasource import ExitDocsDataSource
+﻿from .data.exit_docs_datasource import ExitDocsDataSource
 from .models.exit_doc_model import ExitDocInDb, ExitHistoryInDb
 
-
 class ExitDocsRepository:
+    _instance: "ExitDocsRepository | None" = None
+
     def __init__(self, exit_docs_ds: ExitDocsDataSource):
         self.exit_docs_ds = exit_docs_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = ExitDocsRepository(
+                exit_docs_ds=ExitDocsDataSource()
+            )
+        return cls._instance
 
     async def get_all_exit_docs(self) -> list[ExitDocInDb]:
         results = await self.exit_docs_ds.get_all_exit_docs()
