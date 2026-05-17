@@ -411,6 +411,29 @@ wheels = [
 ]
 
 [[package]]
+name = "kardex-business"
+version = "0.1.0"
+source = { editable = "packages/kardex-business" }
+dependencies = [
+    { name = "argon2-cffi" },
+    { name = "fastapi" },
+    { name = "motor" },
+    { name = "pydantic" },
+    { name = "pyjwt" },
+    { name = "pytz" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "argon2-cffi", specifier = ">=25.1.0" },
+    { name = "fastapi", specifier = ">=0.135.2" },
+    { name = "motor", specifier = ">=3.7.1" },
+    { name = "pydantic", specifier = ">=2.0" },
+    { name = "pyjwt", specifier = ">=2.12.1" },
+    { name = "pytz", specifier = ">=2026.1" },
+]
+
+[[package]]
 name = "kardex-server-lite"
 version = "0.1.1"
 source = { virtual = "." }
@@ -418,6 +441,7 @@ dependencies = [
     { name = "argon2-cffi" },
     { name = "cryptography" },
     { name = "fastapi", extra = ["standard"] },
+    { name = "kardex-business" },
     { name = "motor" },
     { name = "openpyxl" },
     { name = "packaging" },
@@ -441,6 +465,7 @@ requires-dist = [
     { name = "argon2-cffi", specifier = ">=25.1.0" },
     { name = "cryptography", specifier = ">=46.0.2" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.135.2" },
+    { name = "kardex-business", editable = "packages/kardex-business" },
     { name = "motor", specifier = ">=3.7.1" },
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "packaging", specifier = ">=24.2" },
