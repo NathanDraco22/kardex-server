@@ -1,11 +1,20 @@
-from .data.exit_histories_datasource import ExitHistoriesDataSource
+﻿from .data.exit_histories_datasource import ExitHistoriesDataSource
 from .models.exit_history_model import ExitHistoryInDb
 from .params.get_exit_history_params import GetExitHistoryParams
 
-
 class ExitHistoriesRepository:
+    _instance: "ExitHistoriesRepository | None" = None
+
     def __init__(self, exit_histories_ds: ExitHistoriesDataSource):
         self.exit_histories_ds = exit_histories_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = ExitHistoriesRepository(
+                exit_histories_ds=ExitHistoriesDataSource()
+            )
+        return cls._instance
 
     async def get_exit_history(
         self, params: GetExitHistoryParams

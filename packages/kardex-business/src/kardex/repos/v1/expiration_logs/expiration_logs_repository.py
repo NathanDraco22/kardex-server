@@ -1,4 +1,4 @@
-from kardex.tools import TimeTools, UuidTool
+﻿from kardex.tools import TimeTools, UuidTool
 from .data.expiration_logs_datasource import ExpirationLogsDataSource
 from .models.expiration_log_model import (
     CreateExpirationLog,
@@ -6,10 +6,19 @@ from .models.expiration_log_model import (
     ExpirationLogInDb,
 )
 
-
 class ExpirationLogsRepository:
+    _instance: "ExpirationLogsRepository | None" = None
+
     def __init__(self, expiration_logs_ds: ExpirationLogsDataSource):
         self.expiration_logs_ds = expiration_logs_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = ExpirationLogsRepository(
+                expiration_logs_ds=ExpirationLogsDataSource()
+            )
+        return cls._instance
 
     async def create_expiration_log(
         self, create_expiration_log: CreateExpirationLog

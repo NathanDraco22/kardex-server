@@ -1,4 +1,4 @@
-from .data.product_sale_profiles_datasource import ProductSaleProfilesDataSource
+﻿from .data.product_sale_profiles_datasource import ProductSaleProfilesDataSource
 from .models.product_sale_profile_model import (
     ProductSaleProfileInDbWithProduct,
     UpdateProductSaleProfile,
@@ -7,10 +7,19 @@ from .models.product_sale_profile_model import (
 
 from kardex.tools import TimeTools
 
-
 class ProductSaleProfilesRepository:
+    _instance: "ProductSaleProfilesRepository | None" = None
+
     def __init__(self, product_sale_profiles_ds: ProductSaleProfilesDataSource):
         self.product_sale_profiles_ds = product_sale_profiles_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = ProductSaleProfilesRepository(
+                product_sale_profiles_ds=ProductSaleProfilesDataSource()
+            )
+        return cls._instance
 
     async def get_all_product_sale_profiles(
         self, branch_id: str

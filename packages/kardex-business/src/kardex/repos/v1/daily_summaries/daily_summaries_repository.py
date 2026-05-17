@@ -1,12 +1,21 @@
-from .data.daily_summaries_datasource import DailySummariesDataSource
+﻿from .data.daily_summaries_datasource import DailySummariesDataSource
 from .models.daily_summary_model import CreateDailySummary, DailySummaryInDb
 
 from kardex.tools import UuidTool, TimeTools
 
-
 class DailySummariesRepository:
+    _instance: "DailySummariesRepository | None" = None
+
     def __init__(self, daily_summaries_ds: DailySummariesDataSource):
         self.daily_summaries_ds = daily_summaries_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = DailySummariesRepository(
+                daily_summaries_ds=DailySummariesDataSource()
+            )
+        return cls._instance
 
     async def create_daily_summary(
         self, create_daily_summary: CreateDailySummary

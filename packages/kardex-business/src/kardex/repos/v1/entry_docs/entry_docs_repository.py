@@ -1,10 +1,19 @@
-from .data.entry_docs_datasource import EntryDocsDataSource
+﻿from .data.entry_docs_datasource import EntryDocsDataSource
 from .models.entry_doc_model import EntryDocInDb, EntryHistoryInDb
 
-
 class EntryDocsRepository:
+    _instance: "EntryDocsRepository | None" = None
+
     def __init__(self, entry_docs_ds: EntryDocsDataSource):
         self.entry_docs_ds = entry_docs_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = EntryDocsRepository(
+                entry_docs_ds=EntryDocsDataSource()
+            )
+        return cls._instance
 
     async def get_all_entry_docs(self) -> list[EntryDocInDb]:
         results = await self.entry_docs_ds.get_all_entry_docs()

@@ -6,8 +6,18 @@ from .models.adjust_entry_model import (
 
 
 class AdjustEntriesRepository:
+    _instance: "AdjustEntriesRepository | None" = None
+
     def __init__(self, adjust_entries_ds: AdjustEntriesDataSource):
         self.adjust_entries_ds = adjust_entries_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = AdjustEntriesRepository(
+                adjust_entries_ds=AdjustEntriesDataSource()
+            )
+        return cls._instance
 
     async def get_all_adjust_entries(self, **kwargs) -> list[AdjustEntryInDb]:
         results = await self.adjust_entries_ds.get_all_adjust_entries(**kwargs)

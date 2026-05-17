@@ -1,4 +1,4 @@
-from .data.product_stats_datasource import ProductStatsDataSource
+﻿from .data.product_stats_datasource import ProductStatsDataSource
 from .models.product_stat_model import (
     ProductStatInDb,
     ProductStatInDbWithInfo,
@@ -6,10 +6,19 @@ from .models.product_stat_model import (
     UpdateProductStatBatchItem,
 )
 
-
 class ProductStatsRepository:
+    _instance: "ProductStatsRepository | None" = None
+
     def __init__(self, product_stats_ds: ProductStatsDataSource):
         self.product_stats_ds = product_stats_ds
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = ProductStatsRepository(
+                product_stats_ds=ProductStatsDataSource()
+            )
+        return cls._instance
 
     async def get_all_product_stats(self, **kwargs) -> list[ProductStatInDb]:
         results = await self.product_stats_ds.get_all_product_stats(**kwargs)
