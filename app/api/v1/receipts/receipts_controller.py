@@ -1,8 +1,8 @@
-from fastapi import HTTPException, status
+﻿from fastapi import HTTPException, status
 
 
-from core.receipt_register.receipt_register import ReceiptRegister
-from repos.v1.receipts import (
+from kardex.core.receipt_register.receipt_register import ReceiptRegister
+from kardex.repos.v1.receipts import (
     CreateReceipt,
     UpdateReceipt,
     ReceiptInDb,
@@ -10,7 +10,7 @@ from repos.v1.receipts import (
     ReceiptsDataSource,
     ReceiptTotal,
 )
-from repos.v1.common.models.history_params import HistoryClientParams
+from kardex.repos.v1.common.models.history_params import HistoryClientParams
 
 
 from .query_params import ReceiptQueryParams

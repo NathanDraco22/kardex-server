@@ -1,6 +1,6 @@
-from fastapi import HTTPException, status
+﻿from fastapi import HTTPException, status
 
-from repos.v1.expiration_logs import (
+from kardex.repos.v1.expiration_logs import (
     CreateExpirationLog,
     UpdateExpirationLog,
     ExpirationLogInDb,

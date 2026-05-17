@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, BackgroundTasks
+﻿from fastapi import APIRouter, Depends, BackgroundTasks
 
-from repos.v1.transfers import (
+from kardex.repos.v1.transfers import (
     CreateTransfer,
     TransferInDb,
     ReceiveTransferIntent,

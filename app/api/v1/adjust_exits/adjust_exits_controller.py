@@ -1,12 +1,12 @@
-from fastapi import HTTPException, status, BackgroundTasks
+﻿from fastapi import HTTPException, status, BackgroundTasks
 from api.common.query_params import AdjustQueryParams
-from core.adjust_ledger.adjust_ledger import AdjustLedgerManager
+from kardex.core.adjust_ledger.adjust_ledger import AdjustLedgerManager
 from core.app_notifier.app_notifier import AppNotifier
 from tools import BranchesTool
 
 from responses.v1 import ListResponse
 
-from repos.v1.adjust_exits import (
+from kardex.repos.v1.adjust_exits import (
     CreateAdjustExit,
     UpdateAdjustExit,
     AdjustExitInDb,

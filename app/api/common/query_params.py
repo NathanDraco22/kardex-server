@@ -1,6 +1,6 @@
 from pydantic import BaseModel
-from repos.v1.invoices.models.invoice_model import InvoiceStatus
-from repos.v1.common.models.sale_item import PaymentType
+from kardex.repos.v1.invoices.models.invoice_model import InvoiceStatus
+from kardex.repos.v1.common.models.sale_item import PaymentType
 
 
 class InvoiceQueryParams(BaseModel):

@@ -1,4 +1,4 @@
-from .mongo_service import MongoService
+from kardex.services import MongoService
 from .excel_service import ProjectionExcelService, ProjectionRow, ProjectionSheet
 from .telgram_service import TelegramService
 

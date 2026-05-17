@@ -1,6 +1,6 @@
-from fastapi import HTTPException, status
+﻿from fastapi import HTTPException, status
 from core.app_notifier.app_notifier import AppNotifier
-from repos.v1.integrations import (
+from kardex.repos.v1.integrations import (
     UpdateIntegration,
     IntegrationInDb,
     IntegrationsRepository,

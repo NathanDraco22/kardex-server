@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends
 
-from repos.v1.executive_summaries import CreateExecutiveSummary, ExecutiveSummaryInDb
+from kardex.repos.v1.executive_summaries import CreateExecutiveSummary, ExecutiveSummaryInDb
 
 from responses.v1 import ListResponse
 

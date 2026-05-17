@@ -1,6 +1,6 @@
-from fastapi import HTTPException, status
+﻿from fastapi import HTTPException, status
 
-from repos.v1.user_roles import (
+from kardex.repos.v1.user_roles import (
     CreateUserRole,
     UpdateUserRole,
     UserRoleInDb,

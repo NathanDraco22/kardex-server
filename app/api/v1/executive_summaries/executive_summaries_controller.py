@@ -1,6 +1,6 @@
-from fastapi import HTTPException, status
+﻿from fastapi import HTTPException, status
 
-from repos.v1.executive_summaries import (
+from kardex.repos.v1.executive_summaries import (
     CreateExecutiveSummary,
     ExecutiveSummaryInDb,
     ExecutiveSummariesRepository,

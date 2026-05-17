@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends
 
-from repos.v1.product_sale_profiles import (
+from kardex.repos.v1.product_sale_profiles import (
     UpdateProductSaleProfile,
     ProductSaleProfileInDb,
     ProductSaleProfileInDbWithProduct,

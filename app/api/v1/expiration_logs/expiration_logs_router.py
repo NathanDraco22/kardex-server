@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends
 
-from repos.v1.expiration_logs import (
+from kardex.repos.v1.expiration_logs import (
     CreateExpirationLog,
     ExpirationLogInDb,
 )

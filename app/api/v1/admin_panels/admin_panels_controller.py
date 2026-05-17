@@ -1,7 +1,7 @@
-import asyncio
-from repos.v1.invoices import InvoicesRepository, InvoicesDataSource
+﻿import asyncio
+from kardex.repos.v1.invoices import InvoicesRepository, InvoicesDataSource
 
-from tools.time_tools import TimeTools
+from tools import TimeTools
 
 from .responses import AdminChartsResponses
 

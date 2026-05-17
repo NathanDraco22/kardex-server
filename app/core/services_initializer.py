@@ -1,9 +1,9 @@
-from services import MongoService
-from services.mongo_indexes import create_indexes
-from core.default_values.create_default_roles import create_default_roles
-from core.default_values.defult_etags import set_default_etags
-from core.default_values.create_default_integration import create_default_integration
-from core.default_values.create_root_user import create_root_user
+from kardex.services import MongoService
+from kardex.services.mongo_indexes import create_indexes
+from kardex.core.default_values.create_default_roles import create_default_roles
+from kardex.core.default_values.defult_etags import set_default_etags
+from kardex.core.default_values.create_default_integration import create_default_integration
+from kardex.core.default_values.create_root_user import create_root_user
 from tools import BranchesTool
 from tools.users_tool import UsersTool
 

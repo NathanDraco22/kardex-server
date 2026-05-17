@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends
 
-from repos.v1.invoices import (
+from kardex.repos.v1.invoices import (
     CreateInvoice,
     UpdateInvoice,
     InvoiceInDb,
@@ -10,7 +10,7 @@ from repos.v1.invoices import (
 
 from app_middleware import auth_middleware
 
-from repos.v1.common.models.history_params import HistoryClientParams
+from kardex.repos.v1.common.models.history_params import HistoryClientParams
 
 from responses.v1 import ListResponse
 

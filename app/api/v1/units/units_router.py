@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends
 
 
 from app_middleware import auth_middleware
 
-from repos.v1.units import CreateUnit, UpdateUnit, UnitInDb
+from kardex.repos.v1.units import CreateUnit, UpdateUnit, UnitInDb
 
 from responses.v1 import ListResponse
 

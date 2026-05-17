@@ -1,6 +1,6 @@
-from responses.v1 import ListResponse
+﻿from responses.v1 import ListResponse
 from fastapi import HTTPException, status
-from repos.v1.product_accounts import (
+from kardex.repos.v1.product_accounts import (
     ProductAccountsRepository,
     ProductAccountsDataSource,
     ProductAccountInDb,
@@ -9,13 +9,13 @@ from repos.v1.product_accounts import (
     SubstractToProductAccount,
 )
 
-from repos.v1.expiration_logs import (
+from kardex.repos.v1.expiration_logs import (
     ExpirationLogsRepository,
     ExpirationLogsDataSource,
     CreateExpirationLog,
     ProductInfo,
 )
-from repos.v1.products import ProductsRepository
+from kardex.repos.v1.products import ProductsRepository
 
 
 class ProductAccountsController:

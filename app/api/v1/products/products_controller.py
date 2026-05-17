@@ -1,10 +1,10 @@
-from fastapi import HTTPException, status
+﻿from fastapi import HTTPException, status
 
 from responses.v1 import ListResponse
 
 from .query_params import ProductQueryParams
 
-from repos.v1.products import (
+from kardex.repos.v1.products import (
     CreateProduct,
     UpdateProduct,
     ProductInDb,
@@ -13,7 +13,7 @@ from repos.v1.products import (
     ProductsDataSource,
 )
 
-from core.product_register.process_create_product import process_create_product
+from kardex.core.product_register.process_create_product import process_create_product
 
 
 class ProductsController:

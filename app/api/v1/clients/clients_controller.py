@@ -1,15 +1,15 @@
-from fastapi import HTTPException, status
+﻿from fastapi import HTTPException, status
 
 from responses.v1 import ListResponse
 
-from repos.v1.clients import (
+from kardex.repos.v1.clients import (
     CreateClient,
     UpdateClient,
     ClientInDb,
     ClientsRepository,
     ClientsDataSource,
 )
-from repos.v1.clients.clients_repository import InitialBalanceClient
+from kardex.repos.v1.clients.clients_repository import InitialBalanceClient
 
 from .query_params import ClientQueryParams
 from .bodies import CreateMultipleInitialBalance

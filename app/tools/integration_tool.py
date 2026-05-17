@@ -1,4 +1,4 @@
-from repos.v1.integrations import (
+from kardex.repos.v1.integrations import (
     IntegrationsRepository,
     IntegrationsDataSource,
     IntegrationInDb,

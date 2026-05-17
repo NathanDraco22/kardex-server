@@ -1,16 +1,16 @@
-from typing import Any
+﻿from typing import Any
 import csv
 import codecs
 
 from fastapi import UploadFile, HTTPException
 
-from core.imports.init_inventory.model.product_import import ProductImport
-from core.imports.init_inventory.process_init_import import (
+from kardex.core.imports.init_inventory.model.product_import import ProductImport
+from kardex.core.imports.init_inventory.process_init_import import (
     process_init_import,
     process_inventory_import,
 )
-from core.imports.clients.model.client_import import ClientImport
-from core.imports.clients.process_clients_import import process_clients_import
+from kardex.core.imports.clients.model.client_import import ClientImport
+from kardex.core.imports.clients.process_clients_import import process_clients_import
 
 
 class ImportsController:
@@ -36,7 +36,7 @@ class ImportsController:
 
         return {
             "status": "success",
-            "message": "Importación exitosa",
+            "message": "ImportacioÌn exitosa",
         }
 
     async def create_inventory_import(self, branch_id: str, file: UploadFile) -> Any:
@@ -61,7 +61,7 @@ class ImportsController:
 
         return {
             "status": "success",
-            "message": "Importación exitosa",
+            "message": "ImportacioÌn exitosa",
         }
 
     def parse_dict(self, csv_reader: csv.DictReader) -> list:
@@ -118,7 +118,7 @@ class ImportsController:
 
         return {
             "status": "success",
-            "message": "Importación de clientes exitosa",
+            "message": "ImportacioÌn de clientes exitosa",
         }
 
     def parse_clients_dict(self, csv_reader: csv.DictReader) -> list:

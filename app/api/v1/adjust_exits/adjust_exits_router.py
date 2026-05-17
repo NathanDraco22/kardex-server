@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, BackgroundTasks
+﻿from fastapi import APIRouter, Depends, BackgroundTasks
 from api.common.query_params import AdjustQueryParams
-from repos.v1.adjust_exits import CreateAdjustExit, AdjustExitInDb
+from kardex.repos.v1.adjust_exits import CreateAdjustExit, AdjustExitInDb
 
 from app_middleware import auth_middleware
 

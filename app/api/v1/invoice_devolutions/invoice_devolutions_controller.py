@@ -1,9 +1,9 @@
-from fastapi import HTTPException, status
+﻿from fastapi import HTTPException, status
 
-from repos.v1.invoices import InvoicesRepository, InvoicesDataSource
-from repos.v1.devolutions import DevolutionsRepository, DevolutionsDataSource
+from kardex.repos.v1.invoices import InvoicesRepository, InvoicesDataSource
+from kardex.repos.v1.devolutions import DevolutionsRepository, DevolutionsDataSource
 
-from core.default_values.create_default_client import SALE_CLIENT_ID
+from kardex.core.default_values.create_default_client import SALE_CLIENT_ID
 
 from .responses import InvoiceDevolutionsResponse
 

@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends
 
-from repos.v1.core_settings.models.core_setting_model import DecodedCoreSetting
-from repos.v1.core_settings import CreateCoreSetting, UpdateCoreSetting, CoreSettingInDb
+from kardex.repos.v1.core_settings.models.core_setting_model import DecodedCoreSetting
+from kardex.repos.v1.core_settings import CreateCoreSetting, UpdateCoreSetting, CoreSettingInDb
 
 from .core_settings_controller import core_settings_controller
 from .depends import validate_super_token

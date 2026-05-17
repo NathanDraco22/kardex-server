@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, BackgroundTasks
+﻿from fastapi import APIRouter, Depends, BackgroundTasks
 
 from api.common.query_params import AdjustQueryParams
-from repos.v1.adjust_entries import (
+from kardex.repos.v1.adjust_entries import (
     CreateAdjustEntry,
     AdjustEntryInDb,
 )

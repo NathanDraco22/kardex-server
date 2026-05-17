@@ -1,6 +1,6 @@
-from fastapi import HTTPException, status
+﻿from fastapi import HTTPException, status
 
-from repos.v1.users import (
+from kardex.repos.v1.users import (
     CreateUser,
     UpdateUser,
     UserInDb,

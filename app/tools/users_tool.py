@@ -1,4 +1,4 @@
-from repos.v1.users import UsersRepository, UsersDataSource, UserInDb
+from kardex.repos.v1.users import UsersRepository, UsersDataSource, UserInDb
 
 
 class UsersTool:
