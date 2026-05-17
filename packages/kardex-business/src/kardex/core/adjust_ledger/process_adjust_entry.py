@@ -1,8 +1,8 @@
 from kardex.tools import UuidTool, TimeTools, BranchesTool
 from kardex.core.inventory import (
-    execute_inventory_entry_db_operations,
+    InventoryBatchTransformer,
     InventoryEntryBatchItem,
-    prepare_inventory_entry_batch,
+    InventoryEngine,
 )
 from kardex.repos.v1.adjust_entries import AdjustEntryInDb, CreateAdjustEntry
 from kardex.repos.v1.product_accounts import ProductAccountInDb
@@ -89,7 +89,7 @@ async def process_adjust_entry(
 
             # 5. EJECUTAR LÓGICA PURA REUTILIZABLE 🧠
             # Usa la misma lógica de entrada que Compras y Traslados
-            batch_result = prepare_inventory_entry_batch(
+            batch_result = InventoryBatchTransformer.prepare_entry(
                 branch_id=adjust_entry.branchId,
                 is_commerce_branch=current_branch_in_db.isCommerce,
                 items=batch_items,
@@ -103,7 +103,7 @@ async def process_adjust_entry(
             )
 
             # 6. PERSISTENCIA MASIVA 💾
-            await execute_inventory_entry_db_operations(
+            await InventoryEngine.execute_entry(
                 branch_id=adjust_entry.branchId,
                 batch_result=batch_result,
                 session=session,

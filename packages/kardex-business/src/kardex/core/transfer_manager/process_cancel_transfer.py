@@ -1,8 +1,8 @@
 from kardex.tools import BranchesTool
 from kardex.core.inventory import (
-    execute_inventory_entry_db_operations,
+    InventoryBatchTransformer,
     InventoryEntryBatchItem,
-    prepare_inventory_entry_batch,
+    InventoryEngine,
 )
 from kardex.repos.v1.transfers import TransferInDb, CancelTransferIntent
 from kardex.repos.v1.product_accounts import ProductAccountInDb
@@ -95,7 +95,7 @@ async def process_cancel_transfer(
 
             # 6. EJECUTAR LÓGICA PURA REUTILIZABLE 🧠
             # Usamos la misma lógica que una entrada normal, porque el stock está entrando de vuelta.
-            batch_result = prepare_inventory_entry_batch(
+            batch_result = InventoryBatchTransformer.prepare_entry(
                 branch_id=origin_branch_id,
                 is_commerce_branch=origin_branch_in_db.isCommerce,
                 items=batch_items,
@@ -109,7 +109,7 @@ async def process_cancel_transfer(
             )
 
             # 7. PERSISTENCIA MASIVA 💾
-            await execute_inventory_entry_db_operations(
+            await InventoryEngine.execute_entry(
                 branch_id=origin_branch_id,
                 batch_result=batch_result,
                 session=session,

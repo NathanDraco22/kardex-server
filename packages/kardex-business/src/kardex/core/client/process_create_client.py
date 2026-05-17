@@ -3,7 +3,7 @@ from typing import Tuple, Any
 from kardex.tools import UuidTool, TimeTools
 from kardex.tools.search_tools import generate_prefixes
 from kardex.core.counter_manager.counter_manager import CounterManager
-from kardex.core.finance import process_client_financial_movement, FinanceTransactionRequest
+from kardex.core.finance import ClientFinanceEngine, FinanceTransactionRequest
 
 from kardex.repos.v1.clients import CreateClient, ClientInDb
 from kardex.repos.v1.invoices import CreateInvoice, InvoiceInDb
@@ -128,7 +128,7 @@ async def process_create_client_with_balance(
             # ==========================================
             # 3. GESTIÓN FINANCIERA (Cargo / Deuda)
             # ==========================================
-            client = await process_client_financial_movement(
+            client = await ClientFinanceEngine.process_movement(
                 request=FinanceTransactionRequest(
                     client_id=client_number,
                     amount=new_invoice_in_db.total,
@@ -228,7 +228,7 @@ async def create_initial_balance(
             )
             new_invoice_in_db = InvoiceInDb.model_validate(new_invoice_data)
 
-            client = await process_client_financial_movement(
+            client = await ClientFinanceEngine.process_movement(
                 request=FinanceTransactionRequest(
                     client_id=client.id,
                     amount=new_invoice_in_db.total,
@@ -374,7 +374,7 @@ async def _execute_multiple_initial_balance(
         new_invoice_in_db = InvoiceInDb.model_validate(new_invoice_data)
 
         # 2. Procesamos el movimiento financiero
-        updated_client = await process_client_financial_movement(
+        updated_client = await ClientFinanceEngine.process_movement(
             request=FinanceTransactionRequest(
                 client_id=client.id,
                 amount=new_invoice_in_db.total,

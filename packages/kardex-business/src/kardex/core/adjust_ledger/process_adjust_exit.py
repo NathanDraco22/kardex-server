@@ -1,8 +1,8 @@
 from kardex.tools import UuidTool, TimeTools, BranchesTool
 from kardex.core.inventory import (
-    execute_inventory_exit_db_operations,
-    prepare_inventory_exit_batch,
+    InventoryBatchTransformer,
     InventoryExitBatchItem,
+    InventoryEngine,
 )
 
 from kardex.repos.v1.adjust_exits import AdjustExitInDb, CreateAdjustExit
@@ -84,7 +84,7 @@ async def process_adjust_exit(
 
             # 4. EJECUTAR LÓGICA PURA REUTILIZABLE 🧠
             # Valida stock insuficiente y calcula costos de salida
-            batch_result = prepare_inventory_exit_batch(
+            batch_result = InventoryBatchTransformer.prepare_exit(
                 branch_id=adjust_exit.branchId,
                 items=batch_items,
                 existing_accounts_dict=accounts_dict,
@@ -102,7 +102,7 @@ async def process_adjust_exit(
                 item.cost = batch_result.assigned_costs[i]
 
             # 6. PERSISTENCIA MASIVA 💾
-            await execute_inventory_exit_db_operations(
+            await InventoryEngine.execute_exit(
                 branch_id=adjust_exit.branchId,
                 batch_result=batch_result,
                 session=session,

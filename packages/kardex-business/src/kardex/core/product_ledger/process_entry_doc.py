@@ -1,8 +1,8 @@
 from kardex.tools import UuidTool, TimeTools, BranchesTool
 from kardex.core.inventory import (
-    execute_inventory_entry_db_operations,
+    InventoryBatchTransformer,
     InventoryEntryBatchItem,
-    prepare_inventory_entry_batch,
+    InventoryEngine,
 )
 from kardex.repos.v1.entry_docs.models.entry_doc_model import CreateEntryDoc
 from kardex.repos.v1.entry_docs import EntryDocInDb
@@ -77,7 +77,7 @@ async def process_entry_doc(
                 for acc in existing_accounts_data
             }
 
-            batch_result = prepare_inventory_entry_batch(
+            batch_result = InventoryBatchTransformer.prepare_entry(
                 branch_id=entry_doc.branchId,
                 is_commerce_branch=current_branch_in_db.isCommerce,
                 items=batch_items,
@@ -88,7 +88,7 @@ async def process_entry_doc(
                 tx_subtype="entry",
             )
 
-            await execute_inventory_entry_db_operations(
+            await InventoryEngine.execute_entry(
                 branch_id=entry_doc.branchId,
                 batch_result=batch_result,
                 session=session,

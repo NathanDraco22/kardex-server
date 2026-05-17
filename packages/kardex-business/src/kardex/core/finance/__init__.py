@@ -1,6 +1,9 @@
-from .client_financial_movement import (
+from .client_finance_engine import (
     FinanceTransactionRequest,
-    process_client_financial_movement,
+    ClientFinanceEngine,
 )
 
-__all__ = ["FinanceTransactionRequest", "process_client_financial_movement"]
+__all__ = [
+    "FinanceTransactionRequest",
+    "ClientFinanceEngine",
+]
