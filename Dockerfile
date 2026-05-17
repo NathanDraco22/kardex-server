@@ -1,4 +1,4 @@
-FROM python:3.12.13-slim-bookworm
+FROM python:3.12.12-slim-bookworm
 
 RUN mkdir -p /home/server
 
@@ -6,6 +6,7 @@ WORKDIR /home/server
 
 RUN pip install uv
 
+COPY packages packages
 COPY pyproject.toml .
 COPY uv.lock .
 
