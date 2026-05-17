@@ -158,6 +158,7 @@ class AuthsController:
         settings = DecodedCoreSetting.model_validate(decoded_settings)
 
         return ServinStatusResponese(
+            nickname=settings.nickname,
             isActive=settings.isActive,
             isMultiBranch=settings.isMultiBranch,
         )

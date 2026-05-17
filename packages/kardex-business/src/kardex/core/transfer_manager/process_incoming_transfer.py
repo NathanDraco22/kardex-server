@@ -1,8 +1,8 @@
 from kardex.tools import BranchesTool
 from kardex.core.inventory import (
-    execute_inventory_entry_db_operations,
+    InventoryBatchTransformer,
     InventoryEntryBatchItem,
-    prepare_inventory_entry_batch,
+    InventoryEngine,
 )
 
 from kardex.repos.v1.transfers import TransferInDb, ReceiveTransferIntent
@@ -109,7 +109,7 @@ async def process_incoming_transfer(
 
             # 4. EJECUTAR LÓGICA PURA (Tu función prepare_inventory_entry_batch)
             # Aquí obtenemos el objeto EntryBatchResult fuertemente tipado
-            batch_result = prepare_inventory_entry_batch(
+            batch_result = InventoryBatchTransformer.prepare_entry(
                 branch_id=destination_branch,
                 is_commerce_branch=destination_branch_in_db.isCommerce,
                 items=batch_items,
@@ -121,7 +121,7 @@ async def process_incoming_transfer(
             )
 
             # 5. PERSISTENCIA EN BD (Usando la función que te di arriba)
-            await execute_inventory_entry_db_operations(
+            await InventoryEngine.execute_entry(
                 branch_id=destination_branch,
                 batch_result=batch_result,
                 session=session,

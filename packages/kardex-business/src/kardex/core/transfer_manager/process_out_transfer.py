@@ -1,8 +1,8 @@
 from kardex.tools import UuidTool, TimeTools
 from kardex.core.inventory import (
-    execute_inventory_exit_db_operations,
-    prepare_inventory_exit_batch,
+    InventoryBatchTransformer,
     InventoryExitBatchItem,
+    InventoryEngine,
 )
 
 from kardex.repos.v1.transfers import TransferInDb, CreateTransfer
@@ -69,7 +69,7 @@ async def process_outgoing_transfer(
             # 3. EJECUTAR LÓGICA PURA REUTILIZABLE 🧠
             # Esta función valida stock (lanza InsufficientBalanceError si falla),
             # calcula saldos y prepara las transacciones.
-            batch_result = prepare_inventory_exit_batch(
+            batch_result = InventoryBatchTransformer.prepare_exit(
                 branch_id=create_transfer.origin,
                 items=batch_items,
                 existing_accounts_dict=accounts_dict,
@@ -88,7 +88,7 @@ async def process_outgoing_transfer(
                 item.cost = batch_result.assigned_costs[i]
 
             # 5. PERSISTENCIA MASIVA EN BD (Stock y Kardex) 💾
-            await execute_inventory_exit_db_operations(
+            await InventoryEngine.execute_exit(
                 branch_id=create_transfer.origin,
                 batch_result=batch_result,
                 session=session,
