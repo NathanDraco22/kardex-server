@@ -21,6 +21,10 @@ class ProductsCollection:
         collection = self.__collection
         await collection.insert_one(product)
 
+    async def create_product_with_session(self, product: dict, session: Any) -> None:
+        collection = self.__collection
+        await collection.insert_one(product, session=session)
+
     async def create_many_products(self, products: list[dict], session: Any) -> None:
         collection = self.__collection
         await collection.insert_many(products, session=session)

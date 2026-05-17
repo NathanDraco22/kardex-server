@@ -30,6 +30,36 @@ class ProductAccountsRepository:
 
         return ProductAccountInDb.model_validate(result)
 
+    async def update_product_account_stock_and_cost(
+        self, product_id: str, branch_id: str, **kwargs
+    ) -> ProductAccountInDb | None:
+        result = await self.product_accounts_ds.update_product_account_stock_and_cost(
+            product_id, branch_id, **kwargs
+        )
+        if result is None:
+            return None
+        return ProductAccountInDb.model_validate(result)
+
+    async def add_product_account_stock(
+        self, product_id: str, branch_id: str, **kwargs
+    ) -> ProductAccountInDb | None:
+        result = await self.product_accounts_ds.add_product_account_stock(
+            product_id, branch_id, **kwargs
+        )
+        if result is None:
+            return None
+        return ProductAccountInDb.model_validate(result)
+
+    async def substract_product_account_stock(
+        self, product_id: str, branch_id: str, **kwargs
+    ) -> ProductAccountInDb | None:
+        result = await self.product_accounts_ds.substract_product_account_stock(
+            product_id, branch_id, **kwargs
+        )
+        if result is None:
+            return None
+        return ProductAccountInDb.model_validate(result)
+
     async def get_product_accounts_by_product(
         self, product_id: str
     ) -> list[ProductAccountInDb]:
