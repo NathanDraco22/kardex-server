@@ -6,18 +6,10 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "argon2-cffi>=25.1.0",
-<<<<<<< HEAD
-    "cryptography>=46.0.2",
-    "fastapi[standard]>=0.135.2",
-    "kardex-business",
-    "motor>=3.7.1",
-=======
     "cryptography>=48.0.0",
     "fastapi[standard]>=0.136.1",
     "kardex-business",
     "motor>=3.7.1",
-    "onnxruntime>=1.26.0",
->>>>>>> b212b93a6aa33081f295e5489858d522b18512f9
     "openpyxl>=3.1.5",
     "packaging>=26.2",
     "pyjwt>=2.12.1",
@@ -42,8 +34,4 @@ dev = [
 [tool.ty.environment]
 extra-paths = [
     "./app", ".venv/Lib/site-packages", "./packages/kardex-business/src"
-<<<<<<< HEAD
 ]
-=======
-]
->>>>>>> b212b93a6aa33081f295e5489858d522b18512f9
