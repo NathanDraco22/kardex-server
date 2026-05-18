@@ -1,7 +1,6 @@
-﻿from pydantic import BaseModel
+from pydantic import BaseModel
 from kardex.repos.v1.invoices.models.invoice_totals_model import InvoiceTotals
 from kardex.repos.v1.receipts.models.receipt_total import ReceiptTotal
-
 from kardex.repos.v1.invoices import InvoiceInDb
 from kardex.repos.v1.receipts import ReceiptInDb
 

@@ -1,4 +1,4 @@
-﻿from responses.v1.list_response import ListResponse
+from responses.v1.list_response import ListResponse
 from kardex.repos.v1.inventories import (
     InventoryInDb,
     InventoriesRepository,

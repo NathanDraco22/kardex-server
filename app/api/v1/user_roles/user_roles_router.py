@@ -1,5 +1,4 @@
-﻿from fastapi import APIRouter
-
+from fastapi import APIRouter
 from kardex.repos.v1.user_roles import CreateUserRole, UpdateUserRole, UserRoleInDb
 from responses.v1 import ListResponse
 

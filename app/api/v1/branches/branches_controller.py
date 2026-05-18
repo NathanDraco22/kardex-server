@@ -1,5 +1,5 @@
-﻿from fastapi import HTTPException, status
-from tools import BranchesTool
+from fastapi import HTTPException, status
+from kardex.tools import BranchesTool
 from kardex.repos.v1.branches import (
     CreateBranch,
     UpdateBranch,

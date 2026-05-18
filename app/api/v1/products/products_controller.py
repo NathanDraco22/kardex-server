@@ -3,7 +3,6 @@
 from responses.v1 import ListResponse
 
 from .query_params import ProductQueryParams
-
 from kardex.repos.v1.products import (
     CreateProduct,
     UpdateProduct,

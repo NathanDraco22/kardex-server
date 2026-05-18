@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends
 from kardex.repos.v1.daily_summaries import DailySummaryInDb
 from app_middleware import cache_header_response_midnight
 from responses.v1 import ListResponse

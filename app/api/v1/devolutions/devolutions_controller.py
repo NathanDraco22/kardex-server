@@ -1,12 +1,10 @@
 ﻿from fastapi import HTTPException, status
 
 from kardex.core.devolution_register.devolution_register import DevolutionRegister
-
 from kardex.repos.v1.branches import BranchesRepository, BranchesDataSource
 from kardex.repos.v1.clients import ClientsRepository, ClientsDataSource
 from kardex.repos.v1.products import ProductsRepository, ProductsDataSource
 from kardex.repos.v1.common.models.history_params import HistoryClientParams
-
 from kardex.repos.v1.devolutions import (
     CreateDevolution,
     UpdateDevolution,
@@ -37,6 +35,14 @@ class DevolutionsController:
         self, params: DevolutionQueryParams
     ) -> ListResponse[DevolutionInDb]:
         devolutions = await self.devolutions_repo.get_all_devolutions(
+            **params.model_dump()
+        )
+        return ListResponse(count=len(devolutions), data=devolutions)
+
+    async def get_all_active_devolutions(
+        self, params: DevolutionQueryParams
+    ) -> ListResponse[DevolutionInDb]:
+        devolutions = await self.devolutions_repo.get_all_active_devolutions(
             **params.model_dump()
         )
         return ListResponse(count=len(devolutions), data=devolutions)

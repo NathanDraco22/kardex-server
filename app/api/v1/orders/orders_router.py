@@ -1,5 +1,4 @@
-﻿from fastapi import APIRouter, Depends
-
+from fastapi import APIRouter, Depends
 from kardex.repos.v1.orders import CreateOrder, UpdateOrder, OrderInDb
 from kardex.repos.v1.common.models.invoice_product_sale import ProductSalesTotal
 from kardex.repos.v1.common.models import ProductStockDemand

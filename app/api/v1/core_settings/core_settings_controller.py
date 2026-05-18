@@ -1,5 +1,4 @@
-﻿from fastapi import HTTPException, status
-
+from fastapi import HTTPException, status
 from kardex.repos.v1.branches import BranchesRepository, BranchesDataSource
 from kardex.repos.v1.users import UsersRepository, UsersDataSource, CreateUser
 from kardex.repos.v1.core_settings import (
@@ -17,7 +16,7 @@ from kardex.core.default_values import (
     create_default_branch,
 )
 
-from tools import BranchesTool
+from kardex.tools import BranchesTool
 
 
 class CoreSettingsController:

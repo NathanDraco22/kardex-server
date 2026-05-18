@@ -2,10 +2,9 @@
 from api.common.query_params import AdjustQueryParams
 from kardex.core.adjust_ledger.adjust_ledger import AdjustLedgerManager
 from core.app_notifier.app_notifier import AppNotifier
-from tools import BranchesTool
+from kardex.tools import BranchesTool
 
 from responses.v1 import ListResponse
-
 from kardex.repos.v1.adjust_exits import (
     CreateAdjustExit,
     UpdateAdjustExit,

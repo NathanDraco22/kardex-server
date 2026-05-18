@@ -1,5 +1,4 @@
-﻿from fastapi import HTTPException, status
-
+from fastapi import HTTPException, status
 from kardex.repos.v1.invoices import InvoicesRepository, InvoicesDataSource
 from kardex.repos.v1.devolutions import DevolutionsRepository, DevolutionsDataSource
 

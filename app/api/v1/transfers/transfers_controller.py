@@ -3,7 +3,6 @@
 from kardex.core.transfer_manager.transfer_manager import TransferManager
 
 from responses.v1 import ListResponse
-
 from kardex.repos.v1.transfers import (
     CreateTransfer,
     TransferInDb,
@@ -97,7 +96,7 @@ class TransfersController:
     async def receive_transfer(
         self, transfer_id: str, intent: ReceiveTransferIntent, bg_tasks: BackgroundTasks
     ) -> TransferInDb:
-        transfer, _ = await self.transfer_manager.regis_incoming_transfer(
+        transfer = await self.transfer_manager.regis_incoming_transfer(
             transfer_id, intent
         )
 

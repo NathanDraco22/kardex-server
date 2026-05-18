@@ -7,7 +7,7 @@ from kardex.repos.v1.integrations import (
     IntegrationsDataSource,
 )
 
-from tools.integration_tool import IntegrationTool
+from kardex.tools.integration_tool import IntegrationTool
 from responses.v1 import ListResponse
 
 

@@ -1,4 +1,4 @@
-﻿from pydantic import BaseModel
+from pydantic import BaseModel
 from kardex.repos.v1.orders.models.order_model import OrderInDb
 from kardex.repos.v1.invoices.models.invoice_model import InvoiceInDb
 

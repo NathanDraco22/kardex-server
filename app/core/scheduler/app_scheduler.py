@@ -1,14 +1,14 @@
 import asyncio
 from datetime import datetime, timedelta
 
-from core.scheduler.daily_report_maker import (
+from .daily_report_maker import (
     DailyReportMaker,
     WeeklyReportMaker,
     MonthlyReportMaker,
     YearlyReportMaker,
 )
-from core.scheduler.app_reminder import AppReminder
-from tools import TimeTools
+from .app_reminder import AppReminder
+from kardex.tools import TimeTools
 
 
 class AppScheduler:

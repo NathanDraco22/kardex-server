@@ -1,6 +1,9 @@
-﻿from fastapi import APIRouter, Depends
-
-from kardex.repos.v1.client_groups import CreateClientGroup, UpdateClientGroup, ClientGroupInDb
+from fastapi import APIRouter, Depends
+from kardex.repos.v1.client_groups import (
+    CreateClientGroup,
+    UpdateClientGroup,
+    ClientGroupInDb,
+)
 from app_middleware import auth_middleware
 
 from .client_groups_controller import client_groups_controller

@@ -1,5 +1,4 @@
-﻿from fastapi import APIRouter
-
+from fastapi import APIRouter
 from kardex.repos.v1.product_accounts import (
     ProductAccountInDb,
     UpdateProductAccount,

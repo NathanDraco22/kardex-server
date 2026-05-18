@@ -1,4 +1,4 @@
-﻿from responses.v1 import ListResponse
+from responses.v1 import ListResponse
 from fastapi import HTTPException, status
 from kardex.repos.v1.product_accounts import (
     ProductAccountsRepository,

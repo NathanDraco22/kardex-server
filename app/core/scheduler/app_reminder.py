@@ -3,7 +3,7 @@ from datetime import datetime
 from kardex.repos.v1.daily_summaries import DailySummaryInDb
 from kardex.repos.v1.executive_summaries import ExecutiveSummaryInDb
 from core.app_notifier.app_notifier import AppNotifier
-from tools import TimeTools
+from kardex.tools import TimeTools
 
 
 class AppReminder:

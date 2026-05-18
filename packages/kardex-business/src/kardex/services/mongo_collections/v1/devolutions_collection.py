@@ -35,6 +35,21 @@ class DevolutionsCollection:
 
         return result
 
+    async def fetch_all_active_devolutions(self, **kwargs) -> list[dict[str, Any]]:
+        collection = self.__collection
+
+        query = {}
+
+        query = {key: value for key, value in kwargs.items() if value is not None}
+
+        query["status"] = {"$in": ["confirmed", "open"]}
+
+        cursor = collection.find(query).sort("createdAt", -1)
+
+        result = await cursor.to_list(length=None)
+
+        return result
+
     async def fetch_devolutions_by_invoice_id(
         self, invoice_id: str, client_id: str | None
     ) -> list[dict[str, Any]]:

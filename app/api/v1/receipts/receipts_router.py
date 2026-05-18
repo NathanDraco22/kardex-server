@@ -1,6 +1,10 @@
-﻿from fastapi import APIRouter, Depends
-
-from kardex.repos.v1.receipts import CreateReceipt, UpdateReceipt, ReceiptInDb, ReceiptTotal
+from fastapi import APIRouter, Depends
+from kardex.repos.v1.receipts import (
+    CreateReceipt,
+    UpdateReceipt,
+    ReceiptInDb,
+    ReceiptTotal,
+)
 from kardex.repos.v1.common.models.history_params import HistoryClientParams
 from responses.v1 import ListResponse
 

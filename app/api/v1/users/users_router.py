@@ -1,5 +1,4 @@
-﻿from fastapi import APIRouter, Depends
-
+from fastapi import APIRouter, Depends
 from kardex.repos.v1.users import CreateUser, UpdateUser, UserInDb, UserInDbWithRole
 
 from app_middleware import auth_middleware

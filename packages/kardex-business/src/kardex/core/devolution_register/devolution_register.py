@@ -1,6 +1,5 @@
 import asyncio
 from typing import Callable, Coroutine, List, Tuple
-from fastapi import HTTPException, status
 from pymongo.errors import OperationFailure
 
 from kardex.repos.v1.devolutions import (
@@ -12,6 +11,12 @@ from kardex.repos.v1.product_accounts import ProductAccountInDb
 from kardex.repos.v1.branches import BranchesRepository
 from kardex.repos.v1.products import ProductsRepository
 from kardex.core.default_values import SALE_CLIENT_ID
+from kardex.tools import (
+    InvalidOperation,
+    BranchNotFound,
+    ClientNotFound,
+    ProductNotFound,
+)
 
 
 from .process_devolution import process_devolution, process_anon_devolution
@@ -53,35 +58,22 @@ class DevolutionRegister:
                 if e.code == 112:  # WriteConflict
                     await asyncio.sleep(0.3)
                 else:
-                    raise HTTPException(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail=f"Database error: {e}",
-                    )
+                    raise InvalidOperation(f"Database error: {e}")
             except Exception as e:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"An unexpected error occurred: {e}",
-                )
+                raise InvalidOperation(f"An unexpected error occurred: {e}")
 
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Server is too busy, please try again later",
-        )
+        raise InvalidOperation("Server is too busy, please try again later")
 
     async def confirm_devolution(self, devolution_id: str) -> DevolutionInDb:
         """Procesa una devolución para un cliente específico."""
 
         devolution = await self.devolutions_repo.get_devolution_by_id(devolution_id)
         if devolution is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Devolution not found",
-            )
+            raise InvalidOperation("Devolution not found")
 
         if devolution.clientId == SALE_CLIENT_ID:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Use the anonymous devolution endpoint for this client.",
+            raise InvalidOperation(
+                "Use the anonymous devolution endpoint for this client."
             )
 
         return await self._register_transaction(devolution, process_devolution)
@@ -93,16 +85,10 @@ class DevolutionRegister:
 
         devolution = await self.devolutions_repo.get_devolution_by_id(devolution_id)
         if devolution is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Devolution not found",
-            )
+            raise InvalidOperation("Devolution not found")
 
         if devolution.clientId != SALE_CLIENT_ID:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid client ID for anonymous devolution.",
-            )
+            raise InvalidOperation("Invalid client ID for anonymous devolution.")
 
         return await self._register_transaction(devolution, process_anon_devolution)
 
@@ -110,27 +96,18 @@ class DevolutionRegister:
         """Valida los datos relacionados antes de la transacción."""
         branch = await self.branches_repo.get_branch_by_id(doc.branchId)
         if branch is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="BRANCH_NOT_FOUND"
-            )
+            raise BranchNotFound("BRANCH_NOT_FOUND", branch_id=doc.branchId)
 
         # Valida el cliente solo si no es la venta anónima
         if doc.clientId != SALE_CLIENT_ID:
             client = await self.clients_repo.get_client_by_id(doc.clientId)
             if client is None:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="CLIENT_NOT_FOUND"
-                )
+                raise ClientNotFound("CLIENT_NOT_FOUND", client_id=doc.clientId)
 
         product_ids = list(set(item.product.id for item in doc.returnedItems))
         products = await self.products_repo.get_product_by_ids(product_ids)
         if len(products) != len(product_ids):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="PRODUCT_NOT_FOUND"
-            )
+            raise ProductNotFound("PRODUCT_NOT_FOUND")
 
         if doc.status != "open":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Devolution is not open.",
-            )
+            raise InvalidOperation("Devolution is not open.")

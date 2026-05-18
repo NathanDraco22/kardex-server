@@ -1,6 +1,5 @@
 import asyncio
 from typing import Callable, Coroutine
-from fastapi import HTTPException, status
 from kardex.tools import BranchesTool
 
 from kardex.repos.v1.invoices import (
@@ -14,7 +13,12 @@ from pymongo.errors import OperationFailure
 
 
 from kardex.core.default_values import SALE_CLIENT_ID
-from kardex.core.inventory import InsufficientBalanceError
+from kardex.tools import (
+    InsufficientBalanceError,
+    DocumentAlreadyExists,
+    BranchNotFound,
+    InvalidOperation,
+)
 
 from kardex.repos.v1.clients import ClientInDb
 from kardex.repos.v1.product_accounts import ProductAccountInDb
@@ -44,9 +48,8 @@ class InvoiceRegister:
             create_invoice.docNumber
         )
         if invoice is not None:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Invoice with this document number already exists",
+            raise DocumentAlreadyExists(
+                "Invoice with this document number already exists"
             )
 
         await self._validate_document(create_invoice)
@@ -56,25 +59,18 @@ class InvoiceRegister:
             try:
                 return await process_function(create_invoice)
             except InsufficientBalanceError as e:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"INSUFFICIENT_STOCK: {e}",
-                )
+                raise InsufficientBalanceError(f"INSUFFICIENT_STOCK: {e}")
             except OperationFailure as _:
                 await asyncio.sleep(0.3)
                 continue
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Server is too busy, please try again later",
-        )
+        raise InvalidOperation("Server is too busy, please try again later")
 
     async def regis_invoice(
         self, create_invoice: CreateInvoice
     ) -> tuple[InvoiceInDb, ClientInDb]:
         if create_invoice.clientId == SALE_CLIENT_ID:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Use the anonymous invoice endpoint for this client.",
+            raise InvalidOperation(
+                "Use the anonymous invoice endpoint for this client."
             )
         looked = False
         try:
@@ -89,10 +85,7 @@ class InvoiceRegister:
         self, create_invoice: CreateInvoice
     ) -> tuple[InvoiceInDb, list[ProductAccountInDb]]:
         if create_invoice.clientId != SALE_CLIENT_ID:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid client ID for anonymous invoice.",
-            )
+            raise InvalidOperation("Invalid client ID for anonymous invoice.")
         looked = False
         try:
             await asyncio.wait_for(invoice_mutex.acquire(), timeout=7)
@@ -107,6 +100,4 @@ class InvoiceRegister:
     async def _validate_document(self, doc: CreateInvoice):
         branch = BranchesTool().get_branch_by_id(doc.branchId)
         if branch is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="BRANCH_NOT_FOUND"
-            )
+            raise BranchNotFound("BRANCH_NOT_FOUND", branch_id=doc.branchId)

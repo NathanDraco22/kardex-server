@@ -1,4 +1,4 @@
-﻿from pydantic import BaseModel
+from pydantic import BaseModel
 from kardex.repos.v1.invoices import InvoiceTotals
 
 

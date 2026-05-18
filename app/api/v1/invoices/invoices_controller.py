@@ -1,6 +1,5 @@
-﻿from fastapi import HTTPException, status
+from fastapi import HTTPException, status
 from kardex.core.invoice_register.invoice_register import InvoiceRegister
-
 from kardex.repos.v1.invoices import (
     CreateInvoice,
     UpdateInvoice,

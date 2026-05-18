@@ -1,5 +1,4 @@
-﻿from fastapi import APIRouter, Depends
-
+from fastapi import APIRouter, Depends
 from kardex.repos.v1.devolutions import CreateDevolution, DevolutionInDb
 from kardex.repos.v1.common.models.history_params import HistoryClientParams
 from responses.v1 import ListResponse
@@ -24,6 +23,13 @@ async def get_all_devolutions(
     params: DevolutionQueryParams = Depends(),
 ) -> ListResponse[DevolutionInDb]:
     return await devolutions_controller.get_all_devolutions(params)
+
+
+@devolutions_router.get("/all/active")
+async def get_all_active_devolutions(
+    params: DevolutionQueryParams = Depends(),
+) -> ListResponse[DevolutionInDb]:
+    return await devolutions_controller.get_all_active_devolutions(params)
 
 
 @devolutions_router.get("/history")

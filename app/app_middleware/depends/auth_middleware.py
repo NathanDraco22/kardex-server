@@ -2,7 +2,7 @@
 from fastapi.exceptions import HTTPException
 
 from kardex.core.security import TokenManager
-from tools.users_tool import UsersTool
+from kardex.tools.users_tool import UsersTool
 
 
 def auth_middleware(req: Request):

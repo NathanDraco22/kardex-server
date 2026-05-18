@@ -1,5 +1,4 @@
-﻿from fastapi import APIRouter, Depends
-
+from fastapi import APIRouter, Depends
 from kardex.repos.v1.clients import CreateClient, UpdateClient, ClientInDb
 from responses.v1 import ListResponse
 
