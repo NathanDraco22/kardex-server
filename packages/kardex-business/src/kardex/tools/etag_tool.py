@@ -28,7 +28,7 @@ class EtagTool:
         return self._tags.get(key)
 
     async def update_branches_etags(self):
-        collection = BranchesCollection()
+        collection = BranchesCollection.get_instance()
         count = await collection._collection.estimated_document_count()
         self.set_tag("branches_count", str(count))
 

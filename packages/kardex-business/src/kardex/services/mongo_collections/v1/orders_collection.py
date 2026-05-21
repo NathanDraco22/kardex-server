@@ -1,35 +1,25 @@
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 from kardex.tools import TimeTools
 
 
-class OrdersCollection:
+class OrdersCollection(BaseMongoCollection):
     collection_name = "Orders"
-    _instance: "OrdersCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_order(self, order: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(order)
 
     async def create_order_with_session(self, order: dict, session: Any) -> dict:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(order, session=session)
         return order
 
     async def fetch_paginated_orders(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         skip = kwargs.pop("skip", 0)
         limit = kwargs.pop("limit", 50)
@@ -65,7 +55,7 @@ class OrdersCollection:
         return result
 
     async def fetch_products_in_orders(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         branch_id = kwargs.pop("branchId", None)
         start_date = kwargs.pop("startDate", None)
         end_date = kwargs.pop("endDate", None)
@@ -110,7 +100,7 @@ class OrdersCollection:
         return result
 
     async def fetch_demand_vs_stock(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         branch_id = kwargs.pop("branchId", None)
         start_date = kwargs.pop("startDate", None)
         end_date = kwargs.pop("endDate", None)
@@ -201,12 +191,12 @@ class OrdersCollection:
         return result
 
     async def fetch_order_by_id(self, order_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": order_id})
         return result
 
     async def fetch_order_by_doc_number(self, doc_number: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"docNumber": doc_number})
         return result
 
@@ -215,7 +205,7 @@ class OrdersCollection:
         order_id: str,
         order: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {
@@ -234,7 +224,7 @@ class OrdersCollection:
         order: dict,
         session: Any,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"docNumber": doc_number},
@@ -251,7 +241,7 @@ class OrdersCollection:
         status: str,
         session: Any,
     ) -> None:
-        collection = self.__collection
+        collection = self._collection
 
         await collection.update_one(
             {"docNumber": doc_number},
@@ -265,7 +255,7 @@ class OrdersCollection:
         )
 
     async def delete_order_draft_by_id(self, order_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_delete(
             {
                 "id": order_id,
@@ -280,7 +270,7 @@ class OrdersCollection:
         status: str,
         session: Any,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         return await collection.find_one_and_update(
             {"id": order_id},
             {
@@ -294,7 +284,7 @@ class OrdersCollection:
         )
 
     async def create_indexes(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),

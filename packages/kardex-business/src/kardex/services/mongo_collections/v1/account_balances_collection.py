@@ -1,29 +1,18 @@
 from typing import Any
 
 from pymongo import ReturnDocument
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class AccountBalancesCollection:
+class AccountBalancesCollection(BaseMongoCollection):
     collection_name = "AccountBalances"
-
-    _instance: "AccountBalancesCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def fetch_account_balance(
         self,
         account_id: str,
         branch_id: str,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one(
             {
                 "accountId": account_id,
@@ -37,7 +26,7 @@ class AccountBalancesCollection:
         account_balance_id: str,
         account_balance: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": account_balance_id},
@@ -50,7 +39,7 @@ class AccountBalancesCollection:
     async def delete_account_balance_by_id(
         self, account_balance_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_delete({"id": account_balance_id})
         return result
 
@@ -64,7 +53,7 @@ class AccountBalancesCollection:
         updated_at: int,
         session: Any,
     ) -> dict[str, Any]:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {
@@ -94,7 +83,7 @@ class AccountBalancesCollection:
         updated_at: int,
         session: Any,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {

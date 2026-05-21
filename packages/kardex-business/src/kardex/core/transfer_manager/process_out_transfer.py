@@ -24,9 +24,9 @@ async def process_outgoing_transfer(
     mongo_client = MongoService().client
 
     # Colecciones
-    prd_transaction_col = ProductTransactionsCollection()
-    product_account_col = ProductAccountsCollection()
-    transfers_col = TransfersCollection()
+    prd_transaction_col = ProductTransactionsCollection.get_instance()
+    product_account_col = ProductAccountsCollection.get_instance()
+    transfers_col = TransfersCollection.get_instance()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():

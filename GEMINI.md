@@ -121,4 +121,16 @@ Code Review y validación de la refactorización del módulo de control de stock
 3. **Desacoplamiento de FastAPI**: Se eliminó la dependencia de `fastapi.HTTPException` dentro del paquete de negocio `kardex-business`. Las excepciones se propagan de manera nativa y son mapeadas limpiamente a nivel global mediante Exception Handlers en `app/regis_exception_handlers.py`. Esto respeta perfectamente la Onion Architecture.
 4. **Oportunidad Detectada**: Alinear la excepción de sucursal no encontrada en el flujo de entradas (`process_entry_doc.py`) usando la nueva excepción `BranchNotFound` para total consistencia.
 
+## Fecha: 2026-05-20
+### Objetivo
+Estandarización de todas las Collection classes y Datasources al patrón `BaseMongoCollection` + `get_instance()`.
 
+### Resumen de Implementación
+1. **`BaseMongoCollection`**: Se corrigió el import de `from services` a `from kardex.services`.
+2. **33 Collection classes**: Se refactorizaron para extender `BaseMongoCollection` en lugar de implementar su propio singleton via `__new__()`. Se eliminaron `_instance`, `__new__()`, y `__init__()` con `MongoService` de cada una. Se normalizó `self.__collection` → `self._collection`.
+3. **33 Datasource classes**: Se cambió `CollectionName()` por `CollectionName.get_instance()` para usar el singleton correctamente.
+4. **Auditoría Completa de Instanciaciones**: Se revisó todo el codebase y se eliminaron las referencias legacy a constructores directos `Collection()` en:
+   - [process_create_product.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/lite/core/product_register/process_create_product.py)
+   - [etag_tool.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/tools/etag_tool.py)
+   - [mongo_indexes.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/services/mongo_indexes.py)
+5. **Verificación**: `ty` typecheck pasó exitosamente a nivel global, certificando la validez del tipado estático del nuevo patrón Singleton.

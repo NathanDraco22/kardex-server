@@ -1,21 +1,11 @@
 from typing import Any
 
 from pymongo import ReturnDocument
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class BranchesCollection:
+class BranchesCollection(BaseMongoCollection):
     collection_name = "Branches"
-    _instance: "BranchesCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self._collection = mongo_service.get_collection(self.collection_name)
 
     async def create_branch(self, branch: dict) -> None:
         collection = self._collection

@@ -1,28 +1,18 @@
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel, UpdateOne
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class ProductStatsCollection:
+class ProductStatsCollection(BaseMongoCollection):
     collection_name = "ProductStats"
-    _instance: "ProductStatsCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_product_stat(self, product_stat: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(product_stat)
 
     async def fetch_all_product_stats(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = kwargs
 
@@ -34,7 +24,7 @@ class ProductStatsCollection:
         return result
 
     async def fetch_all_product_stats_with_info(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = kwargs
 
@@ -62,7 +52,7 @@ class ProductStatsCollection:
     async def fetch_all_product_stats_with_account(
         self, **kwargs
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = kwargs
 
@@ -108,7 +98,7 @@ class ProductStatsCollection:
         return result
 
     async def fetch_all_product_stats_with_transaction(self) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         cursor = collection.find(
             {
@@ -125,7 +115,7 @@ class ProductStatsCollection:
     async def fetch_product_stat_by_id(
         self, product_stat_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": product_stat_id})
         return result
 
@@ -134,7 +124,7 @@ class ProductStatsCollection:
         product_stat_id: str,
         product_stat: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": product_stat_id},
@@ -162,17 +152,17 @@ class ProductStatsCollection:
                 ),
             )
 
-        await self.__collection.bulk_write(operations)
+        await self._collection.bulk_write(operations)
 
     async def delete_product_stat_by_id(
         self, product_stat_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_delete({"id": product_stat_id})
         return result
 
     async def set_no_transtaction_product_stats(self, last_estimation: int):
-        collection = self.__collection
+        collection = self._collection
         await collection.update_many(
             {"lastEstimation": {"$lt": last_estimation}},
             {
@@ -191,7 +181,7 @@ class ProductStatsCollection:
         if not product_stats:
             return
 
-        collection = self.__collection
+        collection = self._collection
 
         update_operations = [
             UpdateOne(
@@ -214,7 +204,7 @@ class ProductStatsCollection:
         product_stats: dict,
         session: Any,
     ):
-        collection = self.__collection
+        collection = self._collection
 
         await collection.find_one_and_update(
             {
@@ -228,7 +218,7 @@ class ProductStatsCollection:
         )
 
     async def create_indexes(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel(

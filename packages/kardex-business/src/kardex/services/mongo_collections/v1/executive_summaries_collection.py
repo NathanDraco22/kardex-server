@@ -1,28 +1,18 @@
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class ExecutiveSummariesCollection:
+class ExecutiveSummariesCollection(BaseMongoCollection):
     collection_name = "ExecutiveSummaries"
-    _instance: "ExecutiveSummariesCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_executive_summary(self, executive_summary: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(executive_summary)
 
     async def fetch_all_executive_summaries(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {}
 
@@ -53,14 +43,14 @@ class ExecutiveSummariesCollection:
     async def fetch_executive_summary_by_id(
         self, executive_summary_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": executive_summary_id})
         return result
 
     async def fetch_executive_summary_by_date_id_and_type(
         self, date_id: str, type: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one(
             {
                 "dateId": {"$regex": f"^{date_id}"},
@@ -74,7 +64,7 @@ class ExecutiveSummariesCollection:
         executive_summary_id: str,
         executive_summary: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": executive_summary_id},
@@ -87,12 +77,12 @@ class ExecutiveSummariesCollection:
     async def delete_executive_summary_by_id(
         self, executive_summary_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_delete({"id": executive_summary_id})
         return result
 
     async def create_indexes(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),

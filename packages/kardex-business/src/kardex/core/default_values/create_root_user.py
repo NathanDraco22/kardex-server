@@ -16,7 +16,7 @@ async def create_root_user():
         createdAt=TimeTools.get_now_in_milliseconds(),
     )
 
-    await UsersCollection().create_user_if_absent(
+    await UsersCollection.get_instance().create_user_if_absent(
         root_user.id,
         root_user.model_dump(),
     )

@@ -1,28 +1,18 @@
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class UsersCollection:
+class UsersCollection(BaseMongoCollection):
     collection_name = "Users"
-    _instance: "UsersCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_user(self, user: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(user)
 
     async def create_user_if_absent(self, user_id: str, user: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.find_one_and_update(
             {"id": user_id},
             {"$setOnInsert": user},
@@ -30,7 +20,7 @@ class UsersCollection:
         )
 
     async def fetch_all_users(self) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         cursor = collection.aggregate(
             [
@@ -65,7 +55,7 @@ class UsersCollection:
     async def fetch_all_active_users_by_branch(
         self, branch_id: str | None
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         branch_query = {}
         if branch_id:
@@ -103,7 +93,7 @@ class UsersCollection:
         return result
 
     async def get_inactive_users(self) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         cursor = collection.aggregate(
             [
@@ -122,7 +112,7 @@ class UsersCollection:
         return result
 
     async def fetch_user_by_id(self, user_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         cursor = collection.aggregate(
             [
@@ -158,7 +148,7 @@ class UsersCollection:
         return result[0]
 
     async def fetch_user_by_username(self, email: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"username": email})
         return result
 
@@ -167,7 +157,7 @@ class UsersCollection:
         user_id: str,
         user: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": user_id},
@@ -180,7 +170,7 @@ class UsersCollection:
     async def change_password(
         self, user_id: str, password: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": user_id},
@@ -191,7 +181,7 @@ class UsersCollection:
         return result
 
     async def delete_user_by_id(self, user_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_update(
             {"id": user_id},
             {
@@ -204,7 +194,7 @@ class UsersCollection:
         return result
 
     async def create_indexes(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),

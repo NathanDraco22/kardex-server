@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel, UpdateOne
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
 @dataclass
@@ -12,27 +12,17 @@ class UpdateSaleProfileOperation:
     data: dict
 
 
-class ProductSaleProfilesCollection:
+class ProductSaleProfilesCollection(BaseMongoCollection):
     collection_name = "ProductSaleProfiles"
-    _instance: "ProductSaleProfilesCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_product_sale_profile(self, product_sale_profile: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(product_sale_profile)
 
     async def fetch_all_product_sale_profiles(
         self, branch_id: str
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         cursor = collection.aggregate(
             [
@@ -95,7 +85,7 @@ class ProductSaleProfilesCollection:
         branch_id: str,
         product_id: str,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one(
             {
                 "branchId": branch_id,
@@ -110,7 +100,7 @@ class ProductSaleProfilesCollection:
         product_id: str,
         product_sale_profile: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {
@@ -129,7 +119,7 @@ class ProductSaleProfilesCollection:
         if not update_operations:
             return
 
-        collection = self.__collection
+        collection = self._collection
 
         update_ops: list[UpdateOne] = []
 
@@ -149,21 +139,21 @@ class ProductSaleProfilesCollection:
     async def delete_product_sale_profile_by_id(
         self, product_sale_profile_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_delete({"id": product_sale_profile_id})
         return result
 
     async def create_product_sale_profile_with_session(
         self, product_sale_profile: dict, session: Any
     ) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(
             product_sale_profile,
             session=session,
         )
 
     async def create_index(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel(
@@ -186,7 +176,7 @@ class ProductSaleProfilesCollection:
         if not product_sale_profiles:
             return
 
-        collection = self.__collection
+        collection = self._collection
 
         update_operations = [
             UpdateOne(
@@ -209,7 +199,7 @@ class ProductSaleProfilesCollection:
         product_sale_profile: dict,
         session: Any,
     ):
-        collection = self.__collection
+        collection = self._collection
 
         await collection.find_one_and_update(
             {
@@ -229,7 +219,7 @@ class ProductSaleProfilesCollection:
         product_sale_profile: dict,
         session: Any,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {

@@ -11,8 +11,8 @@ async def cancel_order(order: OrderInDb) -> OrderInDb:
     Cancela un pedido y libera el stock prometido (si estaba en estado 'open').
     """
     mongo_client = MongoService().client
-    order_col = OrdersCollection()
-    prd_account_col = ProductAccountsCollection()
+    order_col = OrdersCollection.get_instance()
+    prd_account_col = ProductAccountsCollection.get_instance()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
