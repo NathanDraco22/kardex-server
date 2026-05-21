@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from repos.v1.users import UserInDbWithRole
+from kardex.repos.v1.users import UserInDbWithRole
 
 
 class LoginResponse(BaseModel):
@@ -8,5 +8,6 @@ class LoginResponse(BaseModel):
 
 
 class ServinStatusResponese(BaseModel):
+    nickname: str
     isActive: bool
     isMultiBranch: bool

@@ -1,6 +1,5 @@
 from fastapi import HTTPException, status
-
-from repos.v1.product_prices import (
+from kardex.repos.v1.product_prices import (
     CreateProductPrice,
     UpdateProductPrice,
     ProductPriceInDb,

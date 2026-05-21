@@ -3,9 +3,7 @@ from fastapi import HTTPException, status
 from responses.v1 import ListResponse
 
 from .query_params import ProductQueryParams
-
-
-from repos.v1.products import (
+from kardex.repos.v1.products import (
     CreateProduct,
     UpdateProduct,
     ProductInDb,

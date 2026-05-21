@@ -1,16 +1,15 @@
 from fastapi import HTTPException, status
-
-from repos.v1.invoices.models.invoice_model import (
+from kardex.repos.v1.invoices.models.invoice_model import (
     InvoiceInDb,
     CreateInvoice,
     InvoiceStatus,
 )
-from repos.v1.common.models.invoice_product_sale import ProductSalesTotal
-from core.order_register.order_register import OrderRegister
-from core.invoice_register.invoice_register import InvoiceRegister
-from core.order_register.cancel_order import cancel_order
-from core.counter_manager.counter_manager import CounterManager
-from repos.v1.orders import (
+from kardex.repos.v1.common.models.invoice_product_sale import ProductSalesTotal
+from kardex.core.order_register.order_register import OrderRegister
+from kardex.core.invoice_register.invoice_register import InvoiceRegister
+from kardex.core.order_register.cancel_order import cancel_order
+from kardex.core.counter_manager.counter_manager import CounterManager
+from kardex.repos.v1.orders import (
     CreateOrder,
     UpdateOrder,
     OrderInDb,
@@ -20,7 +19,7 @@ from repos.v1.orders import (
 
 from responses.v1 import ListResponse
 from .orders_query_params import OrderQueryParams
-from repos.v1.common.models import ProductStockDemand
+from kardex.repos.v1.common.models import ProductStockDemand
 
 
 class OrdersController:

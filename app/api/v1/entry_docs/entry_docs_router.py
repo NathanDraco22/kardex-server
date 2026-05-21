@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, BackgroundTasks
 
 
 from responses.v1.list_response import ListResponse
-from repos.v1.entry_docs import CreateEntryDoc, EntryDocInDb, EntryHistoryInDb
+from kardex.repos.v1.entry_docs import CreateEntryDoc, EntryDocInDb, EntryHistoryInDb
 
 from app_middleware import auth_middleware
 

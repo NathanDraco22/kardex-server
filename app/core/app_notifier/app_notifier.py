@@ -3,9 +3,9 @@ from datetime import datetime
 from typing import Self, Literal
 from services import TelegramService
 
-from tools.integration_tool import IntegrationTool
-from repos.v1.daily_summaries import DailySummaryInDb
-from repos.v1.executive_summaries import ExecutiveSummaryInDb
+from kardex.tools.integration_tool import IntegrationTool
+from kardex.repos.v1.daily_summaries import DailySummaryInDb
+from kardex.repos.v1.executive_summaries import ExecutiveSummaryInDb
 
 
 AdjusmentType = Literal["in", "out"]

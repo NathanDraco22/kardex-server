@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from api.v1.router import router_v1
 from app_lifespan import lifespan
-from tools import NotModified, not_modified_exception_handler
+from regis_exception_handlers import register_exception_handlers
 from scalar_fastapi import get_scalar_api_reference
 
 load_dotenv()
@@ -26,7 +26,7 @@ async def get_sdoc():
     return get_scalar_api_reference(openapi_url=app.openapi_url)
 
 
-app.add_exception_handler(NotModified, not_modified_exception_handler)
+register_exception_handlers(app)
 
 
 app.add_middleware(

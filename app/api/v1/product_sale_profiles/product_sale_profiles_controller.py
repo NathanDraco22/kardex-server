@@ -1,6 +1,5 @@
 from fastapi import HTTPException, status
-
-from repos.v1.product_sale_profiles import (
+from kardex.repos.v1.product_sale_profiles import (
     UpdateProductSaleProfile,
     ProductSaleProfileInDb,
     ProductSaleProfileInDbWithProduct,

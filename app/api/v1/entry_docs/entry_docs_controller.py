@@ -1,15 +1,14 @@
 from fastapi import HTTPException, status, BackgroundTasks
 
 from responses.v1.list_response import ListResponse
-from core.product_ledger.product_ledger_manager import ProductLedgerManager
-
-from repos.v1.expiration_logs import (
+from kardex.core.product_ledger.product_ledger_manager import ProductLedgerManager
+from kardex.repos.v1.expiration_logs import (
     ExpirationLogsRepository,
     ExpirationLogsDataSource,
     CreateExpirationLog,
     ProductInfo,
 )
-from repos.v1.entry_docs import (
+from kardex.repos.v1.entry_docs import (
     CreateEntryDoc,
     EntryDocInDb,
     EntryDocsRepository,
@@ -58,7 +57,7 @@ class EntryDocsController:
     async def create_entry_doc(
         self, body: CreateEntryDoc, bg_tasks: BackgroundTasks
     ) -> EntryDocInDb:
-        entry_doc, _ = await self.product_ledger_manager.regis_entry_doc(body)
+        entry_doc = await self.product_ledger_manager.regis_entry_doc(body)
         bg_tasks.add_task(self._create_expiration_logs, entry_doc)
         return entry_doc
 
@@ -86,9 +85,7 @@ class EntryDocsController:
             )
         return entry_doc
 
-    async def get_entry_history(
-        self, **kwargs
-    ) -> ListResponse[EntryHistoryInDb]:
+    async def get_entry_history(self, **kwargs) -> ListResponse[EntryHistoryInDb]:
         mapped_kwargs = {
             "branch_id": kwargs.get("branch_id"),
             "supplier_id": kwargs.get("supplierId"),
@@ -103,8 +100,10 @@ class EntryDocsController:
     async def get_history_by_id_with_supplier(
         self, entry_doc_id: str
     ) -> EntryHistoryInDb:
-        entry_history = await self.entry_docs_repo.get_entry_history_by_id_with_supplier(
-            entry_doc_id
+        entry_history = (
+            await self.entry_docs_repo.get_entry_history_by_id_with_supplier(
+                entry_doc_id
+            )
         )
         if not entry_history:
             raise HTTPException(
@@ -116,8 +115,10 @@ class EntryDocsController:
     async def get_entry_history_by_doc_number_and_branch_id(
         self, doc_number: str, branch_id: str
     ) -> EntryHistoryInDb:
-        entry_history = await self.entry_docs_repo.get_entry_history_by_doc_number_and_branch_id(
-            doc_number, branch_id
+        entry_history = (
+            await self.entry_docs_repo.get_entry_history_by_doc_number_and_branch_id(
+                doc_number, branch_id
+            )
         )
         if not entry_history:
             raise HTTPException(

@@ -3,22 +3,19 @@ import base64
 from fastapi import HTTPException, status
 from fastapi.responses import FileResponse
 
-from tools import TimeTools, EtagTool
+from kardex.tools import TimeTools, EtagTool
 
 from core.ml import ProductClassifier, ProductDataStat
 
 from services import ProjectionExcelService, ProjectionSheet, ProjectionRow
 
 from responses.v1 import ListResponse
-
-from repos.v1.product_transactions import (
+from kardex.repos.v1.product_transactions import (
     ProductTransactionsRepository,
     ProductTransactionsDataSource,
 )
-
-from repos.v1.branches import BranchesRepository, BranchesDataSource
-
-from repos.v1.product_stats import (
+from kardex.repos.v1.branches import BranchesRepository, BranchesDataSource
+from kardex.repos.v1.product_stats import (
     UpdateProductStatBatchItem,
     ProductStatInDb,
     ProductStatInDbWithInfo,

@@ -1,0 +1,2 @@
+﻿class NotModified(Exception):
+    pass

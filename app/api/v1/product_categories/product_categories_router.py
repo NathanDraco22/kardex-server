@@ -1,6 +1,5 @@
 from fastapi import APIRouter
-
-from repos.v1.product_categories import (
+from kardex.repos.v1.product_categories import (
     CreateProductCategory,
     UpdateProductCategory,
     ProductCategoryInDb,

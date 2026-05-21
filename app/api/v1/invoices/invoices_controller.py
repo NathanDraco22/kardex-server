@@ -1,7 +1,6 @@
 from fastapi import HTTPException, status
-from core.invoice_register.invoice_register import InvoiceRegister
-
-from repos.v1.invoices import (
+from kardex.core.invoice_register.invoice_register import InvoiceRegister
+from kardex.repos.v1.invoices import (
     CreateInvoice,
     UpdateInvoice,
     InvoiceInDb,
@@ -11,7 +10,7 @@ from repos.v1.invoices import (
     ProductSalesTotal,
 )
 from responses.v1 import ListResponse
-from repos.v1.common.models.history_params import HistoryClientParams
+from kardex.repos.v1.common.models.history_params import HistoryClientParams
 
 
 from .responses import InvoiceResponse, InvoiceAnonResponse

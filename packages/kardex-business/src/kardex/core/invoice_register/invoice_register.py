@@ -1,0 +1,94 @@
+import asyncio
+from typing import Callable, Coroutine
+from kardex.tools import BranchesTool
+
+from kardex.repos.v1.invoices import (
+    CreateInvoice,
+    InvoicesRepository,
+    InvoicesDataSource,
+    InvoiceInDb,
+)
+
+from pymongo.errors import OperationFailure
+
+
+from kardex.core.default_values import SALE_CLIENT_ID
+from kardex.tools import InsufficientBalanceError, DocumentAlreadyExists, BranchNotFound, InvalidOperation
+
+from kardex.repos.v1.clients import ClientInDb
+from kardex.repos.v1.product_accounts import ProductAccountInDb
+from kardex.repos.v1.branches import BranchesRepository, BranchesDataSource
+from kardex.repos.v1.products import ProductsRepository, ProductsDataSource
+
+from .process_invoice import (
+    process_invoice,
+    process_anon_invoice,
+)
+
+invoice_mutex = asyncio.Lock()
+
+
+class InvoiceRegister:
+    def __init__(self) -> None:
+        self.invoices_repo = InvoicesRepository(InvoicesDataSource())
+        self.branches_repo = BranchesRepository(BranchesDataSource())
+        self.products_repo = ProductsRepository(ProductsDataSource())
+
+    async def _register_transaction(
+        self,
+        create_invoice: CreateInvoice,
+        process_function: Callable[[CreateInvoice], Coroutine],
+    ):
+        invoice = await self.invoices_repo.get_invoice_by_doc_number(
+            create_invoice.docNumber
+        )
+        if invoice is not None:
+            raise DocumentAlreadyExists("Invoice with this document number already exists")
+
+        await self._validate_document(create_invoice)
+
+        max_retries = 3
+        for _ in range(max_retries):
+            try:
+                return await process_function(create_invoice)
+            except InsufficientBalanceError as e:
+                raise InsufficientBalanceError(f"INSUFFICIENT_STOCK: {e}")
+            except OperationFailure as _:
+                await asyncio.sleep(0.3)
+                continue
+        raise InvalidOperation("Server is too busy, please try again later")
+
+    async def regis_invoice(
+        self, create_invoice: CreateInvoice
+    ) -> tuple[InvoiceInDb, ClientInDb]:
+        if create_invoice.clientId == SALE_CLIENT_ID:
+            raise InvalidOperation("Use the anonymous invoice endpoint for this client.")
+        looked = False
+        try:
+            await asyncio.wait_for(invoice_mutex.acquire(), timeout=7)
+            looked = True
+            return await self._register_transaction(create_invoice, process_invoice)
+        finally:
+            if looked:
+                invoice_mutex.release()
+
+    async def regis_anon_invoice(
+        self, create_invoice: CreateInvoice
+    ) -> tuple[InvoiceInDb, list[ProductAccountInDb]]:
+        if create_invoice.clientId != SALE_CLIENT_ID:
+            raise InvalidOperation("Invalid client ID for anonymous invoice.")
+        looked = False
+        try:
+            await asyncio.wait_for(invoice_mutex.acquire(), timeout=7)
+            looked = True
+            return await self._register_transaction(
+                create_invoice, process_anon_invoice
+            )
+        finally:
+            if looked:
+                invoice_mutex.release()
+
+    async def _validate_document(self, doc: CreateInvoice):
+        branch = BranchesTool().get_branch_by_id(doc.branchId)
+        if branch is None:
+            raise BranchNotFound("BRANCH_NOT_FOUND", branch_id=doc.branchId)

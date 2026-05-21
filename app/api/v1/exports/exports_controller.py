@@ -1,9 +1,9 @@
 from fastapi import HTTPException, status
 from fastapi.responses import FileResponse
-from repos.v1.products import ProductsRepository, ProductsDataSource
+from kardex.repos.v1.products import ProductsRepository, ProductsDataSource
 from services.excel_service import PriceListService, PriceListSheet, PriceListRow
 
-from tools import BranchesTool
+from kardex.tools import BranchesTool
 
 
 class ExportsController:

@@ -1,8 +1,7 @@
 from fastapi import HTTPException, status
 
 from responses.v1 import ListResponse
-
-from repos.v1.suppliers import (
+from kardex.repos.v1.suppliers import (
     CreateSupplier,
     UpdateSupplier,
     SupplierInDb,
