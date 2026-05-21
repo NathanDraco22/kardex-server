@@ -1,28 +1,18 @@
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class DailySummariesCollection:
+class DailySummariesCollection(BaseMongoCollection):
     collection_name = "DailySummaries"
-    _instance: "DailySummariesCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_daily_summary(self, daily_summary: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(daily_summary)
 
     async def fetch_all_daily_summaries(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {}
 
@@ -45,7 +35,7 @@ class DailySummariesCollection:
         return result
 
     async def fetch_daily_summary_by_start_date_range(self, **kwargs):
-        collection = self.__collection
+        collection = self._collection
 
         query = {}
 
@@ -67,14 +57,14 @@ class DailySummariesCollection:
     async def fetch_daily_summary_by_id(
         self, daily_summary_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": daily_summary_id})
         return result
 
     async def fetch_daily_summary_by_date_id(
         self, date_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one(
             {
                 "dateId": {
@@ -89,7 +79,7 @@ class DailySummariesCollection:
         daily_summary_id: str,
         daily_summary: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": daily_summary_id},
@@ -102,12 +92,12 @@ class DailySummariesCollection:
     async def delete_daily_summary_by_id(
         self, daily_summary_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_delete({"id": daily_summary_id})
         return result
 
     async def create_indexes(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),

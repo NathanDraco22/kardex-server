@@ -8,35 +8,29 @@ The project follows a strict **Onion Architecture** (Clean Architecture) pattern
 ### Data Flow Pattern
 `Router` (HTTP) → `Controller` (Orchestration) → `Repository` (Business Logic) → `DataSource` (DB/Persistence) → `Service` (External)
 
-### Layer Responsibilities
-- **`app/api/vX/`**: 
-    - `router.py`: Endpoint definitions using FastAPI.
-    - `controller.py`: Validates inputs, calls repositories, and maps responses.
-- **`app/repos/vX/`**:
-    - `repository.py`: Orchestrates business logic and domain rules.
-    - `data/`: `datasource.py` implements specific DB queries (MongoDB/Motor).
-    - `models/`: Domain Pydantic models.
-- **`app/core/`**: Shared complex business processes (e.g., invoice processing, report generation).
-- **`app/services/`**: Outermost layer for external world (Database connections, file storage, etc.).
-- **`app/tools/`**: Pure utilities and auxiliary helpers.
+### Package (`packages/kardex-business/src/kardex/`)
+Contains all business logic, repositories, data sources, domain models, and services. No FastAPI dependency — pure domain logic.
 
----
+- **`repos/v1/`**: Repository layer — orchestrates business logic, delegates to DataSource.
+    - `repository.py`: Business rules + singleton `get_instance()` pattern.
+    - `data/datasource.py`: DB queries (MongoDB/Motor).
+    - `models/`: Pydantic domain models (camelCase properties).
+- **`core/`**: Complex business processes (inventory, invoices, orders, transfers, etc.).
+- **`services/`**: MongoService, MongoCollection classes, indexes.
+- **`tools/`**: Utilities: TimeTools, UuidTool, EtagTool, search, query builder.
+    - `kardex_exceptions.py`: Domain exceptions (`InsufficientBalanceError`, `BranchNotFound`, etc.).
+- **`lite/core/`**: Lite-specific core modules (e.g., product_register).
 
-## 🛠 Tooling: Onion CLI
-This project uses a custom CLI called `onion` to automate boilerplate creation.
+### Local (`app/`)
+Thin web layer with FastAPI — imports everything from `kardex.*`.
 
-### Common Commands
-- `onion crud <entity> --version 1`: Creates Router, Controller, Repo, DataSource, and Model.
-- `onion crud-mongo <entity> --version 1`: Same as above + MongoDB collection setup in `onion-config.toml`.
-- `onion repo <entity> --version 1`: Creates only the repository and data layers.
-
-### Manual Steps After Generation
-1. **Registration**: Every new router MUST be manually imported and included in `app/api/v1/router.py`:
-   ```python
-   from .my_entity.my_entity_router import my_entity_router
-   router_v1.include_router(my_entity_router, prefix="/my-entity")
-   ```
-2. **Main Router**: If creating a NEW API version (e.g., `v2`), it must be included in `app/main.py`.
+- **`api/v1/`**: Controllers + routers — endpoints, request validation, response mapping.
+- **`tools/`**: `__init__.py` re-exports from `kardex.tools.*`, plus local tools (`integration_tool.py`, `users_tool.py`).
+- **`core/scheduler/`**: Scheduler + app_notifier (stays local).
+- **`core/services_initializer.py`**: Startup initialization (calls package).
+- **`services/`**: `excel_service.py`, `telgram_service.py` (local). `MongoService` re-exported from package.
+- **`regis_exception_handlers.py`**: Centralized exception-to-HTTP mapping for all `KardexException` subclasses.
+- **`app_middleware/`**: Auth middleware, cache headers.
 
 ---
 
@@ -48,20 +42,16 @@ This project uses a custom CLI called `onion` to automate boilerplate creation.
     - **Pydantic Model Properties**: MUST use **`camelCase`** (to maintain consistency with Flutter/MongoDB standards). Example: `productId`, `branchId`.
 2. **Entities**: Always use **singular** for entity names (`product`, not `products`).
 3. **Database**: 
-    - Use `MongoService` for DB access.
+    - Use `MongoService` from `kardex.services` for DB access.
     - Collection names are tracked in `app/config/onion-config.toml`.
     - Do NOT hardcode collection names; use constants or configuration references.
-4. **Validation**: Use **Pydantic** models for all Request/Response bodies.
+4. **Validation**: Use **Pydantic** for all Request/Response models.
 5. **Data Types**:
     - **Dates**: Always use `int` (Unix Timestamps).
-    - **Currency/Money**: Always use `int` (to avoid floating-point errors, usually representing cents or the smallest unit).
-6. **Dependencies**: Managed by `uv`. Add dependencies using `uv add <package>`.
-
----
-
-## 🤖 Agent Session Protocol
-- **`GEMINI.md`**: After every session or major feature completion, YOU MUST update the `GEMINI.md` file at the root. Record the date, the objective, and a summary of the technical implementation.
-- **Aesthetics**: When asked for Web App or UI changes, prioritize premium aesthetics, dynamic designs, rich UX.
+    - **Currency/Money**: Always use `int` (centavos).
+6. **Exceptions**: Business exceptions inherit from `KardexException`. HTTP mapping lives in `app/regis_exception_handlers.py`. Never raise `HTTPException` from the package.
+7. **Repositories**: All repos implement `get_instance()` singleton + constructor injection.
+8. **Dependencies**: Managed by `uv`. Add package deps using `uv add <package>`. Package has NO FastAPI dependency.
 
 ---
 
@@ -81,8 +71,81 @@ Both must pass before finishing a task.
 
 ---
 
+## 🤖 Agent Session Protocol
+- **`GEMINI.md`**: After every session or major feature completion, YOU MUST update the `GEMINI.md` file at the root. Record the date, the objective, and a summary of the technical implementation.
+- **Aesthetics**: When asked for Web App or UI changes, prioritize premium aesthetics, dynamic designs, rich UX.
+
+---
+
 ## 🏗 Registry Reference
 - **Main Entry Point**: `app/main.py`
 - **Dependency/Startup**: `app/app_lifespan.py`
 - **Global V1 Router**: `app/api/v1/router.py`
 - **CLI Config**: `app/config/onion-config.toml`
+- **Business Package**: `packages/kardex-business/src/kardex/`
+- **Exception Handlers**: `app/regis_exception_handlers.py`
+
+---
+
+## 🔧 Onion CLI — Entity Generation
+
+Use the `onion` CLI to generate boilerplate for new entities. **Always use `--version 1`**. Entity names must be **singular**.
+
+### CLI Commands
+
+| Command | Produces |
+|---|---|
+| `onion crud-mongo <entity> --version 1` | Router + Controller + Repo + Datasource + Model + MongoCollection (full stack) |
+| `onion crud <entity> --version 1` | Router + Controller + Repo + Datasource + Model (no MongoCollection) |
+| `onion repo-mongo <entity> --version 1` | Repo + Datasource + Model + MongoCollection (data layer only) |
+| `onion repo <entity> --version 1` | Repo + Datasource + Model (no collection) |
+| `onion router <entity> --version 1` | Router + Controller only (no data layer) |
+
+### Examples
+```bash
+onion crud-mongo product --version 1          # Full stack with MongoDB
+onion crud product category --version 1        # Multiple entities
+onion repo supplier --version 1                # Data layer only
+```
+
+### Generated Structure (for `crud-mongo`)
+```
+app/
+├── api/v1/{entities}/
+│   ├── {entities}_router.py        # FastAPI router (CRUD endpoints)
+│   └── {entities}_controller.py    # Wired to repository
+├── repos/v1/{entities}/
+│   ├── {entities}_repository.py    # Singleton + constructor injection
+│   ├── data/{entities}_datasource.py  # Calls collection via get_instance()
+│   └── models/{entity}_model.py    # BaseX, CreateX, UpdateX, XInDb
+└── services/mongo_collections/v1/
+    └── {entities}_collection.py    # Extends BaseMongoCollection
+```
+
+### Naming Rules
+- **Input**: always singular (`product`, not `products`). The CLI rejects plurals.
+- **Derived variations**:
+  | Variation | Example |
+  |---|---|
+  | `Name` (PascalCase) | `Product` |
+  | `Name_plural` (PascalCase) | `Products` |
+  | `single_name` (snake_case) | `product` |
+  | `plural_name` (snake_case) | `products` |
+- Hyphens/spaces are normalized: `order-item` → `OrderItem`.
+
+### Workflow: Adding a New Entity
+```bash
+# 1. Generate the full stack
+onion crud-mongo <entity> --version 1
+
+# 2. Move files from app/ to packages/kardex-business/src/kardex/
+#    (repos/ → repos/, services/mongo_collections/ → services/mongo_collections/)
+
+# 3. Fix imports (replace from app. with kardex. or kardex. as needed)
+
+# 4. Implement datasource CRUD logic
+
+# 5. Register in __init__.py barrel files
+
+# 6. Run lint & typecheck
+```

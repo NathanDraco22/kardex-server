@@ -1,28 +1,18 @@
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class ReceiptsCollection:
+class ReceiptsCollection(BaseMongoCollection):
     collection_name = "Receipts"
-    _instance: "ReceiptsCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_receipt(self, receipt: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(receipt)
 
     async def fetch_all_receipts(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {key: value for key, value in kwargs.items() if value is not None}
 
@@ -53,7 +43,7 @@ class ReceiptsCollection:
     async def fetch_receipts_by_invoice_id(
         self, invoice_id: str
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         cursor = collection.find({"appliedInvoices.invoiceId": invoice_id})
 
         result = await cursor.to_list(length=None)
@@ -62,7 +52,7 @@ class ReceiptsCollection:
         return result
 
     async def get_totals_from_receipts(self, **kwargs) -> dict[str, Any]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {key: value for key, value in kwargs.items() if value is not None}
 
@@ -101,7 +91,7 @@ class ReceiptsCollection:
     async def get_totals_from_receipts_by_payment_method(
         self, **kwargs
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {key: value for key, value in kwargs.items() if value is not None}
 
@@ -151,7 +141,7 @@ class ReceiptsCollection:
         return []
 
     async def get_applied_amounts_by_branch(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         # 1. Extracción de variables seguras
         start_date = kwargs.pop("startDate", None)
@@ -202,14 +192,14 @@ class ReceiptsCollection:
         return result
 
     async def fetch_receipt_by_id(self, receipt_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": receipt_id})
         return result
 
     async def fetch_receipt_by_doc_number(
         self, docNumber: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"docNumber": docNumber})
         return result
 
@@ -218,7 +208,7 @@ class ReceiptsCollection:
         receipt_id: str,
         receipt: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": receipt_id},
@@ -229,14 +219,14 @@ class ReceiptsCollection:
         return result
 
     async def delete_receipt_by_id(self, receipt_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_delete({"id": receipt_id})
         return result
 
     async def delete_receipt_by_id_with_session(
         self, receipt_id: str, deleted_at: int, session: Any
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_update(
             {"id": receipt_id},
             {
@@ -255,7 +245,7 @@ class ReceiptsCollection:
         receipt: dict,
         session: Any,
     ) -> dict[str, Any]:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(receipt, session=session)
         return receipt
 
@@ -264,12 +254,12 @@ class ReceiptsCollection:
         receipt: dict,
         session: Any,
     ) -> dict[str, Any]:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(receipt, session=session)
         return receipt
 
     async def fetch_receipt_history(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {key: value for key, value in kwargs.items() if value is not None}
 
@@ -284,7 +274,7 @@ class ReceiptsCollection:
         return result
 
     async def create_indexes(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),

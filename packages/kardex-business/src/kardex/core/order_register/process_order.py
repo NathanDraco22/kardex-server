@@ -13,8 +13,8 @@ async def process_order(
     create_order: CreateOrder,
 ) -> Tuple[OrderInDb, List[ProductAccountInDb]]:
     mongo_client = MongoService().client
-    prd_account_col = ProductAccountsCollection()
-    order_col = OrdersCollection()
+    prd_account_col = ProductAccountsCollection.get_instance()
+    order_col = OrdersCollection.get_instance()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():

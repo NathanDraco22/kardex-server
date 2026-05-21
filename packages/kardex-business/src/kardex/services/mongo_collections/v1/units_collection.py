@@ -1,28 +1,18 @@
 from typing import Any
 
 from pymongo import ReturnDocument
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class UnitsCollection:
+class UnitsCollection(BaseMongoCollection):
     collection_name = "Units"
-    _instance: "UnitsCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_unit(self, unit: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(unit)
 
     async def fetch_all_units(self) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         cursor = collection.find()
 
         result = await cursor.to_list(length=None)
@@ -31,7 +21,7 @@ class UnitsCollection:
         return result
 
     async def fetch_unit_by_id(self, unit_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": unit_id})
         return result
 
@@ -40,7 +30,7 @@ class UnitsCollection:
         unit_id: str,
         unit: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": unit_id},
@@ -51,6 +41,6 @@ class UnitsCollection:
         return result
 
     async def delete_unit_by_id(self, unit_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_delete({"id": unit_id})
         return result

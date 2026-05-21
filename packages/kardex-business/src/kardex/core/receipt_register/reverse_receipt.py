@@ -23,11 +23,11 @@ async def reverse_receipt(
     Solo permite revertir si las facturas involucradas están en estado 'partiallyPaid'.
     """
     mongo_client = MongoService().client
-    receipt_col = ReceiptsCollection()
-    invoice_col = InvoicesCollection()
-    devolution_col = DevolutionsCollection()
-    client_transaction_col = ClientTransactionsCollection()
-    client_account_col = ClientsCollection()
+    receipt_col = ReceiptsCollection.get_instance()
+    invoice_col = InvoicesCollection.get_instance()
+    devolution_col = DevolutionsCollection.get_instance()
+    client_transaction_col = ClientTransactionsCollection.get_instance()
+    client_account_col = ClientsCollection.get_instance()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():

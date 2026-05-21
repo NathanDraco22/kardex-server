@@ -1,26 +1,16 @@
 from typing import Any
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class TransactionsCollection:
+class TransactionsCollection(BaseMongoCollection):
     collection_name = "Transactions"
-    _instance: "TransactionsCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_transaction(self, transaction: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(transaction)
 
     async def fetch_all_transactions(self) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         cursor = collection.find()
 
         result = await cursor.to_list(length=None)
@@ -31,7 +21,7 @@ class TransactionsCollection:
     async def fetch_transaction_by_id(
         self, transaction_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": transaction_id})
         return result
 
@@ -42,7 +32,7 @@ class TransactionsCollection:
         transaction_data: dict,
         session: Any,
     ) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(
             transaction_data,
             session=session,
@@ -53,7 +43,7 @@ class TransactionsCollection:
         transactions_data: list[dict],
         session: Any,
     ) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_many(
             transactions_data,
             session=session,

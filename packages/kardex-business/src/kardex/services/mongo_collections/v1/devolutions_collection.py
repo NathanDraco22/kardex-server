@@ -1,29 +1,19 @@
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 from kardex.tools import TimeTools
 
 
-class DevolutionsCollection:
+class DevolutionsCollection(BaseMongoCollection):
     collection_name = "Devolutions"
-    _instance: "DevolutionsCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_devolution(self, devolution: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(devolution)
 
     async def fetch_all_devolutions(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {}
 
@@ -36,7 +26,7 @@ class DevolutionsCollection:
         return result
 
     async def fetch_all_active_devolutions(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {}
 
@@ -53,7 +43,7 @@ class DevolutionsCollection:
     async def fetch_devolutions_by_invoice_id(
         self, invoice_id: str, client_id: str | None
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         query = {"originalInvoiceId": invoice_id}
 
         if client_id is not None:
@@ -64,14 +54,14 @@ class DevolutionsCollection:
         return result
 
     async def fetch_devolution_by_id(self, devolution_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": devolution_id})
         return result
 
     async def fetch_devolution_by_doc_number(
         self, doc_number: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"docNumber": doc_number})
         return result
 
@@ -80,7 +70,7 @@ class DevolutionsCollection:
         devolution_id: str,
         devolution: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": devolution_id},
@@ -93,12 +83,12 @@ class DevolutionsCollection:
     async def delete_devolution_by_id(
         self, devolution_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_delete({"id": devolution_id})
         return result
 
     async def create_indexes(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),
@@ -112,7 +102,7 @@ class DevolutionsCollection:
     async def create_devolution_with_session(
         self, devolution: dict, session: Any
     ) -> dict[str, Any]:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(devolution, session=session)
 
         return devolution
@@ -120,7 +110,7 @@ class DevolutionsCollection:
     async def update_devolution_status_by_id(
         self, devolution_id: str, status: str, session: Any
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": devolution_id},
@@ -137,7 +127,7 @@ class DevolutionsCollection:
         return result
 
     async def fetch_history_devolutions(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {}
 

@@ -9,7 +9,7 @@ from kardex.services.mongo_collections.v1 import SuppliersCollection
 
 
 async def process_suppliers_import(suppliers: list[SupplierImport]) -> None:
-    supplier_col = SuppliersCollection()
+    supplier_col = SuppliersCollection.get_instance()
     now_milliseconds = TimeTools.get_now_in_milliseconds()
 
     new_suppliers: list[SupplierInDb] = []

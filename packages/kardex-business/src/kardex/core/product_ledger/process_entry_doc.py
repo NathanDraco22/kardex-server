@@ -26,11 +26,11 @@ async def process_entry_doc(
     mongo_client = MongoService().client
 
     # Colecciones
-    product_account_col = ProductAccountsCollection()
-    product_stats_col = ProductStatsCollection()
-    product_prof_col = ProductSaleProfilesCollection()
-    prd_transaction_col = ProductTransactionsCollection()
-    entry_docs_col = EntryDocsCollection()
+    product_account_col = ProductAccountsCollection.get_instance()
+    product_stats_col = ProductStatsCollection.get_instance()
+    product_prof_col = ProductSaleProfilesCollection.get_instance()
+    prd_transaction_col = ProductTransactionsCollection.get_instance()
+    entry_docs_col = EntryDocsCollection.get_instance()
 
     # Tools
     branches_tool = BranchesTool()

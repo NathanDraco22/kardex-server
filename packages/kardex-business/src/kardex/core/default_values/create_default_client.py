@@ -14,7 +14,7 @@ async def create_default_client() -> ClientInDb:
         createdAt=TimeTools.get_now_in_milliseconds(),
     )
 
-    await ClientsCollection().create_client_if_absent(
+    await ClientsCollection.get_instance().create_client_if_absent(
         SALE_CLIENT_ID, new_client.model_dump()
     )
 

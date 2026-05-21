@@ -27,12 +27,12 @@ from kardex.services.mongo_collections.v1 import (
 
 
 async def process_init_import(branch_id: str, products: list[ProductImport]) -> None:
-    product_col: ProductsCollection = ProductsCollection()
-    adjust_entry_doc_col: AdjustEntriesCollection = AdjustEntriesCollection()
-    account_col: ProductAccountsCollection = ProductAccountsCollection()
-    profile_col: ProductSaleProfilesCollection = ProductSaleProfilesCollection()
-    stats_col: ProductStatsCollection = ProductStatsCollection()
-    transaction_col: ProductTransactionsCollection = ProductTransactionsCollection()
+    product_col: ProductsCollection = ProductsCollection.get_instance()
+    adjust_entry_doc_col: AdjustEntriesCollection = AdjustEntriesCollection.get_instance()
+    account_col: ProductAccountsCollection = ProductAccountsCollection.get_instance()
+    profile_col: ProductSaleProfilesCollection = ProductSaleProfilesCollection.get_instance()
+    stats_col: ProductStatsCollection = ProductStatsCollection.get_instance()
+    transaction_col: ProductTransactionsCollection = ProductTransactionsCollection.get_instance()
 
     now_milliseconds = TimeTools.get_now_in_milliseconds()
 
@@ -189,12 +189,12 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
 async def process_inventory_import(
     branch_id: str, products: list[ProductImport]
 ) -> None:
-    product_col: ProductsCollection = ProductsCollection()
-    adjust_entry_doc_col: AdjustEntriesCollection = AdjustEntriesCollection()
-    account_col: ProductAccountsCollection = ProductAccountsCollection()
-    profile_col: ProductSaleProfilesCollection = ProductSaleProfilesCollection()
-    stats_col: ProductStatsCollection = ProductStatsCollection()
-    transaction_col: ProductTransactionsCollection = ProductTransactionsCollection()
+    product_col: ProductsCollection = ProductsCollection.get_instance()
+    adjust_entry_doc_col: AdjustEntriesCollection = AdjustEntriesCollection.get_instance()
+    account_col: ProductAccountsCollection = ProductAccountsCollection.get_instance()
+    profile_col: ProductSaleProfilesCollection = ProductSaleProfilesCollection.get_instance()
+    stats_col: ProductStatsCollection = ProductStatsCollection.get_instance()
+    transaction_col: ProductTransactionsCollection = ProductTransactionsCollection.get_instance()
 
     now_milliseconds = TimeTools.get_now_in_milliseconds()
 

@@ -1,31 +1,21 @@
 from typing import Any, AsyncGenerator
 from pymongo import ReturnDocument, IndexModel
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 from kardex.tools import TimeTools, build_query
 
 
-class InvoicesCollection:
+class InvoicesCollection(BaseMongoCollection):
     collection_name = "Invoices"
-    _instance: "InvoicesCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_invoice(self, invoice: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(invoice)
 
     async def fetch_all_invoices_stream(
         self, **kargs
     ) -> AsyncGenerator[dict[str, Any], None]:
-        collection = self.__collection
+        collection = self._collection
 
         date_field = "paidAt" if kargs.get("byPaidAt") else "createdAt"
 
@@ -42,7 +32,7 @@ class InvoicesCollection:
             yield result
 
     async def fetch_all_invoices(self, **kargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         date_field = "paidAt" if kargs.get("byPaidAt") else "createdAt"
 
@@ -61,7 +51,7 @@ class InvoicesCollection:
         return result
 
     async def fetch_all_product_sales(self, **kargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         date_field = "paidAt" if kargs.get("byPaidAt") else "createdAt"
 
@@ -96,7 +86,7 @@ class InvoicesCollection:
         offset: int,
         limit: int,
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         cursor = collection.find({"clientId": client_id})
 
         cursor = cursor.sort("createdAt", -1).skip(offset).limit(limit)
@@ -109,7 +99,7 @@ class InvoicesCollection:
     async def fetch_pending_to_paid_invoices(
         self, client_id: str
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         cursor = collection.find(
             {
                 "clientId": client_id,
@@ -123,21 +113,21 @@ class InvoicesCollection:
         return result
 
     async def fetch_invoice_by_id(self, invoice_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": invoice_id})
         return result
 
     async def fetch_invoice_by_id_with_session(
         self, invoice_id: str, session: Any
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": invoice_id}, session=session)
         return result
 
     async def fetch_invoice_by_doc_number(
         self, docNumber: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         query = {
             "docNumber": docNumber,
@@ -151,7 +141,7 @@ class InvoicesCollection:
         invoice_id: str,
         invoice: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": invoice_id},
@@ -162,7 +152,7 @@ class InvoicesCollection:
         return result
 
     async def create_invoice_with_session(self, invoice: dict, session: Any) -> dict:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(
             invoice,
             session=session,
@@ -171,7 +161,7 @@ class InvoicesCollection:
         return invoice
 
     async def add_to_amount_paid(self, invoice_id: str, amount_paid: int, session: Any):
-        collection = self.__collection
+        collection = self._collection
 
         pipeline = [
             {
@@ -213,7 +203,7 @@ class InvoicesCollection:
     async def subtract_from_amount_paid(
         self, invoice_id: str, amount_paid: int, session: Any
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         pipeline = [
             {
@@ -258,7 +248,7 @@ class InvoicesCollection:
         invoice: dict,
         session: Any,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": invoice_id},
@@ -270,7 +260,7 @@ class InvoicesCollection:
         return result
 
     async def get_totals_from_invoices(self, **kargs) -> dict[str, Any]:
-        collection = self.__collection
+        collection = self._collection
 
         date_field = "paidAt" if kargs.get("byPaidAt") else "createdAt"
 
@@ -306,7 +296,7 @@ class InvoicesCollection:
         self,
         **kwargs,
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {}
 
@@ -363,7 +353,7 @@ class InvoicesCollection:
         return []
 
     async def get_invoice_resume(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {}
 
@@ -433,7 +423,7 @@ class InvoicesCollection:
     async def get_pending_invoice_totals_by_branch(
         self, **kwargs
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {}
         query["status"] = {"$in": ["open", "partiallyPaid"]}
@@ -474,7 +464,7 @@ class InvoicesCollection:
         return []
 
     async def fetch_invoice_history(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {key: value for key, value in kwargs.items() if value is not None}
 
@@ -489,7 +479,7 @@ class InvoicesCollection:
         return result
 
     async def create_indexes(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel([("docNumber", 1)], unique=True),

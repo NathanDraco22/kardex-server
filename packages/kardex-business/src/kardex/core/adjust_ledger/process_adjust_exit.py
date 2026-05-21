@@ -24,9 +24,9 @@ async def process_adjust_exit(
     mongo_client = MongoService().client
 
     # Colecciones
-    adjust_col = AdjustExitsCollection()
-    prd_transaction_col = ProductTransactionsCollection()
-    product_account_col = ProductAccountsCollection()
+    adjust_col = AdjustExitsCollection.get_instance()
+    prd_transaction_col = ProductTransactionsCollection.get_instance()
+    product_account_col = ProductAccountsCollection.get_instance()
 
     # Tools
     branches_tool = BranchesTool()

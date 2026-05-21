@@ -24,11 +24,11 @@ async def process_adjust_entry(
     mongo_client = MongoService().client
 
     # Colecciones
-    adjust_col = AdjustEntriesCollection()
-    prd_transaction_col = ProductTransactionsCollection()
-    product_account_col = ProductAccountsCollection()
-    product_stats_col = ProductStatsCollection()
-    product_prof_col = ProductSaleProfilesCollection()
+    adjust_col = AdjustEntriesCollection.get_instance()
+    prd_transaction_col = ProductTransactionsCollection.get_instance()
+    product_account_col = ProductAccountsCollection.get_instance()
+    product_stats_col = ProductStatsCollection.get_instance()
+    product_prof_col = ProductSaleProfilesCollection.get_instance()
 
     # Tools
     branches_tool = BranchesTool()

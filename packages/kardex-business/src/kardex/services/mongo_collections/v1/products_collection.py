@@ -1,36 +1,26 @@
 from typing import Any, AsyncIterable
 
 from pymongo import ReturnDocument, IndexModel
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class ProductsCollection:
+class ProductsCollection(BaseMongoCollection):
     collection_name = "Products"
-    _instance: "ProductsCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_product(self, product: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(product)
 
     async def create_product_with_session(self, product: dict, session: Any) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(product, session=session)
 
     async def create_many_products(self, products: list[dict], session: Any) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_many(products, session=session)
 
     async def fetch_all_products(self) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         cursor = collection.find({"isDeleted": False})
 
         result = await cursor.to_list(length=None)
@@ -41,7 +31,7 @@ class ProductsCollection:
     async def fetch_paginated_products(
         self, offset: int, limit: int
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         cursor = collection.find({"isDeleted": False})
         cursor = cursor.sort("name", 1).skip(offset).limit(limit)
@@ -52,19 +42,19 @@ class ProductsCollection:
         return result
 
     async def fetch_product_by_id(self, product_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": product_id, "isDeleted": False})
         return result
 
     async def fetch_product_by_code(self, product_code: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"code": product_code, "isDeleted": False})
         return result
 
     async def fetch_product_by_ids(
         self, product_ids: list[str]
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         cursor = collection.find({"id": {"$in": product_ids}})
 
         result = await cursor.to_list(length=None)
@@ -73,7 +63,7 @@ class ProductsCollection:
         return result
 
     async def search_product_by_text(self, text_query: str) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {
             "$text": {
@@ -102,7 +92,7 @@ class ProductsCollection:
         branch_id: str,
         text_query: str,
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         cursor = collection.aggregate(
             [
                 {
@@ -155,7 +145,7 @@ class ProductsCollection:
         branch_id: str,
         text_query: str,
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         cursor = collection.aggregate(
             [
                 {
@@ -223,7 +213,7 @@ class ProductsCollection:
         return result
 
     async def get_all_product_in_branch(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         branch_id = kwargs.get("branchId")
         limit = kwargs.get("limit", 50)
         offset = kwargs.get("offset", 0)
@@ -291,7 +281,7 @@ class ProductsCollection:
     async def get_all_product_in_branch_streamed(
         self, **kwargs
     ) -> AsyncIterable[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         branch_id = kwargs.get("branchId")
 
         cursor = collection.aggregate(
@@ -349,7 +339,7 @@ class ProductsCollection:
     async def get_product_in_branch_by_id(
         self, product_id: str, branch_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         cursor = collection.aggregate(
             [
@@ -401,7 +391,7 @@ class ProductsCollection:
     async def fetch_all_products_with_accounts(
         self, branch_id: str, page: int, limit: int
     ):
-        collection = self.__collection
+        collection = self._collection
 
         cursor = collection.aggregate(
             [
@@ -443,7 +433,7 @@ class ProductsCollection:
         product_id: str,
         product: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": product_id},
@@ -454,7 +444,7 @@ class ProductsCollection:
         return result
 
     async def delete_product_by_id(self, product_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_update(
             {"id": product_id},
             {"$set": {"isDeleted": True}},
@@ -463,7 +453,7 @@ class ProductsCollection:
         return result
 
     async def create_indexes(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),

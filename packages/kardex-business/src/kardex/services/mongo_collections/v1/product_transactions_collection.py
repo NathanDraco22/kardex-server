@@ -1,28 +1,18 @@
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class ProductTransactionsCollection:
+class ProductTransactionsCollection(BaseMongoCollection):
     collection_name = "ProductTransactions"
-    _instance: "ProductTransactionsCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_product_transaction(self, product_transaction: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(product_transaction)
 
     async def fetch_all_product_transactions(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {key: value for key, value in kwargs.items() if value is not None}
 
@@ -45,7 +35,7 @@ class ProductTransactionsCollection:
     async def fetch_product_transaction_by_id(
         self, product_transaction_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": product_transaction_id})
         return result
 
@@ -54,7 +44,7 @@ class ProductTransactionsCollection:
         product_transaction_id: str,
         product_transaction: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": product_transaction_id},
@@ -65,7 +55,7 @@ class ProductTransactionsCollection:
         return result
 
     async def create_index(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel(
@@ -100,17 +90,17 @@ class ProductTransactionsCollection:
     async def create_product_transaction_with_session(
         self, product_transaction: dict, session: Any
     ) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(product_transaction, session=session)
 
     async def create_many_product_transactions_with_session(
         self, product_transactions: list[dict], session: Any
     ) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_many(product_transactions, session=session)
 
     async def estimate_invoice_product_stats(self, **kwargs) -> None:
-        collection = self.__collection
+        collection = self._collection
         start_date = kwargs.get("startDate")
         end_date = kwargs.get("endDate")
         batch_time = kwargs.get("batchTime")
