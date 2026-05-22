@@ -1,32 +1,22 @@
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class TransfersCollection:
+class TransfersCollection(BaseMongoCollection):
     collection_name = "Transfers"
-    _instance: "TransfersCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_transfer(self, transfer: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(transfer)
 
     async def create_transfer_with_session(self, transfer: dict, session) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(transfer, session=session)
 
     async def fetch_all_transfers(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         raw_params = kwargs
 
@@ -45,21 +35,21 @@ class TransfersCollection:
         return result
 
     async def fetch_transfer_by_id(self, transfer_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": transfer_id})
         return result
 
     async def fetch_tranfer_by_doc_number(
         self, doc_number: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"docNumber": doc_number})
         return result
 
     async def fetch_transfer_by_id_with_session(
         self, transfer_id: str, session
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": transfer_id}, session=session)
         return result
 
@@ -68,7 +58,7 @@ class TransfersCollection:
         transfer_id: str,
         transfer: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": transfer_id},
@@ -81,7 +71,7 @@ class TransfersCollection:
     async def update_transfer_status_with_session(
         self, transfer_id: str, update_data: dict, session
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": transfer_id},
@@ -93,12 +83,12 @@ class TransfersCollection:
         return result
 
     async def delete_transfer_by_id(self, transfer_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_delete({"id": transfer_id})
         return result
 
     async def create_indexes(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True, name="unique_id_index"),

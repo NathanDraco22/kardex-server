@@ -1,32 +1,22 @@
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class ExpirationLogsCollection:
+class ExpirationLogsCollection(BaseMongoCollection):
     collection_name = "ExpirationLog"
-    _instance: "ExpirationLogsCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_expiration_log(self, expiration_log: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(expiration_log)
 
     async def create_many_expiration_logs(self, expiration_logs: list[dict]) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_many(expiration_logs)
 
     async def fetch_all_expiration_logs(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {key: value for key, value in kwargs.items() if value is not None}
 
@@ -40,7 +30,7 @@ class ExpirationLogsCollection:
     async def fetch_expiration_log_by_id(
         self, expiration_log_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": expiration_log_id})
         return result
 
@@ -49,7 +39,7 @@ class ExpirationLogsCollection:
         expiration_log_id: str,
         expiration_log: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": expiration_log_id},
@@ -62,12 +52,12 @@ class ExpirationLogsCollection:
     async def delete_expiration_log_by_id(
         self, expiration_log_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_delete({"id": expiration_log_id})
         return result
 
     async def create_indexes(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),
@@ -77,7 +67,7 @@ class ExpirationLogsCollection:
         )
 
     async def has_near_expiration_date(self, target_date: int, branch_id: str) -> bool:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one(
             {
                 "expirationDate": {"$lte": target_date},

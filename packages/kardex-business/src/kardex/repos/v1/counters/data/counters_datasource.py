@@ -6,9 +6,9 @@ class CountersDataSource:
     async def increment_counter(
         self, counter_name: str, session: Any
     ) -> dict[str, Any]:
-        return await CountersCollection().increment_counter(counter_name, session)
+        return await CountersCollection.get_instance().increment_counter(counter_name, session)
 
     async def set_counter(
         self, counter_name: str, value: int, session: Any
     ) -> dict[str, Any]:
-        return await CountersCollection().set_counter(counter_name, value, session)
+        return await CountersCollection.get_instance().set_counter(counter_name, value, session)

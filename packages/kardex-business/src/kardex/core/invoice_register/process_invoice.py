@@ -27,12 +27,12 @@ async def process_invoice(
 ) -> tuple[InvoiceInDb, ClientInDb]:
     mongo_client = MongoService().client
 
-    prd_transaction_col = ProductTransactionsCollection()
-    product_account_col = ProductAccountsCollection()
-    invoice_col = InvoicesCollection()
-    order_col = OrdersCollection()
-    client_col = ClientsCollection()
-    client_tx_col = ClientTransactionsCollection()
+    prd_transaction_col = ProductTransactionsCollection.get_instance()
+    product_account_col = ProductAccountsCollection.get_instance()
+    invoice_col = InvoicesCollection.get_instance()
+    order_col = OrdersCollection.get_instance()
+    client_col = ClientsCollection.get_instance()
+    client_tx_col = ClientTransactionsCollection.get_instance()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
@@ -211,9 +211,9 @@ async def process_anon_invoice(
     """
     mongo_client = MongoService().client
 
-    prd_transaction_col = ProductTransactionsCollection()
-    product_account_col = ProductAccountsCollection()
-    invoice_col = InvoicesCollection()
+    prd_transaction_col = ProductTransactionsCollection.get_instance()
+    product_account_col = ProductAccountsCollection.get_instance()
+    invoice_col = InvoicesCollection.get_instance()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():

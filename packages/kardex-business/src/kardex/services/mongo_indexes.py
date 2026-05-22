@@ -25,68 +25,68 @@ from kardex.services.mongo_collections.v1 import (
 
 
 async def create_indexes():
-    collection = CountersCollection()
+    collection = CountersCollection.get_instance()
     await collection.create_indexes()
 
-    collection = ProductsCollection()
+    collection = ProductsCollection.get_instance()
     await collection.create_indexes()
 
-    collection = ClientsCollection()
+    collection = ClientsCollection.get_instance()
     await collection.create_indexes()
 
-    collection = ClientTransactionsCollection()
+    collection = ClientTransactionsCollection.get_instance()
     await collection.create_indexes()
 
-    collection = SuppliersCollection()
+    collection = SuppliersCollection.get_instance()
     await collection.create_indexes()
 
-    collection = ProductCategoriesCollection()
+    collection = ProductCategoriesCollection.get_instance()
     await collection.create_indexes()
 
-    collection = ProductPricesCollection()
+    collection = ProductPricesCollection.get_instance()
     await collection.create_indexes()
 
-    collection = EntryDocsCollection()
+    collection = EntryDocsCollection.get_instance()
     await collection.create_index()
 
-    collection = ExitDocsCollection()
+    collection = ExitDocsCollection.get_instance()
     await collection.create_index()
 
-    collection = ProductAccountsCollection()
+    collection = ProductAccountsCollection.get_instance()
     await collection.create_index()
 
-    collection = ProductSaleProfilesCollection()
+    collection = ProductSaleProfilesCollection.get_instance()
     await collection.create_index()
 
-    collection = ProductTransactionsCollection()
+    collection = ProductTransactionsCollection.get_instance()
     await collection.create_index()
 
-    collection = InvoicesCollection()
+    collection = InvoicesCollection.get_instance()
     await collection.create_indexes()
 
-    collection = OrdersCollection()
+    collection = OrdersCollection.get_instance()
     await collection.create_indexes()
 
-    collection = ExpirationLogsCollection()
+    collection = ExpirationLogsCollection.get_instance()
     await collection.create_indexes()
 
-    collection = DevolutionsCollection()
+    collection = DevolutionsCollection.get_instance()
     await collection.create_indexes()
 
-    collection = DailySummariesCollection()
+    collection = DailySummariesCollection.get_instance()
     await collection.create_indexes()
 
-    collection = ExecutiveSummariesCollection()
+    collection = ExecutiveSummariesCollection.get_instance()
     await collection.create_indexes()
 
-    collection = ProductStatsCollection()
+    collection = ProductStatsCollection.get_instance()
     await collection.create_indexes()
 
-    collection = TransfersCollection()
+    collection = TransfersCollection.get_instance()
     await collection.create_indexes()
 
-    collection = AdjustEntriesCollection()
+    collection = AdjustEntriesCollection.get_instance()
     await collection.create_indexes()
 
-    collection = AdjustExitsCollection()
+    collection = AdjustExitsCollection.get_instance()
     await collection.create_indexes()

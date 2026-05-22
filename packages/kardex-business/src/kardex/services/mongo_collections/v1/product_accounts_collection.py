@@ -5,38 +5,28 @@ from typing import Any
 from pymongo import ReturnDocument, IndexModel, UpdateOne
 from pymongo.errors import OperationFailure
 
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 from kardex.tools import TimeTools
 
 
-class ProductAccountsCollection:
+class ProductAccountsCollection(BaseMongoCollection):
     collection_name = "ProductAccounts"
-    _instance: "ProductAccountsCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_product_account(self, product_account: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(product_account)
 
     async def create_many_product_accounts(
         self, product_accounts: list[dict], session: Any
     ) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_many(product_accounts, session=session)
 
     async def get_product_account_by_product_and_branch_id(
         self, product_id: str, branch_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one(
             {"productId": product_id, "branchId": branch_id}
         )
@@ -45,7 +35,7 @@ class ProductAccountsCollection:
     async def update_product_account_stock_and_cost(
         self, product_id: str, branch_id: str, **kwargs
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         if not kwargs:
             return await self.get_product_account_by_product_and_branch_id(
@@ -64,7 +54,7 @@ class ProductAccountsCollection:
     async def add_product_account_stock(
         self, product_id: str, branch_id: str, **kwargs
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         if not kwargs:
             return await self.get_product_account_by_product_and_branch_id(
@@ -91,7 +81,7 @@ class ProductAccountsCollection:
     async def substract_product_account_stock(
         self, product_id: str, branch_id: str, **kwargs
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         if not kwargs:
             return await self.get_product_account_by_product_and_branch_id(
@@ -118,7 +108,7 @@ class ProductAccountsCollection:
     async def get_accounts_by_branch_id(
         self, branch_id: str, product_ids: list[str], session: Any
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         cursor = collection.find(
             {
@@ -136,7 +126,7 @@ class ProductAccountsCollection:
         self,
         product_id: str,
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         cursor = collection.find(
             {
                 "productId": product_id,
@@ -148,7 +138,7 @@ class ProductAccountsCollection:
     async def get_product_account_with_product_data(
         self, product_id: str, branch_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         cursor = collection.aggregate(
             [
@@ -181,7 +171,7 @@ class ProductAccountsCollection:
     async def create_new_product_account_with_session(
         self, product_account: dict, session: Any
     ) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(product_account, session=session)
 
     async def substract_product_account_data(
@@ -191,7 +181,7 @@ class ProductAccountsCollection:
         substract_to_current_stock: int,
         session: Any,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         updated_at = TimeTools.get_now_in_milliseconds()
         result = await collection.find_one_and_update(
             {
@@ -219,7 +209,7 @@ class ProductAccountsCollection:
         bulk_data: list[dict[str, Any]],
         session: Any,
     ) -> bool:
-        collection = self.__collection
+        collection = self._collection
         updated_at = TimeTools.get_now_in_milliseconds()
 
         operations: list[UpdateOne] = []
@@ -269,7 +259,7 @@ class ProductAccountsCollection:
         bulk_to_substrack: list[tuple[str, int]],
         session: Any,
     ) -> bool:
-        collection = self.__collection
+        collection = self._collection
         updated_at = TimeTools.get_now_in_milliseconds()
 
         operations: list[UpdateOne] = []
@@ -323,7 +313,7 @@ class ProductAccountsCollection:
     async def add_to_promise_stock(
         self, product_id: str, branch_id: str, quantity: int, session: Any
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         updated_at = TimeTools.get_now_in_milliseconds()
         result = await collection.find_one_and_update(
             {
@@ -365,7 +355,7 @@ class ProductAccountsCollection:
         Incrementa masivamente el stock prometido (Reserva).
         Valida que: (Current - Promise) >= Cantidad a reservar.
         """
-        collection = self.__collection
+        collection = self._collection
         updated_at = TimeTools.get_now_in_milliseconds()
 
         operations: list[UpdateOne] = []
@@ -421,7 +411,7 @@ class ProductAccountsCollection:
     async def substract_from_promise_stock(
         self, product_id: str, branch_id: str, quantity: int, session: Any
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         updated_at = TimeTools.get_now_in_milliseconds()
         result = await collection.find_one_and_update(
             {
@@ -453,7 +443,7 @@ class ProductAccountsCollection:
         Libera masivamente stock prometido (Ej: Cancelación de Pedido).
         Resta del promiseStock, pero NO toca el currentStock.
         """
-        collection = self.__collection
+        collection = self._collection
         updated_at = TimeTools.get_now_in_milliseconds()
 
         operations: list[UpdateOne] = []
@@ -503,7 +493,7 @@ class ProductAccountsCollection:
         quantity_delta: int,
         session: Any,
     ) -> dict[str, Any]:
-        collection = self.__collection
+        collection = self._collection
         update_at = TimeTools.get_now_in_milliseconds()
 
         result = await collection.find_one_and_update(
@@ -538,7 +528,7 @@ class ProductAccountsCollection:
         average_cost: int,
         session: Any,
     ) -> dict[str, Any]:
-        collection = self.__collection
+        collection = self._collection
         update_at = TimeTools.get_now_in_milliseconds()
 
         result = await collection.find_one_and_update(
@@ -578,7 +568,7 @@ class ProductAccountsCollection:
         last_cost: int,
         session: Any,
     ) -> dict[str, Any]:
-        collection = self.__collection
+        collection = self._collection
         update_at = TimeTools.get_now_in_milliseconds()
 
         result = await collection.find_one_and_update(
@@ -661,7 +651,7 @@ class ProductAccountsCollection:
         return result
 
     async def create_index(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel(
@@ -686,7 +676,7 @@ class ProductAccountsCollection:
     async def get_all_product_accounts_with_product(
         self, branch_id: str
     ) -> AsyncGenerator[dict[str, Any], None]:
-        collection = self.__collection
+        collection = self._collection
         cursor = collection.aggregate(
             [
                 {
@@ -719,7 +709,7 @@ class ProductAccountsCollection:
             yield product_account
 
     async def get_total_current_stock(self, branch_id: str) -> int:
-        collection = self.__collection
+        collection = self._collection
         cursor = collection.aggregate(
             [
                 {
@@ -759,7 +749,7 @@ class ProductAccountsCollection:
         quantity_dispatched: int,
         session: Any,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         return await collection.find_one_and_update(
             {
                 "productId": product_id,
@@ -789,7 +779,7 @@ class ProductAccountsCollection:
         Versión masiva de dispatch_promise_stock.
         Resta Current y Promise al mismo tiempo.
         """
-        collection = self.__collection
+        collection = self._collection
         updated_at = TimeTools.get_now_in_milliseconds()
 
         operations = []
@@ -827,7 +817,7 @@ class ProductAccountsCollection:
     async def dispatch_direct_stock(
         self, product_id: str, branch_id: str, quantity_to_dispatch: int, session: Any
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         return await collection.find_one_and_update(
             {
                 "productId": product_id,

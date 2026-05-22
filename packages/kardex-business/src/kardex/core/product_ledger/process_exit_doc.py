@@ -20,8 +20,8 @@ async def process_exit_doc(
     follow_transactions: bool,
 ) -> ExitDocInDb:
     mongo_client = MongoService().client
-    prd_transaction_col = ProductTransactionsCollection()
-    product_account_col = ProductAccountsCollection()
+    prd_transaction_col = ProductTransactionsCollection.get_instance()
+    product_account_col = ProductAccountsCollection.get_instance()
 
     branches_tool = BranchesTool()
 
@@ -43,7 +43,7 @@ async def process_exit_doc(
             new_exit_data["id"] = new_exit_doc_generated_id
             new_exit_data["createdAt"] = now_in_milliseconds
 
-            insert_result = await ExitDocsCollection().create_exit_doc_with_session(
+            insert_result = await ExitDocsCollection.get_instance().create_exit_doc_with_session(
                 new_exit_data,
                 session=session,
             )

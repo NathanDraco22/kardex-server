@@ -1,26 +1,16 @@
 from typing import Any
 
 from pymongo import ReturnDocument
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class CountersCollection:
+class CountersCollection(BaseMongoCollection):
     collection_name = "Counters"
-    _instance: "CountersCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def increment_counter(
         self, counter_name: str, session: Any
     ) -> dict[str, Any]:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_update(
             {"name": counter_name},
             {"$inc": {"value": 1}},
@@ -34,7 +24,7 @@ class CountersCollection:
     async def set_counter(
         self, counter_name: str, value: int, session: Any
     ) -> dict[str, Any]:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_update(
             {"name": counter_name},
             {"$set": {"value": value}},
@@ -46,11 +36,11 @@ class CountersCollection:
         return result
 
     async def get_counter(self, counter_name: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"name": counter_name})
 
         return result
 
     async def create_indexes(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_index([("name", 1)])

@@ -27,9 +27,9 @@ async def process_create_client_with_balance(
     """
     mongo_client = MongoService().client
 
-    client_col = ClientsCollection()
-    invoice_col = InvoicesCollection()
-    client_tx_col = ClientTransactionsCollection()
+    client_col = ClientsCollection.get_instance()
+    invoice_col = InvoicesCollection.get_instance()
+    client_tx_col = ClientTransactionsCollection.get_instance()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
@@ -153,9 +153,9 @@ async def create_initial_balance(
     """
     mongo_client = MongoService().client
 
-    client_col = ClientsCollection()
-    invoice_col = InvoicesCollection()
-    client_tx_col = ClientTransactionsCollection()
+    client_col = ClientsCollection.get_instance()
+    invoice_col = InvoicesCollection.get_instance()
+    client_tx_col = ClientTransactionsCollection.get_instance()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
@@ -269,9 +269,9 @@ async def create_multiple_initial_balance(
     """
     mongo_client = MongoService().client
 
-    client_col = ClientsCollection()
-    invoice_col = InvoicesCollection()
-    client_tx_col = ClientTransactionsCollection()
+    client_col = ClientsCollection.get_instance()
+    invoice_col = InvoicesCollection.get_instance()
+    client_tx_col = ClientTransactionsCollection.get_instance()
 
     if external_session:
         return await _execute_multiple_initial_balance(

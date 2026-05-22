@@ -4,18 +4,18 @@ from kardex.services.mongo_collections.v1 import ProductsCollection
 
 class ProductsDataSource:
     async def create_product(self, product: dict[str, Any]) -> dict[str, Any]:
-        collection = ProductsCollection()
+        collection = ProductsCollection.get_instance()
         await collection.create_product(product)
         return product
 
     async def get_all_products(self) -> list[dict[str, Any]]:
-        collection = ProductsCollection()
+        collection = ProductsCollection.get_instance()
         return await collection.fetch_all_products()
 
     async def get_paginated_products(
         self, offset: int, limit: int
     ) -> list[dict[str, Any]]:
-        collection = ProductsCollection()
+        collection = ProductsCollection.get_instance()
         return await collection.fetch_paginated_products(offset, limit)
 
     async def get_all_products_with_accounts(
@@ -24,19 +24,19 @@ class ProductsDataSource:
         page: int,
         limit: int,
     ) -> list[dict[str, Any]]:
-        collection = ProductsCollection()
+        collection = ProductsCollection.get_instance()
         return await collection.fetch_all_products_with_accounts(branch_id, page, limit)
 
     async def get_product_by_id(self, product_id: str) -> dict[str, Any] | None:
-        collection = ProductsCollection()
+        collection = ProductsCollection.get_instance()
         return await collection.fetch_product_by_id(product_id)
 
     async def get_product_by_code(self, product_code: str) -> dict[str, Any] | None:
-        collection = ProductsCollection()
+        collection = ProductsCollection.get_instance()
         return await collection.fetch_product_by_code(product_code)
 
     async def search_product_by_text(self, text_query: str) -> list[dict[str, Any]]:
-        collection = ProductsCollection()
+        collection = ProductsCollection.get_instance()
         return await collection.search_product_by_text(text_query)
 
     async def search_product_in_branch(
@@ -44,35 +44,35 @@ class ProductsDataSource:
         branch_id: str,
         text_query: str,
     ) -> list[dict[str, Any]]:
-        collection = ProductsCollection()
+        collection = ProductsCollection.get_instance()
         return await collection.searchProductInBranch(branch_id, text_query)
 
     async def get_all_product_in_branch(self, **kwargs) -> list[dict[str, Any]]:
-        collection = ProductsCollection()
+        collection = ProductsCollection.get_instance()
         return await collection.get_all_product_in_branch(**kwargs)
 
     async def get_all_product_in_branch_streamed(
         self, **kwargs
     ) -> AsyncIterable[dict[str, Any]]:
-        collection = ProductsCollection()
+        collection = ProductsCollection.get_instance()
         return collection.get_all_product_in_branch_streamed(**kwargs)
 
     async def get_product_in_branch_by_id(
         self, product_id: str, branch_id: str
     ) -> dict[str, Any] | None:
-        collection = ProductsCollection()
+        collection = ProductsCollection.get_instance()
         return await collection.get_product_in_branch_by_id(product_id, branch_id)
 
     async def get_product_by_ids(self, product_ids: list[str]) -> list[dict[str, Any]]:
-        collection = ProductsCollection()
+        collection = ProductsCollection.get_instance()
         return await collection.fetch_product_by_ids(product_ids)
 
     async def update_product_by_id(
         self, product_id: str, product: dict[str, Any]
     ) -> dict[str, Any] | None:
-        collection = ProductsCollection()
+        collection = ProductsCollection.get_instance()
         return await collection.update_product_by_id(product_id, product)
 
     async def delete_product_by_id(self, product_id: str) -> dict[str, Any] | None:
-        collection = ProductsCollection()
+        collection = ProductsCollection.get_instance()
         return await collection.delete_product_by_id(product_id)

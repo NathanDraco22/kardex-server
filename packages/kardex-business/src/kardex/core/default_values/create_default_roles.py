@@ -16,7 +16,7 @@ async def create_default_roles() -> None:
             createdAt=TimeTools.get_now_in_milliseconds(),
         )
 
-        await UserRolesCollection().create_role_if_absent(
+        await UserRolesCollection.get_instance().create_role_if_absent(
             role.name,
             new_role_db.model_dump(),
         )

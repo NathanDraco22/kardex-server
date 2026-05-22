@@ -14,7 +14,7 @@ from kardex.services.mongo_collections.v1 import ClientsCollection
 
 
 async def process_clients_import(branch_id: str, clients: list[ClientImport]) -> None:
-    client_col = ClientsCollection()
+    client_col = ClientsCollection.get_instance()
     now_milliseconds = TimeTools.get_now_in_milliseconds()
 
     new_clients: list[ClientInDb] = []

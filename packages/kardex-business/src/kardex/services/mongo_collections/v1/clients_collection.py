@@ -2,39 +2,29 @@ import re
 from typing import Any
 
 from pymongo import ReturnDocument
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 from pymongo import IndexModel
 
 
-class ClientsCollection:
+class ClientsCollection(BaseMongoCollection):
     collection_name = "Clients"
-    _instance: "ClientsCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_client(self, client: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(client)
 
     async def create_client_with_session(self, client: dict, session: Any) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(client, session=session)
 
     async def create_many_clients_with_session(self, clients: list[dict], session: Any) -> None:
-        collection = self.__collection
+        collection = self._collection
         if clients:
             await collection.insert_many(clients, session=session)
 
     async def create_client_if_absent(self, client_id: str, client: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.update_one(
             {"id": client_id},
             {"$setOnInsert": client},
@@ -42,7 +32,7 @@ class ClientsCollection:
         )
 
     async def fetch_all_clients(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         group_param = kwargs.pop("group", None)
         hasMovements = kwargs.pop("hasMovements", None)
 
@@ -67,7 +57,7 @@ class ClientsCollection:
         return result
 
     async def fetch_all_clients_with_balance(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
         group_param = kwargs.pop("group", None)
 
         query = {}
@@ -106,7 +96,7 @@ class ClientsCollection:
         self,
         text_query: str,
     ) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         safe_query = re.escape(text_query)
 
@@ -156,17 +146,17 @@ class ClientsCollection:
         return result
 
     async def fetch_client_by_id(self, client_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": client_id, "isDeleted": False})
         return result
 
     async def get_client_by_card_id(self, card_id: str) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"cardId": card_id, "isDeleted": False})
         return result
 
     async def search_client_by_text(self, text_query: str) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         safe_query = re.escape(text_query)
 
@@ -217,7 +207,7 @@ class ClientsCollection:
         client_id: str,
         client: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": client_id},
@@ -232,13 +222,13 @@ class ClientsCollection:
         old_group: str,
         new_group: str,
     ):
-        collection = self.__collection
+        collection = self._collection
         await collection.update_many(
             {"group": old_group}, {"$set": {"group": new_group}}
         )
 
     async def create_indexes(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel(
@@ -282,7 +272,7 @@ class ClientsCollection:
     async def add_to_client_balance(
         self, client_id: str, amount: int, timestamp: int, session: Any
     ) -> dict[str, Any]:
-        collection = self.__collection
+        collection = self._collection
         updated_at = timestamp
 
         result = await collection.find_one_and_update(
@@ -328,7 +318,7 @@ class ClientsCollection:
     async def substract_from_client_balance(
         self, client_id: str, amount: int, session: Any, timestamp: int
     ) -> dict[str, Any]:
-        collection = self.__collection
+        collection = self._collection
         updated_at = timestamp
 
         result = await collection.find_one_and_update(

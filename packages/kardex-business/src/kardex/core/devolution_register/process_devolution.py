@@ -23,9 +23,9 @@ async def process_devolution(
     4. Crea las transacciones de producto y de cliente para el Kardex.
     """
     mongo_client = MongoService().client
-    devolution_col = DevolutionsCollection()
-    prd_account_col = ProductAccountsCollection()
-    prd_transaction_col = ProductTransactionsCollection()
+    devolution_col = DevolutionsCollection.get_instance()
+    prd_account_col = ProductAccountsCollection.get_instance()
+    prd_transaction_col = ProductTransactionsCollection.get_instance()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
@@ -95,9 +95,9 @@ async def process_anon_devolution(
     3. Actualiza el estado de la devolución a "confirmed".
     """
     mongo_client = MongoService().client
-    devolution_col = DevolutionsCollection()
-    prd_account_col = ProductAccountsCollection()
-    prd_transaction_col = ProductTransactionsCollection()
+    devolution_col = DevolutionsCollection.get_instance()
+    prd_account_col = ProductAccountsCollection.get_instance()
+    prd_transaction_col = ProductTransactionsCollection.get_instance()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():

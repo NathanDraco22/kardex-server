@@ -1,28 +1,18 @@
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel
-from kardex.services import MongoService
+from kardex.services import BaseMongoCollection
 
 
-class ClientTransactionsCollection:
+class ClientTransactionsCollection(BaseMongoCollection):
     collection_name = "ClientTransactions"
-    _instance: "ClientTransactionsCollection|None" = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(cls, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        mongo_service = MongoService()
-        self.__collection = mongo_service.get_collection(self.collection_name)
 
     async def create_client_transaction(self, client_transaction: dict) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(client_transaction)
 
     async def fetch_all_client_transactions(self, **kwargs) -> list[dict[str, Any]]:
-        collection = self.__collection
+        collection = self._collection
 
         query = {key: value for key, value in kwargs.items() if value is not None}
 
@@ -39,7 +29,7 @@ class ClientTransactionsCollection:
     async def fetch_client_transaction_by_id(
         self, client_transaction_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one({"id": client_transaction_id})
         return result
 
@@ -48,7 +38,7 @@ class ClientTransactionsCollection:
         client_transaction_id: str,
         client_transaction: dict,
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": client_transaction_id},
@@ -61,12 +51,12 @@ class ClientTransactionsCollection:
     async def delete_client_transaction_by_id(
         self, client_transaction_id: str
     ) -> dict[str, Any] | None:
-        collection = self.__collection
+        collection = self._collection
         result = await collection.find_one_and_delete({"id": client_transaction_id})
         return result
 
     async def create_indexes(self):
-        collection = self.__collection
+        collection = self._collection
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),
@@ -80,5 +70,5 @@ class ClientTransactionsCollection:
     async def create_client_transaction_with_session(
         self, client_transaction: dict, session: Any
     ) -> None:
-        collection = self.__collection
+        collection = self._collection
         await collection.insert_one(client_transaction, session=session)

@@ -24,9 +24,9 @@ async def process_create_product(
 ) -> ProductInDb:
     mongo_client = MongoService().client
 
-    products_col = ProductsCollection()
-    accounts_col = ProductAccountsCollection()
-    profiles_col = ProductSaleProfilesCollection()
+    products_col = ProductsCollection.get_instance()
+    accounts_col = ProductAccountsCollection.get_instance()
+    profiles_col = ProductSaleProfilesCollection.get_instance()
 
     branches_repo = BranchesRepository(BranchesDataSource())
 

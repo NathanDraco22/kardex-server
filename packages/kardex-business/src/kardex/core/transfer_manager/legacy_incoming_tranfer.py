@@ -31,15 +31,15 @@ async def process_incoming_transfer(
 
     # Colecciones necesarias
 
-    transfers_col = TransfersCollection()
+    transfers_col = TransfersCollection.get_instance()
 
-    product_account_col = ProductAccountsCollection()
+    product_account_col = ProductAccountsCollection.get_instance()
 
-    product_stats_col = ProductStatsCollection()
+    product_stats_col = ProductStatsCollection.get_instance()
 
-    product_prof_col = ProductSaleProfilesCollection()
+    product_prof_col = ProductSaleProfilesCollection.get_instance()
 
-    prd_transaction_col = ProductTransactionsCollection()
+    prd_transaction_col = ProductTransactionsCollection.get_instance()
 
     async with await mongo_client.start_session() as session:
         async with session.start_transaction():
