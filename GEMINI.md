@@ -134,3 +134,11 @@ Estandarización de todas las Collection classes y Datasources al patrón `BaseM
    - [etag_tool.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/tools/etag_tool.py)
    - [mongo_indexes.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/services/mongo_indexes.py)
 5. **Verificación**: `ty` typecheck pasó exitosamente a nivel global, certificando la validez del tipado estático del nuevo patrón Singleton.
+
+## Fecha: 2026-05-21
+### Objetivo
+Actualizar `AGENTS.md` con la guía de uso completa y detallada de la herramienta `onion` CLI.
+
+### Resumen de Implementación
+1. **Guía Expandida**: Se reemplazó la sección simplificada "Onion CLI — Entity Generation" en `AGENTS.md` con una especificación detallada de la CLI Onion.
+2. **Documentación Multitecnológica**: Se incluyeron todos los comandos de la CLI para FastAPI (Python) y Flutter/Dart (cubits, models, data sources, etc.), convenciones de nombres (singular), parámetros de directorios de salida (`--output-dir`), estructuras de directorios generadas y workflows típicos.
