@@ -157,3 +157,13 @@ Creación e integración del módulo de gastos (`expense`) en la arquitectura On
    - **Filtros Avanzados y Paginación**: Se creó `ExpensesFilterParams` en un nuevo subpaquete `common/filter_params/` que hereda de `HistoryParams` para soportar búsquedas complejas (rango de fechas de creación `createdAt`, rangos de montos, categoría, sucursal, etc.) y paginación (`limit`, `offset`) retornando un `ListResponse`.
    - **Índices en MongoDB**: Se indexó el campo `createdAt` en la colección `Expenses` para soportar consultas de rango ("mayor que" y "menor que") de forma eficiente.
 4. **Verificación**: Las comprobaciones estáticas con `ruff` y el typechecking completo de `ty` pasaron con éxito de forma global.
+
+## Fecha: 2026-05-22 (Parte 2)
+### Objetivo
+Creación de la clase `KardexConfig` en memoria para habilitar saldos negativos en existencias durante facturación.
+
+### Resumen de Implementación
+1. **Configuración en Memoria**: Creación de la clase `KardexConfig` estructurada como un Singleton en `packages/kardex-business/src/kardex/kardex_config.py`.
+2. **Propiedad `letInvoiceWithNegative`**: Atributo booleano que permite omitir el error `InsufficientBalanceError` en salidas cuyo subtipo es `"invoice"` (facturas).
+3. **Core Integración**: Modificación de `InventoryBatchTransformer.prepare_exit` para evaluar `KardexConfig().letInvoiceWithNegative` al validar límites de stock.
+4. **Verificación**: Comprobaciones estáticas (`ruff` y `ty`) exitosas y validación dinámica de escenarios `True` y `False` mediante script en `scratch/test_negative_stock.py`.
