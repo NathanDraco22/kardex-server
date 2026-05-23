@@ -1,10 +1,12 @@
 from pydantic import BaseModel
 from typing import Any
+from kardex.repos.v1.expenses import ExpensesStatus
 
 
 class ExpensesFilterParams(BaseModel):
     offset: int
     limit: int = 50
+    status: ExpensesStatus | None = None
     startDate: int | None = None
     endDate: int | None = None
     createdBy: str | None = None

@@ -1,16 +1,23 @@
+from typing import Literal
 from pydantic import BaseModel
+from kardex.repos.v1.common.models import UserInfo
+
+ExpensesStatus = Literal["draft", "open", "paid", "partiallyPaid", "cancelled"]
 
 
 class BaseExpense(BaseModel):
     branchId: str
+    docNumber: str = ""
     amount: int
     category: str
     description: str | None = None
     date: int
     dateId: str
-    createdBy: str
-    docNumber: str = ""
+    status: ExpensesStatus
     isActive: bool = True
+    expirationDate: int | None = None
+    createdBy: UserInfo
+    paidAt: int | None = None
 
 
 class CreateExpense(BaseExpense):

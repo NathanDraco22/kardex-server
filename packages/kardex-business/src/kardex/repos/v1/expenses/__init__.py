@@ -1,6 +1,12 @@
 from .data.expenses_datasource import ExpensesDataSource
-from .models.expense_model import CreateExpense, UpdateExpense, ExpenseInDb
+from .models.expense_model import (
+    CreateExpense,
+    UpdateExpense,
+    ExpenseInDb,
+    ExpensesStatus,
+)
 from .expenses_repository import ExpensesRepository
+
 
 __all__ = [
     "ExpensesDataSource",
@@ -8,4 +14,5 @@ __all__ = [
     "UpdateExpense",
     "ExpenseInDb",
     "ExpensesRepository",
+    "ExpensesStatus",
 ]
