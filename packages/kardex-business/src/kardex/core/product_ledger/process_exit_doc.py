@@ -17,7 +17,6 @@ from kardex.services.mongo_collections.v1 import (
 
 async def process_exit_doc(
     create_exit_doc: CreateExitDoc,
-    follow_transactions: bool,
 ) -> ExitDocInDb:
     mongo_client = MongoService().client
     prd_transaction_col = ProductTransactionsCollection.get_instance()
@@ -43,9 +42,11 @@ async def process_exit_doc(
             new_exit_data["id"] = new_exit_doc_generated_id
             new_exit_data["createdAt"] = now_in_milliseconds
 
-            insert_result = await ExitDocsCollection.get_instance().create_exit_doc_with_session(
-                new_exit_data,
-                session=session,
+            insert_result = (
+                await ExitDocsCollection.get_instance().create_exit_doc_with_session(
+                    new_exit_data,
+                    session=session,
+                )
             )
 
             new_exit_doc_in_db = ExitDocInDb.model_validate(insert_result)
@@ -90,7 +91,6 @@ async def process_exit_doc(
                 session=session,
                 account_col=product_account_col,
                 transaction_col=prd_transaction_col,
-                follow_transactions=follow_transactions,
             )
 
             return new_exit_doc_in_db

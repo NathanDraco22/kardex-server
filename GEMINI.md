@@ -179,3 +179,12 @@ Persistencia de stock negativo a nivel de Base de Datos (MongoDB) al facturar.
 4. **Acoplamiento con Facturación**: Se actualizó [process_invoice.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/core/invoice_register/process_invoice.py) para pasar `allow_negative=KardexConfig().letInvoiceWithNegative` a `InventoryEngine.execute_exit`.
 5. **Verificación**: Comprobación estática (`ruff` y `ty`) y script de integración con DB `scratch/test_db_negative_stock.py`.
 
+## Fecha: 2026-05-22 (Parte 4)
+### Objetivo
+Agregar la variable de configuración `followTransaction` a `KardexConfig`.
+
+### Resumen de Implementación
+1. **Propiedad `followTransaction`**: Se agregó a [kardex_config.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/kardex_config.py) la variable de clase `followTransaction: bool = True` por defecto, permitiendo que la lógica del negocio pueda acceder y conmutar el comportamiento del rastreo de transacciones del Kardex.
+2. **Verificación**: Se ejecutó `ty check` de forma global con éxito rotundo.
+
+

@@ -38,7 +38,7 @@ from .process_exit_doc import process_exit_doc
 
 
 class ProductLedgerManager:
-    def __init__(self, follow_transactions: bool = True) -> None:
+    def __init__(self) -> None:
         self.entry_docs_repo = EntryDocsRepository(entry_docs_ds=EntryDocsDataSource())
         self.exit_docs_repo = ExitDocsRepository(exit_docs_ds=ExitDocsDataSource())
         self.branches_repo = BranchesRepository(
@@ -50,8 +50,6 @@ class ProductLedgerManager:
         self.products_repo = ProductsRepository(
             products_ds=ProductsDataSource(),
         )
-
-        self.follow_transactions = follow_transactions
 
     async def regis_entry_doc(self, create_entry_doc: CreateEntryDoc) -> EntryDocInDb:
         entry_doc = await self.entry_docs_repo.get_entry_doc_by_doc_number_and_supplier(
@@ -67,10 +65,7 @@ class ProductLedgerManager:
         max_retries = 3
         for _ in range(max_retries):
             try:
-                result = await process_entry_doc(
-                    create_entry_doc,
-                    self.follow_transactions,
-                )
+                result = await process_entry_doc(create_entry_doc)
                 return result
 
             except OperationFailure as e:
@@ -102,9 +97,7 @@ class ProductLedgerManager:
         max_retries = 3
         for _ in range(max_retries):
             try:
-                result = await process_exit_doc(
-                    create_exit_doc, self.follow_transactions
-                )
+                result = await process_exit_doc(create_exit_doc)
                 return result
 
             except InsufficientBalanceError:

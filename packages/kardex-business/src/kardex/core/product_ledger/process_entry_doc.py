@@ -21,7 +21,6 @@ from kardex.services.mongo_collections.v1 import (
 
 async def process_entry_doc(
     entry_doc: CreateEntryDoc,
-    follow_transactions: bool,
 ) -> EntryDocInDb:
     mongo_client = MongoService().client
 
@@ -98,7 +97,6 @@ async def process_entry_doc(
                 profile_col=product_prof_col,
                 stats_col=product_stats_col,
                 transaction_col=prd_transaction_col,
-                follow_transactions=follow_transactions,
             )
 
             return new_entry_doc_in_db
