@@ -58,12 +58,14 @@ class InventoryEngine:
         account_col: ProductAccountsCollection,
         transaction_col: ProductTransactionsCollection,
         follow_transactions: bool = True,
+        allow_negative: bool = False,
     ):
         if batch_result.stock_subtractions:
             await account_col.bulk_substract_product_account_data(
                 branch_id=branch_id,
                 bulk_to_substrack=batch_result.stock_subtractions,
                 session=session,
+                allow_negative=allow_negative,
             )
 
         if batch_result.transactions and follow_transactions:
