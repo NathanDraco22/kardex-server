@@ -187,4 +187,14 @@ Agregar la variable de configuración `followTransaction` a `KardexConfig`.
 1. **Propiedad `followTransaction`**: Se agregó a [kardex_config.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/kardex_config.py) la variable de clase `followTransaction: bool = True` por defecto, permitiendo que la lógica del negocio pueda acceder y conmutar el comportamiento del rastreo de transacciones del Kardex.
 2. **Verificación**: Se ejecutó `ty check` de forma global con éxito rotundo.
 
+## Fecha: 2026-05-23
+### Objetivo
+Implementación de endpoint `/byProduct/{product_id}` para obtener facturas asociadas a un producto.
 
+### Resumen de Implementación
+1. **Colección (`invoices_collection.py`)**: Implementado `fetch_all_invoices_by_product` utilizando `build_query` y aplicando la condición `{"saleItems.product.id": product_id}` sobre el índice de MongoDB existente `IndexModel([("saleItems.product.id", 1)])`.
+2. **DataSource (`invoices_datasource.py`)**: Añadido método de delegación `get_all_invoices_by_product` a nivel de DataSource de facturas.
+3. **Repository (`invoices_repository.py`)**: Añadido `get_all_invoices_by_product` que invoca al DataSource y valida/serializa los resultados usando `InvoiceInDb.model_validate`.
+4. **Controller (`invoices_controller.py`)**: Añadido `get_invoices_by_product` que serializa los query parameters `InvoiceQueryParams` y encapsula el listado en un objeto `ListResponse`.
+5. **Router (`invoices_router.py`)**: Registrado el endpoint `GET /byProduct/{product_id}` utilizando `Depends(InvoiceQueryParams)` para permitir el filtrado avanzado compatible con las búsquedas generales de facturas.
+6. **Verificación**: Ejecutado type-checking estático global (`ty check`) con éxito rotundo.

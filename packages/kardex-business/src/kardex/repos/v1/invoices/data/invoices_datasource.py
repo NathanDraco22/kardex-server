@@ -12,6 +12,12 @@ class InvoicesDataSource:
         collection = InvoicesCollection.get_instance()
         return await collection.fetch_all_invoices(**kargs)
 
+    async def get_all_invoices_by_product(
+        self, product_id: str, **kargs
+    ) -> list[dict[str, Any]]:
+        collection = InvoicesCollection.get_instance()
+        return await collection.fetch_all_invoices_by_product(product_id, **kargs)
+
     async def get_all_product_sales(self, **kargs) -> list[dict[str, Any]]:
         collection = InvoicesCollection.get_instance()
         return await collection.fetch_all_product_sales(**kargs)
