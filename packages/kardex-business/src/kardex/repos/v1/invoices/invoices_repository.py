@@ -25,6 +25,15 @@ class InvoicesRepository:
         models = [InvoiceInDb.model_validate(result) for result in results]
         return models
 
+    async def get_all_invoices_by_product(
+        self, product_id: str, **kargs
+    ) -> list[InvoiceInDb]:
+        results = await self.invoices_ds.get_all_invoices_by_product(
+            product_id, **kargs
+        )
+        models = [InvoiceInDb.model_validate(result) for result in results]
+        return models
+
     async def get_all_product_sales(self, **kargs) -> list[ProductSalesTotal]:
         results = await self.invoices_ds.get_all_product_sales(**kargs)
         models = [ProductSalesTotal.model_validate(result) for result in results]

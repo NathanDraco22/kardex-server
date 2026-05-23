@@ -66,6 +66,14 @@ async def get_invoices_history(
     return await invoices_controller.get_invoice_history(params)
 
 
+@invoices_router.get("/byProduct/{product_id}")
+async def get_invoices_by_product(
+    product_id: str,
+    query_params: InvoiceQueryParams = Depends(),
+) -> ListResponse[InvoiceInDb]:
+    return await invoices_controller.get_invoices_by_product(product_id, query_params)
+
+
 @invoices_router.get("/{invoice_id}")
 async def get_invoice_by_id(invoice_id: str) -> InvoiceInDb:
     return await invoices_controller.get_invoice_by_id(invoice_id)
