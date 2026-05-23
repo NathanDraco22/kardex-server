@@ -11,6 +11,7 @@ from kardex.kardex_config import KardexConfig
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     KardexConfig().letInvoiceWithNegative = True
+    KardexConfig().followTransaction = False
     await init_services()
     if os.getenv("MODE") != "DEV":
         await AppScheduler().start_task()
