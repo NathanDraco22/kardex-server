@@ -180,15 +180,20 @@ class ProductAccountsCollection(BaseMongoCollection):
         branch_id: str,
         substract_to_current_stock: int,
         session: Any,
+        allow_negative: bool = False,
     ) -> dict[str, Any] | None:
         collection = self._collection
         updated_at = TimeTools.get_now_in_milliseconds()
+
+        filter_dict: dict[str, Any] = {
+            "productId": product_id,
+            "branchId": branch_id,
+        }
+        if not allow_negative:
+            filter_dict["currentStock"] = {"$gte": abs(substract_to_current_stock)}
+
         result = await collection.find_one_and_update(
-            {
-                "productId": product_id,
-                "branchId": branch_id,
-                "currentStock": {"$gte": abs(substract_to_current_stock)},
-            },
+            filter_dict,
             {
                 "$inc": {
                     "currentStock": -abs(substract_to_current_stock),
@@ -202,6 +207,7 @@ class ProductAccountsCollection(BaseMongoCollection):
         )
 
         return result
+
 
     async def bulk_update_product_account_balance_with_average_cost(
         self,
@@ -258,6 +264,7 @@ class ProductAccountsCollection(BaseMongoCollection):
         branch_id: str,
         bulk_to_substrack: list[tuple[str, int]],
         session: Any,
+        allow_negative: bool = False,
     ) -> bool:
         collection = self._collection
         updated_at = TimeTools.get_now_in_milliseconds()
@@ -268,22 +275,25 @@ class ProductAccountsCollection(BaseMongoCollection):
 
             qty = abs(substract_to_current_stock)
 
+            filter_dict: dict[str, Any] = {
+                "productId": product_id,
+                "branchId": branch_id,
+            }
+            if not allow_negative:
+                filter_dict["$expr"] = {
+                    "$gte": [
+                        {
+                            "$subtract": [
+                                {"$ifNull": ["$currentStock", 0]},
+                                {"$ifNull": ["$promiseStock", 0]},
+                            ]
+                        },
+                        qty,
+                    ]
+                }
+
             update_op = UpdateOne(
-                {
-                    "productId": product_id,
-                    "branchId": branch_id,
-                    "$expr": {
-                        "$gte": [
-                            {
-                                "$subtract": [
-                                    {"$ifNull": ["$currentStock", 0]},
-                                    {"$ifNull": ["$promiseStock", 0]},
-                                ]
-                            },
-                            qty,
-                        ]
-                    },
-                },
+                filter_dict,
                 {
                     "$inc": {
                         "currentStock": -qty,

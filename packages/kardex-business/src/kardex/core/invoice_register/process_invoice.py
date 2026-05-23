@@ -1,4 +1,5 @@
 from kardex.tools import UuidTool, TimeTools
+from kardex.kardex_config import KardexConfig
 from kardex.repos.v1.invoices import CreateInvoice, InvoiceInDb
 from kardex.repos.v1.product_accounts import ProductAccountInDb
 from kardex.core.inventory import (
@@ -120,6 +121,7 @@ async def process_invoice(
                     session=session,
                     account_col=product_account_col,
                     transaction_col=prd_transaction_col,
+                    allow_negative=KardexConfig().letInvoiceWithNegative,
                 )
 
             if create_invoice.status == "draft":
@@ -281,6 +283,7 @@ async def process_anon_invoice(
                 session=session,
                 account_col=product_account_col,
                 transaction_col=prd_transaction_col,
+                allow_negative=KardexConfig().letInvoiceWithNegative,
             )
 
             # 6. GUARDAR LA FACTURA

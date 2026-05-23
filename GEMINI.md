@@ -167,3 +167,15 @@ Creación de la clase `KardexConfig` en memoria para habilitar saldos negativos 
 2. **Propiedad `letInvoiceWithNegative`**: Atributo booleano que permite omitir el error `InsufficientBalanceError` en salidas cuyo subtipo es `"invoice"` (facturas).
 3. **Core Integración**: Modificación de `InventoryBatchTransformer.prepare_exit` para evaluar `KardexConfig().letInvoiceWithNegative` al validar límites de stock.
 4. **Verificación**: Comprobaciones estáticas (`ruff` y `ty`) exitosas y validación dinámica de escenarios `True` y `False` mediante script en `scratch/test_negative_stock.py`.
+
+## Fecha: 2026-05-22 (Parte 3)
+### Objetivo
+Persistencia de stock negativo a nivel de Base de Datos (MongoDB) al facturar.
+
+### Resumen de Implementación
+1. **Parámetro `allow_negative` en Colección**: Se añadió el parámetro opcional `allow_negative` a los métodos de sustracción `substract_product_account_data` y `bulk_substract_product_account_data` de [product_accounts_collection.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/services/mongo_collections/v1/product_accounts_collection.py).
+2. **Evadir Filtro Restrictivo**: Si `allow_negative` es `True`, se omiten las cláusulas restrictivas de stock de MongoDB (ej. `$expr` que exige stock disponible >= qty), logrando que la operación `$inc` de decremento decremente a valores negativos sin arrojar `OperationFailure`.
+3. **Propagación en Core**: Se modificó `execute_exit` en [inventory_engine.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/core/inventory/inventory_engine.py) para aceptar y propagar este parámetro.
+4. **Acoplamiento con Facturación**: Se actualizó [process_invoice.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/core/invoice_register/process_invoice.py) para pasar `allow_negative=KardexConfig().letInvoiceWithNegative` a `InventoryEngine.execute_exit`.
+5. **Verificación**: Comprobación estática (`ruff` y `ty`) y script de integración con DB `scratch/test_db_negative_stock.py`.
+
