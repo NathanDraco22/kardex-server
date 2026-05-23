@@ -2,6 +2,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from kardex.tools import UuidTool, TimeTools, InsufficientBalanceError
+from kardex.kardex_config import KardexConfig
 from kardex.repos.v1.product_accounts import ProductAccountInDb
 from kardex.repos.v1.product_transactions import (
     ProductTransactionInDb,
@@ -192,14 +193,16 @@ class InventoryBatchTransformer:
                 limit_stock = account.currentStock - promise_stock
 
             if total_qty_needed > limit_stock:
-                stock_type_msg = "FÍSICO" if is_order_fulfillment else "DISPONIBLE"
-                raise InsufficientBalanceError(
-                    f"Stock {stock_type_msg} insuficiente para '{p_name}'. "
-                    f"Requerido: {total_qty_needed}, "
-                    f"Disponible: {limit_stock}",
-                    product_id=p_id,
-                    product_name=p_name,
-                )
+                is_invoice = tx_subtype == "invoice"
+                if not (is_invoice and KardexConfig().letInvoiceWithNegative):
+                    stock_type_msg = "FÍSICO" if is_order_fulfillment else "DISPONIBLE"
+                    raise InsufficientBalanceError(
+                        f"Stock {stock_type_msg} insuficiente para '{p_name}'. "
+                        f"Requerido: {total_qty_needed}, "
+                        f"Disponible: {limit_stock}",
+                        product_id=p_id,
+                        product_name=p_name,
+                    )
 
             pair_op.append((p_id, total_qty_needed))
 
