@@ -6,6 +6,7 @@ from kardex.repos.v1.expenses import (
     UpdateExpense, 
     ExpenseInDb, 
     ExpensesRepository,
+    AddToAmountRequest,
 )
 from responses.v1 import ListResponse
 
@@ -62,6 +63,16 @@ class ExpensesController:
                 detail="Expense not found",
             )
         return deleted_expense
+
+    async def add_to_amount_paid(self, body: AddToAmountRequest) -> ExpenseInDb:
+        updated_expense = await self.expenses_repo.add_to_amount_paid(body.expenseId, body.amountPaid)
+        if updated_expense is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Expense not found",
+            )
+        return updated_expense
+
 
 
 expenses_controller = ExpensesController(
