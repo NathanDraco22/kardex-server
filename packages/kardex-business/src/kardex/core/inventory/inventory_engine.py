@@ -1,5 +1,5 @@
 from typing import Any
-
+from kardex.kardex_config import KardexConfig
 from kardex.services.mongo_collections.v1 import (
     ProductAccountsCollection,
     ProductSaleProfilesCollection,
@@ -23,7 +23,6 @@ class InventoryEngine:
         profile_col: ProductSaleProfilesCollection,
         stats_col: ProductStatsCollection,
         transaction_col: ProductTransactionsCollection,
-        follow_transactions: bool = True,
     ):
         if batch_result.accounts_update:
             await account_col.bulk_update_product_account_balance_with_average_cost(
@@ -38,13 +37,13 @@ class InventoryEngine:
                 raw_profiles, session=session
             )
 
-        if batch_result.new_stats and follow_transactions:
+        if batch_result.new_stats and KardexConfig().followTransaction:
             raw_stats = [s.model_dump() for s in batch_result.new_stats]
             await stats_col.bulk_create_product_stats_if_not_exist(
                 raw_stats, session=session
             )
 
-        if batch_result.transactions and follow_transactions:
+        if batch_result.transactions and KardexConfig().followTransaction:
             raw_txs = [t.model_dump() for t in batch_result.transactions]
             await transaction_col.create_many_product_transactions_with_session(
                 raw_txs, session=session
@@ -57,16 +56,17 @@ class InventoryEngine:
         session: Any,
         account_col: ProductAccountsCollection,
         transaction_col: ProductTransactionsCollection,
-        follow_transactions: bool = True,
+        allow_negative: bool = False,
     ):
         if batch_result.stock_subtractions:
             await account_col.bulk_substract_product_account_data(
                 branch_id=branch_id,
                 bulk_to_substrack=batch_result.stock_subtractions,
                 session=session,
+                allow_negative=allow_negative,
             )
 
-        if batch_result.transactions and follow_transactions:
+        if batch_result.transactions and KardexConfig().followTransaction:
             raw_txs = [t.model_dump() for t in batch_result.transactions]
             await transaction_col.create_many_product_transactions_with_session(
                 raw_txs,

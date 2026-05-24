@@ -40,6 +40,15 @@ class InvoicesController:
         invoices = await self.invoices_repo.get_all_invoices(**kargs)
         return ListResponse(count=len(invoices), data=invoices)
 
+    async def get_invoices_by_product(
+        self, product_id: str, query_params: InvoiceQueryParams
+    ) -> ListResponse[InvoiceInDb]:
+        kargs = query_params.model_dump()
+        invoices = await self.invoices_repo.get_all_invoices_by_product(
+            product_id, **kargs
+        )
+        return ListResponse(count=len(invoices), data=invoices)
+
     async def get_all_product_sales(
         self, query_params: InvoiceQueryParams
     ) -> ListResponse[ProductSalesTotal]:

@@ -76,3 +76,8 @@ class CounterManager:
         res = await self.counters_repository.increment_counter("adjustNumber", session)
         formatted = str(res.value)
         return formatted
+
+    async def next_expense_number(self, session: Any = None) -> str:
+        res = await self.counters_repository.increment_counter("expenseNumber", session)
+        formatted = str(res.value)
+        return formatted

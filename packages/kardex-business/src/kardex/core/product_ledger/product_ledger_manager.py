@@ -23,7 +23,14 @@ from kardex.repos.v1.product_accounts import (
 )
 from kardex.repos.v1.products import ProductsRepository, ProductsDataSource
 
-from kardex.tools import BranchesTool, InsufficientBalanceError, DocumentAlreadyExists, BranchNotFound, ProductNotFound, InvalidOperation
+from kardex.tools import (
+    BranchesTool,
+    InsufficientBalanceError,
+    DocumentAlreadyExists,
+    BranchNotFound,
+    ProductNotFound,
+    InvalidOperation,
+)
 
 
 from .process_entry_doc import process_entry_doc
@@ -31,7 +38,7 @@ from .process_exit_doc import process_exit_doc
 
 
 class ProductLedgerManager:
-    def __init__(self, follow_transactions: bool = True) -> None:
+    def __init__(self) -> None:
         self.entry_docs_repo = EntryDocsRepository(entry_docs_ds=EntryDocsDataSource())
         self.exit_docs_repo = ExitDocsRepository(exit_docs_ds=ExitDocsDataSource())
         self.branches_repo = BranchesRepository(
@@ -43,8 +50,6 @@ class ProductLedgerManager:
         self.products_repo = ProductsRepository(
             products_ds=ProductsDataSource(),
         )
-
-        self.follow_transactions = follow_transactions
 
     async def regis_entry_doc(self, create_entry_doc: CreateEntryDoc) -> EntryDocInDb:
         entry_doc = await self.entry_docs_repo.get_entry_doc_by_doc_number_and_supplier(
@@ -60,10 +65,7 @@ class ProductLedgerManager:
         max_retries = 3
         for _ in range(max_retries):
             try:
-                result = await process_entry_doc(
-                    create_entry_doc,
-                    self.follow_transactions,
-                )
+                result = await process_entry_doc(create_entry_doc)
                 return result
 
             except OperationFailure as e:
@@ -71,10 +73,14 @@ class ProductLedgerManager:
                     await asyncio.sleep(0.3)
 
                 else:
-                    raise InvalidOperation("Error processing account entry transaction \n" + str(e))
+                    raise InvalidOperation(
+                        "Error processing account entry transaction \n" + str(e)
+                    )
 
             except Exception as e:
-                raise InvalidOperation("Error processing account entry transaction \n" + str(e))
+                raise InvalidOperation(
+                    "Error processing account entry transaction \n" + str(e)
+                )
 
         raise InvalidOperation("Server is too busy, try again later")
 
@@ -91,23 +97,27 @@ class ProductLedgerManager:
         max_retries = 3
         for _ in range(max_retries):
             try:
-                result = await process_exit_doc(
-                    create_exit_doc, self.follow_transactions
-                )
+                result = await process_exit_doc(create_exit_doc)
                 return result
 
             except InsufficientBalanceError:
-                raise InsufficientBalanceError("INSUFFICIENT_STOCK_FOR_ONE_OR_MORE_PRODUCTS")
+                raise InsufficientBalanceError(
+                    "INSUFFICIENT_STOCK_FOR_ONE_OR_MORE_PRODUCTS"
+                )
 
             except OperationFailure as e:
                 if e.code == 112:
                     await asyncio.sleep(0.3)
 
                 else:
-                    raise InvalidOperation("Error processing account exit transaction \n" + str(e))
+                    raise InvalidOperation(
+                        "Error processing account exit transaction \n" + str(e)
+                    )
 
             except Exception as e:
-                raise InvalidOperation("Error processing account exit transaction \n" + str(e))
+                raise InvalidOperation(
+                    "Error processing account exit transaction \n" + str(e)
+                )
 
         raise InvalidOperation("Server is too busy, try again later")
 

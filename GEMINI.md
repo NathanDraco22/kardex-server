@@ -70,6 +70,7 @@ Migración de endpoints de historiales de salidas (`exit_histories`) hacia `exit
 
 ### Resumen de Sesión
 1. **Migración Exit Docs**: Se replicó el patrón para las salidas, moviendo las consultas de `exit_histories` hacia `exit_docs`.
+
 ## Fecha: 2026-05-14
 ### Objetivo
 Implementación de endpoint de streaming para productos (`get_all_products_in_branch_streamed`).
@@ -87,7 +88,7 @@ Implementación de endpoint de streaming para productos (`get_all_products_in_br
 Creación de endpoint de exportación de lista de precios en Excel.
 
 ### Resumen de Sesión
-1.  **Nuevo Módulo Exports**: Se crearon `exports_router.py` y `exports_controller.py` bajo `app/api/v1/exports/` para centralizar descargas de archivos.
+1.  **Nuevo Módulo Exports**: Se crearon `exports_router.py` and `exports_controller.py` bajo `app/api/v1/exports/` para centralizar descargas de archivos.
 2.  **Endpoint `/exports/price-list`**: Se implementó un endpoint `GET` que genera una lista de precios en formato `.xlsx`.
 3.  **Consumo de Stream**: El controlador consume eficientemente el método `get_all_product_in_branch_streamed` (creado en la sesión anterior) para evitar cargar todo el inventario en memoria.
 4.  **PriceListService**: Se agregó `PriceListService` y sus dataclasses (`PriceListRow`, `PriceListSheet`) en `excel_service.py` para abstraer la creación del Excel usando `openpyxl`. Los montos de dinero se dividen entre 100 para convertirlos de centavos a decimales.
@@ -134,3 +135,80 @@ Estandarización de todas las Collection classes y Datasources al patrón `BaseM
    - [etag_tool.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/tools/etag_tool.py)
    - [mongo_indexes.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/services/mongo_indexes.py)
 5. **Verificación**: `ty` typecheck pasó exitosamente a nivel global, certificando la validez del tipado estático del nuevo patrón Singleton.
+
+## Fecha: 2026-05-21
+### Objetivo
+Actualizar `AGENTS.md` con la guía de uso completa y detallada de la herramienta `onion` CLI.
+
+### Resumen de Implementación
+1. **Guía Expandida**: Se reemplazó la sección simplificada "Onion CLI — Entity Generation" en `AGENTS.md` con una especificación detallada de la CLI Onion.
+2. **Documentación Multitecnológica**: Se incluyeron todos los comandos de la CLI para FastAPI (Python) y Flutter/Dart (cubits, models, data sources, etc.), convenciones de nombres (singular), parámetros de directorios de salida (`--output-dir`), estructuras de directorios generadas y workflows típicos.
+
+## Fecha: 2026-05-22
+### Objetivo
+Creación e integración del módulo de gastos (`expense`) en la arquitectura Onion (FastAPI + paquete de negocio `kardex-business`).
+
+### Resumen de Implementación
+1. **Generación con Onion CLI**: Se generó la estructura base usando la CLI con variables de entorno UTF-8 para Windows.
+2. **Reubicación al Paquete de Negocio**: Se movió la capa de negocio (repositorios, modelos, datasource, colección de MongoDB) al paquete `kardex-business` de acuerdo a la arquitectura, manteniendo el enrutador y controlador en el servidor FastAPI (`app/`).
+3. **Refinamiento de Requisitos**:
+   - **`docNumber` único**: Se configuró un índice único en MongoDB sobre `docNumber`. Si no se especifica en la creación, se autogenera una secuencia con el contador incremental `"expenseNumber"`.
+   - **Consistencia de Fechas**: Se integró `dateId` en `BaseExpense` y `UpdateExpense` para que sea provisto directamente desde el frontend en formato `"YYYY-MM-DD"`, removiendo la generación en el servidor.
+   - **Dinero en Centavos**: Todos los campos financieros (`amount`) se almacenaron como enteros (`int`).
+   - **Filtros Avanzados y Paginación**: Se creó `ExpensesFilterParams` en un nuevo subpaquete `common/filter_params/` que hereda de `HistoryParams` para soportar búsquedas complejas (rango de fechas de creación `createdAt`, rangos de montos, categoría, sucursal, etc.) y paginación (`limit`, `offset`) retornando un `ListResponse`.
+   - **Índices en MongoDB**: Se indexó el campo `createdAt` en la colección `Expenses` para soportar consultas de rango ("mayor que" y "menor que") de forma eficiente.
+4. **Verificación**: Las comprobaciones estáticas con `ruff` y el typechecking completo de `ty` pasaron con éxito de forma global.
+
+## Fecha: 2026-05-22 (Parte 2)
+### Objetivo
+Creación de la clase `KardexConfig` en memoria para habilitar saldos negativos en existencias durante facturación.
+
+### Resumen de Implementación
+1. **Configuración en Memoria**: Creación de la clase `KardexConfig` estructurada como un Singleton en `packages/kardex-business/src/kardex/kardex_config.py`.
+2. **Propiedad `letInvoiceWithNegative`**: Atributo booleano que permite omitir el error `InsufficientBalanceError` en salidas cuyo subtipo es `"invoice"` (facturas).
+3. **Core Integración**: Modificación de `InventoryBatchTransformer.prepare_exit` para evaluar `KardexConfig().letInvoiceWithNegative` al validar límites de stock.
+4. **Verificación**: Comprobaciones estáticas (`ruff` y `ty`) exitosas y validación dinámica de escenarios `True` y `False` mediante script en `scratch/test_negative_stock.py`.
+
+## Fecha: 2026-05-22 (Parte 3)
+### Objetivo
+Persistencia de stock negativo a nivel de Base de Datos (MongoDB) al facturar.
+
+### Resumen de Implementación
+1. **Parámetro `allow_negative` en Colección**: Se añadió el parámetro opcional `allow_negative` a los métodos de sustracción `substract_product_account_data` y `bulk_substract_product_account_data` de [product_accounts_collection.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/services/mongo_collections/v1/product_accounts_collection.py).
+2. **Evadir Filtro Restrictivo**: Si `allow_negative` es `True`, se omiten las cláusulas restrictivas de stock de MongoDB (ej. `$expr` que exige stock disponible >= qty), logrando que la operación `$inc` de decremento decremente a valores negativos sin arrojar `OperationFailure`.
+3. **Propagación en Core**: Se modificó `execute_exit` en [inventory_engine.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/core/inventory/inventory_engine.py) para aceptar y propagar este parámetro.
+4. **Acoplamiento con Facturación**: Se actualizó [process_invoice.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/core/invoice_register/process_invoice.py) para pasar `allow_negative=KardexConfig().letInvoiceWithNegative` a `InventoryEngine.execute_exit`.
+5. **Verificación**: Comprobación estática (`ruff` y `ty`) y script de integración con DB `scratch/test_db_negative_stock.py`.
+
+## Fecha: 2026-05-22 (Parte 4)
+### Objetivo
+Agregar la variable de configuración `followTransaction` a `KardexConfig`.
+
+### Resumen de Implementación
+1. **Propiedad `followTransaction`**: Se agregó a [kardex_config.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/kardex_config.py) la variable de clase `followTransaction: bool = True` por defecto, permitiendo que la lógica del negocio pueda acceder y conmutar el comportamiento del rastreo de transacciones del Kardex.
+2. **Verificación**: Se ejecutó `ty check` de forma global con éxito rotundo.
+
+## Fecha: 2026-05-23
+### Objetivo
+Implementación de endpoint `/byProduct/{product_id}` para obtener facturas asociadas a un producto.
+
+### Resumen de Implementación
+1. **Colección (`invoices_collection.py`)**: Implementado `fetch_all_invoices_by_product` utilizando `build_query` y aplicando la condición `{"saleItems.product.id": product_id}` sobre el índice de MongoDB existente `IndexModel([("saleItems.product.id", 1)])`.
+2. **DataSource (`invoices_datasource.py`)**: Añadido método de delegación `get_all_invoices_by_product` a nivel de DataSource de facturas.
+3. **Repository (`invoices_repository.py`)**: Añadido `get_all_invoices_by_product` que invoca al DataSource y valida/serializa los resultados usando `InvoiceInDb.model_validate`.
+4. **Controller (`invoices_controller.py`)**: Añadido `get_invoices_by_product` que serializa los query parameters `InvoiceQueryParams` y encapsula el listado en un objeto `ListResponse`.
+5. **Router (`invoices_router.py`)**: Registrado el endpoint `GET /byProduct/{product_id}` utilizando `Depends(InvoiceQueryParams)` para permitir el filtrado avanzado compatible con las búsquedas generales de facturas.
+6. **Verificación**: Ejecutado type-checking estático global (`ty check`) con éxito rotundo.
+
+## Fecha: 2026-05-23 (Parte 2)
+### Objetivo
+Implementación de lógica y endpoint de abonos (`add_to_amount_paid`) para Gastos (`Expenses`).
+
+### Resumen de Implementación
+1. **Modelos (`expense_model.py`)**: Se agregó `amountPaid: int = 0` a `BaseExpense` y `amountPaid: int | None = None` a `UpdateExpense`. También se creó la clase `AddToAmountRequest` para tipar las peticiones de abono con los campos `expenseId` y `amountPaid`.
+2. **Exportación de Tipos (`__init__.py`)**: Se exportó `AddToAmountRequest` en el barrel de `expenses` para que esté disponible en la capa de la API de FastAPI.
+3. **Colección (`expenses_collection.py`)**: Se implementó el método `add_to_amount_paid` mediante un pipeline de agregación atómico que acumula el pago usando `$add` y `$ifNull`, actualizando el estado a `"paid"` si se cubre el total (`amount`), o `"partiallyPaid"` en caso contrario, además de guardar la fecha `paidAt` al completarse el pago.
+4. **Capas de Negocio**: Se añadieron las llamadas delegadas correspondientes en `ExpensesDataSource` y `ExpensesRepository`.
+5. **FastAPI (Controller y Router)**: Se creó el método en `ExpensesController` y se expuso el endpoint `POST /add-to-amount-paid` en `expenses_router.py`.
+6. **Optimización de Índices (Colección)**: Se actualizó `create_indexes` en `expenses_collection.py` para crear los índices en lote mediante una lista de `IndexModel`, añadiendo un índice único sobre `id` y optimizando el ordenamiento en `createdAt` a `-1` (descendente).
+7. **Verificación**: Se ejecutó exitosamente un script de prueba de integración `test_expense_payment.py` y se pasaron los chequeos de tipos estáticos globales (`ty check`).
