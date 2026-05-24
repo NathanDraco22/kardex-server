@@ -30,3 +30,8 @@ class ExpensesDataSource:
     async def delete_expense_by_id(self, expense_id: str) -> dict[str, Any] | None:
         collection = ExpensesCollection.get_instance()
         return await collection.delete_expense_by_id(expense_id)
+
+    async def add_to_amount_paid(self, expense_id: str, amount_paid: int) -> dict[str, Any] | None:
+        collection = ExpensesCollection.get_instance()
+        return await collection.add_to_amount_paid(expense_id, amount_paid)
+

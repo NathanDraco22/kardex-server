@@ -50,6 +50,28 @@ class InvoicesCollection(BaseMongoCollection):
 
         return result
 
+    async def fetch_all_invoices_by_product(
+        self, product_id: str, **kargs
+    ) -> list[dict[str, Any]]:
+        collection = self._collection
+
+        date_field = "paidAt" if kargs.get("byPaidAt") else "createdAt"
+
+        result = build_query(date_field, **kargs)
+        result.query["saleItems.product.id"] = product_id
+
+        cursor = (
+            collection.find(result.query)
+            .skip(result.offset)
+            .limit(result.limit)
+            .sort(date_field, -1)
+        )
+
+        result_list = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result_list
+
     async def fetch_all_product_sales(self, **kargs) -> list[dict[str, Any]]:
         collection = self._collection
 

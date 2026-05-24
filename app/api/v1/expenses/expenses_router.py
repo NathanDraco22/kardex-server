@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from kardex.repos.v1.common.filter_params import ExpensesFilterParams
-from kardex.repos.v1.expenses import CreateExpense, UpdateExpense, ExpenseInDb
+from kardex.repos.v1.expenses import CreateExpense, UpdateExpense, ExpenseInDb, AddToAmountRequest
 from responses.v1 import ListResponse
 
 from .expenses_controller import expenses_controller
@@ -35,3 +35,9 @@ async def update_expense_by_id(expense_id: str, body: UpdateExpense) -> ExpenseI
 @expenses_router.delete("/{expense_id}")
 async def delete_expense_by_id(expense_id: str) -> ExpenseInDb:
     return await expenses_controller.delete_expense_by_id(expense_id)
+
+
+@expenses_router.post("/add-to-amount-paid")
+async def add_to_amount_paid(body: AddToAmountRequest) -> ExpenseInDb:
+    return await expenses_controller.add_to_amount_paid(body)
+

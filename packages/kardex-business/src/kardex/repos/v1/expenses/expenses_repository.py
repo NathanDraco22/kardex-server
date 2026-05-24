@@ -69,3 +69,10 @@ class ExpensesRepository:
         if result is None:
             return None
         return ExpenseInDb.model_validate(result)
+
+    async def add_to_amount_paid(self, expense_id: str, amount_paid: int) -> ExpenseInDb | None:
+        result = await self.expenses_ds.add_to_amount_paid(expense_id, amount_paid)
+        if result is None:
+            return None
+        return ExpenseInDb.model_validate(result)
+

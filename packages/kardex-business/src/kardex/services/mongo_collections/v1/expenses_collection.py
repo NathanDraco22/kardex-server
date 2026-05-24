@@ -1,7 +1,8 @@
 from typing import Any
 
-from pymongo import ReturnDocument
+from pymongo import ReturnDocument, IndexModel
 from kardex.services import BaseMongoCollection
+from kardex.tools import TimeTools
 
 
 class ExpensesCollection(BaseMongoCollection):
@@ -65,9 +66,57 @@ class ExpensesCollection(BaseMongoCollection):
         )
         return result
 
-    async def create_indexes(self):
+    async def add_to_amount_paid(
+        self, expense_id: str, amount_paid: int, session: Any = None
+    ) -> dict[str, Any] | None:
         collection = self._collection
-        await collection.create_index([("docNumber", 1)], unique=True)
-        await collection.create_index([("branchId", 1)])
-        await collection.create_index([("dateId", 1)])
-        await collection.create_index([("createdAt", 1)])
+
+        pipeline = [
+            {
+                "$set": {
+                    "amountPaid": {
+                        "$add": [{"$ifNull": ["$amountPaid", 0]}, amount_paid],
+                    },
+                },
+            },
+            {
+                "$set": {
+                    "status": {
+                        "$cond": {
+                            "if": {"$gte": ["$amountPaid", "$amount"]},
+                            "then": "paid",
+                            "else": "partiallyPaid",
+                        }
+                    },
+                    "paidAt": {
+                        "$cond": {
+                            "if": {"$gte": ["$amountPaid", "$amount"]},
+                            "then": TimeTools.get_now_in_milliseconds(),
+                            "else": None,
+                        }
+                    },
+                }
+            },
+        ]
+
+        result = await collection.find_one_and_update(
+            {"id": expense_id, "isDeleted": False},
+            pipeline,
+            return_document=ReturnDocument.AFTER,
+            session=session,
+        )
+
+        return result
+
+    async def create_indexes(self):
+
+        collection = self._collection
+        await collection.create_indexes(
+            [
+                IndexModel([("id", 1)], unique=True),
+                IndexModel([("docNumber", 1)], unique=True),
+                IndexModel([("branchId", 1)]),
+                IndexModel([("dateId", 1)]),
+                IndexModel([("createdAt", -1)]),
+            ]
+        )

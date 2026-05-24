@@ -70,6 +70,7 @@ Migración de endpoints de historiales de salidas (`exit_histories`) hacia `exit
 
 ### Resumen de Sesión
 1. **Migración Exit Docs**: Se replicó el patrón para las salidas, moviendo las consultas de `exit_histories` hacia `exit_docs`.
+
 ## Fecha: 2026-05-14
 ### Objetivo
 Implementación de endpoint de streaming para productos (`get_all_products_in_branch_streamed`).
@@ -87,7 +88,7 @@ Implementación de endpoint de streaming para productos (`get_all_products_in_br
 Creación de endpoint de exportación de lista de precios en Excel.
 
 ### Resumen de Sesión
-1.  **Nuevo Módulo Exports**: Se crearon `exports_router.py` y `exports_controller.py` bajo `app/api/v1/exports/` para centralizar descargas de archivos.
+1.  **Nuevo Módulo Exports**: Se crearon `exports_router.py` and `exports_controller.py` bajo `app/api/v1/exports/` para centralizar descargas de archivos.
 2.  **Endpoint `/exports/price-list`**: Se implementó un endpoint `GET` que genera una lista de precios en formato `.xlsx`.
 3.  **Consumo de Stream**: El controlador consume eficientemente el método `get_all_product_in_branch_streamed` (creado en la sesión anterior) para evitar cargar todo el inventario en memoria.
 4.  **PriceListService**: Se agregó `PriceListService` y sus dataclasses (`PriceListRow`, `PriceListSheet`) en `excel_service.py` para abstraer la creación del Excel usando `openpyxl`. Los montos de dinero se dividen entre 100 para convertirlos de centavos a decimales.
@@ -187,4 +188,27 @@ Agregar la variable de configuración `followTransaction` a `KardexConfig`.
 1. **Propiedad `followTransaction`**: Se agregó a [kardex_config.py](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/kardex_config.py) la variable de clase `followTransaction: bool = True` por defecto, permitiendo que la lógica del negocio pueda acceder y conmutar el comportamiento del rastreo de transacciones del Kardex.
 2. **Verificación**: Se ejecutó `ty check` de forma global con éxito rotundo.
 
+## Fecha: 2026-05-23
+### Objetivo
+Implementación de endpoint `/byProduct/{product_id}` para obtener facturas asociadas a un producto.
 
+### Resumen de Implementación
+1. **Colección (`invoices_collection.py`)**: Implementado `fetch_all_invoices_by_product` utilizando `build_query` y aplicando la condición `{"saleItems.product.id": product_id}` sobre el índice de MongoDB existente `IndexModel([("saleItems.product.id", 1)])`.
+2. **DataSource (`invoices_datasource.py`)**: Añadido método de delegación `get_all_invoices_by_product` a nivel de DataSource de facturas.
+3. **Repository (`invoices_repository.py`)**: Añadido `get_all_invoices_by_product` que invoca al DataSource y valida/serializa los resultados usando `InvoiceInDb.model_validate`.
+4. **Controller (`invoices_controller.py`)**: Añadido `get_invoices_by_product` que serializa los query parameters `InvoiceQueryParams` y encapsula el listado en un objeto `ListResponse`.
+5. **Router (`invoices_router.py`)**: Registrado el endpoint `GET /byProduct/{product_id}` utilizando `Depends(InvoiceQueryParams)` para permitir el filtrado avanzado compatible con las búsquedas generales de facturas.
+6. **Verificación**: Ejecutado type-checking estático global (`ty check`) con éxito rotundo.
+
+## Fecha: 2026-05-23 (Parte 2)
+### Objetivo
+Implementación de lógica y endpoint de abonos (`add_to_amount_paid`) para Gastos (`Expenses`).
+
+### Resumen de Implementación
+1. **Modelos (`expense_model.py`)**: Se agregó `amountPaid: int = 0` a `BaseExpense` y `amountPaid: int | None = None` a `UpdateExpense`. También se creó la clase `AddToAmountRequest` para tipar las peticiones de abono con los campos `expenseId` y `amountPaid`.
+2. **Exportación de Tipos (`__init__.py`)**: Se exportó `AddToAmountRequest` en el barrel de `expenses` para que esté disponible en la capa de la API de FastAPI.
+3. **Colección (`expenses_collection.py`)**: Se implementó el método `add_to_amount_paid` mediante un pipeline de agregación atómico que acumula el pago usando `$add` y `$ifNull`, actualizando el estado a `"paid"` si se cubre el total (`amount`), o `"partiallyPaid"` en caso contrario, además de guardar la fecha `paidAt` al completarse el pago.
+4. **Capas de Negocio**: Se añadieron las llamadas delegadas correspondientes en `ExpensesDataSource` y `ExpensesRepository`.
+5. **FastAPI (Controller y Router)**: Se creó el método en `ExpensesController` y se expuso el endpoint `POST /add-to-amount-paid` en `expenses_router.py`.
+6. **Optimización de Índices (Colección)**: Se actualizó `create_indexes` en `expenses_collection.py` para crear los índices en lote mediante una lista de `IndexModel`, añadiendo un índice único sobre `id` y optimizando el ordenamiento en `createdAt` a `-1` (descendente).
+7. **Verificación**: Se ejecutó exitosamente un script de prueba de integración `test_expense_payment.py` y se pasaron los chequeos de tipos estáticos globales (`ty check`).
