@@ -222,3 +222,14 @@ Comparación y evaluación de viabilidad de la rama `lite` frente a `main`.
 2. **Duplicidad y Mantenimiento**: Mantener una rama Git divergente a largo plazo solo para deshabilitar módulos genera una alta carga de mantenimiento, obligando a continuos merges manuales para resolver conflictos.
 3. **Recomendación**: Se sugiere eliminar la rama `lite` y controlar la activación de módulos mediante variables de entorno (ej. `LITE_MODE=true`) o flags de configuración en `onion-config.toml`.
 
+## Fecha: 2026-05-25
+### Objetivo
+Bloqueo de ajuste directo de existencias en el repositorio de cuentas cuando `followTransaction` está activo.
+
+### Resumen de Implementación
+1. **Nueva Excepción**: Creación de `DirectStockAdjustmentBlocked` en `kardex_exceptions.py` y exportación en `tools/__init__.py`.
+2. **Validación en Repositorio**: Se modificaron `update_product_account_stock_and_cost`, `add_product_account_stock` y `substract_product_account_stock` en `ProductAccountsRepository` para que lancen `DirectStockAdjustmentBlocked` si `KardexConfig().followTransaction` es `True`.
+3. **Mapeo Global HTTP**: Se registró la excepción en `app/regis_exception_handlers.py` con el manejador `handle_forbidden` para devolver un código HTTP `403 Forbidden` al cliente.
+4. **Imports limpios**: Se reestructuraron todos los imports de la unificación para ubicarse en la parte superior de cada archivo.
+
+

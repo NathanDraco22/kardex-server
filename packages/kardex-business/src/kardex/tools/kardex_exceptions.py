@@ -54,3 +54,8 @@ class InvalidOperation(KardexException):
     def __init__(self, message: str, detail: str | None = None):
         self.detail = detail
         super().__init__(message)
+
+
+class DirectStockAdjustmentBlocked(KardexException):
+    def __init__(self, message: str):
+        super().__init__(message)
