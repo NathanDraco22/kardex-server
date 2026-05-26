@@ -212,3 +212,13 @@ Implementación de lógica y endpoint de abonos (`add_to_amount_paid`) para Gast
 5. **FastAPI (Controller y Router)**: Se creó el método en `ExpensesController` y se expuso el endpoint `POST /add-to-amount-paid` en `expenses_router.py`.
 6. **Optimización de Índices (Colección)**: Se actualizó `create_indexes` en `expenses_collection.py` para crear los índices en lote mediante una lista de `IndexModel`, añadiendo un índice único sobre `id` y optimizando el ordenamiento en `createdAt` a `-1` (descendente).
 7. **Verificación**: Se ejecutó exitosamente un script de prueba de integración `test_expense_payment.py` y se pasaron los chequeos de tipos estáticos globales (`ty check`).
+
+## Fecha: 2026-05-24
+### Objetivo
+Comparación y evaluación de viabilidad de la rama `lite` frente a `main`.
+
+### Resumen de Revisión
+1. **Diferencias Clave**: La rama `lite` hereda todo el historial de `main`, pero deshabilita activamente múltiples rutas de FastAPI (`entry_docs`, `exit_docs`, `expenses`, `suppliers`, `product_stats`, `product_transactions`, `imports`) y elimina servicios no esenciales como Machine Learning (`ml_service.py` y `product_classifier.py`).
+2. **Duplicidad y Mantenimiento**: Mantener una rama Git divergente a largo plazo solo para deshabilitar módulos genera una alta carga de mantenimiento, obligando a continuos merges manuales para resolver conflictos.
+3. **Recomendación**: Se sugiere eliminar la rama `lite` y controlar la activación de módulos mediante variables de entorno (ej. `LITE_MODE=true`) o flags de configuración en `onion-config.toml`.
+

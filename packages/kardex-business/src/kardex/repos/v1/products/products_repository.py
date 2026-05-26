@@ -1,4 +1,4 @@
-﻿from typing import AsyncIterable
+from typing import AsyncIterable
 from .data.products_datasource import ProductsDataSource
 from .models.product_model import (
     CreateProduct,
@@ -9,6 +9,9 @@ from .models.product_model import (
 )
 from kardex.core.counter_manager.counter_manager import CounterManager
 from kardex.tools import UuidTool, TimeTools, generate_prefixes
+from kardex.kardex_config import KardexConfig
+from kardex.lite.core.product_register.process_create_product import process_create_product
+
 
 class ProductsRepository:
     _instance: "ProductsRepository | None" = None
@@ -25,6 +28,9 @@ class ProductsRepository:
         return cls._instance
 
     async def create_product(self, create_product: CreateProduct) -> ProductInDb:
+        if KardexConfig().createFullProductProfile:
+            return await process_create_product(create_product)
+
         if not create_product.code:
             create_product.code = await CounterManager().next_product_number()
 
