@@ -2,6 +2,7 @@ class KardexConfig:
     _instance = None
     letInvoiceWithNegative: bool = False
     followTransaction: bool = True
+    createFullProductProfile: bool = False
 
     def __new__(cls):
         if cls._instance is None:
