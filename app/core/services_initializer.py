@@ -1,3 +1,4 @@
+import os
 from kardex.services_initializer import init_business_services
 from services import ProductClassifierService
 from kardex.core.default_values.create_default_roles import create_default_roles
@@ -18,4 +19,7 @@ async def init_services() -> None:
     await create_root_user()
     await BranchesTool().refresh_current_branches()
     await UsersTool().refresh_inactive_users()
-    ProductClassifierService()
+
+    lite_mode = os.getenv("LITE_MODE", "false").lower() == "true"
+    if not lite_mode:
+        ProductClassifierService()
