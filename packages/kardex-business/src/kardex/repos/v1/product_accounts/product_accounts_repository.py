@@ -1,7 +1,9 @@
-﻿from .data.product_accounts_datasource import ProductAccountsDataSource
+from .data.product_accounts_datasource import ProductAccountsDataSource
 from .models.product_account_model import (
     ProductAccountInDb,
 )
+from kardex.kardex_config import KardexConfig
+from kardex.tools import DirectStockAdjustmentBlocked
 
 class ProductAccountsRepository:
     _instance: "ProductAccountsRepository | None" = None
@@ -42,6 +44,10 @@ class ProductAccountsRepository:
     async def update_product_account_stock_and_cost(
         self, product_id: str, branch_id: str, **kwargs
     ) -> ProductAccountInDb | None:
+        if KardexConfig().followTransaction:
+            raise DirectStockAdjustmentBlocked(
+                "Direct stock updates are not allowed when followTransaction is active."
+            )
         result = await self.product_accounts_ds.update_product_account_stock_and_cost(
             product_id, branch_id, **kwargs
         )
@@ -52,6 +58,10 @@ class ProductAccountsRepository:
     async def add_product_account_stock(
         self, product_id: str, branch_id: str, **kwargs
     ) -> ProductAccountInDb | None:
+        if KardexConfig().followTransaction:
+            raise DirectStockAdjustmentBlocked(
+                "Direct stock adjustments are not allowed when followTransaction is active."
+            )
         result = await self.product_accounts_ds.add_product_account_stock(
             product_id, branch_id, **kwargs
         )
@@ -62,6 +72,10 @@ class ProductAccountsRepository:
     async def substract_product_account_stock(
         self, product_id: str, branch_id: str, **kwargs
     ) -> ProductAccountInDb | None:
+        if KardexConfig().followTransaction:
+            raise DirectStockAdjustmentBlocked(
+                "Direct stock adjustments are not allowed when followTransaction is active."
+            )
         result = await self.product_accounts_ds.substract_product_account_stock(
             product_id, branch_id, **kwargs
         )
