@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class BaseSupplier(BaseModel):
     name: str
+    creditDays: int = 0
     cardId: str | None = None
     email: str | None = None
     phone: str | None = None
