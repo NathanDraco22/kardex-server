@@ -118,5 +118,6 @@ class ExpensesCollection(BaseMongoCollection):
                 IndexModel([("branchId", 1)]),
                 IndexModel([("dateId", 1)]),
                 IndexModel([("createdAt", -1)]),
+                IndexModel([("type", 1), ("createdAt", -1)]),
             ]
         )
