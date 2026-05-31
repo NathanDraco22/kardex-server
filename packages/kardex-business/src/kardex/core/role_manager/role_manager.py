@@ -11,6 +11,8 @@ class Modules:
     INVENTORY = "inventory"
     ADVANCED_TOOLS = "advancedTools"
     SETTINGS = "settings"
+    PENDING_INVOICES = "pendingInvoices"
+    EXPENSES = "expenses"
 
 
 class CommercialSubModules:
