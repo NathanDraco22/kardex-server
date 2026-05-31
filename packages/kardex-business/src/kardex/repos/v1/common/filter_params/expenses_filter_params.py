@@ -5,6 +5,7 @@ from typing import Any
 class ExpensesFilterParams(BaseModel):
     offset: int
     limit: int = 50
+    type: str | None = None
     status: str | None = None
     startDate: int | None = None
     endDate: int | None = None
