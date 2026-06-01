@@ -16,6 +16,7 @@ from .entry_histories.entry_histories_router import entry_histories_router
 from .executive_summaries.executive_summaries_router import executive_summaries_router
 from .exit_docs.exit_docs_router import exit_docs_router
 from .exit_histories.exit_histories_router import exit_histories_router
+from .expense_categories.expense_categories_router import expense_categories_router
 from .expenses.expenses_router import expenses_router
 from .expiration_logs.expiration_logs_router import expiration_logs_router
 from .exports.exports_router import exports_router
@@ -58,6 +59,7 @@ router_v1.include_router(entry_histories_router, prefix="/entry-histories")
 router_v1.include_router(executive_summaries_router, prefix="/executive-summaries")
 router_v1.include_router(exit_docs_router, prefix="/exit-docs")
 router_v1.include_router(exit_histories_router, prefix="/exit-histories")
+router_v1.include_router(expense_categories_router, prefix='/expense-categories')
 router_v1.include_router(expenses_router, prefix="/expenses")
 router_v1.include_router(expiration_logs_router, prefix="/expiration-logs")
 router_v1.include_router(exports_router, prefix="/exports")

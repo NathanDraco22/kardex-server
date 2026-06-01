@@ -22,6 +22,7 @@ from kardex.services.mongo_collections.v1 import (
     AdjustEntriesCollection,
     AdjustExitsCollection,
     ExpensesCollection,
+    ExpenseCategoriesCollection,
 )
 
 
@@ -93,4 +94,7 @@ async def create_indexes():
     await collection.create_indexes()
 
     collection = ExpensesCollection.get_instance()
+    await collection.create_indexes()
+
+    collection = ExpenseCategoriesCollection.get_instance()
     await collection.create_indexes()
