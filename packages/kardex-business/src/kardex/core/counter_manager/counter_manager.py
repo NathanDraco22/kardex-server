@@ -76,10 +76,10 @@ class CounterManager:
 
     async def next_adjust_number(self, session: Any) -> str:
         res = await self.counters_repository.increment_counter("adjustNumber", session)
-        formatted = "A" + str(res.value).zfill(4)
+        formatted = str(res.value).zfill(4)
         return formatted
 
     async def next_expense_number(self, session: Any = None) -> str:
         res = await self.counters_repository.increment_counter("expenseNumber", session)
-        formatted = "G" + str(res.value).zfill(4)
+        formatted = str(res.value).zfill(4)
         return formatted
