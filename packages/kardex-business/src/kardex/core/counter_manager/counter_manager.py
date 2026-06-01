@@ -61,7 +61,9 @@ class CounterManager:
         return formatted
 
     async def next_supplier_number(self, session: Any = None) -> str:
-        res = await self.counters_repository.increment_counter("supplierNumber", session)
+        res = await self.counters_repository.increment_counter(
+            "supplierNumber", session
+        )
         formatted = str(res.value).zfill(4)
         return formatted
 
@@ -74,10 +76,10 @@ class CounterManager:
 
     async def next_adjust_number(self, session: Any) -> str:
         res = await self.counters_repository.increment_counter("adjustNumber", session)
-        formatted = str(res.value)
+        formatted = "A" + str(res.value).zfill(4)
         return formatted
 
     async def next_expense_number(self, session: Any = None) -> str:
         res = await self.counters_repository.increment_counter("expenseNumber", session)
-        formatted = str(res.value)
+        formatted = "G" + str(res.value).zfill(4)
         return formatted
