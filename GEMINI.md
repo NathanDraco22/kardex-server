@@ -232,4 +232,15 @@ Bloqueo de ajuste directo de existencias en el repositorio de cuentas cuando `fo
 3. **Mapeo Global HTTP**: Se registró la excepción en `app/regis_exception_handlers.py` con el manejador `handle_forbidden` para devolver un código HTTP `403 Forbidden` al cliente.
 4. **Imports limpios**: Se reestructuraron todos los imports de la unificación para ubicarse en la parte superior de cada archivo.
 
+## Fecha: 2026-05-31
+### Objetivo
+Creación e integración del CRUD de Categorías de Gastos (`Expense Categories`) en la arquitectura Onion (FastAPI + paquete de negocio `kardex-business`).
+
+### Resumen de Implementación
+1. **Generación con Onion CLI**: Generación de la estructura base del módulo usando `onion crud-mongo expense-category --version 1` bajo entornos UTF-8 para Windows.
+2. **Reubicación de Negocio**: Traslado de la capa de negocio (repositorios, modelos, datasource y colección MongoDB) al paquete `kardex-business`. Se eliminaron los duplicados redundantes generados localmente por la CLI en `app/services/`.
+3. **Registro e Indexación**: Registro de `ExpenseCategoriesCollection` en el barrel de colecciones e inicialización automática de sus índices únicos en `mongo_indexes.py`.
+4. **Estandarización de Tipos**: Ajuste de los modelos Pydantic a camelCase (`createdAt`, `updatedAt`) y fechas en entero (`int` Unix Timestamp). Se configuró el controlador y enrutador de FastAPI para retornar `ListResponse` en la obtención masiva.
+5. **Verificación**: Validación estática con `ruff` y `ty check` exitosa a nivel global, y ejecución de pruebas de integración dinámicas directas a MongoDB pasando de forma exitosa.
+
 
