@@ -25,7 +25,6 @@ class BaseExpense(BaseModel):
     paidAt: int | None = None
 
 
-
 class CreateExpense(BaseExpense):
     pass
 
@@ -39,8 +38,8 @@ class UpdateExpense(BaseModel):
     description: str | None = None
     date: int | None = None
     dateId: str | None = None
+    status: ExpensesStatus | None = None
     isActive: bool | None = None
-
 
 
 class ExpenseInDb(BaseExpense):
@@ -53,4 +52,3 @@ class ExpenseInDb(BaseExpense):
 class AddToAmountRequest(BaseModel):
     expenseId: str
     amountPaid: int
-
