@@ -18,6 +18,7 @@ class BaseExpense(BaseModel):
     dateId: str
     amountPaid: int = 0
     supplierId: str = ""
+    supplierName: str | None = None
     status: ExpensesStatus
     isActive: bool = True
     expirationDate: int | None = None
