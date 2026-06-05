@@ -1,6 +1,7 @@
-﻿from kardex.tools import TimeTools, UuidTool
+from kardex.tools import TimeTools, UuidTool
 from .data.orders_datasource import OrdersDataSource
 from .models.order_model import CreateOrder, UpdateOrder, OrderInDb
+from kardex.repos.v1.common.filter_params import OrderFilterParams
 
 from kardex.repos.v1.common.models.invoice_product_sale import ProductSalesTotal
 from kardex.repos.v1.common.models import ProductStockDemand
@@ -29,16 +30,26 @@ class OrdersRepository:
         result = await self.orders_ds.create_order(newDraftOrder.model_dump())
         return OrderInDb.model_validate(result)
 
-    async def get_paginated_orders(self, **kwargs) -> list[OrderInDb]:
-        result = await self.orders_ds.get_paginated_orders(**kwargs)
+    async def get_paginated_orders(self, params: OrderFilterParams) -> list[OrderInDb]:
+        result = await self.orders_ds.get_paginated_orders(
+            **params.model_dump(exclude_unset=True)
+        )
         return [OrderInDb.model_validate(order) for order in result]
 
-    async def get_products_in_orders(self, **kwargs) -> list[ProductSalesTotal]:
-        result = await self.orders_ds.get_products_in_orders(**kwargs)
+    async def get_products_in_orders(
+        self, params: OrderFilterParams
+    ) -> list[ProductSalesTotal]:
+        result = await self.orders_ds.get_products_in_orders(
+            **params.model_dump(exclude_none=True)
+        )
         return [ProductSalesTotal.model_validate(order) for order in result]
 
-    async def get_demand_vs_stock(self, **kwargs) -> list[ProductStockDemand]:
-        result = await self.orders_ds.get_demand_vs_stock(**kwargs)
+    async def get_demand_vs_stock(
+        self, params: OrderFilterParams
+    ) -> list[ProductStockDemand]:
+        result = await self.orders_ds.get_demand_vs_stock(
+            **params.model_dump(exclude_none=True)
+        )
         return [ProductStockDemand.model_validate(order) for order in result]
 
     async def get_order_by_id(self, order_id: str) -> OrderInDb | None:

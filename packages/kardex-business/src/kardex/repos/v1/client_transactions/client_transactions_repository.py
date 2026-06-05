@@ -1,5 +1,6 @@
-﻿from .data.client_transactions_datasource import ClientTransactionsDataSource
+from .data.client_transactions_datasource import ClientTransactionsDataSource
 from .models.client_transaction_model import ClientTransactionInDb
+from kardex.repos.v1.common.filter_params import ClientTransactionFilterParams
 
 class ClientTransactionsRepository:
     _instance: "ClientTransactionsRepository | None" = None
@@ -16,10 +17,11 @@ class ClientTransactionsRepository:
         return cls._instance
 
     async def get_all_client_transactions(
-        self, **kwargs
+        self, params: ClientTransactionFilterParams
     ) -> list[ClientTransactionInDb]:
+        query = params.to_query()
         results = await self.client_transactions_ds.get_all_client_transactions(
-            **kwargs
+            **query
         )
         models = [ClientTransactionInDb.model_validate(result) for result in results]
         return models

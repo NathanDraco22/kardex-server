@@ -1,9 +1,10 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from kardex.core.client.process_create_client import InitialBalanceClient
 from kardex.tools import TimeTools
 from kardex.tools.search_tools import generate_prefixes
 from kardex.core.counter_manager.counter_manager import CounterManager
+from kardex.repos.v1.common.filter_params import ClientFilterParams
 
 from kardex.core.client.process_create_client import (
     create_multiple_initial_balance,
@@ -64,13 +65,19 @@ class ClientsRepository:
     ) -> list[ClientInDb]:
         return await create_multiple_initial_balance(balances)
 
-    async def get_all_clients(self, **kwargs) -> list[ClientInDb]:
-        results = await self.clients_ds.get_all_clients(**kwargs)
+    async def get_all_clients(self, params: ClientFilterParams) -> list[ClientInDb]:
+        results = await self.clients_ds.get_all_clients(
+            **params.model_dump(exclude_none=True)
+        )
         models = [ClientInDb.model_validate(result) for result in results]
         return models
 
-    async def get_all_clients_with_balance(self, **kwargs) -> list[ClientInDb]:
-        results = await self.clients_ds.get_all_clients_with_balance(**kwargs)
+    async def get_all_clients_with_balance(
+        self, params: ClientFilterParams
+    ) -> list[ClientInDb]:
+        results = await self.clients_ds.get_all_clients_with_balance(
+            **params.model_dump(exclude_none=True)
+        )
         models = [ClientInDb.model_validate(result) for result in results]
         return models
 

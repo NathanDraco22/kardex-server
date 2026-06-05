@@ -1,5 +1,4 @@
 from pydantic import BaseModel
 
-
-class ExpirationLogQueryParams(BaseModel):
+class ExpirationLogFilterParams(BaseModel):
     branchId: str | None = None

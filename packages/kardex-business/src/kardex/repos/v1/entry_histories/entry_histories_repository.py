@@ -1,6 +1,6 @@
-﻿from .data.entry_histories_datasource import EntryHistoriesDataSource
+from .data.entry_histories_datasource import EntryHistoriesDataSource
 from .models.entry_history_model import EntryHistoryInDb
-from .params.get_entry_history_params import GetEntryHistoryParams
+from kardex.repos.v1.common.filter_params import EntryHistoryFilterParams
 
 class EntryHistoriesRepository:
     _instance: "EntryHistoriesRepository | None" = None
@@ -17,10 +17,10 @@ class EntryHistoriesRepository:
         return cls._instance
 
     async def get_entry_history(
-        self, params: GetEntryHistoryParams
+        self, params: EntryHistoryFilterParams
     ) -> list[EntryHistoryInDb]:
         entry_histories_data = await self.entry_histories_ds.get_entry_history(
-            **params.to_dict()
+            **params.to_query_params()
         )
 
         entry_histories = [

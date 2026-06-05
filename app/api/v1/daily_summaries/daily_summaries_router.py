@@ -6,7 +6,7 @@ from responses.v1 import ListResponse
 from app_middleware import auth_middleware
 
 from .daily_summaries_controller import daily_summaries_controller
-from .query_params import DailySummaryQueryParams
+from kardex.repos.v1.common.filter_params import DailySummaryFilterParams
 
 
 daily_summaries_router = APIRouter(tags=["daily_summariesV1"])
@@ -20,7 +20,7 @@ daily_summaries_router = APIRouter(tags=["daily_summariesV1"])
     ],
 )
 async def get_all_daily_summaries(
-    query: DailySummaryQueryParams = Depends(),
+    query: DailySummaryFilterParams = Depends(),
 ) -> ListResponse[DailySummaryInDb]:
     return await daily_summaries_controller.get_all_daily_summaries(query)
 

@@ -24,7 +24,7 @@ from kardex.repos.v1.product_stats import (
     ProductStatsDataSource,
 )
 
-from .query_params import ProductStatQueryParams, ReadProductStatQueryParams
+from kardex.repos.v1.common.filter_params import ProductStatFilterParams, ReadProductStatFilterParams
 
 
 class ProductStatsController:
@@ -41,11 +41,10 @@ class ProductStatsController:
         self.branches_repo = branches_repo
 
     async def get_all_product_stats(
-        self, query_params: ReadProductStatQueryParams
+        self, query_params: ReadProductStatFilterParams
     ) -> ListResponse[ProductStatInDb]:
-        raw_params = query_params.model_dump(exclude_none=True)
         product_stats = await self.product_stats_repo.get_all_product_stats(
-            **raw_params
+            query_params
         )
         return ListResponse(
             count=len(product_stats),
@@ -53,11 +52,10 @@ class ProductStatsController:
         )
 
     async def get_all_product_stats_with_info(
-        self, query_params: ReadProductStatQueryParams
+        self, query_params: ReadProductStatFilterParams
     ) -> ListResponse[ProductStatInDbWithInfo]:
-        raw_params = query_params.model_dump(exclude_none=True)
         product_stats = await self.product_stats_repo.get_all_product_stats_with_info(
-            **raw_params
+            query_params
         )
         return ListResponse(
             count=len(product_stats),
@@ -65,12 +63,11 @@ class ProductStatsController:
         )
 
     async def get_all_product_stats_with_account(
-        self, query_params: ReadProductStatQueryParams
+        self, query_params: ReadProductStatFilterParams
     ) -> ListResponse[ProductStatInDbWithAccount]:
-        raw_params = query_params.model_dump(exclude_none=True)
         product_stats = (
             await self.product_stats_repo.get_all_product_stats_with_account(
-                **raw_params
+                query_params
             )
         )
         return ListResponse(
@@ -228,7 +225,7 @@ class ProductStatsController:
             )
         return product_stat
 
-    async def estimate_product_stats(self, query_params: ProductStatQueryParams):
+    async def estimate_product_stats(self, query_params: ProductStatFilterParams):
         raw_query_params = query_params.model_dump()
         batch_time = TimeTools.get_now_in_milliseconds()
         raw_query_params["batchTime"] = batch_time

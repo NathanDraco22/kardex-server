@@ -1,6 +1,6 @@
-﻿from .data.exit_histories_datasource import ExitHistoriesDataSource
+from .data.exit_histories_datasource import ExitHistoriesDataSource
 from .models.exit_history_model import ExitHistoryInDb
-from .params.get_exit_history_params import GetExitHistoryParams
+from kardex.repos.v1.common.filter_params import ExitHistoryFilterParams
 
 class ExitHistoriesRepository:
     _instance: "ExitHistoriesRepository | None" = None
@@ -17,9 +17,11 @@ class ExitHistoriesRepository:
         return cls._instance
 
     async def get_exit_history(
-        self, params: GetExitHistoryParams
+        self, params: ExitHistoryFilterParams
     ) -> list[ExitHistoryInDb]:
-        res = await self.exit_histories_ds.get_exit_history(**params.to_dict())
+        res = await self.exit_histories_ds.get_exit_history(
+            **params.to_query_params()
+        )
 
         exit_histories = [
             ExitHistoryInDb.model_validate(exit_history) for exit_history in res

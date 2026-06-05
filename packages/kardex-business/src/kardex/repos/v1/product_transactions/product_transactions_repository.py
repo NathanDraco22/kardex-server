@@ -1,4 +1,5 @@
-﻿from .data.product_transactions_datasource import ProductTransactionsDataSource
+from kardex.repos.v1.common.filter_params import ProductTransactionFilterParams
+from .data.product_transactions_datasource import ProductTransactionsDataSource
 from .models.product_transaction_model import ProductTransactionInDb
 
 class ProductTransactionsRepository:
@@ -16,10 +17,10 @@ class ProductTransactionsRepository:
         return cls._instance
 
     async def get_all_product_transactions(
-        self, **kwargs
+        self, params: ProductTransactionFilterParams
     ) -> list[ProductTransactionInDb]:
         results = await self.product_transactions_ds.get_all_product_transactions(
-            **kwargs
+            **params.model_dump(exclude_unset=True)
         )
         models = [ProductTransactionInDb.model_validate(result) for result in results]
         return models

@@ -1,14 +1,12 @@
 import asyncio
 from kardex.repos.v1.invoices import InvoicesRepository, InvoicesDataSource
+from kardex.repos.v1.common.filter_params import InvoiceFilterParams
 
 from kardex.tools import TimeTools
 
 from .responses import AdminChartsResponses
 
-# tao3c943of8bzpoukp9iu1ud7a
 
-
-#
 class AdminPanelsController:
     def __init__(self, invoices_repo: InvoicesRepository) -> None:
         self.invoices_repo = invoices_repo
@@ -20,7 +18,7 @@ class AdminPanelsController:
         for _ in range(0, 7):
             start_date = current_end_date - TimeTools.ms_day
             coro = self.invoices_repo.get_totals_from_invoices(
-                startDate=start_date, endDate=current_end_date
+                InvoiceFilterParams(startDate=start_date, endDate=current_end_date)
             )
 
             current_end_date = start_date
@@ -40,9 +38,11 @@ class AdminPanelsController:
         for _ in range(0, 7):
             start_date = current_end_date - TimeTools.ms_day
             coro = self.invoices_repo.get_totals_from_invoices(
-                startDate=start_date,
-                endDate=current_end_date,
-                branchId=branch_id,
+                InvoiceFilterParams(
+                    startDate=start_date,
+                    endDate=current_end_date,
+                    branchId=branch_id,
+                )
             )
 
             current_end_date = start_date

@@ -7,7 +7,7 @@ from kardex.repos.v1.entry_docs import CreateEntryDoc, EntryDocInDb, EntryHistor
 from app_middleware import auth_middleware
 
 from .entry_docs_controller import entry_docs_controller
-from .query_params import EntryDocQueryParams
+from kardex.repos.v1.common.filter_params import EntryDocFilterParams
 
 
 entry_docs_router = APIRouter(
@@ -29,11 +29,9 @@ async def get_all_entry_docs() -> list[EntryDocInDb]:
 
 @entry_docs_router.get("/paginated")
 async def get_paginated_entry_docs(
-    query_params: EntryDocQueryParams = Depends(),
+    query_params: EntryDocFilterParams = Depends(),
 ) -> ListResponse[EntryDocInDb]:
-    return await entry_docs_controller.get_paginated_entry_docs(
-        **query_params.model_dump()
-    )
+    return await entry_docs_controller.get_paginated_entry_docs(query_params)
 
 
 @entry_docs_router.get("/{entry_doc_id}")
@@ -43,9 +41,9 @@ async def get_entry_doc_by_id(entry_doc_id: str) -> EntryDocInDb:
 
 @entry_docs_router.get("/history")
 async def get_entry_history(
-    query_params: EntryDocQueryParams = Depends(),
+    query_params: EntryDocFilterParams = Depends(),
 ) -> ListResponse[EntryHistoryInDb]:
-    return await entry_docs_controller.get_entry_history(**query_params.model_dump())
+    return await entry_docs_controller.get_entry_history(query_params)
 
 
 @entry_docs_router.get("/history/{entry_doc_id}")

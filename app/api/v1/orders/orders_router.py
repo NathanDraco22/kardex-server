@@ -8,7 +8,7 @@ from app_middleware import auth_middleware
 
 from .orders_controller import orders_controller
 from .responses import ConvertOrderToInvoiceResponse
-from .orders_query_params import OrderQueryParams
+from kardex.repos.v1.common.filter_params import OrderFilterParams
 
 
 orders_router = APIRouter(
@@ -30,21 +30,21 @@ async def convert_order_to_invoice(order_id: str) -> ConvertOrderToInvoiceRespon
 
 @orders_router.get("")
 async def get_paginated_orders(
-    query_params: OrderQueryParams = Depends(),
+    query_params: OrderFilterParams = Depends(),
 ) -> ListResponse[OrderInDb]:
     return await orders_controller.get_paginated_orders(query_params)
 
 
 @orders_router.get("/product-orders")
 async def get_product_in_orders(
-    query_params: OrderQueryParams = Depends(),
+    query_params: OrderFilterParams = Depends(),
 ) -> ListResponse[ProductSalesTotal]:
     return await orders_controller.get_product_in_orders(query_params)
 
 
 @orders_router.get("/product-demand-vs-inventory")
 async def get_product_demand_vs_inventory(
-    query_params: OrderQueryParams = Depends(),
+    query_params: OrderFilterParams = Depends(),
 ) -> ListResponse[ProductStockDemand]:
     return await orders_controller.get_product_demand_vs_inventory(query_params)
 

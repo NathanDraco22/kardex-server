@@ -243,4 +243,15 @@ Creación e integración del CRUD de Categorías de Gastos (`Expense Categories`
 4. **Estandarización de Tipos**: Ajuste de los modelos Pydantic a camelCase (`createdAt`, `updatedAt`) y fechas en entero (`int` Unix Timestamp). Se configuró el controlador y enrutador de FastAPI para retornar `ListResponse` en la obtención masiva.
 5. **Verificación**: Validación estática con `ruff` y `ty check` exitosa a nivel global, y ejecución de pruebas de integración dinámicas directas a MongoDB pasando de forma exitosa.
 
+## Fecha: 2026-06-04
+### Objetivo
+Migración de los parámetros de consulta (query/filter params) definidos en la capa API (`app/`) hacia el paquete de negocio `kardex-business` para tipado estático y desacoplamiento.
+
+### Resumen de Implementación
+1. **Modelos Centralizados**: Creación de las clases de filter params en `packages/kardex-business/src/kardex/repos/v1/common/filter_params/` (e.g. `ClientFilterParams`, `ProductFilterParams`, `InvoiceFilterParams`, `ProductTransactionFilterParams`, `ExecutiveSummaryFilterParams`, `ReceiptFilterParams`, etc.) heredando de una clase base común `BaseFilterParams`.
+2. **Tipado de Repositorios**: Actualización de todos los métodos de búsqueda en los repositorios de `kardex-business` para que reciban la correspondiente instancia tipada de filter params, encargándose de desempaquetar las propiedades mediante `**params.model_dump(...)` al llamar a la capa DataSource, garantizando que DataSources y colecciones mantengan sus firmas de `**kwargs`.
+3. **Inyección en Controladores y Routers**: Modificación de los controladores y routers de FastAPI en `app/` para inyectar estos filter params mediante `Depends(...)`, logrando deserializar directamente desde la URL.
+4. **Remoción de Legacy**: Eliminación definitiva de todos los archivos obsoletos `query_params.py` y `transaction_query_params.py` de la capa API.
+5. **Verificación**: Comprobación estática global y tipado exitosos mediante `ruff check` y `ty check` (todos los chequeos aprobados).
+
 

@@ -13,6 +13,9 @@ from kardex.kardex_config import KardexConfig
 from kardex.lite.core.product_register.process_create_product import process_create_product
 
 
+from kardex.repos.v1.common.filter_params import ProductFilterParams
+
+
 class ProductsRepository:
     _instance: "ProductsRepository | None" = None
 
@@ -105,16 +108,18 @@ class ProductsRepository:
         models = [ProductInDbInBranch.model_validate(result) for result in results]
         return models
 
-    async def get_all_product_in_branch(self, **kwargs) -> list[ProductInDbInBranch]:
-        results = await self.products_ds.get_all_product_in_branch(**kwargs)
+    async def get_all_product_in_branch(self, params: ProductFilterParams) -> list[ProductInDbInBranch]:
+        results = await self.products_ds.get_all_product_in_branch(
+            **params.model_dump(exclude_unset=True)
+        )
         models = [ProductInDbInBranch.model_validate(result) for result in results]
         return models
 
     async def get_all_product_in_branch_streamed(
-        self, **kwargs
+        self, params: ProductFilterParams
     ) -> AsyncIterable[ProductInDbInBranch]:
         async for result in await self.products_ds.get_all_product_in_branch_streamed(
-            **kwargs
+            **params.model_dump(exclude_unset=True)
         ):
             yield ProductInDbInBranch.model_validate(result)
 

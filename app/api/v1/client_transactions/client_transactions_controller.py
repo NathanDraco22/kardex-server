@@ -7,7 +7,7 @@ from kardex.repos.v1.client_transactions import (
 
 from responses.v1 import ListResponse
 
-from .query_params import ClientTransactionQueryParams
+from kardex.repos.v1.common.filter_params import ClientTransactionFilterParams
 
 
 class ClientTransactionsController:
@@ -16,11 +16,10 @@ class ClientTransactionsController:
 
     async def get_all_client_transactions(
         self,
-        params: ClientTransactionQueryParams,
+        params: ClientTransactionFilterParams,
     ) -> ListResponse[ClientTransactionInDb]:
-        query = params.to_query()
         client_transactions = (
-            await self.client_transactions_repo.get_all_client_transactions(**query)
+            await self.client_transactions_repo.get_all_client_transactions(params)
         )
         return ListResponse(
             count=len(client_transactions),

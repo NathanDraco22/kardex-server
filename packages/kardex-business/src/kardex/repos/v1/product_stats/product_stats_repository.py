@@ -1,10 +1,11 @@
-﻿from .data.product_stats_datasource import ProductStatsDataSource
+from .data.product_stats_datasource import ProductStatsDataSource
 from .models.product_stat_model import (
     ProductStatInDb,
     ProductStatInDbWithInfo,
     ProductStatInDbWithAccount,
     UpdateProductStatBatchItem,
 )
+from kardex.repos.v1.common.filter_params import ReadProductStatFilterParams
 
 class ProductStatsRepository:
     _instance: "ProductStatsRepository | None" = None
@@ -20,21 +21,26 @@ class ProductStatsRepository:
             )
         return cls._instance
 
-    async def get_all_product_stats(self, **kwargs) -> list[ProductStatInDb]:
+    async def get_all_product_stats(
+        self, params: ReadProductStatFilterParams | None = None
+    ) -> list[ProductStatInDb]:
+        kwargs = params.model_dump(exclude_none=True) if params else {}
         results = await self.product_stats_ds.get_all_product_stats(**kwargs)
         models = [ProductStatInDb.model_validate(result) for result in results]
         return models
 
     async def get_all_product_stats_with_info(
-        self, **kwargs
+        self, params: ReadProductStatFilterParams | None = None
     ) -> list[ProductStatInDbWithInfo]:
+        kwargs = params.model_dump(exclude_none=True) if params else {}
         results = await self.product_stats_ds.get_all_product_stats_with_info(**kwargs)
         models = [ProductStatInDbWithInfo.model_validate(result) for result in results]
         return models
 
     async def get_all_product_stats_with_account(
-        self, **kwargs
+        self, params: ReadProductStatFilterParams | None = None
     ) -> list[ProductStatInDbWithAccount]:
+        kwargs = params.model_dump(exclude_none=True) if params else {}
         results = await self.product_stats_ds.get_all_product_stats_with_account(
             **kwargs
         )

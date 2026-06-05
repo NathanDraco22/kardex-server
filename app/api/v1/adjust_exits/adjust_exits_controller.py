@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status, BackgroundTasks
-from api.common.query_params import AdjustQueryParams
+from kardex.repos.v1.common.filter_params import AdjustFilterParams
 from kardex.core.adjust_ledger.adjust_ledger import AdjustLedgerManager
 from core.app_notifier.app_notifier import AppNotifier
 from kardex.tools import BranchesTool
@@ -37,10 +37,9 @@ class AdjustExitsController:
         return res
 
     async def get_all_adjust_exits(
-        self, params: AdjustQueryParams
+        self, params: AdjustFilterParams
     ) -> ListResponse[AdjustExitInDb]:
-        raw_params = params.model_dump(exclude_none=True)
-        adjust_exits = await self.adjust_exits_repo.get_all_adjust_exits(**raw_params)
+        adjust_exits = await self.adjust_exits_repo.get_all_adjust_exits(params)
         return ListResponse(
             count=len(adjust_exits),
             data=adjust_exits,
