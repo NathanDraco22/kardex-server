@@ -1,6 +1,8 @@
+from typing import Literal
 from .base_filter_params import BaseFilterParams
-from kardex.repos.v1.invoices.models.invoice_model import InvoiceStatus
-from kardex.repos.v1.common.models.sale_item import PaymentType
+
+InvoiceStatus = Literal["draft", "open", "paid", "partiallyPaid", "cancelled"]
+PaymentType = Literal["cash", "credit", "transfer", "card", "check", "other"]
 
 class InvoiceFilterParams(BaseFilterParams):
     clientId: str | None = None

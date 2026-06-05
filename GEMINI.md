@@ -253,5 +253,6 @@ Migración de los parámetros de consulta (query/filter params) definidos en la 
 3. **Inyección en Controladores y Routers**: Modificación de los controladores y routers de FastAPI en `app/` para inyectar estos filter params mediante `Depends(...)`, logrando deserializar directamente desde la URL.
 4. **Remoción de Legacy**: Eliminación definitiva de todos los archivos obsoletos `query_params.py` y `transaction_query_params.py` de la capa API.
 5. **Verificación**: Comprobación estática global y tipado exitosos mediante `ruff check` y `ty check` (todos los chequeos aprobados).
+6. **Resolución de Importación Circular**: Se detectó una dependencia circular al cargar el barrel `filter_params` debido a la importación de tipos (como `TransactionType`, `DevolutionStatus`, `InvoiceStatus`, `OrderStatus`, `PaymentMethod`) desde los modelos de repositorios. Al ser tipos `Literal` puros (alias de strings), se redefinieron localmente en cada archivo de filter_params, eliminando cualquier importación externa de la capa de repositorios y convirtiendo a `common/filter_params` en un paquete hoja sin dependencias circulares. La importación de inicio del servidor con `import app.main` funciona perfectamente ahora.
 
 
