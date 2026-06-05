@@ -1,9 +1,8 @@
-from typing import Any
+from typing import Any, Literal
 from .base_filter_params import BaseFilterParams
-from kardex.repos.v1.client_transactions.models.client_transaction_model import (
-    TransactionType,
-    TransactionSubType,
-)
+
+TransactionType = Literal["credit", "debit"]
+TransactionSubType = Literal["invoice", "discount", "devolution", "receipt"]
 
 class ClientTransactionFilterParams(BaseFilterParams):
     branchId: str | None = None

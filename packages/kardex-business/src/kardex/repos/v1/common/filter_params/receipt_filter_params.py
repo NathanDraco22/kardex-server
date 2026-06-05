@@ -1,5 +1,7 @@
+from typing import Literal
 from .base_filter_params import BaseFilterParams
-from kardex.repos.v1.receipts.models.receipt_model import PaymentMethod
+
+PaymentMethod = Literal["cash", "transfer", "card", "check", "other"]
 
 
 class ReceiptFilterParams(BaseFilterParams):
