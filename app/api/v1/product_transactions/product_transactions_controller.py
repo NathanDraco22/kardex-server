@@ -1,3 +1,4 @@
+from kardex.repos.v1.common.filter_params import ProductTransactionFilterParams
 from kardex.repos.v1.product_transactions import (
     ProductTransactionsDataSource,
     ProductTransactionsRepository,
@@ -5,8 +6,6 @@ from kardex.repos.v1.product_transactions import (
 )
 
 from responses.v1 import ListResponse
-
-from .transaction_query_params import TransactionQueryParams
 
 
 class ProductTransactionsController:
@@ -17,11 +16,9 @@ class ProductTransactionsController:
         self.transaction_repo = transaction_repo
 
     async def get_all_product_transactions(
-        self, query_params: TransactionQueryParams
+        self, query_params: ProductTransactionFilterParams
     ) -> ListResponse[ProductTransactionInDb]:
-        query = query_params.model_dump(exclude_unset=True)
-
-        transactions = await self.transaction_repo.get_all_product_transactions(**query)
+        transactions = await self.transaction_repo.get_all_product_transactions(query_params)
 
         return ListResponse(count=len(transactions), data=transactions)
 

@@ -1,5 +1,6 @@
-﻿from .data.daily_summaries_datasource import DailySummariesDataSource
+from .data.daily_summaries_datasource import DailySummariesDataSource
 from .models.daily_summary_model import CreateDailySummary, DailySummaryInDb
+from kardex.repos.v1.common.filter_params import DailySummaryFilterParams
 
 from kardex.tools import UuidTool, TimeTools
 
@@ -32,16 +33,18 @@ class DailySummariesRepository:
 
         return new_daily_summary
 
-    async def get_all_daily_summaries(self, **kwargs) -> list[DailySummaryInDb]:
-        results = await self.daily_summaries_ds.get_all_daily_summaries(**kwargs)
+    async def get_all_daily_summaries(self, params: DailySummaryFilterParams) -> list[DailySummaryInDb]:
+        results = await self.daily_summaries_ds.get_all_daily_summaries(
+            **params.model_dump(exclude_unset=True)
+        )
         models = [DailySummaryInDb.model_validate(result) for result in results]
         return models
 
     async def get_daily_summary_by_start_date_range(
-        self, **kwargs
+        self, startDate: int, endDate: int
     ) -> list[DailySummaryInDb]:
         results = await self.daily_summaries_ds.get_daily_summary_by_start_date_range(
-            **kwargs
+            startDate=startDate, endDate=endDate
         )
         models = [DailySummaryInDb.model_validate(result) for result in results]
         return models

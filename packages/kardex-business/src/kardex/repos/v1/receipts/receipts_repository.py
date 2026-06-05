@@ -3,6 +3,7 @@ from .data.receipts_datasource import ReceiptsDataSource
 from .models.receipt_model import CreateReceipt, UpdateReceipt, ReceiptInDb
 from .models.receipt_total import ReceiptTotal
 from .models.branch_receipt_amount_total import BranchAppliedReceiptsAmountsSummary
+from kardex.repos.v1.common.filter_params import TotalsFilterParams, ReceiptFilterParams
 
 
 class ReceiptsRepository:
@@ -21,8 +22,10 @@ class ReceiptsRepository:
         # TODO: implement create
         raise NotImplementedError()
 
-    async def get_all_receipts(self, **kwargs) -> list[ReceiptInDb]:
-        results = await self.receipts_ds.get_all_receipts(**kwargs)
+    async def get_all_receipts(self, params: ReceiptFilterParams) -> list[ReceiptInDb]:
+        results = await self.receipts_ds.get_all_receipts(
+            **params.model_dump(exclude_unset=True)
+        )
         models = [ReceiptInDb.model_validate(result) for result in results]
         return models
 
@@ -31,15 +34,17 @@ class ReceiptsRepository:
         models = [ReceiptInDb.model_validate(result) for result in results]
         return models
 
-    async def get_totals_from_receipts(self, **kwargs) -> ReceiptTotal:
-        res = await self.receipts_ds.get_totals_from_receipts(**kwargs)
+    async def get_totals_from_receipts(self, params: ReceiptFilterParams) -> ReceiptTotal:
+        res = await self.receipts_ds.get_totals_from_receipts(
+            **params.model_dump(exclude_unset=True)
+        )
         return ReceiptTotal.model_validate(res)
 
     async def get_totals_from_receipts_by_payment_method(
-        self, **kwargs
+        self, params: TotalsFilterParams
     ) -> list[ReceiptTotal]:
         res = await self.receipts_ds.get_totals_from_receipts_by_payment_method(
-            **kwargs
+            **params.model_dump(exclude_none=True)
         )
         models = [ReceiptTotal.model_validate(result) for result in res]
         return models

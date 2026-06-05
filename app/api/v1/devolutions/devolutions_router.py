@@ -6,7 +6,7 @@ from responses.v1 import ListResponse
 from app_middleware import auth_middleware
 
 from .devolutions_controller import devolutions_controller
-from .devolution_query_param import DevolutionQueryParams
+from kardex.repos.v1.common.filter_params import DevolutionFilterParams
 
 devolutions_router = APIRouter(
     tags=["devolutionsV1"], dependencies=[Depends(auth_middleware)]
@@ -20,13 +20,13 @@ async def create_devolution(body: CreateDevolution) -> DevolutionInDb:
 
 @devolutions_router.get("")
 async def get_all_devolutions(
-    params: DevolutionQueryParams = Depends(),
+    params: DevolutionFilterParams = Depends(),
 ) -> ListResponse[DevolutionInDb]:
     return await devolutions_controller.get_all_devolutions(params)
 
 @devolutions_router.get("/all/active")
 async def get_all_active_devolutions(
-    params: DevolutionQueryParams = Depends(),
+    params: DevolutionFilterParams = Depends(),
 ) -> ListResponse[DevolutionInDb]:
     return await devolutions_controller.get_all_active_devolutions(params)
 

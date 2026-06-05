@@ -6,6 +6,7 @@ from .models.invoice_totals_model import InvoiceTotals
 from kardex.repos.v1.common.models.invoice_product_sale import ProductSalesTotal
 from kardex.repos.v1.invoices.models.invoice_summary import BranchPortfolioSummary
 from kardex.repos.v1.invoices.models.pending_invoice_total import PendingInvoiceTotalsByBranch
+from kardex.repos.v1.common.filter_params import InvoiceFilterParams, TotalsFilterParams
 
 
 class InvoicesRepository:
@@ -20,37 +21,47 @@ class InvoicesRepository:
             cls._instance = cls(InvoicesDataSource())
         return cls._instance
 
-    async def get_all_invoices(self, **kargs) -> list[InvoiceInDb]:
-        results = await self.invoices_ds.get_all_invoices(**kargs)
+    async def get_all_invoices(self, params: InvoiceFilterParams) -> list[InvoiceInDb]:
+        results = await self.invoices_ds.get_all_invoices(**params.model_dump(exclude_unset=True))
         models = [InvoiceInDb.model_validate(result) for result in results]
         return models
 
     async def get_all_invoices_by_product(
-        self, product_id: str, **kargs
+        self, product_id: str, params: InvoiceFilterParams
     ) -> list[InvoiceInDb]:
         results = await self.invoices_ds.get_all_invoices_by_product(
-            product_id, **kargs
+            product_id, **params.model_dump(exclude_unset=True)
         )
         models = [InvoiceInDb.model_validate(result) for result in results]
         return models
 
-    async def get_all_product_sales(self, **kargs) -> list[ProductSalesTotal]:
-        results = await self.invoices_ds.get_all_product_sales(**kargs)
+    async def get_all_product_sales(self, params: InvoiceFilterParams) -> list[ProductSalesTotal]:
+        results = await self.invoices_ds.get_all_product_sales(
+            **params.model_dump(exclude_unset=True)
+        )
         models = [ProductSalesTotal.model_validate(result) for result in results]
         return models
 
     async def get_all_invoices_stream(
-        self, **kargs
+        self, params: InvoiceFilterParams
     ) -> AsyncGenerator[InvoiceInDb, None]:
-        async for result in self.invoices_ds.get_all_invoices_stream(**kargs):
+        async for result in self.invoices_ds.get_all_invoices_stream(
+            **params.model_dump(exclude_unset=True)
+        ):
             yield InvoiceInDb.model_validate(result)
 
-    async def get_totals_from_invoices(self, **kargs) -> InvoiceTotals:
-        res = await self.invoices_ds.get_totals_from_invoices(**kargs)
+    async def get_totals_from_invoices(self, params: InvoiceFilterParams) -> InvoiceTotals:
+        res = await self.invoices_ds.get_totals_from_invoices(
+            **params.model_dump(exclude_unset=True)
+        )
         return InvoiceTotals(**res)
 
-    async def get_totals_invoices_by_payment_type(self, **kargs) -> list[InvoiceTotals]:
-        res = await self.invoices_ds.get_totals_invoices_by_payment_type(**kargs)
+    async def get_totals_invoices_by_payment_type(
+        self, params: TotalsFilterParams
+    ) -> list[InvoiceTotals]:
+        res = await self.invoices_ds.get_totals_invoices_by_payment_type(
+            **params.model_dump(exclude_none=True)
+        )
         return [InvoiceTotals(**result) for result in res]
 
     async def get_invoice_by_id(self, invoice_id: str) -> InvoiceInDb | None:

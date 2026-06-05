@@ -8,6 +8,7 @@ from kardex.repos.v1.invoices import (
     BranchPortfolioSummary,
     PendingInvoiceTotalsByBranch,
 )
+from kardex.repos.v1.common.filter_params import InvoiceFilterParams, TotalsFilterParams
 from kardex.repos.v1.receipts import ReceiptsRepository, ReceiptsDataSource
 from kardex.repos.v1.receipts.models.branch_receipt_amount_total import (
     BranchAppliedReceiptsAmountsSummary,
@@ -60,7 +61,7 @@ class ReportManager:
 
         for branch in all_branches:
             coro = self.invoices_repo.get_totals_from_invoices(
-                startDate=start_date, endDate=end_date, branchId=branch.id
+                InvoiceFilterParams(startDate=start_date, endDate=end_date, branchId=branch.id)
             )
             coros.append(coro)
 

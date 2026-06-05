@@ -5,9 +5,8 @@ from responses.v1 import ListResponse
 
 from app_middleware import auth_middleware
 
+from kardex.repos.v1.common.filter_params import ReceiptFilterParams
 from .receipts_controller import receipts_controller
-
-from .query_params import ReceiptQueryParams
 
 
 receipts_router = APIRouter(
@@ -23,7 +22,7 @@ async def create_receipt(body: CreateReceipt) -> ReceiptInDb:
 
 @receipts_router.get("")
 async def get_all_receipts(
-    query_params: ReceiptQueryParams = Depends(),
+    query_params: ReceiptFilterParams = Depends(),
 ) -> ListResponse[ReceiptInDb]:
     return await receipts_controller.get_all_receipts(query_params)
 
@@ -35,14 +34,14 @@ async def get_receipts_by_invoice_id(invoice_id: str) -> ListResponse[ReceiptInD
 
 @receipts_router.get("/totals")
 async def get_totals_from_receipts(
-    query_params: ReceiptQueryParams = Depends(),
+    query_params: ReceiptFilterParams = Depends(),
 ) -> ReceiptTotal:
     return await receipts_controller.get_totals_from_receipts(query_params)
 
 
 @receipts_router.get("/totals/byPaymentMethod")
 async def get_totals_from_receipts_by_payment_method(
-    query_params: ReceiptQueryParams = Depends(),
+    query_params: ReceiptFilterParams = Depends(),
 ) -> ListResponse[ReceiptTotal]:
     return await receipts_controller.get_totals_from_receipts_by_payment_method(
         query_params

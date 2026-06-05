@@ -1,10 +1,11 @@
-﻿from kardex.tools import TimeTools, UuidTool
+from kardex.tools import TimeTools, UuidTool
 from .data.expiration_logs_datasource import ExpirationLogsDataSource
 from .models.expiration_log_model import (
     CreateExpirationLog,
     UpdateExpirationLog,
     ExpirationLogInDb,
 )
+from kardex.repos.v1.common.filter_params import ExpirationLogFilterParams
 
 class ExpirationLogsRepository:
     _instance: "ExpirationLogsRepository | None" = None
@@ -49,8 +50,12 @@ class ExpirationLogsRepository:
         raw_data = [log.model_dump() for log in models_in_db]
         await self.expiration_logs_ds.create_many_expiration_logs(raw_data)
 
-    async def get_all_expiration_logs(self, **kwargs) -> list[ExpirationLogInDb]:
-        results = await self.expiration_logs_ds.get_all_expiration_logs(**kwargs)
+    async def get_all_expiration_logs(
+        self, params: ExpirationLogFilterParams
+    ) -> list[ExpirationLogInDb]:
+        results = await self.expiration_logs_ds.get_all_expiration_logs(
+            **params.model_dump(exclude_unset=True)
+        )
         models = [ExpirationLogInDb.model_validate(result) for result in results]
         return models
 

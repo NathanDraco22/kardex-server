@@ -4,7 +4,7 @@ from responses.v1.list_response import ListResponse
 from kardex.repos.v1.exit_docs import CreateExitDoc, ExitDocInDb, ExitHistoryInDb
 from app_middleware import auth_middleware
 
-from .query_params import ExitDocQueryParams
+from kardex.repos.v1.common.filter_params import ExitDocFilterParams
 from .exit_docs_controller import exit_docs_controller
 
 
@@ -25,11 +25,9 @@ async def get_all_exit_docs() -> list[ExitDocInDb]:
 
 @exit_docs_router.get("/paginated")
 async def get_paginated_exit_docs(
-    query_params: ExitDocQueryParams = Depends(),
+    query_params: ExitDocFilterParams = Depends(),
 ) -> ListResponse[ExitDocInDb]:
-    return await exit_docs_controller.get_paginated_exit_docs(
-        **query_params.model_dump()
-    )
+    return await exit_docs_controller.get_paginated_exit_docs(query_params)
 
 
 @exit_docs_router.get("/{exit_doc_id}")
@@ -39,9 +37,9 @@ async def get_exit_doc_by_id(exit_doc_id: str) -> ExitDocInDb:
 
 @exit_docs_router.get("/history")
 async def get_exit_history(
-    query_params: ExitDocQueryParams = Depends(),
+    query_params: ExitDocFilterParams = Depends(),
 ) -> ListResponse[ExitHistoryInDb]:
-    return await exit_docs_controller.get_exit_history(**query_params.model_dump())
+    return await exit_docs_controller.get_exit_history(query_params)
 
 
 @exit_docs_router.get("/history/{exit_doc_id}")

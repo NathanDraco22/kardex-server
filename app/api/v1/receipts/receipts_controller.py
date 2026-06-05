@@ -10,10 +10,11 @@ from kardex.repos.v1.receipts import (
     ReceiptsDataSource,
     ReceiptTotal,
 )
+from kardex.repos.v1.common.filter_params import (
+    ReceiptFilterParams,
+    TotalsFilterParams,
+)
 from kardex.repos.v1.common.models.history_params import HistoryClientParams
-
-
-from .query_params import ReceiptQueryParams
 from responses.v1 import ListResponse
 
 
@@ -27,15 +28,13 @@ class ReceiptsController:
         return receipt
 
     async def get_all_receipts(
-        self, query_params: ReceiptQueryParams
+        self, query_params: ReceiptFilterParams
     ) -> ListResponse[ReceiptInDb]:
         if query_params.endDate is None or query_params.startDate is None:
             query_params.startDate = None
             query_params.endDate = None
 
-        receipts = await self.receipts_repo.get_all_receipts(
-            **query_params.model_dump(exclude_none=True)
-        )
+        receipts = await self.receipts_repo.get_all_receipts(query_params)
 
         return ListResponse(
             count=len(receipts),
@@ -52,17 +51,15 @@ class ReceiptsController:
         )
 
     async def get_totals_from_receipts(
-        self, query_params: ReceiptQueryParams
+        self, query_params: ReceiptFilterParams
     ) -> ReceiptTotal:
         if query_params.endDate is None or query_params.startDate is None:
             query_params.startDate = None
             query_params.endDate = None
-        return await self.receipts_repo.get_totals_from_receipts(
-            **query_params.model_dump()
-        )
+        return await self.receipts_repo.get_totals_from_receipts(query_params)
 
     async def get_totals_from_receipts_by_payment_method(
-        self, query_params: ReceiptQueryParams
+        self, query_params: ReceiptFilterParams
     ) -> ListResponse[ReceiptTotal]:
         if query_params.endDate is None or query_params.startDate is None:
             query_params.startDate = None
@@ -74,7 +71,7 @@ class ReceiptsController:
         kwargs.pop("limit", None)
 
         res = await self.receipts_repo.get_totals_from_receipts_by_payment_method(
-            **kwargs
+            TotalsFilterParams(**kwargs)
         )
 
         return ListResponse(count=len(res), data=res)

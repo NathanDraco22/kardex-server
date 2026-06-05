@@ -15,7 +15,13 @@ from kardex.repos.v1.invoices import InvoicesRepository
 from kardex.repos.v1.common.models import InventoryBranchDetail
 from kardex.core.report_manager.report_manager import ReportManager
 
-from .query_params import ReportQueryParams, TotalsQueryParams
+from kardex.repos.v1.common.filter_params import (
+    ReportFilterParams,
+    TotalsFilterParams,
+    DailySummaryFilterParams,
+    InvoiceFilterParams,
+    ReceiptFilterParams,
+)
 from .responses import TotalsResult
 
 
@@ -32,10 +38,15 @@ class ReportsController:
         self.invoices_repo = InvoicesRepository.get_instance()
 
     async def get_general_report(
-        self, params: ReportQueryParams
+        self, params: ReportFilterParams
     ) -> ExecutiveSummaryInDb:
-        query = params.model_dump(exclude_none=True)
-        daily_reports = await self.daily_summaries_repo.get_all_daily_summaries(**query)
+        daily_filter = DailySummaryFilterParams(
+            startDate=params.startDate,
+            endDate=params.endDate,
+        )
+        daily_reports = await self.daily_summaries_repo.get_all_daily_summaries(
+            daily_filter
+        )
 
         all_summary = reduce(lambda a, b: a + b, daily_reports)
 
@@ -71,18 +82,27 @@ class ReportsController:
         return executive_summary
 
     async def get_total_results_by_date_range(
-        self, params: TotalsQueryParams
+        self, params: TotalsFilterParams
     ) -> TotalsResult:
-        query = params.model_dump(exclude_none=True)
         invoices_totals = await self.invoices_repo.get_totals_invoices_by_payment_type(
-            **query
+            params
         )
         receipts = await self.receipts_repo.get_totals_from_receipts_by_payment_method(
-            **query
+            params
         )
 
-        detail_invoices = await self.invoices_repo.get_all_invoices(**query)
-        detail_receipts = await self.receipts_repo.get_all_receipts(**query)
+        invoice_filter = InvoiceFilterParams(
+            branchId=params.branchId,
+            startDate=params.startDate,
+            endDate=params.endDate,
+        )
+        receipt_filter = ReceiptFilterParams(
+            branchId=params.branchId,
+            startDate=params.startDate,
+            endDate=params.endDate,
+        )
+        detail_invoices = await self.invoices_repo.get_all_invoices(invoice_filter)
+        detail_receipts = await self.receipts_repo.get_all_receipts(receipt_filter)
 
         return TotalsResult(
             branchId=params.branchId,

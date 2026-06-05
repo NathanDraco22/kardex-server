@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from kardex.repos.v1.orders.models.order_model import OrderStatus
 
-class OrderQueryParams(BaseModel):
+class OrderFilterParams(BaseModel):
     skip: int = 0
     limit: int = 50
     status: OrderStatus | None = None

@@ -1,9 +1,8 @@
-from pydantic import BaseModel
+from .base_filter_params import BaseFilterParams
 from kardex.repos.v1.invoices.models.invoice_model import InvoiceStatus
 from kardex.repos.v1.common.models.sale_item import PaymentType
 
-
-class InvoiceQueryParams(BaseModel):
+class InvoiceFilterParams(BaseFilterParams):
     clientId: str | None = None
     branchId: str | None = None
     paymentType: PaymentType | None = None
@@ -13,12 +12,7 @@ class InvoiceQueryParams(BaseModel):
     byPaidAt: bool = False
     status: InvoiceStatus | None = None
     createdBy: str | None = None
-    offset: int = 0
-    limit: int = 50
 
-
-class AdjustQueryParams(BaseModel):
-    offset: int = 0
-    limit: int = 50
+class AdjustFilterParams(BaseFilterParams):
     branchId: str | None = None
     endDate: int | None = None

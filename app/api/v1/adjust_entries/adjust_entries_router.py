@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, BackgroundTasks
 
-from api.common.query_params import AdjustQueryParams
+from kardex.repos.v1.common.filter_params import AdjustFilterParams
 from kardex.repos.v1.adjust_entries import (
     CreateAdjustEntry,
     AdjustEntryInDb,
@@ -25,7 +25,7 @@ async def create_adjust_entry(
 
 @adjust_entries_router.get("")
 async def get_all_adjust_entries(
-    query: AdjustQueryParams = Depends(),
+    query: AdjustFilterParams = Depends(),
 ) -> ListResponse[AdjustEntryInDb]:
     return await adjust_entries_controller.get_all_adjust_entries(query)
 

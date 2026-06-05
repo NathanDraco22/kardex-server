@@ -1,5 +1,6 @@
-﻿from .data.adjust_exits_datasource import AdjustExitsDataSource
+from .data.adjust_exits_datasource import AdjustExitsDataSource
 from .models.adjust_exit_model import CreateAdjustExit, UpdateAdjustExit, AdjustExitInDb
+from kardex.repos.v1.common.filter_params import AdjustFilterParams
 
 class AdjustExitsRepository:
     _instance: "AdjustExitsRepository | None" = None
@@ -21,8 +22,10 @@ class AdjustExitsRepository:
         # TODO: implement create
         raise NotImplementedError()
 
-    async def get_all_adjust_exits(self, **kwargs) -> list[AdjustExitInDb]:
-        results = await self.adjust_exits_ds.get_all_adjust_exits(**kwargs)
+    async def get_all_adjust_exits(self, params: AdjustFilterParams) -> list[AdjustExitInDb]:
+        results = await self.adjust_exits_ds.get_all_adjust_exits(
+            **params.model_dump(exclude_unset=True)
+        )
         models = [AdjustExitInDb.model_validate(result) for result in results]
         return models
 

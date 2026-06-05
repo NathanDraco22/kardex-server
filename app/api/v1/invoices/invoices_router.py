@@ -14,7 +14,7 @@ from responses.v1 import ListResponse
 
 from .invoices_controller import invoices_controller
 from .responses import InvoiceResponse, InvoiceAnonResponse
-from api.common.query_params import InvoiceQueryParams
+from kardex.repos.v1.common.filter_params import InvoiceFilterParams
 
 invoices_router = APIRouter(
     tags=["invoicesV1"], dependencies=[Depends(auth_middleware)]
@@ -33,28 +33,28 @@ async def create_anon_invoice(body: CreateInvoice) -> InvoiceAnonResponse:
 
 @invoices_router.get("")
 async def get_all_invoices(
-    query_params: InvoiceQueryParams = Depends(),
+    query_params: InvoiceFilterParams = Depends(),
 ) -> ListResponse[InvoiceInDb]:
     return await invoices_controller.get_all_invoices(query_params)
 
 
 @invoices_router.get("/product-sales")
 async def get_all_product_sales(
-    query_params: InvoiceQueryParams = Depends(),
+    query_params: InvoiceFilterParams = Depends(),
 ) -> ListResponse[ProductSalesTotal]:
     return await invoices_controller.get_all_product_sales(query_params)
 
 
 @invoices_router.get("/totals")
 async def get_totals_from_invoices(
-    query_params: InvoiceQueryParams = Depends(),
+    query_params: InvoiceFilterParams = Depends(),
 ) -> InvoiceTotals:
     return await invoices_controller.get_totals_from_invoices(query_params)
 
 
 @invoices_router.get("/totals/byPaymentType")
 async def get_totals_invoices_by_payment_type(
-    query_params: InvoiceQueryParams = Depends(),
+    query_params: InvoiceFilterParams = Depends(),
 ) -> ListResponse[InvoiceTotals]:
     return await invoices_controller.get_totals_invoices_by_payment_type(query_params)
 
@@ -69,7 +69,7 @@ async def get_invoices_history(
 @invoices_router.get("/byProduct/{product_id}")
 async def get_invoices_by_product(
     product_id: str,
-    query_params: InvoiceQueryParams = Depends(),
+    query_params: InvoiceFilterParams = Depends(),
 ) -> ListResponse[InvoiceInDb]:
     return await invoices_controller.get_invoices_by_product(product_id, query_params)
 

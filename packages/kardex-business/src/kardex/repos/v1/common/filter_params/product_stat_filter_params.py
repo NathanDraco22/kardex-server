@@ -1,11 +1,9 @@
 from pydantic import BaseModel
 
-
-class ProductStatQueryParams(BaseModel):
+class ProductStatFilterParams(BaseModel):
     startDate: int
     endDate: int
     daysAnalysis: int
 
-
-class ReadProductStatQueryParams(BaseModel):
+class ReadProductStatFilterParams(BaseModel):
     branchId: str | None = None

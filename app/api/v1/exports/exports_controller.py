@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import FileResponse
 from kardex.repos.v1.products import ProductsRepository, ProductsDataSource
+from kardex.repos.v1.common.filter_params import ProductFilterParams
 from services.excel_service import PriceListService, PriceListSheet, PriceListRow
 
 from kardex.tools import BranchesTool
@@ -14,7 +15,7 @@ class ExportsController:
     async def export_price_list(self, branch_id: str) -> FileResponse:
         rows = []
         async for product in self.products_repo.get_all_product_in_branch_streamed(
-            branchId=branch_id
+            ProductFilterParams(branchId=branch_id)
         ):
             row = PriceListRow(
                 code=product.code,

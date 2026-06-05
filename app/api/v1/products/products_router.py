@@ -8,7 +8,7 @@ from kardex.repos.v1.products import (
 
 from responses.v1 import ListResponse
 
-from .query_params import ProductQueryParams
+from kardex.repos.v1.common.filter_params import ProductFilterParams
 from .products_controller import products_controller
 
 
@@ -27,7 +27,7 @@ async def get_all_products() -> ListResponse[ProductInDb]:
 
 @products_router.get("/paginated")
 async def get_paginated_products(
-    query_params: ProductQueryParams = Depends(),
+    query_params: ProductFilterParams = Depends(),
 ) -> ListResponse[ProductInDb]:
     return await products_controller.get_paginated_products(
         **query_params.model_dump(exclude_none=True)
@@ -55,7 +55,7 @@ async def search_product_in_branch(
 @products_router.get("/branch/{branch_id}")
 async def get_all_products_in_branch(
     branch_id: str,
-    query: ProductQueryParams = Depends(),
+    query: ProductFilterParams = Depends(),
 ) -> ListResponse[ProductInDbInBranch]:
     query.branchId = branch_id
     return await products_controller.get_all_product_in_branch(query)

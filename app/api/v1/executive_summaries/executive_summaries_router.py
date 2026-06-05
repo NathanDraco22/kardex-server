@@ -6,7 +6,7 @@ from responses.v1 import ListResponse
 from app_middleware import cache_header_response_midnight
 from app_middleware import auth_middleware
 
-from .query_params import ExecutiveSummaryQueryParams
+from kardex.repos.v1.common.filter_params import ExecutiveSummaryFilterParams
 from .executive_summaries_controller import executive_summaries_controller
 
 
@@ -26,7 +26,7 @@ async def create_executive_summary(
 
 @executive_summaries_router.get("")
 async def get_all_executive_summaries(
-    query: ExecutiveSummaryQueryParams = Depends(),
+    query: ExecutiveSummaryFilterParams = Depends(),
 ) -> ListResponse[ExecutiveSummaryInDb]:
     return await executive_summaries_controller.get_all_executive_summaries(query)
 

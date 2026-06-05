@@ -18,7 +18,7 @@ from kardex.repos.v1.orders import (
 )
 
 from responses.v1 import ListResponse
-from .orders_query_params import OrderQueryParams
+from kardex.repos.v1.common.filter_params import OrderFilterParams
 from kardex.repos.v1.common.models import ProductStockDemand
 
 
@@ -98,27 +98,24 @@ class OrdersController:
         return res, order
 
     async def get_paginated_orders(
-        self, params: OrderQueryParams
+        self, params: OrderFilterParams
     ) -> ListResponse[OrderInDb]:
-        raw_params = params.model_dump(exclude_unset=True)
-        res = await self.orders_repo.get_paginated_orders(**raw_params)
+        res = await self.orders_repo.get_paginated_orders(params)
         return ListResponse(
             count=len(res),
             data=res,
         )
 
     async def get_product_in_orders(
-        self, params: OrderQueryParams
+        self, params: OrderFilterParams
     ) -> ListResponse[ProductSalesTotal]:
-        raw_params = params.model_dump(exclude_none=True)
-        res = await self.orders_repo.get_products_in_orders(**raw_params)
+        res = await self.orders_repo.get_products_in_orders(params)
         return ListResponse(count=len(res), data=res)
 
     async def get_product_demand_vs_inventory(
-        self, params: OrderQueryParams
+        self, params: OrderFilterParams
     ) -> ListResponse[ProductStockDemand]:
-        raw_params = params.model_dump(exclude_none=True)
-        res = await self.orders_repo.get_demand_vs_stock(**raw_params)
+        res = await self.orders_repo.get_demand_vs_stock(params)
         return ListResponse(count=len(res), data=res)
 
     async def get_order_by_id(self, order_id: str) -> OrderInDb:

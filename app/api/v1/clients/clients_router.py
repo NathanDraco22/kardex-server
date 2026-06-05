@@ -6,7 +6,7 @@ from app_middleware import auth_middleware
 
 from .bodies import CreateInitialBalance, CreateMultipleInitialBalance
 from .clients_controller import clients_controller
-from .query_params import ClientQueryParams
+from kardex.repos.v1.common.filter_params import ClientFilterParams
 
 clients_router = APIRouter(tags=["clientsV1"], dependencies=[Depends(auth_middleware)])
 
@@ -40,14 +40,14 @@ async def create_multiple_initial_balance(
 
 @clients_router.get("")
 async def get_all_clients(
-    params: ClientQueryParams = Depends(),
+    params: ClientFilterParams = Depends(),
 ) -> ListResponse[ClientInDb]:
     return await clients_controller.get_all_clients(params)
 
 
 @clients_router.get("/balance")
 async def get_all_clients_with_balance(
-    params: ClientQueryParams = Depends(),
+    params: ClientFilterParams = Depends(),
 ) -> ListResponse[ClientInDb]:
     return await clients_controller.get_all_clients_with_balance(params)
 

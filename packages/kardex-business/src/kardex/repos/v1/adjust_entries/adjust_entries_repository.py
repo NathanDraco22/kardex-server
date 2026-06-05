@@ -3,6 +3,7 @@ from .models.adjust_entry_model import (
     UpdateAdjustEntry,
     AdjustEntryInDb,
 )
+from kardex.repos.v1.common.filter_params import AdjustFilterParams
 
 
 class AdjustEntriesRepository:
@@ -19,8 +20,12 @@ class AdjustEntriesRepository:
             )
         return cls._instance
 
-    async def get_all_adjust_entries(self, **kwargs) -> list[AdjustEntryInDb]:
-        results = await self.adjust_entries_ds.get_all_adjust_entries(**kwargs)
+    async def get_all_adjust_entries(
+        self, params: AdjustFilterParams
+    ) -> list[AdjustEntryInDb]:
+        results = await self.adjust_entries_ds.get_all_adjust_entries(
+            **params.model_dump(exclude_unset=True)
+        )
         models = [AdjustEntryInDb.model_validate(result) for result in results]
         return models
 

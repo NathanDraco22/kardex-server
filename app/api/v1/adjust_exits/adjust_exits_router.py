@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, BackgroundTasks
-from api.common.query_params import AdjustQueryParams
+from kardex.repos.v1.common.filter_params import AdjustFilterParams
 from kardex.repos.v1.adjust_exits import CreateAdjustExit, AdjustExitInDb
 
 from app_middleware import auth_middleware
@@ -23,7 +23,7 @@ async def create_adjust_exit(
 
 @adjust_exits_router.get("")
 async def get_all_adjust_exits(
-    query: AdjustQueryParams = Depends(),
+    query: AdjustFilterParams = Depends(),
 ) -> ListResponse[AdjustExitInDb]:
     return await adjust_exits_controller.get_all_adjust_exits(query)
 

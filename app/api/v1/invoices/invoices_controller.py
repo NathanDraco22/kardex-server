@@ -14,7 +14,7 @@ from kardex.repos.v1.common.models.history_params import HistoryClientParams
 
 
 from .responses import InvoiceResponse, InvoiceAnonResponse
-from api.common.query_params import InvoiceQueryParams
+from kardex.repos.v1.common.filter_params import InvoiceFilterParams, TotalsFilterParams
 
 
 class InvoicesController:
@@ -34,45 +34,39 @@ class InvoicesController:
         return InvoiceAnonResponse(invoice=invoice)
 
     async def get_all_invoices(
-        self, query_params: InvoiceQueryParams
+        self, query_params: InvoiceFilterParams
     ) -> ListResponse[InvoiceInDb]:
-        kargs = query_params.model_dump()
-        invoices = await self.invoices_repo.get_all_invoices(**kargs)
+        invoices = await self.invoices_repo.get_all_invoices(query_params)
         return ListResponse(count=len(invoices), data=invoices)
 
     async def get_invoices_by_product(
-        self, product_id: str, query_params: InvoiceQueryParams
+        self, product_id: str, query_params: InvoiceFilterParams
     ) -> ListResponse[InvoiceInDb]:
-        kargs = query_params.model_dump()
         invoices = await self.invoices_repo.get_all_invoices_by_product(
-            product_id, **kargs
+            product_id, query_params
         )
         return ListResponse(count=len(invoices), data=invoices)
 
     async def get_all_product_sales(
-        self, query_params: InvoiceQueryParams
+        self, query_params: InvoiceFilterParams
     ) -> ListResponse[ProductSalesTotal]:
-        kargs = query_params.model_dump()
-        product_sales = await self.invoices_repo.get_all_product_sales(**kargs)
+        product_sales = await self.invoices_repo.get_all_product_sales(query_params)
         return ListResponse(count=len(product_sales), data=product_sales)
 
     async def get_totals_from_invoices(
-        self, query_params: InvoiceQueryParams
+        self, query_params: InvoiceFilterParams
     ) -> InvoiceTotals:
-        kargs = query_params.model_dump()
-        return await self.invoices_repo.get_totals_from_invoices(**kargs)
+        return await self.invoices_repo.get_totals_from_invoices(query_params)
 
     async def get_totals_invoices_by_payment_type(
-        self, query_params: InvoiceQueryParams
+        self, query_params: InvoiceFilterParams
     ) -> ListResponse[InvoiceTotals]:
-        kargs = query_params.model_dump(
-            exclude_none=True,
+        totals_params = TotalsFilterParams(
+            branchId=query_params.branchId or "",
+            startDate=query_params.startDate or 0,
+            endDate=query_params.endDate or 0,
         )
-        kargs.pop("byPaidAt", None)
-        kargs.pop("offset", None)
-        kargs.pop("limit", None)
-
-        res = await self.invoices_repo.get_totals_invoices_by_payment_type(**kargs)
+        res = await self.invoices_repo.get_totals_invoices_by_payment_type(totals_params)
         return ListResponse(count=len(res), data=res)
 
     async def get_invoice_by_id(self, invoice_id: str) -> InvoiceInDb:

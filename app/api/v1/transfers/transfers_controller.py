@@ -18,7 +18,7 @@ from kardex.repos.v1.expiration_logs import (
     ProductInfo,
 )
 
-from .query_params import TransferQueryParams
+from kardex.repos.v1.common.filter_params import TransferFilterParams
 
 
 class TransfersController:
@@ -66,10 +66,9 @@ class TransfersController:
         return transfer
 
     async def get_all_transfers(
-        self, query: TransferQueryParams
+        self, query: TransferFilterParams
     ) -> ListResponse[TransferInDb]:
-        raw_query = query.model_dump(exclude_none=True)
-        transfers = await self.transfers_repo.get_all_transfers(**raw_query)
+        transfers = await self.transfers_repo.get_all_transfers(query)
         return ListResponse(
             count=len(transfers),
             data=transfers,

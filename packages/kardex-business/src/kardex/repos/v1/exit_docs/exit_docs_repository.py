@@ -1,5 +1,6 @@
-﻿from .data.exit_docs_datasource import ExitDocsDataSource
+from .data.exit_docs_datasource import ExitDocsDataSource
 from .models.exit_doc_model import ExitDocInDb, ExitHistoryInDb
+from kardex.repos.v1.common.filter_params import ExitDocFilterParams
 
 class ExitDocsRepository:
     _instance: "ExitDocsRepository | None" = None
@@ -21,10 +22,10 @@ class ExitDocsRepository:
         return models
 
     async def get_paginated_exit_docs(
-        self, offset: int, page_size: int, branch_id: str
+        self, params: ExitDocFilterParams
     ) -> list[ExitDocInDb]:
         results = await self.exit_docs_ds.get_paginated_exit_docs(
-            offset, page_size, branch_id
+            params.offset, params.limit, params.branch_id
         )
         models = [ExitDocInDb.model_validate(result) for result in results]
 
@@ -59,8 +60,18 @@ class ExitDocsRepository:
 
         return ExitDocInDb.model_validate(result)
 
-    async def get_exit_history(self, **kwargs) -> list[ExitHistoryInDb]:
-        results = await self.exit_docs_ds.get_exit_history(**kwargs)
+    async def get_exit_history(
+        self, params: ExitDocFilterParams
+    ) -> list[ExitHistoryInDb]:
+        mapped_kwargs = {
+            "branch_id": params.branch_id,
+            "client_id": params.clientId,
+            "offset": params.offset,
+            "limit": params.limit,
+            "start_date": params.startDate,
+            "end_date": params.endDate,
+        }
+        results = await self.exit_docs_ds.get_exit_history(**mapped_kwargs)
         return [ExitHistoryInDb.model_validate(result) for result in results]
 
     async def get_exit_history_by_id_with_client(
