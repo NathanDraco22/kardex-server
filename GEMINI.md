@@ -251,8 +251,25 @@ Migración de los parámetros de consulta (query/filter params) definidos en la 
 1. **Modelos Centralizados**: Creación de las clases de filter params en `packages/kardex-business/src/kardex/repos/v1/common/filter_params/` (e.g. `ClientFilterParams`, `ProductFilterParams`, `InvoiceFilterParams`, `ProductTransactionFilterParams`, `ExecutiveSummaryFilterParams`, `ReceiptFilterParams`, etc.) heredando de una clase base común `BaseFilterParams`.
 2. **Tipado de Repositorios**: Actualización de todos los métodos de búsqueda en los repositorios de `kardex-business` para que reciban la correspondiente instancia tipada de filter params, encargándose de desempaquetar las propiedades mediante `**params.model_dump(...)` al llamar a la capa DataSource, garantizando que DataSources y colecciones mantengan sus firmas de `**kwargs`.
 3. **Inyección en Controladores y Routers**: Modificación de los controladores y routers de FastAPI en `app/` para inyectar estos filter params mediante `Depends(...)`, logrando deserializar directamente desde la URL.
-4. **Remoción de Legacy**: Eliminación definitiva de todos los archivos obsoletos `query_params.py` y `transaction_query_params.py` de la capa API.
+4. **Remoción de Legacy**: Eliminación definitiva de todos los archivos obsoletos `query_params.py` and `transaction_query_params.py` de la capa API.
 5. **Verificación**: Comprobación estática global y tipado exitosos mediante `ruff check` y `ty check` (todos los chequeos aprobados).
 6. **Resolución de Importación Circular**: Se detectó una dependencia circular al cargar el barrel `filter_params` debido a la importación de tipos (como `TransactionType`, `DevolutionStatus`, `InvoiceStatus`, `OrderStatus`, `PaymentMethod`) desde los modelos de repositorios. Al ser tipos `Literal` puros (alias de strings), se redefinieron localmente en cada archivo de filter_params, eliminando cualquier importación externa de la capa de repositorios y convirtiendo a `common/filter_params` en un paquete hoja sin dependencias circulares. La importación de inicio del servidor con `import app.main` funciona perfectamente ahora.
+
+## Fecha: 2026-06-06
+### Objetivo
+Explicación de flujo del endpoint `search_product_in_branch` e implementación del nuevo endpoint por lote de IDs en la sucursal.
+
+### Resumen de Revisión e Implementación
+1. **Flujo de Capas**: Se revisaron todas las capas que componen el endpoint `GET /branch/{branch_id}/search/{text_query}`.
+2. **Implementación de Consulta por lote de IDs (`GET_PRODUCTS_BY_IDS`)**:
+   - **Modelo (`product_model.py`)**: Se creó y exportó la clase request `GetProductsInBranchRequest` que encapsula `productIds: list[str]`.
+   - **Router (`products_router.py`)**: Se registró el endpoint `POST /branch/{branch_id}/by-ids` que recibe la lista de IDs en el body.
+   - **Controller (`products_controller.py`)**: Se agregó `get_products_in_branch_by_ids` que llama al repositorio y retorna los elementos mapeados en un `ListResponse`.
+   - **Repository (`products_repository.py`)**: Invoca la fuente de datos y valida cada diccionario resultante con `ProductInDbInBranch.model_validate`.
+   - **DataSource (`products_datasource.py`)**: Delega la búsqueda hacia la colección.
+   - **Collection (`products_collection.py`)**: Se implementó `fetch_products_in_branch_by_ids` ejecutando una agregación con `$match` usando `{"id": {"$in": product_ids}, "isDeleted": False}` y haciendo `$lookup` con `$unwind` de `ProductAccounts` y `ProductSaleProfiles` para la sucursal especificada.
+3. **Verificación**: Tipado y consistencia estática aprobados por `ty check`.
+
+
 
 

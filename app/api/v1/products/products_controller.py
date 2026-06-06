@@ -76,6 +76,19 @@ class ProductsController:
             count=len(products),
         )
 
+    async def get_products_in_branch_by_ids(
+        self,
+        branch_id: str,
+        product_ids: list[str],
+    ) -> ListResponse[ProductInDbInBranch]:
+        products = await self.products_repo.get_products_in_branch_by_ids(
+            branch_id, product_ids
+        )
+        return ListResponse(
+            data=products,
+            count=len(products),
+        )
+
     async def get_all_product_in_branch(
         self, query: ProductFilterParams
     ) -> ListResponse[ProductInDbInBranch]:

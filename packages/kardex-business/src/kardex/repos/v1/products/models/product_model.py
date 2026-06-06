@@ -53,3 +53,8 @@ class ProductInDbInBranch(BaseProduct):
     updatedAt: int | None = None
     account: ProductAccountInDb
     saleProfile: ProductSaleProfileInDb
+
+
+class GetProductsInBranchRequest(BaseModel):
+    productIds: list[str]
+
