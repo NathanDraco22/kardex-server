@@ -4,6 +4,7 @@ from kardex.repos.v1.products import (
     UpdateProduct,
     ProductInDb,
     ProductInDbInBranch,
+    GetProductsInBranchRequest,
 )
 
 from responses.v1 import ListResponse
@@ -50,6 +51,14 @@ async def search_product_in_branch(
     text_query: str,
 ) -> ListResponse[ProductInDbInBranch]:
     return await products_controller.search_product_in_branch(branch_id, text_query)
+
+
+@products_router.post("/branch/{branch_id}/by-ids")
+async def get_products_in_branch_by_ids(
+    branch_id: str,
+    body: GetProductsInBranchRequest,
+) -> ListResponse[ProductInDbInBranch]:
+    return await products_controller.get_products_in_branch_by_ids(branch_id, body.productIds)
 
 
 @products_router.get("/branch/{branch_id}")

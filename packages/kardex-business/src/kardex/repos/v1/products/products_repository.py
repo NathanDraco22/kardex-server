@@ -108,6 +108,15 @@ class ProductsRepository:
         models = [ProductInDbInBranch.model_validate(result) for result in results]
         return models
 
+    async def get_products_in_branch_by_ids(
+        self,
+        branch_id: str,
+        product_ids: list[str],
+    ) -> list[ProductInDbInBranch]:
+        results = await self.products_ds.get_products_in_branch_by_ids(branch_id, product_ids)
+        models = [ProductInDbInBranch.model_validate(result) for result in results]
+        return models
+
     async def get_all_product_in_branch(self, params: ProductFilterParams) -> list[ProductInDbInBranch]:
         results = await self.products_ds.get_all_product_in_branch(
             **params.model_dump(exclude_unset=True)

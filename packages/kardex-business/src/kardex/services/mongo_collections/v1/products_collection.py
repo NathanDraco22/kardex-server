@@ -212,7 +212,62 @@ class ProductsCollection(BaseMongoCollection):
 
         return result
 
+    async def fetch_products_in_branch_by_ids(
+        self,
+        branch_id: str,
+        product_ids: list[str],
+    ) -> list[dict[str, Any]]:
+        collection = self._collection
+        cursor = collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "id": {"$in": product_ids},
+                        "isDeleted": False,
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "ProductAccounts",
+                        "localField": "id",
+                        "foreignField": "productId",
+                        "as": "account",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "branchId": branch_id,
+                                }
+                            }
+                        ],
+                    }
+                },
+                {"$unwind": "$account"},
+                {
+                    "$lookup": {
+                        "from": "ProductSaleProfiles",
+                        "localField": "id",
+                        "foreignField": "productId",
+                        "as": "saleProfile",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "branchId": branch_id,
+                                }
+                            }
+                        ],
+                    }
+                },
+                {"$unwind": "$saleProfile"},
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return result
+
     async def get_all_product_in_branch(self, **kwargs) -> list[dict[str, Any]]:
+
         collection = self._collection
         branch_id = kwargs.get("branchId")
         limit = kwargs.get("limit", 50)
