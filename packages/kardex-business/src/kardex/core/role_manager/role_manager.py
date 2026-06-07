@@ -30,6 +30,18 @@ class CommercialSubModules:
 default_roles = [
     UserRole(name="Admin", access=[Modules.ALL]),
     UserRole(
+        name="Pre-Venta",
+        access=[
+            Modules.COMMERCIAL,
+            CommercialSubModules.CREATE_INVOICE,
+            CommercialSubModules.ORDERS,
+            CommercialSubModules.CREATE_ORDER,
+            CommercialSubModules.INVOICE_HISTORY,
+            CommercialSubModules.CREATE_DEVOLUTION,
+            CommercialSubModules.DEVOLUTION_HISTORY,
+        ],
+    ),
+    UserRole(
         name="Vendedor",
         access=[
             Modules.COMMERCIAL,
