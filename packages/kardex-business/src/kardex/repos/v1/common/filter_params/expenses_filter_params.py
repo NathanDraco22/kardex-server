@@ -5,6 +5,7 @@ from typing import Any
 class ExpensesFilterParams(BaseModel):
     offset: int
     limit: int = 50
+    type: str | None = None
     status: str | None = None
     startDate: int | None = None
     endDate: int | None = None
@@ -14,6 +15,7 @@ class ExpensesFilterParams(BaseModel):
     docNumber: str | None = None
     minAmount: int | None = None
     maxAmount: int | None = None
+    supplierId: str | None = None
 
     def to_query_params(self) -> dict[str, Any]:
         raw_dict = self.model_dump(exclude_none=True)

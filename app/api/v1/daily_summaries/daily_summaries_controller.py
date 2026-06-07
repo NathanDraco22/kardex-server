@@ -8,7 +8,7 @@ from kardex.repos.v1.daily_summaries import (
 
 from responses.v1 import ListResponse
 
-from .query_params import DailySummaryQueryParams
+from kardex.repos.v1.common.filter_params import DailySummaryFilterParams
 
 
 class DailySummariesController:
@@ -19,11 +19,10 @@ class DailySummariesController:
         return await self.daily_summaries_repo.create_daily_summary(body)
 
     async def get_all_daily_summaries(
-        self, query: DailySummaryQueryParams
+        self, query: DailySummaryFilterParams
     ) -> ListResponse[DailySummaryInDb]:
-        raw_query = query.model_dump(exclude_unset=True)
         daily_summaries = await self.daily_summaries_repo.get_all_daily_summaries(
-            **raw_query
+            query
         )
         return ListResponse(
             count=len(daily_summaries),

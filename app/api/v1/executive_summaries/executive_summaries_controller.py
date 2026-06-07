@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from kardex.repos.v1.common.filter_params import ExecutiveSummaryFilterParams
 from kardex.repos.v1.executive_summaries import (
     CreateExecutiveSummary,
     ExecutiveSummaryInDb,
@@ -7,8 +8,6 @@ from kardex.repos.v1.executive_summaries import (
 )
 
 from responses.v1 import ListResponse
-
-from .query_params import ExecutiveSummaryQueryParams
 
 
 class ExecutiveSummariesController:
@@ -21,11 +20,10 @@ class ExecutiveSummariesController:
         return await self.executive_summaries_repo.create_executive_summary(body)
 
     async def get_all_executive_summaries(
-        self, query: ExecutiveSummaryQueryParams
+        self, query: ExecutiveSummaryFilterParams
     ) -> ListResponse[ExecutiveSummaryInDb]:
-        raw_query = query.model_dump(exclude_unset=True)
         executive_summaries = (
-            await self.executive_summaries_repo.get_all_executive_summaries(**raw_query)
+            await self.executive_summaries_repo.get_all_executive_summaries(query)
         )
         return ListResponse(
             count=len(executive_summaries),

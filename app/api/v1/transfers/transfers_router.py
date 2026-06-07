@@ -9,7 +9,7 @@ from app_middleware import auth_middleware
 from responses.v1 import ListResponse
 
 from .transfers_controller import transfers_controller
-from .query_params import TransferQueryParams
+from kardex.repos.v1.common.filter_params import TransferFilterParams
 
 
 transfers_router = APIRouter(
@@ -24,7 +24,7 @@ async def create_transfer(body: CreateTransfer) -> TransferInDb:
 
 @transfers_router.get("")
 async def get_all_transfers(
-    query: TransferQueryParams = Depends(),
+    query: TransferFilterParams = Depends(),
 ) -> ListResponse[TransferInDb]:
     return await transfers_controller.get_all_transfers(query)
 

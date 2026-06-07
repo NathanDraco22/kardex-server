@@ -9,7 +9,7 @@ from kardex.repos.v1.product_stats import (
 
 from responses.v1 import ListResponse
 from .product_stats_controller import product_stats_controller
-from .query_params import ProductStatQueryParams, ReadProductStatQueryParams
+from kardex.repos.v1.common.filter_params import ProductStatFilterParams, ReadProductStatFilterParams
 from .bodies import CreateXlsxFileBody
 
 
@@ -18,7 +18,7 @@ product_stats_router = APIRouter(tags=["product_statsV1"])
 
 @product_stats_router.get("")
 async def get_all_product_stats(
-    query=Depends(ReadProductStatQueryParams),
+    query=Depends(ReadProductStatFilterParams),
 ) -> ListResponse[ProductStatInDb]:
     return await product_stats_controller.get_all_product_stats(query)
 
@@ -30,14 +30,14 @@ async def get_current_projection_file() -> FileResponse:
 
 @product_stats_router.get("/with-info")
 async def get_all_product_stats_with_info(
-    query=Depends(ReadProductStatQueryParams),
+    query=Depends(ReadProductStatFilterParams),
 ) -> ListResponse[ProductStatInDbWithInfo]:
     return await product_stats_controller.get_all_product_stats_with_info(query)
 
 
 @product_stats_router.get("/with-account")
 async def get_all_product_stats_with_account(
-    query=Depends(ReadProductStatQueryParams),
+    query=Depends(ReadProductStatFilterParams),
 ) -> ListResponse[ProductStatInDbWithAccount]:
     return await product_stats_controller.get_all_product_stats_with_account(query)
 
@@ -50,7 +50,7 @@ async def create_projection_xslx_file(body: CreateXlsxFileBody, res: Response) -
 
 @product_stats_router.post("/estimate")
 async def estimate_product_stats(
-    query_params: ProductStatQueryParams,
+    query_params: ProductStatFilterParams,
 ) -> dict[str, Any]:
     await product_stats_controller.estimate_product_stats(query_params)
     return {"message": "Product stats estimated"}

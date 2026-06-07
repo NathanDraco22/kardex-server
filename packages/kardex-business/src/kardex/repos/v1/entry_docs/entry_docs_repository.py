@@ -1,5 +1,6 @@
-﻿from .data.entry_docs_datasource import EntryDocsDataSource
+from .data.entry_docs_datasource import EntryDocsDataSource
 from .models.entry_doc_model import EntryDocInDb, EntryHistoryInDb
+from kardex.repos.v1.common.filter_params import EntryDocFilterParams
 
 class EntryDocsRepository:
     _instance: "EntryDocsRepository | None" = None
@@ -21,10 +22,10 @@ class EntryDocsRepository:
         return models
 
     async def get_paginated_entry_docs(
-        self, offset: int, limit: int, branch_id: str
+        self, params: EntryDocFilterParams
     ) -> list[EntryDocInDb]:
         results = await self.entry_docs_ds.get_paginated_entry_docs(
-            offset, limit, branch_id
+            params.offset, params.limit, params.branch_id
         )
         models = [EntryDocInDb.model_validate(result) for result in results]
         return models
@@ -57,8 +58,18 @@ class EntryDocsRepository:
 
         return EntryDocInDb.model_validate(result)
 
-    async def get_entry_history(self, **kwargs) -> list[EntryHistoryInDb]:
-        results = await self.entry_docs_ds.get_entry_history(**kwargs)
+    async def get_entry_history(
+        self, params: EntryDocFilterParams
+    ) -> list[EntryHistoryInDb]:
+        mapped_kwargs = {
+            "branch_id": params.branch_id,
+            "supplier_id": params.supplierId,
+            "offset": params.offset,
+            "limit": params.limit,
+            "start_date": params.startDate,
+            "end_date": params.endDate,
+        }
+        results = await self.entry_docs_ds.get_entry_history(**mapped_kwargs)
         return [EntryHistoryInDb.model_validate(result) for result in results]
 
     async def get_entry_history_by_id_with_supplier(

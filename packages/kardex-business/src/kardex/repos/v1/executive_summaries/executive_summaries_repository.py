@@ -1,4 +1,5 @@
-﻿from .data.executive_summaries_datasource import ExecutiveSummariesDataSource
+from kardex.repos.v1.common.filter_params import ExecutiveSummaryFilterParams
+from .data.executive_summaries_datasource import ExecutiveSummariesDataSource
 from .models.executive_summary_model import (
     CreateExecutiveSummary,
     ExecutiveSummaryInDb,
@@ -36,9 +37,9 @@ class ExecutiveSummariesRepository:
 
         return new_executive_summary
 
-    async def get_all_executive_summaries(self, **kwargs) -> list[ExecutiveSummaryInDb]:
+    async def get_all_executive_summaries(self, params: ExecutiveSummaryFilterParams) -> list[ExecutiveSummaryInDb]:
         results = await self.executive_summaries_ds.get_all_executive_summaries(
-            **kwargs
+            **params.model_dump(exclude_unset=True)
         )
         models = [ExecutiveSummaryInDb.model_validate(result) for result in results]
         return models

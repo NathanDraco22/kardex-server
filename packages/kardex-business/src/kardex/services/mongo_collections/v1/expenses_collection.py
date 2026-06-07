@@ -57,6 +57,19 @@ class ExpensesCollection(BaseMongoCollection):
 
         return result
 
+    async def update_expenses_category(
+        self, old_category: str, new_category: str, session: Any
+    ):
+        collection = self._collection
+
+        await collection.update_many(
+            {
+                "category": old_category,
+            },
+            {"$set": {"category": new_category}},
+            session=session,
+        )
+
     async def delete_expense_by_id(self, expense_id: str) -> dict[str, Any] | None:
         collection = self._collection
         result = await collection.find_one_and_update(
@@ -108,6 +121,57 @@ class ExpensesCollection(BaseMongoCollection):
 
         return result
 
+    async def get_expenses_summary_in_range(
+        self, start_date: int, end_date: int
+    ) -> dict[str, Any]:
+        collection = self._collection
+
+        query = {
+            "isDeleted": False,
+            "isActive": True,
+            "createdAt": {"$gte": start_date, "$lte": end_date},
+        }
+
+        pipeline = [
+            {"$match": query},
+            {
+                "$group": {
+                    "_id": "$branchId",
+                    "expensesTotal": {"$sum": "$amount"},
+                    "expensesPaid": {
+                        "$sum": {
+                            "$cond": [{"$eq": ["$status", "paid"]}, "$amount", 0]
+                        }
+                    },
+                }
+            },
+        ]
+
+        cursor = collection.aggregate(pipeline)
+        results = await cursor.to_list(length=None)
+        await cursor.close()
+
+        branches_map = {}
+        global_total = 0
+        global_paid = 0
+
+        for row in results:
+            b_id = row["_id"]
+            total = row.get("expensesTotal", 0)
+            paid = row.get("expensesPaid", 0)
+            branches_map[b_id] = {
+                "expensesTotal": total,
+                "expensesPaid": paid,
+            }
+            global_total += total
+            global_paid += paid
+
+        return {
+            "branches": branches_map,
+            "expensesTotal": global_total,
+            "expensesPaid": global_paid,
+        }
+
     async def create_indexes(self):
 
         collection = self._collection
@@ -118,5 +182,6 @@ class ExpensesCollection(BaseMongoCollection):
                 IndexModel([("branchId", 1)]),
                 IndexModel([("dateId", 1)]),
                 IndexModel([("createdAt", -1)]),
+                IndexModel([("type", 1), ("createdAt", -1)]),
             ]
         )

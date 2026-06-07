@@ -9,7 +9,7 @@ from app_middleware import auth_middleware
 from responses.v1 import ListResponse
 
 from .expiration_logs_controller import expiration_logs_controller
-from .query_params import ExpirationLogQueryParams
+from kardex.repos.v1.common.filter_params import ExpirationLogFilterParams
 
 
 expiration_logs_router = APIRouter(
@@ -24,7 +24,7 @@ async def create_expiration_log(body: CreateExpirationLog) -> ExpirationLogInDb:
 
 @expiration_logs_router.get("")
 async def get_all_expiration_logs(
-    params: ExpirationLogQueryParams = Depends(),
+    params: ExpirationLogFilterParams = Depends(),
 ) -> ListResponse[ExpirationLogInDb]:
     return await expiration_logs_controller.get_all_expiration_logs(params)
 

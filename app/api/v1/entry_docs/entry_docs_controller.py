@@ -2,6 +2,7 @@ from fastapi import HTTPException, status, BackgroundTasks
 
 from responses.v1.list_response import ListResponse
 from kardex.core.product_ledger.product_ledger_manager import ProductLedgerManager
+from kardex.repos.v1.common.filter_params import EntryDocFilterParams
 from kardex.repos.v1.expiration_logs import (
     ExpirationLogsRepository,
     ExpirationLogsDataSource,
@@ -66,11 +67,9 @@ class EntryDocsController:
         return entry_docs
 
     async def get_paginated_entry_docs(
-        self, offset: int, limit: int, branch_id: str
+        self, params: EntryDocFilterParams
     ) -> ListResponse[EntryDocInDb]:
-        entry_docs = await self.entry_docs_repo.get_paginated_entry_docs(
-            offset, limit, branch_id
-        )
+        entry_docs = await self.entry_docs_repo.get_paginated_entry_docs(params)
         return ListResponse(
             count=len(entry_docs),
             data=entry_docs,
@@ -85,16 +84,10 @@ class EntryDocsController:
             )
         return entry_doc
 
-    async def get_entry_history(self, **kwargs) -> ListResponse[EntryHistoryInDb]:
-        mapped_kwargs = {
-            "branch_id": kwargs.get("branch_id"),
-            "supplier_id": kwargs.get("supplierId"),
-            "offset": kwargs.get("offset"),
-            "limit": kwargs.get("limit"),
-            "start_date": kwargs.get("startDate"),
-            "end_date": kwargs.get("endDate"),
-        }
-        entry_histories = await self.entry_docs_repo.get_entry_history(**mapped_kwargs)
+    async def get_entry_history(
+        self, params: EntryDocFilterParams
+    ) -> ListResponse[EntryHistoryInDb]:
+        entry_histories = await self.entry_docs_repo.get_entry_history(params)
         return ListResponse(count=len(entry_histories), data=entry_histories)
 
     async def get_history_by_id_with_supplier(

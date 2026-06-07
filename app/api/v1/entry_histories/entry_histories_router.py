@@ -5,7 +5,7 @@ from responses.v1 import ListResponse
 from app_middleware import auth_middleware
 
 from .entry_histories_controller import entry_histories_controller
-from .query_params import EntryHistoryQueryParams
+from kardex.repos.v1.common.filter_params import EntryHistoryFilterParams
 
 entry_histories_router = APIRouter(
     tags=["entry_historiesV1"], dependencies=[Depends(auth_middleware)]
@@ -14,7 +14,7 @@ entry_histories_router = APIRouter(
 
 @entry_histories_router.get("")
 async def get_entry_histories(
-    query_params: EntryHistoryQueryParams = Depends(),
+    query_params: EntryHistoryFilterParams = Depends(),
 ) -> ListResponse[EntryHistoryInDb]:
     return await entry_histories_controller.get_entry_history(query_params)
 

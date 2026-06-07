@@ -16,6 +16,7 @@ from .kardex_exceptions import (
     ReceiptAlreadyDeleted,
     SameBranchTransferError,
     InvalidOperation,
+    DirectStockAdjustmentBlocked,
 )
 
 
@@ -37,4 +38,5 @@ __all__ = [
     "ReceiptAlreadyDeleted",
     "SameBranchTransferError",
     "InvalidOperation",
+    "DirectStockAdjustmentBlocked",
 ]

@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 
 from responses.v1 import ListResponse
 
-from .query_params import ProductQueryParams
+from kardex.repos.v1.common.filter_params import ProductFilterParams
 from kardex.repos.v1.products import (
     CreateProduct,
     UpdateProduct,
@@ -76,11 +76,23 @@ class ProductsController:
             count=len(products),
         )
 
-    async def get_all_product_in_branch(
-        self, query: ProductQueryParams
+    async def get_products_in_branch_by_ids(
+        self,
+        branch_id: str,
+        product_ids: list[str],
     ) -> ListResponse[ProductInDbInBranch]:
-        kwargs = query.model_dump(exclude_none=True)
-        products = await self.products_repo.get_all_product_in_branch(**kwargs)
+        products = await self.products_repo.get_products_in_branch_by_ids(
+            branch_id, product_ids
+        )
+        return ListResponse(
+            data=products,
+            count=len(products),
+        )
+
+    async def get_all_product_in_branch(
+        self, query: ProductFilterParams
+    ) -> ListResponse[ProductInDbInBranch]:
+        products = await self.products_repo.get_all_product_in_branch(query)
         return ListResponse(
             data=products,
             count=len(products),

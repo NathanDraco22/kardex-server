@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class BaseSupplier(BaseModel):
     name: str
+    creditDays: int = 0
     cardId: str | None = None
     email: str | None = None
     phone: str | None = None
@@ -15,6 +16,7 @@ class CreateSupplier(BaseSupplier):
 
 class UpdateSupplier(BaseModel):
     name: str | None = None
+    creditDays: int | None = None
     cardId: str | None = None
     email: str | None = None
     phone: str | None = None

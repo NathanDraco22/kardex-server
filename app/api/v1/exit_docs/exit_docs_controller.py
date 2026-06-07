@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from responses.v1.list_response import ListResponse
 from kardex.core.product_ledger.product_ledger_manager import ProductLedgerManager
+from kardex.repos.v1.common.filter_params import ExitDocFilterParams
 from kardex.repos.v1.exit_docs import (
     CreateExitDoc,
     ExitDocInDb,
@@ -28,11 +29,9 @@ class ExitDocsController:
         return exit_docs
 
     async def get_paginated_exit_docs(
-        self, offset: int, page_size: int, branch_id: str
+        self, params: ExitDocFilterParams
     ) -> ListResponse[ExitDocInDb]:
-        exit_docs = await self.exit_docs_repo.get_paginated_exit_docs(
-            offset, page_size, branch_id
-        )
+        exit_docs = await self.exit_docs_repo.get_paginated_exit_docs(params)
         return ListResponse(count=len(exit_docs), data=exit_docs)
 
     async def get_exit_doc_by_id(self, exit_doc_id: str) -> ExitDocInDb:
@@ -44,16 +43,10 @@ class ExitDocsController:
             )
         return exit_doc
 
-    async def get_exit_history(self, **kwargs) -> ListResponse[ExitHistoryInDb]:
-        mapped_kwargs = {
-            "branch_id": kwargs.get("branch_id"),
-            "client_id": kwargs.get("clientId"),
-            "offset": kwargs.get("offset"),
-            "limit": kwargs.get("limit"),
-            "start_date": kwargs.get("startDate"),
-            "end_date": kwargs.get("endDate"),
-        }
-        exit_histories = await self.exit_docs_repo.get_exit_history(**mapped_kwargs)
+    async def get_exit_history(
+        self, params: ExitDocFilterParams
+    ) -> ListResponse[ExitHistoryInDb]:
+        exit_histories = await self.exit_docs_repo.get_exit_history(params)
         return ListResponse(count=len(exit_histories), data=exit_histories)
 
     async def get_history_by_id_with_client(self, exit_doc_id: str) -> ExitHistoryInDb:

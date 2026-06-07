@@ -1,4 +1,4 @@
-﻿from typing import AsyncIterable
+from typing import AsyncIterable
 from .data.products_datasource import ProductsDataSource
 from .models.product_model import (
     CreateProduct,
@@ -9,6 +9,12 @@ from .models.product_model import (
 )
 from kardex.core.counter_manager.counter_manager import CounterManager
 from kardex.tools import UuidTool, TimeTools, generate_prefixes
+from kardex.kardex_config import KardexConfig
+from kardex.lite.core.product_register.process_create_product import process_create_product
+
+
+from kardex.repos.v1.common.filter_params import ProductFilterParams
+
 
 class ProductsRepository:
     _instance: "ProductsRepository | None" = None
@@ -25,6 +31,9 @@ class ProductsRepository:
         return cls._instance
 
     async def create_product(self, create_product: CreateProduct) -> ProductInDb:
+        if KardexConfig().createFullProductProfile:
+            return await process_create_product(create_product)
+
         if not create_product.code:
             create_product.code = await CounterManager().next_product_number()
 
@@ -99,16 +108,27 @@ class ProductsRepository:
         models = [ProductInDbInBranch.model_validate(result) for result in results]
         return models
 
-    async def get_all_product_in_branch(self, **kwargs) -> list[ProductInDbInBranch]:
-        results = await self.products_ds.get_all_product_in_branch(**kwargs)
+    async def get_products_in_branch_by_ids(
+        self,
+        branch_id: str,
+        product_ids: list[str],
+    ) -> list[ProductInDbInBranch]:
+        results = await self.products_ds.get_products_in_branch_by_ids(branch_id, product_ids)
+        models = [ProductInDbInBranch.model_validate(result) for result in results]
+        return models
+
+    async def get_all_product_in_branch(self, params: ProductFilterParams) -> list[ProductInDbInBranch]:
+        results = await self.products_ds.get_all_product_in_branch(
+            **params.model_dump(exclude_unset=True)
+        )
         models = [ProductInDbInBranch.model_validate(result) for result in results]
         return models
 
     async def get_all_product_in_branch_streamed(
-        self, **kwargs
+        self, params: ProductFilterParams
     ) -> AsyncIterable[ProductInDbInBranch]:
         async for result in await self.products_ds.get_all_product_in_branch_streamed(
-            **kwargs
+            **params.model_dump(exclude_unset=True)
         ):
             yield ProductInDbInBranch.model_validate(result)
 

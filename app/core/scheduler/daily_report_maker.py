@@ -199,6 +199,23 @@ class WeeklyReportMaker:
             for branch, total in inventory_result.results
         ]
 
+        expenses_summary = await self.report_maker.get_expenses_summary_in_range(
+            previous_week_timestamp, current_timestamp
+        )
+
+        updated_branches = []
+        for branch_detail in weekly_summary.branches:
+            branch_expenses = expenses_summary.get("branches", {}).get(
+                branch_detail.branchId, {"expensesTotal": 0, "expensesPaid": 0}
+            )
+            updated_branches.append(
+                CommercialBranchDetail(
+                    **branch_detail.model_dump(exclude={"expensesTotal", "expensesPaid"}),
+                    expensesTotal=branch_expenses["expensesTotal"],
+                    expensesPaid=branch_expenses["expensesPaid"],
+                )
+            )
+
         create_weekly_summary = CreateExecutiveSummary(
             dateId=current_time.strftime("%Y-%m-%d"),
             type="weekly",
@@ -217,9 +234,11 @@ class WeeklyReportMaker:
             totalReceiptDevolutions=weekly_summary.totalReceiptDevolutions,
             totalReceipts=weekly_summary.totalReceipts,
             receiptCount=weekly_summary.receiptCount,
-            commercialBranches=weekly_summary.branches,
+            commercialBranches=updated_branches,
             inventoryTotalCost=inventory_result.total,
             inventoryBranches=inventory_branches,
+            expensesTotal=expenses_summary.get("expensesTotal", 0),
+            expensesPaid=expenses_summary.get("expensesPaid", 0),
         )
 
         res = await self.executive_summaries_repo.create_executive_summary(
@@ -315,6 +334,23 @@ class MonthlyReportMaker:
         for pending_total in pending_totals:
             total_pending_invoice += pending_total.totalOwed
 
+        expenses_summary = await self.report_maker.get_expenses_summary_in_range(
+            start_timestamp, end_timestamp
+        )
+
+        updated_branches = []
+        for branch_detail in monthly_summary.branches:
+            branch_expenses = expenses_summary.get("branches", {}).get(
+                branch_detail.branchId, {"expensesTotal": 0, "expensesPaid": 0}
+            )
+            updated_branches.append(
+                CommercialBranchDetail(
+                    **branch_detail.model_dump(exclude={"expensesTotal", "expensesPaid"}),
+                    expensesTotal=branch_expenses["expensesTotal"],
+                    expensesPaid=branch_expenses["expensesPaid"],
+                )
+            )
+
         create_monthly_summary = CreateExecutiveSummary(
             dateId=date_id,
             type="monthly",
@@ -333,9 +369,11 @@ class MonthlyReportMaker:
             totalReceiptDevolutions=monthly_summary.totalReceiptDevolutions,
             totalReceipts=monthly_summary.totalReceipts,
             receiptCount=monthly_summary.receiptCount,
-            commercialBranches=monthly_summary.branches,
+            commercialBranches=updated_branches,
             inventoryTotalCost=inventory_result.total,
             inventoryBranches=inventory_branches,
+            expensesTotal=expenses_summary.get("expensesTotal", 0),
+            expensesPaid=expenses_summary.get("expensesPaid", 0),
         )
 
         res = await self.executive_summaries_repo.create_executive_summary(
@@ -423,6 +461,23 @@ class YearlyReportMaker:
         for pending_total in pending_totals:
             total_pending_invoice += pending_total.totalOwed
 
+        expenses_summary = await self.report_maker.get_expenses_summary_in_range(
+            start_timestamp, end_timestamp
+        )
+
+        updated_branches = []
+        for branch_detail in yearly_summary.branches:
+            branch_expenses = expenses_summary.get("branches", {}).get(
+                branch_detail.branchId, {"expensesTotal": 0, "expensesPaid": 0}
+            )
+            updated_branches.append(
+                CommercialBranchDetail(
+                    **branch_detail.model_dump(exclude={"expensesTotal", "expensesPaid"}),
+                    expensesTotal=branch_expenses["expensesTotal"],
+                    expensesPaid=branch_expenses["expensesPaid"],
+                )
+            )
+
         create_yearly_summary = CreateExecutiveSummary(
             dateId=date_id,
             type="yearly",
@@ -441,9 +496,11 @@ class YearlyReportMaker:
             totalReceiptDevolutions=yearly_summary.totalReceiptDevolutions,
             totalReceipts=yearly_summary.totalReceipts,
             receiptCount=yearly_summary.receiptCount,
-            commercialBranches=yearly_summary.branches,
+            commercialBranches=updated_branches,
             inventoryTotalCost=inventory_result.total,
             inventoryBranches=inventory_branches,
+            expensesTotal=expenses_summary.get("expensesTotal", 0),
+            expensesPaid=expenses_summary.get("expensesPaid", 0),
         )
 
         await self.executive_summaries_repo.create_executive_summary(

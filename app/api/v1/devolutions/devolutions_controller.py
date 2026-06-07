@@ -15,7 +15,7 @@ from kardex.repos.v1.devolutions import (
 
 from responses.v1 import ListResponse
 
-from .devolution_query_param import DevolutionQueryParams
+from kardex.repos.v1.common.filter_params import DevolutionFilterParams
 
 
 class DevolutionsController:
@@ -32,19 +32,15 @@ class DevolutionsController:
         return await self.devolutions_repo.create_devolution(body)
 
     async def get_all_devolutions(
-        self, params: DevolutionQueryParams
+        self, params: DevolutionFilterParams
     ) -> ListResponse[DevolutionInDb]:
-        devolutions = await self.devolutions_repo.get_all_devolutions(
-            **params.model_dump()
-        )
+        devolutions = await self.devolutions_repo.get_all_devolutions(params)
         return ListResponse(count=len(devolutions), data=devolutions)
 
     async def get_all_active_devolutions(
-        self, params: DevolutionQueryParams
+        self, params: DevolutionFilterParams
     ) -> ListResponse[DevolutionInDb]:
-        devolutions = await self.devolutions_repo.get_all_active_devolutions(
-            **params.model_dump()
-        )
+        devolutions = await self.devolutions_repo.get_all_active_devolutions(params)
         return ListResponse(count=len(devolutions), data=devolutions)
 
     async def get_devolution_by_id(self, devolution_id: str) -> DevolutionInDb:

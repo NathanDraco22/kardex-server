@@ -14,6 +14,7 @@ from .entry_docs_collection import EntryDocsCollection
 from .executive_summaries_collection import ExecutiveSummariesCollection
 from .exit_docs_collection import ExitDocsCollection
 from .expiration_logs_collection import ExpirationLogsCollection
+from .expense_categories_collection import ExpenseCategoriesCollection
 from .expenses_collection import ExpensesCollection
 from .integrations_collection import IntegrationsCollection
 from .invoices_collection import InvoicesCollection
@@ -50,6 +51,7 @@ __all__ = [
     "ExecutiveSummariesCollection",
     "ExitDocsCollection",
     "ExpirationLogsCollection",
+    "ExpenseCategoriesCollection",
     "ExpensesCollection",
     "IntegrationsCollection",
     "InvoicesCollection",

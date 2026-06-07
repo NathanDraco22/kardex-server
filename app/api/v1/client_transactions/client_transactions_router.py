@@ -6,7 +6,7 @@ from responses.v1 import ListResponse
 from app_middleware import auth_middleware
 
 from .client_transactions_controller import client_transactions_controller
-from .query_params import ClientTransactionQueryParams
+from kardex.repos.v1.common.filter_params import ClientTransactionFilterParams
 
 client_transactions_router = APIRouter(
     tags=["client_transactionsV1"], dependencies=[Depends(auth_middleware)]
@@ -15,7 +15,7 @@ client_transactions_router = APIRouter(
 
 @client_transactions_router.get("")
 async def get_all_client_transactions(
-    params: ClientTransactionQueryParams = Depends(),
+    params: ClientTransactionFilterParams = Depends(),
 ) -> ListResponse[ClientTransactionInDb]:
     return await client_transactions_controller.get_all_client_transactions(params)
 

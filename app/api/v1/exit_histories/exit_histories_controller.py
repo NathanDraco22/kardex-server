@@ -3,12 +3,11 @@ from kardex.repos.v1.exit_histories import (
     ExitHistoryInDb,
     ExitHistoriesRepository,
     ExitHistoriesDataSource,
-    GetExitHistoryParams,
 )
 
 from responses.v1 import ListResponse
 
-from .query_params import ExitHistoryQueryParams
+from kardex.repos.v1.common.filter_params import ExitHistoryFilterParams
 
 
 class ExitHistoriesController:
@@ -16,18 +15,9 @@ class ExitHistoriesController:
         self.exit_histories_repo = exit_histories_repo
 
     async def get_exit_history(
-        self, params: ExitHistoryQueryParams
+        self, params: ExitHistoryFilterParams
     ) -> ListResponse[ExitHistoryInDb]:
-        domain_params = GetExitHistoryParams(
-            branch_id=params.branchId,
-            client_id=params.clientId,
-            offset=params.offset,
-            limit=params.limit,
-            start_date=params.startDate,
-            end_date=params.endDate,
-        )
-
-        exit_histories = await self.exit_histories_repo.get_exit_history(domain_params)
+        exit_histories = await self.exit_histories_repo.get_exit_history(params)
         return ListResponse(count=len(exit_histories), data=exit_histories)
 
     async def get_exit_doc_history_by_id_with_client(

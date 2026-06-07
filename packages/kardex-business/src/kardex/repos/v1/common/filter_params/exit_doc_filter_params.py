@@ -1,7 +1,6 @@
-from params import PaginationParams
+from .base_filter_params import BaseFilterParams
 
-
-class ExitDocQueryParams(PaginationParams):
+class ExitDocFilterParams(BaseFilterParams):
     branch_id: str
     clientId: str | None = None
     startDate: int | None = None

@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 from pydantic import BaseModel
 
 from kardex.repos.v1.invoices import (
@@ -8,12 +9,14 @@ from kardex.repos.v1.invoices import (
     BranchPortfolioSummary,
     PendingInvoiceTotalsByBranch,
 )
+from kardex.repos.v1.common.filter_params import InvoiceFilterParams
 from kardex.repos.v1.receipts import ReceiptsRepository, ReceiptsDataSource
 from kardex.repos.v1.receipts.models.branch_receipt_amount_total import (
     BranchAppliedReceiptsAmountsSummary,
 )
 from kardex.repos.v1.branches import BranchesRepository, BranchesDataSource, BranchInDb
 from kardex.repos.v1.inventories import InventoriesRepository, InventoriesDataSource
+from kardex.repos.v1.expenses import ExpensesRepository, ExpensesDataSource
 
 
 class DailyInvoiceReportResult(BaseModel):
@@ -50,6 +53,7 @@ class ReportManager:
         self.branches_repo = BranchesRepository(BranchesDataSource())
         self.inventories_repo = InventoriesRepository(InventoriesDataSource())
         self.receipts_repo = ReceiptsRepository(ReceiptsDataSource())
+        self.expenses_repo = ExpensesRepository(ExpensesDataSource())
 
     async def get_total_invoices_by_date_range(
         self, start_date: int, end_date: int
@@ -60,7 +64,7 @@ class ReportManager:
 
         for branch in all_branches:
             coro = self.invoices_repo.get_totals_from_invoices(
-                startDate=start_date, endDate=end_date, branchId=branch.id
+                InvoiceFilterParams(startDate=start_date, endDate=end_date, branchId=branch.id)
             )
             coros.append(coro)
 
@@ -216,3 +220,8 @@ class ReportManager:
                     )
                 )
         return paired_results
+
+    async def get_expenses_summary_in_range(
+        self, start_date: int, end_date: int
+    ) -> dict[str, Any]:
+        return await self.expenses_repo.get_expenses_summary_in_range(start_date, end_date)

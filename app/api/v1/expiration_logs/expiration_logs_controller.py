@@ -10,7 +10,7 @@ from kardex.repos.v1.expiration_logs import (
 from responses.v1 import ListResponse
 from kardex.tools import TimeTools
 
-from .query_params import ExpirationLogQueryParams
+from kardex.repos.v1.common.filter_params import ExpirationLogFilterParams
 
 
 class ExpirationLogsController:
@@ -23,10 +23,10 @@ class ExpirationLogsController:
         return await self.expiration_logs_repo.create_expiration_log(body)
 
     async def get_all_expiration_logs(
-        self, params: ExpirationLogQueryParams
+        self, params: ExpirationLogFilterParams
     ) -> ListResponse[ExpirationLogInDb]:
         expiration_logs = await self.expiration_logs_repo.get_all_expiration_logs(
-            **params.model_dump()
+            params
         )
         return ListResponse(
             count=len(expiration_logs),

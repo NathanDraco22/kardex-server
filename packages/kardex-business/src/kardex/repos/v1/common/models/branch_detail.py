@@ -14,6 +14,8 @@ class CommercialBranchDetail(BaseModel):
     totalReceiptDevolutions: int = 0
     totalReceipts: int = 0
     receiptCount: int = 0
+    expensesTotal: int = 0
+    expensesPaid: int = 0
 
     def __add__(self, other: "CommercialBranchDetail") -> "CommercialBranchDetail":
         if self.branchId != other.branchId:
@@ -33,6 +35,8 @@ class CommercialBranchDetail(BaseModel):
             + other.totalReceiptDevolutions,
             totalReceipts=self.totalReceipts + other.totalReceipts,
             receiptCount=self.receiptCount + other.receiptCount,
+            expensesTotal=self.expensesTotal + other.expensesTotal,
+            expensesPaid=self.expensesPaid + other.expensesPaid,
         )
 
 

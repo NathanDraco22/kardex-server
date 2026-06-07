@@ -1,6 +1,7 @@
-﻿from kardex.tools import TimeTools, UuidTool
+from kardex.tools import TimeTools, UuidTool
 from kardex.core.counter_manager.counter_manager import CounterManager
 from kardex.repos.v1.common.models.history_params import HistoryClientParams
+from kardex.repos.v1.common.filter_params import DevolutionFilterParams
 
 from .data.devolutions_datasource import DevolutionsDataSource
 from .models.devolution_model import CreateDevolution, UpdateDevolution, DevolutionInDb
@@ -36,13 +37,21 @@ class DevolutionsRepository:
 
         return new_devolution
 
-    async def get_all_devolutions(self, **kwargs) -> list[DevolutionInDb]:
-        results = await self.devolutions_ds.get_all_devolutions(**kwargs)
+    async def get_all_devolutions(
+        self, params: DevolutionFilterParams
+    ) -> list[DevolutionInDb]:
+        results = await self.devolutions_ds.get_all_devolutions(
+            **params.model_dump(exclude_unset=True)
+        )
         models = [DevolutionInDb.model_validate(result) for result in results]
         return models
 
-    async def get_all_active_devolutions(self, **kwargs) -> list[DevolutionInDb]:
-        results = await self.devolutions_ds.get_all_active_devolutions(**kwargs)
+    async def get_all_active_devolutions(
+        self, params: DevolutionFilterParams
+    ) -> list[DevolutionInDb]:
+        results = await self.devolutions_ds.get_all_active_devolutions(
+            **params.model_dump(exclude_unset=True)
+        )
         models = [DevolutionInDb.model_validate(result) for result in results]
         return models
 

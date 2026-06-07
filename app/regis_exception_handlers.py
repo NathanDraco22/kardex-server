@@ -12,6 +12,7 @@ from kardex.tools.kardex_exceptions import (
     ReceiptAlreadyDeleted,
     SameBranchTransferError,
     InvalidOperation,
+    DirectStockAdjustmentBlocked,
 )
 
 
@@ -56,6 +57,13 @@ async def handle_bad_request(request: Request, exc: Exception):
     )
 
 
+async def handle_forbidden(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={"detail": str(exc)},
+    )
+
+
 _exception_handlers = {
     NotModified: not_modified_handler,
     InsufficientBalanceError: handle_insufficient_balance,
@@ -67,6 +75,7 @@ _exception_handlers = {
     ReceiptAlreadyDeleted: handle_bad_request,
     SameBranchTransferError: handle_bad_request,
     InvalidOperation: handle_bad_request,
+    DirectStockAdjustmentBlocked: handle_forbidden,
 }
 
 

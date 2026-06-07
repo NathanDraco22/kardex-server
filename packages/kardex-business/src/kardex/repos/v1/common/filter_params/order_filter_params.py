@@ -1,7 +1,9 @@
+from typing import Literal
 from pydantic import BaseModel
-from kardex.repos.v1.orders.models.order_model import OrderStatus
 
-class OrderQueryParams(BaseModel):
+OrderStatus = Literal["draft", "open", "completed", "cancelled"]
+
+class OrderFilterParams(BaseModel):
     skip: int = 0
     limit: int = 50
     status: OrderStatus | None = None

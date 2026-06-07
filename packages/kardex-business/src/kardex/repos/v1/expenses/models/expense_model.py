@@ -4,8 +4,11 @@ from kardex.repos.v1.common.models import UserInfo
 
 ExpensesStatus = Literal["draft", "open", "paid", "partiallyPaid", "cancelled"]
 
+ExpenseType = Literal["operative", "supplier", "tax"]
+
 
 class BaseExpense(BaseModel):
+    type: ExpenseType
     branchId: str
     docNumber: str = ""
     amount: int
@@ -14,6 +17,8 @@ class BaseExpense(BaseModel):
     date: int
     dateId: str
     amountPaid: int = 0
+    supplierId: str = ""
+    supplierName: str | None = None
     status: ExpensesStatus
     isActive: bool = True
     expirationDate: int | None = None
@@ -21,20 +26,21 @@ class BaseExpense(BaseModel):
     paidAt: int | None = None
 
 
-
 class CreateExpense(BaseExpense):
     pass
 
 
 class UpdateExpense(BaseModel):
+    type: ExpenseType | None = None
+    supplierId: str | None = None
     amount: int | None = None
     amountPaid: int | None = None
     category: str | None = None
     description: str | None = None
     date: int | None = None
     dateId: str | None = None
+    status: ExpensesStatus | None = None
     isActive: bool | None = None
-
 
 
 class ExpenseInDb(BaseExpense):
@@ -47,4 +53,3 @@ class ExpenseInDb(BaseExpense):
 class AddToAmountRequest(BaseModel):
     expenseId: str
     amountPaid: int
-

@@ -1,6 +1,10 @@
+import os
 from kardex.services_initializer import init_business_services
 from services import ProductClassifierService
 from kardex.core.default_values.create_default_roles import create_default_roles
+from kardex.core.default_values.create_default_expense_categories import (
+    create_default_expense_categories,
+)
 from kardex.core.default_values.defult_etags import set_default_etags
 from kardex.core.default_values.create_default_integration import (
     create_default_integration,
@@ -13,9 +17,13 @@ from kardex.tools.users_tool import UsersTool
 async def init_services() -> None:
     await init_business_services()
     await create_default_roles()
+    await create_default_expense_categories()
     await set_default_etags()
     await create_default_integration()
     await create_root_user()
     await BranchesTool().refresh_current_branches()
     await UsersTool().refresh_inactive_users()
-    ProductClassifierService()
+
+    lite_mode = os.getenv("LITE_MODE", "false").lower() == "true"
+    if not lite_mode:
+        ProductClassifierService()

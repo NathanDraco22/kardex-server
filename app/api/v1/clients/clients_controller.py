@@ -10,7 +10,7 @@ from kardex.repos.v1.clients import (
 )
 from kardex.core.client.process_create_client import InitialBalanceClient
 
-from .query_params import ClientQueryParams
+from kardex.repos.v1.common.filter_params import ClientFilterParams
 from .bodies import CreateMultipleInitialBalance
 
 
@@ -88,22 +88,18 @@ class ClientsController:
         return ListResponse(count=len(res), data=res)
 
     async def get_all_clients(
-        self, params: ClientQueryParams
+        self, params: ClientFilterParams
     ) -> ListResponse[ClientInDb]:
-        clients = await self.clients_repo.get_all_clients(
-            **params.model_dump(exclude_none=True)
-        )
+        clients = await self.clients_repo.get_all_clients(params)
         return ListResponse(
             data=clients,
             count=len(clients),
         )
 
     async def get_all_clients_with_balance(
-        self, params: ClientQueryParams
+        self, params: ClientFilterParams
     ) -> ListResponse[ClientInDb]:
-        clients = await self.clients_repo.get_all_clients_with_balance(
-            **params.model_dump(exclude_none=True)
-        )
+        clients = await self.clients_repo.get_all_clients_with_balance(params)
         return ListResponse(
             data=clients,
             count=len(clients),

@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status, BackgroundTasks
-from api.common.query_params import AdjustQueryParams
+from kardex.repos.v1.common.filter_params import AdjustFilterParams
 from responses.v1.list_response import ListResponse
 from kardex.core.adjust_ledger.adjust_ledger import AdjustLedgerManager
 from core.app_notifier.app_notifier import AppNotifier
@@ -38,11 +38,10 @@ class AdjustEntriesController:
         return res
 
     async def get_all_adjust_entries(
-        self, query: AdjustQueryParams
+        self, query: AdjustFilterParams
     ) -> ListResponse[AdjustEntryInDb]:
-        raw_query = query.model_dump(exclude_none=True)
         adjust_entries = await self.adjust_entries_repo.get_all_adjust_entries(
-            **raw_query
+            query
         )
         return ListResponse(count=len(adjust_entries), data=adjust_entries)
 

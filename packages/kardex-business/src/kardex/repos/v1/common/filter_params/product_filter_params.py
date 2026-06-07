@@ -1,8 +1,9 @@
-from kardex.repos.v1.receipts.models.receipt_model import PaymentMethod
-from params import PaginationParams
+from typing import Literal
+from .base_filter_params import BaseFilterParams
 
+PaymentMethod = Literal["cash", "transfer", "card", "check", "other"]
 
-class ProductQueryParams(PaginationParams):
+class ProductFilterParams(BaseFilterParams):
     branchId: str | None = None
     startDate: int | None = None
     endDate: int | None = None
