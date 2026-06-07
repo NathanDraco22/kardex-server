@@ -1,3 +1,4 @@
+from typing import Any
 from kardex.tools import TimeTools, UuidTool
 from kardex.core.counter_manager.counter_manager import CounterManager
 from kardex.repos.v1.common.filter_params import ExpensesFilterParams
@@ -75,4 +76,7 @@ class ExpensesRepository:
         if result is None:
             return None
         return ExpenseInDb.model_validate(result)
+
+    async def get_expenses_summary_in_range(self, start_date: int, end_date: int) -> dict[str, Any]:
+        return await self.expenses_ds.get_expenses_summary_in_range(start_date, end_date)
 

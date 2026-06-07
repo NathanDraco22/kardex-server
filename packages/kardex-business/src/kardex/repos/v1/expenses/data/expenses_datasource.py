@@ -35,3 +35,7 @@ class ExpensesDataSource:
         collection = ExpensesCollection.get_instance()
         return await collection.add_to_amount_paid(expense_id, amount_paid)
 
+    async def get_expenses_summary_in_range(self, start_date: int, end_date: int) -> dict[str, Any]:
+        collection = ExpensesCollection.get_instance()
+        return await collection.get_expenses_summary_in_range(start_date, end_date)
+

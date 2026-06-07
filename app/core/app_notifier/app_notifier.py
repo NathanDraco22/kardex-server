@@ -141,6 +141,7 @@ Resultados para {formatted_datetime}
 
         utility = executive_summary.salesTotal - executive_summary.salesTotalCost
         ingreso_caja = executive_summary.cashSales + executive_summary.totalReceiptCash
+        expenses_owed = executive_summary.expensesTotal - executive_summary.expensesPaid
 
         report_channel = telegram.reportId
 
@@ -156,7 +157,7 @@ Periodo: {date_range}
   └ Crédito: {(executive_summary.creditSales / 100):,.2f}
 📈 Costo de Ventas: {(executive_summary.salesTotalCost / 100):,.2f}
 ---------------------------------------------
-💰 Utilidad: {(utility / 100):,.2f}
+💰 Utilidad Bruta: {(utility / 100):,.2f}
 
 📥 *RECAUDACIÓN DETALLADA* 📥
 💵 Ingresos a Caja: {(ingreso_caja / 100):,.2f}
@@ -164,6 +165,11 @@ Periodo: {date_range}
   └ Abonos: {(executive_summary.totalReceiptCash / 100):,.2f}
 
 🔙 Devoluciones: {(executive_summary.totalReceiptDevolutions / 100):,.2f}
+
+💸 *EGRESOS POR GASTOS* 💸
+💵 Gastos Totales: {(executive_summary.expensesTotal / 100):,.2f}
+  ├ Pagado: {(executive_summary.expensesPaid / 100):,.2f}
+  └ Pendiente (Por Pagar): {(expenses_owed / 100):,.2f}
 """
 
         await TelegramService().send_message(report_channel, message)
