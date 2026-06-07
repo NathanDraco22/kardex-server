@@ -59,6 +59,7 @@ default_roles = [
             Modules.CLIENTS,
             Modules.PRODUCTS,
             Modules.INVENTORY,
+            Modules.EXPENSES,
         ],
     ),
     UserRole(
@@ -79,6 +80,7 @@ default_roles = [
             Modules.PRODUCTS,
             Modules.INVENTORY,
             Modules.ADVANCED_TOOLS,
+            Modules.EXPENSES,
         ],
     ),
 ]

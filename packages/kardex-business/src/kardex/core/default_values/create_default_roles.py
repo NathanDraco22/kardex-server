@@ -20,3 +20,28 @@ async def create_default_roles() -> None:
             role.name,
             new_role_db.model_dump(),
         )
+
+    await update_default_roles()
+
+
+async def update_default_roles() -> None:
+    roles = RoleManager().get_default_roles()
+    collection = UserRolesCollection.get_instance()
+
+    for role in roles:
+        existing_role = await collection.fetch_user_role_by_id(role.name)
+        if existing_role:
+            current_access = existing_role.get("access", [])
+            updated = False
+
+            for permission in role.access:
+                if permission not in current_access:
+                    current_access.append(permission)
+                    updated = True
+
+            if updated:
+                await collection.update_user_role_by_id(
+                    role.name,
+                    {"access": current_access}
+                )
+                print(f"[Role Migration] Rol '{role.name}' actualizado con nuevos permisos.")
