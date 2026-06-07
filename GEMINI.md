@@ -270,6 +270,14 @@ Explicación de flujo del endpoint `search_product_in_branch` e implementación 
    - **Collection (`products_collection.py`)**: Se implementó `fetch_products_in_branch_by_ids` ejecutando una agregación con `$match` usando `{"id": {"$in": product_ids}, "isDeleted": False}` y haciendo `$lookup` con `$unwind` de `ProductAccounts` y `ProductSaleProfiles` para la sucursal especificada.
 3. **Verificación**: Tipado y consistencia estática aprobados por `ty check`.
 
+## Fecha: 2026-06-07
+### Objetivo
+Code Review y optimización del flujo transaccional de categorías de gastos (`expense_categories`).
 
-
-
+### Resumen de Revisión y Optimización
+1. **Detección de Bug**: Se identificó un bug donde al renombrar una categoría de gastos, los gastos existentes no se actualizaban debido a que se buscaba por el nombre nuevo en lugar del anterior.
+2. **Implementación Transaccional**:
+   - Se modificó la colección de categorías para soportar lectura con sesión de MongoDB (`session`).
+   - Se actualizó el DataSource para consultar el `old_name` en la base de datos antes de aplicar el cambio.
+   - Se añadió un condicional para actualizar la colección de gastos (`Expenses`) únicamente si el nombre sufrió una modificación real (`old_name != new_name`).
+3. **Verificación**: Todo el tipado estático pasó de forma exitosa mediante `ty check`.

@@ -57,6 +57,19 @@ class ExpensesCollection(BaseMongoCollection):
 
         return result
 
+    async def update_expenses_category(
+        self, old_category: str, new_category: str, session: Any
+    ):
+        collection = self._collection
+
+        await collection.update_many(
+            {
+                "category": old_category,
+            },
+            {"$set": {"category": new_category}},
+            session=session,
+        )
+
     async def delete_expense_by_id(self, expense_id: str) -> dict[str, Any] | None:
         collection = self._collection
         result = await collection.find_one_and_update(

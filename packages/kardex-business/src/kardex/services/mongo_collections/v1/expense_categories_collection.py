@@ -20,27 +20,33 @@ class ExpenseCategoriesCollection(BaseMongoCollection):
 
         return result
 
-    async def fetch_expense_category_by_id(self, expense_category_id: str) -> dict[str, Any] | None:
+    async def fetch_expense_category_by_id(
+        self, expense_category_id: str, session: Any = None
+    ) -> dict[str, Any] | None:
         collection = self._collection
-        result = await collection.find_one({"id": expense_category_id})
+        result = await collection.find_one({"id": expense_category_id}, session=session)
         return result
 
     async def update_expense_category_by_id(
         self,
         expense_category_id: str,
         expense_category: dict,
+        session: Any = None,
     ) -> dict[str, Any] | None:
         collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": expense_category_id},
             {"$set": expense_category},
+            session=session,
             return_document=ReturnDocument.AFTER,
         )
 
         return result
 
-    async def delete_expense_category_by_id(self, expense_category_id: str) -> dict[str, Any] | None:
+    async def delete_expense_category_by_id(
+        self, expense_category_id: str
+    ) -> dict[str, Any] | None:
         collection = self._collection
         result = await collection.find_one_and_delete({"id": expense_category_id})
         return result
