@@ -29,6 +29,8 @@ class BaseExecutiveSummary(BaseModel):
     commercialBranches: list[CommercialBranchDetail]
     inventoryTotalCost: int
     inventoryBranches: list[InventoryBranchDetail]
+    expensesTotal: int = 0
+    expensesPaid: int = 0
 
 
 class CreateExecutiveSummary(BaseExecutiveSummary):

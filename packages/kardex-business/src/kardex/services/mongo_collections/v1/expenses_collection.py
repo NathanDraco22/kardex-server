@@ -121,6 +121,57 @@ class ExpensesCollection(BaseMongoCollection):
 
         return result
 
+    async def get_expenses_summary_in_range(
+        self, start_date: int, end_date: int
+    ) -> dict[str, Any]:
+        collection = self._collection
+
+        query = {
+            "isDeleted": False,
+            "isActive": True,
+            "createdAt": {"$gte": start_date, "$lte": end_date},
+        }
+
+        pipeline = [
+            {"$match": query},
+            {
+                "$group": {
+                    "_id": "$branchId",
+                    "expensesTotal": {"$sum": "$amount"},
+                    "expensesPaid": {
+                        "$sum": {
+                            "$cond": [{"$eq": ["$status", "paid"]}, "$amount", 0]
+                        }
+                    },
+                }
+            },
+        ]
+
+        cursor = collection.aggregate(pipeline)
+        results = await cursor.to_list(length=None)
+        await cursor.close()
+
+        branches_map = {}
+        global_total = 0
+        global_paid = 0
+
+        for row in results:
+            b_id = row["_id"]
+            total = row.get("expensesTotal", 0)
+            paid = row.get("expensesPaid", 0)
+            branches_map[b_id] = {
+                "expensesTotal": total,
+                "expensesPaid": paid,
+            }
+            global_total += total
+            global_paid += paid
+
+        return {
+            "branches": branches_map,
+            "expensesTotal": global_total,
+            "expensesPaid": global_paid,
+        }
+
     async def create_indexes(self):
 
         collection = self._collection
