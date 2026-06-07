@@ -51,6 +51,16 @@ class ExpenseCategoriesCollection(BaseMongoCollection):
         result = await collection.find_one_and_delete({"id": expense_category_id})
         return result
 
+    async def create_category_if_absent(
+        self, category_name: str, category: dict
+    ) -> None:
+        collection = self._collection
+        await collection.find_one_and_update(
+            {"name": category_name},
+            {"$setOnInsert": category},
+            upsert=True,
+        )
+
     async def create_indexes(self):
         collection = self._collection
         await collection.create_indexes(
