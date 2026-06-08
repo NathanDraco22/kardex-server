@@ -1,3 +1,7 @@
+import contextvars
+from dataclasses import dataclass
+
+
 class KardexConfig:
     _instance = None
     letInvoiceWithNegative: bool = False
@@ -8,3 +12,12 @@ class KardexConfig:
         if cls._instance is None:
             cls._instance = super(KardexConfig, cls).__new__(cls)
         return cls._instance
+
+
+@dataclass
+class KardexContext:
+    businessNickname: str = ""
+    branchId: str = ""
+
+
+kardexCtx = contextvars.ContextVar("kardexCtx", default=KardexContext())
