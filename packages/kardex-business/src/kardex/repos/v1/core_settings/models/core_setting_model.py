@@ -7,6 +7,7 @@ class DecodedCoreSetting(BaseModel):
     ownerName: str
     isMultiBranch: bool
     isActive: bool
+    isUsingExpirationDate: bool = True
     price: int
 
 

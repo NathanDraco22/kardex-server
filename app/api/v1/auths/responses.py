@@ -11,3 +11,4 @@ class ServinStatusResponese(BaseModel):
     nickname: str
     isActive: bool
     isMultiBranch: bool
+    isUsingExpirationDate: bool
