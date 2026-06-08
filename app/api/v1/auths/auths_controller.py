@@ -161,6 +161,7 @@ class AuthsController:
             nickname=settings.nickname,
             isActive=settings.isActive,
             isMultiBranch=settings.isMultiBranch,
+            isUsingExpirationDate=settings.isUsingExpirationDate,
         )
 
 
