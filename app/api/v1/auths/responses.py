@@ -12,3 +12,7 @@ class ServinStatusResponese(BaseModel):
     isActive: bool
     isMultiBranch: bool
     isUsingExpirationDate: bool
+
+
+class UserStatusResponse(BaseModel):
+    isActive: bool
