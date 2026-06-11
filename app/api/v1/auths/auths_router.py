@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from .auths_controller import auths_controller
 from .body import LoginBody, RefreshTokenBody, ChangePasswordBody
-from .responses import LoginResponse, ServinStatusResponese
+from .responses import LoginResponse, ServinStatusResponese, UserStatusResponse
 
 auths_router = APIRouter(tags=["authsV1"])
 
@@ -29,3 +29,8 @@ async def change_password(body: ChangePasswordBody) -> dict:
 @auths_router.get("/servin-status")
 async def get_servin_status() -> ServinStatusResponese:
     return await auths_controller.get_servin_status()
+
+
+@auths_router.get("/user-status/{user_id}")
+async def check_user_status(user_id: str) -> UserStatusResponse:
+    return await auths_controller.check_user_status(user_id)

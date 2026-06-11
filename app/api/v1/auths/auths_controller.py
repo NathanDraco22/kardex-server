@@ -12,7 +12,7 @@ from kardex.repos.v1.core_settings import (
 )
 
 from .body import LoginBody
-from .responses import LoginResponse, ServinStatusResponese
+from .responses import LoginResponse, ServinStatusResponese, UserStatusResponse
 
 
 class AuthsController:
@@ -34,6 +34,12 @@ class AuthsController:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials",
+            )
+
+        if not user.isActive:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User is not active",
             )
 
         expiration = datetime.now(tz=timezone.utc) + timedelta(days=1)
@@ -126,6 +132,13 @@ class AuthsController:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials",
             )
+
+        if not user.isActive:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User is not active",
+            )
+
         if not SysPasswordHasher.verify_password(old_password, user.password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -161,13 +174,19 @@ class AuthsController:
             nickname=settings.nickname,
             isActive=settings.isActive,
             isMultiBranch=settings.isMultiBranch,
+            isUsingExpirationDate=settings.isUsingExpirationDate,
         )
 
+    async def check_user_status(self, user_id: str) -> UserStatusResponse:
+        user = await self.users_repo.get_user_by_id(user_id)
 
-class ChangePasswordBody:
-    userId: str
-    oldPassword: str
-    newPassword: str
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        return UserStatusResponse(isActive=user.isActive)
 
 
 auths_controller = AuthsController(
