@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from kardex.services.mongo_collections.v1 import BranchesCollection
+
 
 
 @dataclass
@@ -28,6 +28,8 @@ class EtagTool:
         return self._tags.get(key)
 
     async def update_branches_etags(self):
+        from kardex.services.mongo_collections.v1 import BranchesCollection
+
         collection = BranchesCollection.get_instance()
         count = await collection._collection.estimated_document_count()
         self.set_tag("branches_count", str(count))
