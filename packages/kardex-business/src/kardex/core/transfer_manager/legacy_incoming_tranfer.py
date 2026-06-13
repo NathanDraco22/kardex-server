@@ -41,8 +41,8 @@ async def process_incoming_transfer(
 
     prd_transaction_col = ProductTransactionsCollection.get_instance()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             # 1. OBTENER EL TRASLADO EXISTENTE
 
             # Necesitamos leer los items y el destination original

@@ -17,6 +17,7 @@ from .kardex_exceptions import (
     SameBranchTransferError,
     InvalidOperation,
     DirectStockAdjustmentBlocked,
+    MongoMigrationException,
 )
 
 
@@ -39,4 +40,5 @@ __all__ = [
     "SameBranchTransferError",
     "InvalidOperation",
     "DirectStockAdjustmentBlocked",
+    "MongoMigrationException",
 ]

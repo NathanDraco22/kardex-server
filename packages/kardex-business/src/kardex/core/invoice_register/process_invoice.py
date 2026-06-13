@@ -35,8 +35,8 @@ async def process_invoice(
     client_col = ClientsCollection.get_instance()
     client_tx_col = ClientTransactionsCollection.get_instance()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             new_invoice_id = UuidTool.generate_uuid()
             current_time = TimeTools.get_now_in_milliseconds()
 
@@ -217,8 +217,8 @@ async def process_anon_invoice(
     product_account_col = ProductAccountsCollection.get_instance()
     invoice_col = InvoicesCollection.get_instance()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             new_invoice_doc_id = UuidTool.generate_uuid()
             current_time = TimeTools.get_now_in_milliseconds()
             if len(create_invoice.docNumber) == 0:

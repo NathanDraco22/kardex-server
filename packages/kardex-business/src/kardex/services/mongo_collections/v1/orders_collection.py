@@ -92,7 +92,7 @@ class OrdersCollection(BaseMongoCollection):
             {"$sort": {"productName": 1}},
         ]
 
-        cursor = collection.aggregate(pipeline)
+        cursor = await collection.aggregate(pipeline)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -186,7 +186,7 @@ class OrdersCollection(BaseMongoCollection):
             {"$project": {"inventory": 0}},  # Limpiamos el campo temporal
         ]
 
-        cursor = collection.aggregate(pipeline)
+        cursor = await collection.aggregate(pipeline)
         result = await cursor.to_list(length=None)
         return result
 

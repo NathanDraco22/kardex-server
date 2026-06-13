@@ -24,8 +24,8 @@ async def process_exit_doc(
 
     branches_tool = BranchesTool()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             current_branch_in_db = branches_tool.get_branch_by_id(
                 create_exit_doc.branchId
             )

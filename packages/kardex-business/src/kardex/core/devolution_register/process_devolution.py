@@ -27,8 +27,8 @@ async def process_devolution(
     prd_account_col = ProductAccountsCollection.get_instance()
     prd_transaction_col = ProductTransactionsCollection.get_instance()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             created_product_transactions: List[ProductTransactionInDb] = []
 
             for item in devolution.returnedItems:
@@ -99,8 +99,8 @@ async def process_anon_devolution(
     prd_account_col = ProductAccountsCollection.get_instance()
     prd_transaction_col = ProductTransactionsCollection.get_instance()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             created_product_transactions: List[ProductTransactionInDb] = []
             updated_product_accounts: List[ProductAccountInDb] = []
 

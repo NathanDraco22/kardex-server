@@ -59,3 +59,8 @@ class InvalidOperation(KardexException):
 class DirectStockAdjustmentBlocked(KardexException):
     def __init__(self, message: str):
         super().__init__(message)
+
+
+class MongoMigrationException(KardexException):
+    def __init__(self, message: str):
+        super().__init__(message)

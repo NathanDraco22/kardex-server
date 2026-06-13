@@ -39,8 +39,8 @@ async def process_adjust_exit(
     elif adjust_exit.type == "loss":
         tx_subtype = "loss"
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             new_adjust_id = UuidTool.generate_uuid()
             now_in_milliseconds = TimeTools.get_now_in_milliseconds()
 

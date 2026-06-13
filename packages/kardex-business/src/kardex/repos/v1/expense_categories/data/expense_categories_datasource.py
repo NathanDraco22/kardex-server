@@ -32,8 +32,8 @@ class ExpenseCategoriesDataSource:
         collection = ExpenseCategoriesCollection.get_instance()
         expenses_collection = ExpensesCollection.get_instance()
 
-        async with await mongo_client.start_session() as session:
-            async with session.start_transaction():
+        async with mongo_client.start_session() as session:
+            async with await session.start_transaction():
                 old_category_doc = await collection.fetch_expense_category_by_id(
                     expense_category_id, session=session
                 )

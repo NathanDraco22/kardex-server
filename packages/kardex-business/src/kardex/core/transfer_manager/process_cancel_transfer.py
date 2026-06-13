@@ -40,8 +40,8 @@ async def process_cancel_transfer(
     # Tools
     branches_tool = BranchesTool()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             # 1. OBTENER Y VALIDAR TRASLADO
             existing_transfer_dict = (
                 await transfers_col.fetch_transfer_by_id_with_session(

@@ -22,7 +22,7 @@ class UsersCollection(BaseMongoCollection):
     async def fetch_all_users(self) -> list[dict[str, Any]]:
         collection = self._collection
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {
@@ -61,7 +61,7 @@ class UsersCollection(BaseMongoCollection):
         if branch_id:
             branch_query = {"branches": {"$in": [branch_id]}}
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {
@@ -95,7 +95,7 @@ class UsersCollection(BaseMongoCollection):
     async def get_inactive_users(self) -> list[dict[str, Any]]:
         collection = self._collection
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {
@@ -114,7 +114,7 @@ class UsersCollection(BaseMongoCollection):
     async def fetch_user_by_id(self, user_id: str) -> dict[str, Any] | None:
         collection = self._collection
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {

@@ -45,7 +45,7 @@ class EntryDocsCollection(BaseMongoCollection):
     ) -> dict[str, Any] | None:
         collection = self._collection
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {
@@ -74,7 +74,7 @@ class EntryDocsCollection(BaseMongoCollection):
     ) -> dict[str, Any] | None:
         collection = self._collection
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {
@@ -197,6 +197,6 @@ class EntryDocsCollection(BaseMongoCollection):
             end_date,
         )
 
-        cursor = collection.aggregate(pipeline)
+        cursor = await collection.aggregate(pipeline)
 
         return await cursor.to_list(length=None)

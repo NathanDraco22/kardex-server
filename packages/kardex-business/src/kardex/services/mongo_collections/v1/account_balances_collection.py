@@ -73,6 +73,10 @@ class AccountBalancesCollection(BaseMongoCollection):
             return_document=ReturnDocument.AFTER,
         )
 
+        if result is None:
+            from kardex.tools.kardex_exceptions import MongoMigrationException
+            raise MongoMigrationException("Failed to update/upsert account balance: result is None")
+
         return result
 
     async def subtract_account_balance_with_session(

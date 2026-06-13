@@ -28,7 +28,7 @@ class ProductStatsCollection(BaseMongoCollection):
 
         query = kwargs
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {"$match": {**query}},
                 {"$sort": {"estimationLevel": -1}},
@@ -56,7 +56,7 @@ class ProductStatsCollection(BaseMongoCollection):
 
         query = kwargs
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {"$match": {**query}},
                 {"$sort": {"estimationLevel": -1}},

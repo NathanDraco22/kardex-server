@@ -27,11 +27,17 @@ from kardex.services.mongo_collections.v1 import (
 
 async def process_init_import(branch_id: str, products: list[ProductImport]) -> None:
     product_col: ProductsCollection = ProductsCollection.get_instance()
-    adjust_entry_doc_col: AdjustEntriesCollection = AdjustEntriesCollection.get_instance()
+    adjust_entry_doc_col: AdjustEntriesCollection = (
+        AdjustEntriesCollection.get_instance()
+    )
     account_col: ProductAccountsCollection = ProductAccountsCollection.get_instance()
-    profile_col: ProductSaleProfilesCollection = ProductSaleProfilesCollection.get_instance()
+    profile_col: ProductSaleProfilesCollection = (
+        ProductSaleProfilesCollection.get_instance()
+    )
     stats_col: ProductStatsCollection = ProductStatsCollection.get_instance()
-    transaction_col: ProductTransactionsCollection = ProductTransactionsCollection.get_instance()
+    transaction_col: ProductTransactionsCollection = (
+        ProductTransactionsCollection.get_instance()
+    )
 
     now_milliseconds = TimeTools.get_now_in_milliseconds()
 
@@ -159,8 +165,8 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
 
     entry_doc_data = new_init_entry_doc.model_dump()
 
-    async with await client.start_session() as session:
-        async with session.start_transaction():
+    async with client.start_session() as session:
+        async with await session.start_transaction():
             await adjust_entry_doc_col.create_adjust_entry_with_session(
                 entry_doc_data,
                 session=session,
@@ -189,11 +195,17 @@ async def process_inventory_import(
     branch_id: str, products: list[ProductImport]
 ) -> None:
     product_col: ProductsCollection = ProductsCollection.get_instance()
-    adjust_entry_doc_col: AdjustEntriesCollection = AdjustEntriesCollection.get_instance()
+    adjust_entry_doc_col: AdjustEntriesCollection = (
+        AdjustEntriesCollection.get_instance()
+    )
     account_col: ProductAccountsCollection = ProductAccountsCollection.get_instance()
-    profile_col: ProductSaleProfilesCollection = ProductSaleProfilesCollection.get_instance()
+    profile_col: ProductSaleProfilesCollection = (
+        ProductSaleProfilesCollection.get_instance()
+    )
     stats_col: ProductStatsCollection = ProductStatsCollection.get_instance()
-    transaction_col: ProductTransactionsCollection = ProductTransactionsCollection.get_instance()
+    transaction_col: ProductTransactionsCollection = (
+        ProductTransactionsCollection.get_instance()
+    )
 
     now_milliseconds = TimeTools.get_now_in_milliseconds()
 
@@ -327,8 +339,8 @@ async def process_inventory_import(
 
     entry_doc_data = new_init_entry_doc.model_dump()
 
-    async with await client.start_session() as session:
-        async with session.start_transaction():
+    async with client.start_session() as session:
+        async with await session.start_transaction():
             await adjust_entry_doc_col.create_adjust_entry_with_session(
                 entry_doc_data,
                 session=session,

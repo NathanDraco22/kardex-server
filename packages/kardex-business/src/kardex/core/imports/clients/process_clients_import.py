@@ -22,8 +22,8 @@ async def process_clients_import(branch_id: str, clients: list[ClientImport]) ->
 
     mongo_client = MongoService().client
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             client_id = await CounterManager().next_client_number(session=session)
             raw_int = int(client_id)
 
