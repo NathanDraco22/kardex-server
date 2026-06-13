@@ -32,8 +32,8 @@ async def process_create_product(
 
     all_branches = await branches_repo.get_all_branches()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             if not create_product.code:
                 create_product.code = await CounterManager().next_product_number(
                     session

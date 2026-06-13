@@ -16,8 +16,8 @@ async def process_order(
     prd_account_col = ProductAccountsCollection.get_instance()
     order_col = OrdersCollection.get_instance()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             # ==========================================
             # 1. PREPARACIÓN DE DATOS
             # ==========================================

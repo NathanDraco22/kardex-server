@@ -489,4 +489,48 @@ Integración de gastos registrados y pagados (`expensesTotal` y `expensesPaid`) 
 4. **Notificaciones de Telegram**: Se modificó `app_notifier.py` (`notify_executive_report`) para desglosar la sección `💸 EGRESOS POR GASTOS 💸` detallando Gastos Totales, Pagados y el saldo Pendiente (Por Pagar).
 5. **Verificación**: Se creó y ejecutó con éxito un script de integración `scratch/test_report_expenses.py`, validando el correcto funcionamiento con MongoDB y los cálculos del periodo. Las pruebas estáticas con `ty check` y `ruff` pasaron exitosamente.
 6. **Migración de Roles y Permisos**: Se implementó la lógica en `update_default_roles` dentro de `create_default_roles.py` para iterar de manera incremental sobre los roles existentes en MongoDB y añadirles cualquier permiso nuevo del código (como `"expenses"`) sin sobreescribir configuraciones personalizadas preexistentes.
-7. **Categorías de Gastos Predeterminadas**: Creación de `create_default_expense_categories.py` en `default_values` e integración en el flujo de inicialización de FastAPI (`services_initializer.py`) para registrar de forma idempotente las categorías de gastos más comunes (como Electricidad, Agua, Impuestos, Renta, etc.), además de 9 categorías sugeridas adicionales para dar robustez corporativa al sistema.
+7. **Categorías de Gastos Predeterminadas**: Se creó el archivo `create_default_expense_categories.py` en `default_values` e integración en el flujo de inicialización de FastAPI (`services_initializer.py`) para registrar de forma idempotente las categorías de gastos más comunes (como Electricidad, Agua, Impuestos, Renta, etc.), además de 9 categorías sugeridas adicionales para dar robustez corporativa al sistema.
+
+## Fecha: 2026-06-08
+### Objetivo
+Creación de la guía unificada de arquitectura y estilo Onion Fullstack.
+
+### Resumen de Sesión
+1. **Creación de Guía**: Se generó el archivo `ONION_FULLSTACK_STYLE_GUIDE.md` en la raíz del repositorio.
+2. **Consolidación de Estándares**:
+   - Backend: flujo de capas, transaccionalidad atómica y manejo desacoplado de excepciones de negocio.
+   - Frontend: separación de Cubits de lectura y escritura, enfoque estándar de sincronización y enfoque reactivo con `ReactiveRepository`.
+   - Onion CLI: documentación de comandos clave y pasos manuales indispensables de ajuste.
+
+## Fecha: 2026-06-12
+### Objetivo
+Explicación detallada de la migración del driver de base de datos a PyMongo Async (`AsyncMongoClient`) y el manejo de transacciones.
+
+### Resumen de Sesión
+1. **Investigación de Deprecación**: Se validó el estado de deprecación de `Motor` (EOL en mayo de 2026) en favor del nuevo soporte asíncrono nativo introducido oficialmente en `pymongo` (GA desde v4.13).
+2. **Comparativa de Transacciones**:
+   - Se analizó la sintaxis clásica de transacciones basada en el Driver Motor frente a la nueva API asíncrona de `pymongo`.
+   - Se evaluó el uso de la API de Callback (`with_transaction`) que provee lógica robusta de reintento automático para errores de tipo `TransientTransactionError`.
+   - Se introdujo el concepto de `AsyncClientSession.bind()` (incorporado en `pymongo>=4.17.0`, la versión actual del proyecto), el cual elimina la necesidad de pasar explícitamente el parámetro `session=session` a cada operación CRUD individual dentro de un bloque de código.
+
+## Fecha: 2026-06-12 (Parte 2)
+### Objetivo
+Creación e integración de la excepción `MongoMigrationException`, su aplicación en la migración asíncrona de MongoDB y unificación de transacciones.
+
+### Resumen de Sesión
+1. **Definición de Excepción**: Se añadió `MongoMigrationException` heredando de `KardexException` en `kardex_exceptions.py` y se exportó en el barrel file de herramientas de negocio.
+2. **Control de Errores en Upserts (`find_one_and_update`)**:
+   - Se identificó que con la migración, los métodos `find_one_and_update` que retornan documentos tras realizar un upsert o una modificación atómica crítica (`ReturnDocument.AFTER`) podían devolver de forma imprevista `None` según el tipado estático del driver.
+   - Se inyectó control con `MongoMigrationException` en los métodos de `AccountBalancesCollection`, `ClientsCollection`, `CountersCollection` y `ProductAccountsCollection`. Si el resultado de la operación es `None`, se lanza la excepción, garantizando firmas de retorno estrictas `dict[str, Any]` (sin el tipo opcional `| None`).
+3. **Corrección de Await en Agregaciones**: Se restauraron y agregaron los keywords `await` faltantes en las llamadas a `collection.aggregate` dentro de `ProductAccountsCollection` (`get_product_account_with_product_data`, `get_all_product_accounts_with_product` y `get_total_current_stock`), solucionando los errores de tipo `CoroutineType` en el typechecker.
+4. **Unificación de Transacciones**:
+   - Se refactorizaron todas las transacciones del proyecto para seguir el patrón correcto del driver PyMongo Async en todo el codebase:
+     ```python
+     async with mongo_client.start_session() as session:
+         async with await session.start_transaction():
+     ```
+     en lugar de colocar el `await` en el `start_session()`.
+   - Se aplicó esta corrección en 18 módulos del core y del negocio, así como en los scripts del playground.
+5. **Verificación de Tipado Estático y Runtime (¡Éxito Total!)**:
+   - Se resolvió una discrepancia en el script `auto_code.py` agregando una aserción para asegurar que `current_counter` no sea `None`.
+   - Tras corregir los bloques de transacciones, se ejecutó `ty check` de forma global obteniendo un **"All checks passed!"** rotundo, eliminando por completo todas las advertencias/diagnósticos remanentes. El sistema de tipos está 100% limpio y validado tanto estática como dinámicamente.

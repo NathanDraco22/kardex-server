@@ -65,7 +65,7 @@ class ReceiptsCollection(BaseMongoCollection):
             del query["startDate"]
             del query["endDate"]
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {"$match": query},
                 {
@@ -110,7 +110,7 @@ class ReceiptsCollection(BaseMongoCollection):
             del query["startDate"]
             del query["endDate"]
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {"$match": query},
                 {
@@ -186,7 +186,7 @@ class ReceiptsCollection(BaseMongoCollection):
             {"$sort": {"branchId": 1}},
         ]
 
-        cursor = collection.aggregate(pipeline)
+        cursor = await collection.aggregate(pipeline)
         result = await cursor.to_list(length=None)
 
         return result

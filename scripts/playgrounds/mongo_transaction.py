@@ -1,11 +1,10 @@
 import asyncio
 from typing import Any
-from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo import errors
+from pymongo import AsyncMongoClient, errors
 
 # Configuración (Requiere Replica Set o MongoDB Atlas)
 URI = ""
-client = AsyncIOMotorClient[dict[Any, Any]](URI)
+client = AsyncMongoClient[dict[Any, Any]](URI)
 db = client["test_db"]
 collection = db["productos"]
 
@@ -25,9 +24,9 @@ async def preparar_datos():
 
 async def transaccion_lenta_t1(nuevo_costo):
     """T1: Lee, espera 3s, resta 1 al stock y actualiza el costo."""
-    async with await client.start_session() as session:
+    async with client.start_session() as session:
         try:
-            async with session.start_transaction():
+            async with await session.start_transaction():
                 doc = await collection.find_one({"_id": "refresco_1"}, session=session)
                 if doc is None:
                     print(
@@ -56,9 +55,9 @@ async def transaccion_lenta_t1(nuevo_costo):
 async def transaccion_rapida_t2():
     """T2: Modifica stock y costo rápidamente mientras T1 duerme."""
     await asyncio.sleep(1)
-    async with await client.start_session() as session:
+    async with client.start_session() as session:
         try:
-            async with session.start_transaction():
+            async with await session.start_transaction():
                 print("[T2] Iniciando rápida...")
                 await collection.update_one(
                     {"_id": "refresco_1"},

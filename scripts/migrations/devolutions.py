@@ -1,11 +1,11 @@
 import asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import AsyncMongoClient
 
 MONGO_URL = "mongodb://mongo:gkMCqLnJLuQUVgRCNsEMoHFyLXQchjda@yamabiko.proxy.rlwy.net:28317/?directConnection=true&retryWrites=false"
 
 
 async def add_invoice_doc_number_devolutions():
-    client = AsyncIOMotorClient(MONGO_URL)
+    client = AsyncMongoClient(MONGO_URL)
     db = client["LedgerDB"]
     devol_col = db["Devolutions"]
     inv_col = db["Invoices"]

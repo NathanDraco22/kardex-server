@@ -148,4 +148,5 @@ class ProductTransactionsCollection(BaseMongoCollection):
                 }
             },
         ]
-        await collection.aggregate(pipeline).to_list(length=None)
+        cursor = await collection.aggregate(pipeline)
+        await cursor.to_list(length=None)

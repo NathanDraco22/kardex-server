@@ -1,7 +1,6 @@
 import asyncio
 
-from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo import UpdateOne
+from pymongo import AsyncMongoClient, UpdateOne
 
 
 MONGO_URL = (
@@ -24,7 +23,7 @@ def generate_prefixes(text: str, min_size: int = 2, max_size: int = 10) -> list[
 
 
 async def add_product_prefix():
-    mongo_client = AsyncIOMotorClient(MONGO_URL)
+    mongo_client = AsyncMongoClient(MONGO_URL)
     db = mongo_client.get_database("variedades_etel")
     collection = db.get_collection("Products")
 

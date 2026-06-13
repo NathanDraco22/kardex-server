@@ -1,19 +1,19 @@
 import asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import AsyncMongoClient
 
 
 async def create_transaction():
     # Initialize the MongoDB client
-    client = AsyncIOMotorClient(
+    client = AsyncMongoClient(
         "mongodb://mongo:AOlhqQqCfLDhbwfIgqfVWOKOZdtYhPqt@trolley.proxy.rlwy.net:51439?directConnection=true&retryWrites=false"
     )
     db = client["your_database"]
     collection = db["your_collection"]
 
     # Start a session
-    async with await client.start_session() as session:
+    async with client.start_session() as session:
         # Start a transaction
-        async with session.start_transaction():
+        async with await session.start_transaction():
             # Define the document to insert
             transaction_data = {
                 "field1": "value1",

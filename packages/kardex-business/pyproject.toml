@@ -5,8 +5,8 @@ description = "Business logic and data access layer for Kardex server"
 requires-python = ">=3.12"
 dependencies = [
     "argon2-cffi>=25.1.0",
-    "motor>=3.7.1",
     "pyjwt>=2.12.1",
+    "pymongo>=4.17.0",
     "pytz>=2026.2",
 ]
 

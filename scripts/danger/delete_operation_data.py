@@ -1,10 +1,10 @@
 import asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import AsyncMongoClient
 
 MONGO_URL = "mongodb://mongo:gkMCqLnJLuQUVgRCNsEMoHFyLXQchjda@yamabiko.proxy.rlwy.net:28317/?directConnection=true&retryWrites=false"
 
 async def delete_operation_data():
-    mongo_client = AsyncIOMotorClient(MONGO_URL)
+    mongo_client = AsyncMongoClient(MONGO_URL)
     db = mongo_client.get_database("LedgerDB")
 
     cols = [
@@ -47,7 +47,7 @@ async def delete_operation_data():
 
     await counter_col.delete_many({"name": {"$ne": counter_user_name}})
 
-    mongo_client.close()
+    await mongo_client.close()
 
     print("Commercial Data cleaned.")
 

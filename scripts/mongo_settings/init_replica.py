@@ -1,6 +1,6 @@
 # init_replica_manual.py
 import asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import AsyncMongoClient
 
 # Importamos el error específico de Timeout
 from pymongo.errors import (
@@ -28,7 +28,7 @@ async def initiate_replica_set():
     # intentar descubrir un replica set. El parámetro `directConnection=true`
     # es la clave para que esto funcione.
     connection_string = f"mongodb://{MONGO_HOST}:{MONGO_PORT}/?directConnection=true"
-    client = AsyncIOMotorClient(
+    client = AsyncMongoClient(
         connection_string, serverSelectionTimeoutMS=CONNECTION_TIMEOUT
     )
 
@@ -49,7 +49,7 @@ async def initiate_replica_set():
         print(
             "❌ No se pudo establecer conexión con MongoDB después de varios intentos."
         )
-        client.close()
+        await client.close()
         return
 
     # La configuración del host del miembro del replica set.
@@ -68,7 +68,7 @@ async def initiate_replica_set():
         else:
             print(f"❌ Error al iniciar el replica set: {e}")
     finally:
-        client.close()
+        await client.close()
 
 
 if __name__ == "__main__":

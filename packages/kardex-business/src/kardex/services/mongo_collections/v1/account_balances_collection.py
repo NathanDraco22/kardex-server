@@ -2,6 +2,7 @@ from typing import Any
 
 from pymongo import ReturnDocument
 from kardex.services import BaseMongoCollection
+from kardex.tools import MongoMigrationException
 
 
 class AccountBalancesCollection(BaseMongoCollection):
@@ -72,6 +73,9 @@ class AccountBalancesCollection(BaseMongoCollection):
             upsert=True,
             return_document=ReturnDocument.AFTER,
         )
+
+        if result is None:
+            raise MongoMigrationException("Failed to update/upsert account balance: result is None")
 
         return result
 

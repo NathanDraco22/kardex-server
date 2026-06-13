@@ -93,7 +93,7 @@ class ProductsCollection(BaseMongoCollection):
         text_query: str,
     ) -> list[dict[str, Any]]:
         collection = self._collection
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {
@@ -146,7 +146,7 @@ class ProductsCollection(BaseMongoCollection):
         text_query: str,
     ) -> list[dict[str, Any]]:
         collection = self._collection
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {
@@ -218,7 +218,7 @@ class ProductsCollection(BaseMongoCollection):
         product_ids: list[str],
     ) -> list[dict[str, Any]]:
         collection = self._collection
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {
@@ -273,7 +273,7 @@ class ProductsCollection(BaseMongoCollection):
         limit = kwargs.get("limit", 50)
         offset = kwargs.get("offset", 0)
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {
@@ -339,7 +339,7 @@ class ProductsCollection(BaseMongoCollection):
         collection = self._collection
         branch_id = kwargs.get("branchId")
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {
@@ -396,7 +396,7 @@ class ProductsCollection(BaseMongoCollection):
     ) -> dict[str, Any] | None:
         collection = self._collection
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {
@@ -448,7 +448,7 @@ class ProductsCollection(BaseMongoCollection):
     ):
         collection = self._collection
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {"isDeleted": False},
