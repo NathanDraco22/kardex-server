@@ -147,7 +147,7 @@ class ExpensesCollection(BaseMongoCollection):
             },
         ]
 
-        cursor = collection.aggregate(pipeline)
+        cursor = await collection.aggregate(pipeline)
         results = await cursor.to_list(length=None)
         await cursor.close()
 

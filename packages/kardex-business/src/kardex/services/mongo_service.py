@@ -1,7 +1,8 @@
 import os
 from typing import Literal, Any
 
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from pymongo import AsyncMongoClient
+from pymongo.asynchronous.collection import AsyncCollection
 
 DatabaseName = Literal["LedgerDB"]
 
@@ -14,18 +15,18 @@ class MongoService:
             cls._instance = super(cls, cls).__new__(cls)
         return cls._instance
 
-    client: AsyncIOMotorClient[dict[str, Any]]
+    client: AsyncMongoClient[dict[str, Any]]
 
     async def init_service(self):
         url: str = os.getenv("MONGO_URL", "mongodb://localhost:27017")
-        self.client = AsyncIOMotorClient(url)
+        self.client = AsyncMongoClient(url)
         await self.create_indexes()
 
     def get_collection(
         self,
         collection_name: str,
         database_name: DatabaseName = "LedgerDB",
-    ) -> AsyncIOMotorCollection[dict[str, Any]]:
+    ) -> AsyncCollection[dict[str, Any]]:
         current_db_name = os.getenv("DB_NAME", database_name)
         db = self.client.get_database(current_db_name)
         return db.get_collection(collection_name)

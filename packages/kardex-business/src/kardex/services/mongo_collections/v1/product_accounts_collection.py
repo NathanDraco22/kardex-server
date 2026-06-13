@@ -7,7 +7,7 @@ from pymongo.errors import OperationFailure
 
 from kardex.services import BaseMongoCollection
 
-from kardex.tools import TimeTools
+from kardex.tools import TimeTools, MongoMigrationException
 
 
 class ProductAccountsCollection(BaseMongoCollection):
@@ -140,7 +140,7 @@ class ProductAccountsCollection(BaseMongoCollection):
     ) -> dict[str, Any] | None:
         collection = self._collection
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {
@@ -527,6 +527,9 @@ class ProductAccountsCollection(BaseMongoCollection):
             return_document=ReturnDocument.AFTER,
         )
 
+        if result is None:
+            raise MongoMigrationException("Failed to adjust product stock: result is None")
+
         return result
 
     async def update_product_account_balance_with_average_cost(
@@ -567,6 +570,9 @@ class ProductAccountsCollection(BaseMongoCollection):
             session=session,
             return_document=ReturnDocument.AFTER,
         )
+
+        if result is None:
+            raise MongoMigrationException("Failed to update product account balance with average cost: result is None")
 
         return result
 
@@ -658,6 +664,9 @@ class ProductAccountsCollection(BaseMongoCollection):
             return_document=ReturnDocument.AFTER,
         )
 
+        if result is None:
+            raise MongoMigrationException("Failed to update product account balance data: result is None")
+
         return result
 
     async def create_index(self):
@@ -687,7 +696,7 @@ class ProductAccountsCollection(BaseMongoCollection):
         self, branch_id: str
     ) -> AsyncGenerator[dict[str, Any], None]:
         collection = self._collection
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {
@@ -720,7 +729,7 @@ class ProductAccountsCollection(BaseMongoCollection):
 
     async def get_total_current_stock(self, branch_id: str) -> int:
         collection = self._collection
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {

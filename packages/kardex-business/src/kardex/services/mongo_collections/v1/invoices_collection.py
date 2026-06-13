@@ -95,7 +95,7 @@ class InvoicesCollection(BaseMongoCollection):
             {"$sort": {"productName": 1}},
         ]
 
-        cursor = collection.aggregate(pipeline)
+        cursor = await collection.aggregate(pipeline)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -288,7 +288,7 @@ class InvoicesCollection(BaseMongoCollection):
 
         result = build_query(date_field, **kargs)
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {"$match": result.query},
                 {
@@ -343,7 +343,7 @@ class InvoicesCollection(BaseMongoCollection):
 
         query = {key: value for key, value in query.items() if value is not None}
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {"$match": query},
                 {
@@ -432,7 +432,7 @@ class InvoicesCollection(BaseMongoCollection):
             },
         ]
 
-        cursor = collection.aggregate(pipeline)
+        cursor = await collection.aggregate(pipeline)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -475,7 +475,7 @@ class InvoicesCollection(BaseMongoCollection):
             },
         ]
 
-        cursor = collection.aggregate(pipeline)
+        cursor = await collection.aggregate(pipeline)
 
         result = await cursor.to_list(length=None)
         await cursor.close()

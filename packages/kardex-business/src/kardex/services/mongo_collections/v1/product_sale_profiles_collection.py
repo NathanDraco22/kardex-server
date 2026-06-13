@@ -24,7 +24,7 @@ class ProductSaleProfilesCollection(BaseMongoCollection):
     ) -> list[dict[str, Any]]:
         collection = self._collection
 
-        cursor = collection.aggregate(
+        cursor = await collection.aggregate(
             [
                 {
                     "$match": {

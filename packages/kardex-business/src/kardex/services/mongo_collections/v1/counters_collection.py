@@ -2,6 +2,7 @@ from typing import Any
 
 from pymongo import ReturnDocument
 from kardex.services import BaseMongoCollection
+from kardex.tools import MongoMigrationException
 
 
 class CountersCollection(BaseMongoCollection):
@@ -19,6 +20,9 @@ class CountersCollection(BaseMongoCollection):
             return_document=ReturnDocument.AFTER,
         )
 
+        if result is None:
+            raise MongoMigrationException("Failed to increment counter: result is None")
+
         return result
 
     async def set_counter(
@@ -32,6 +36,9 @@ class CountersCollection(BaseMongoCollection):
             session=session,
             return_document=ReturnDocument.AFTER,
         )
+
+        if result is None:
+            raise MongoMigrationException("Failed to set counter: result is None")
 
         return result
 

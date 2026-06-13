@@ -29,8 +29,8 @@ async def reverse_receipt(
     client_transaction_col = ClientTransactionsCollection.get_instance()
     client_account_col = ClientsCollection.get_instance()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             now_in_milliseconds = TimeTools.get_now_in_milliseconds()
 
             for applied_invoice in receipt.appliedInvoices:

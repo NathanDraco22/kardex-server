@@ -28,8 +28,8 @@ async def process_outgoing_transfer(
     product_account_col = ProductAccountsCollection.get_instance()
     transfers_col = TransfersCollection.get_instance()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             new_transfer_id = UuidTool.generate_uuid()
             current_time = TimeTools.get_now_in_milliseconds()
 

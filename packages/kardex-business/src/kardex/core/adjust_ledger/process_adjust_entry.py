@@ -33,8 +33,8 @@ async def process_adjust_entry(
     # Tools
     branches_tool = BranchesTool()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             now_in_milliseconds = TimeTools.get_now_in_milliseconds()
 
             if not adjust_entry.docNumber:

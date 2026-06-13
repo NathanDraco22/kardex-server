@@ -3,6 +3,7 @@ from typing import Any
 
 from pymongo import ReturnDocument
 from kardex.services import BaseMongoCollection
+from kardex.tools import MongoMigrationException
 
 from pymongo import IndexModel
 
@@ -18,7 +19,9 @@ class ClientsCollection(BaseMongoCollection):
         collection = self._collection
         await collection.insert_one(client, session=session)
 
-    async def create_many_clients_with_session(self, clients: list[dict], session: Any) -> None:
+    async def create_many_clients_with_session(
+        self, clients: list[dict], session: Any
+    ) -> None:
         collection = self._collection
         if clients:
             await collection.insert_many(clients, session=session)
@@ -138,7 +141,7 @@ class ClientsCollection(BaseMongoCollection):
             {"$limit": 20},
             {"$project": {"baseScore": 0, "positionBoost": 0, "finalScore": 0}},
         ]
-        cursor = collection.aggregate(pipeline)
+        cursor = await collection.aggregate(pipeline)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -195,7 +198,7 @@ class ClientsCollection(BaseMongoCollection):
             {"$limit": 20},
             {"$project": {"baseScore": 0, "positionBoost": 0, "finalScore": 0}},
         ]
-        cursor = collection.aggregate(pipeline)
+        cursor = await collection.aggregate(pipeline)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -313,6 +316,9 @@ class ClientsCollection(BaseMongoCollection):
             return_document=ReturnDocument.AFTER,
         )
 
+        if result is None:
+            raise MongoMigrationException("Failed to add to client balance: result is None")
+
         return result
 
     async def substract_from_client_balance(
@@ -337,5 +343,8 @@ class ClientsCollection(BaseMongoCollection):
             session=session,
             return_document=ReturnDocument.AFTER,
         )
+
+        if result is None:
+            raise MongoMigrationException("Failed to substract from client balance: result is None")
 
         return result

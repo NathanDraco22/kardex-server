@@ -31,8 +31,8 @@ async def process_create_client_with_balance(
     invoice_col = InvoicesCollection.get_instance()
     client_tx_col = ClientTransactionsCollection.get_instance()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             current_time = TimeTools.get_now_in_milliseconds()
 
             # ==========================================
@@ -157,8 +157,8 @@ async def create_initial_balance(
     invoice_col = InvoicesCollection.get_instance()
     client_tx_col = ClientTransactionsCollection.get_instance()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             current_time = TimeTools.get_now_in_milliseconds()
 
             new_invoice_id = UuidTool.generate_uuid()
@@ -279,8 +279,8 @@ async def create_multiple_initial_balance(
         )
 
     # Iniciamos la sesión y la transacción UNA sola vez para todo el lote
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             return await _execute_multiple_initial_balance(
                 balance_requests, session, client_col, invoice_col, client_tx_col
             )

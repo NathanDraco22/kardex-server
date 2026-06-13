@@ -30,8 +30,8 @@ async def process_receipt(
     client_transaction_col = ClientTransactionsCollection.get_instance()
     client_account_col = ClientsCollection.get_instance()
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             # 1. Validar Cuadratura de Sumas (Total + Devoluciones == Facturas Aplicadas)
             now_in_milliseconds = TimeTools.get_now_in_milliseconds()
             total_funds = create_receipt.total + sum(

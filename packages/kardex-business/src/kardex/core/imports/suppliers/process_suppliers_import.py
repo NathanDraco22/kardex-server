@@ -16,8 +16,8 @@ async def process_suppliers_import(suppliers: list[SupplierImport]) -> None:
 
     mongo_client = MongoService().client
 
-    async with await mongo_client.start_session() as session:
-        async with session.start_transaction():
+    async with mongo_client.start_session() as session:
+        async with await session.start_transaction():
             supplier_id = await CounterManager().next_supplier_number(session=session)
             raw_int = int(supplier_id)
 
