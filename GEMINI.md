@@ -534,3 +534,19 @@ Creación e integración de la excepción `MongoMigrationException`, su aplicaci
 5. **Verificación de Tipado Estático y Runtime (¡Éxito Total!)**:
    - Se resolvió una discrepancia en el script `auto_code.py` agregando una aserción para asegurar que `current_counter` no sea `None`.
    - Tras corregir los bloques de transacciones, se ejecutó `ty check` de forma global obteniendo un **"All checks passed!"** rotundo, eliminando por completo todas las advertencias/diagnósticos remanentes. El sistema de tipos está 100% limpio y validado tanto estática como dinámicamente.
+
+## Fecha: 2026-06-20
+### Objetivo
+Optimización de relevancia y ordenamiento de mayor a menor coincidencia en las consultas de búsqueda de productos de MongoDB (`ProductsCollection`).
+
+### Resumen de Sesión
+1. **Análisis Comparativo**: Se identificó que las búsquedas de productos no utilizaban la lógica de sanitización ni priorizaban las coincidencias por prefijo en nombre y código como se hacía en clientes con `positionBoost` y `finalScore`.
+2. **Implementación de Position Boost**:
+   - Se modificaron `search_product_by_text`, `searchProductWithAccount` y `searchProductInBranch` en `ProductsCollection` para usar un pipeline de agregación.
+   - Se añadió sanitización de la query mediante `re.escape(text_query)`.
+   - Se inyectaron boosts de relevancia (`nameBoost` y `codeBoost` con valor `100` si coinciden al inicio con el regex `^`).
+3. **Búsqueda por Código de Barras Parcial**: Se introdujo una condición `$or` en el `$match` inicial de los buscadores para evaluar la consulta tanto en la búsqueda de texto `$text` tradicional de MongoDB como en el prefijo del campo `code` vía regex. Esto solventa la limitación de MongoDB donde consultas parciales de códigos no devolvían ningún resultado.
+4. **Optimización en Sucursales**: Se trasladaron las etapas `$sort` por `finalScore` y `$limit` al final del pipeline de agregación en `searchProductInBranch`, evitando la pérdida silente de resultados provocada por el `$unwind` de registros no existentes en la sucursal sobre un conjunto limitado previamente.
+5. **Verificación Estática y Dinámica**:
+   - Se validó el correcto funcionamiento y ordenamiento mediante el script de integración `scratch/test_product_search_boost.py`.
+   - Se corrieron los chequeos de calidad estáticos (`ruff check` y `ty check`) para el archivo modificado, superando todos los análisis sin advertencias ni errores.

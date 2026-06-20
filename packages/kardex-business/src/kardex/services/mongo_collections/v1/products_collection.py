@@ -1,3 +1,4 @@
+import re
 from typing import Any, AsyncIterable
 
 from pymongo import ReturnDocument, IndexModel
@@ -64,23 +65,66 @@ class ProductsCollection(BaseMongoCollection):
 
     async def search_product_by_text(self, text_query: str) -> list[dict[str, Any]]:
         collection = self._collection
+        safe_query = re.escape(text_query)
 
-        query = {
-            "$text": {
-                "$search": text_query,
-                "$caseSensitive": False,
-                "$diacriticSensitive": False,
+        pipeline = [
+            {
+                "$match": {
+                    "isDeleted": False,
+                    "$or": [
+                        {
+                            "$text": {
+                                "$search": safe_query,
+                                "$caseSensitive": False,
+                                "$diacriticSensitive": False,
+                            }
+                        },
+                        {
+                            "code": {
+                                "$regex": f"^{safe_query}",
+                                "$options": "i",
+                            }
+                        },
+                    ]
+                }
             },
-            "isDeleted": False,
-        }
-
-        projection = {"score": {"$meta": "textScore"}}
-
-        cursor = (
-            collection.find(query, projection)
-            .sort([("score", {"$meta": "textScore"})])
-            .limit(7)
-        )
+            {
+                "$addFields": {
+                    "baseScore": {"$meta": "textScore"},
+                    "nameBoost": {
+                        "$cond": [
+                            {
+                                "$regexMatch": {
+                                    "input": "$name",
+                                    "regex": f"^{safe_query}",
+                                    "options": "i",
+                                }
+                            },
+                            100,
+                            0,
+                        ]
+                    },
+                    "codeBoost": {
+                        "$cond": [
+                            {
+                                "$regexMatch": {
+                                    "input": "$code",
+                                    "regex": f"^{safe_query}",
+                                    "options": "i",
+                                }
+                            },
+                            100,
+                            0,
+                        ]
+                    },
+                }
+            },
+            {"$addFields": {"finalScore": {"$add": [{"$ifNull": ["$baseScore", 0]}, "$nameBoost", "$codeBoost"]}}},
+            {"$sort": {"finalScore": -1, "name": 1}},
+            {"$limit": 20},
+            {"$project": {"baseScore": 0, "nameBoost": 0, "codeBoost": 0, "finalScore": 0}},
+        ]
+        cursor = await collection.aggregate(pipeline)
 
         result = await cursor.to_list(length=None)
         await cursor.close()
@@ -93,22 +137,61 @@ class ProductsCollection(BaseMongoCollection):
         text_query: str,
     ) -> list[dict[str, Any]]:
         collection = self._collection
+        safe_query = re.escape(text_query)
         cursor = await collection.aggregate(
             [
                 {
                     "$match": {
-                        "$and": [
+                        "isDeleted": False,
+                        "$or": [
                             {
                                 "$text": {
-                                    "$search": text_query,
+                                    "$search": safe_query,
                                     "$caseSensitive": False,
                                     "$diacriticSensitive": False,
-                                },
+                                }
                             },
-                            {"isDeleted": False},
+                            {
+                                "code": {
+                                    "$regex": f"^{safe_query}",
+                                    "$options": "i",
+                                }
+                            },
                         ]
                     }
                 },
+                {
+                    "$addFields": {
+                        "baseScore": {"$meta": "textScore"},
+                        "nameBoost": {
+                            "$cond": [
+                                {
+                                    "$regexMatch": {
+                                        "input": "$name",
+                                        "regex": f"^{safe_query}",
+                                        "options": "i",
+                                    }
+                                },
+                                100,
+                                0,
+                            ]
+                        },
+                        "codeBoost": {
+                            "$cond": [
+                                {
+                                    "$regexMatch": {
+                                        "input": "$code",
+                                        "regex": f"^{safe_query}",
+                                        "options": "i",
+                                    }
+                                },
+                                100,
+                                0,
+                            ]
+                        },
+                    }
+                },
+                {"$addFields": {"finalScore": {"$add": [{"$ifNull": ["$baseScore", 0]}, "$nameBoost", "$codeBoost"]}}},
                 {
                     "$lookup": {
                         "from": "ProductAccounts",
@@ -128,11 +211,12 @@ class ProductsCollection(BaseMongoCollection):
                     "$unwind": "$account",
                 },
                 {
-                    "$sort": {"name": 1},
+                    "$sort": {"finalScore": -1, "name": 1},
                 },
                 {
-                    "$limit": 7,
+                    "$limit": 20,
                 },
+                {"$project": {"baseScore": 0, "nameBoost": 0, "codeBoost": 0, "finalScore": 0}},
             ]
         )
 
@@ -146,28 +230,61 @@ class ProductsCollection(BaseMongoCollection):
         text_query: str,
     ) -> list[dict[str, Any]]:
         collection = self._collection
+        safe_query = re.escape(text_query)
         cursor = await collection.aggregate(
             [
                 {
                     "$match": {
-                        "$and": [
+                        "isDeleted": False,
+                        "$or": [
                             {
                                 "$text": {
-                                    "$search": text_query,
+                                    "$search": safe_query,
                                     "$caseSensitive": False,
                                     "$diacriticSensitive": False,
-                                },
+                                }
                             },
-                            {"isDeleted": False},
+                            {
+                                "code": {
+                                    "$regex": f"^{safe_query}",
+                                    "$options": "i",
+                                }
+                            },
                         ]
                     }
                 },
                 {
-                    "$sort": {"name": 1},
+                    "$addFields": {
+                        "baseScore": {"$meta": "textScore"},
+                        "nameBoost": {
+                            "$cond": [
+                                {
+                                    "$regexMatch": {
+                                        "input": "$name",
+                                        "regex": f"^{safe_query}",
+                                        "options": "i",
+                                    }
+                                },
+                                100,
+                                0,
+                            ]
+                        },
+                        "codeBoost": {
+                            "$cond": [
+                                {
+                                    "$regexMatch": {
+                                        "input": "$code",
+                                        "regex": f"^{safe_query}",
+                                        "options": "i",
+                                    }
+                                },
+                                100,
+                                0,
+                            ]
+                        },
+                    }
                 },
-                {
-                    "$limit": 21,
-                },
+                {"$addFields": {"finalScore": {"$add": [{"$ifNull": ["$baseScore", 0]}, "$nameBoost", "$codeBoost"]}}},
                 {
                     "$lookup": {
                         "from": "ProductAccounts",
@@ -204,6 +321,13 @@ class ProductsCollection(BaseMongoCollection):
                 {
                     "$unwind": "$saleProfile",
                 },
+                {
+                    "$sort": {"finalScore": -1, "name": 1},
+                },
+                {
+                    "$limit": 21,
+                },
+                {"$project": {"baseScore": 0, "nameBoost": 0, "codeBoost": 0, "finalScore": 0}},
             ]
         )
 
