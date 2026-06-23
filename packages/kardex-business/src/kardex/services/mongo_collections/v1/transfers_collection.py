@@ -24,7 +24,6 @@ class TransfersCollection(BaseMongoCollection):
 
         offset = raw_params.pop("offset", 0)
         limit = raw_params.pop("limit", 50)
-
         query = raw_params
 
         cursor = collection.find(query).sort("createdAt", -1).skip(offset).limit(limit)

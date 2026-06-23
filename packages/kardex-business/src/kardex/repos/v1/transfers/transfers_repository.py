@@ -2,6 +2,7 @@ from .data.transfers_datasource import TransfersDataSource
 from .models.transfer_model import TransferInDb
 from kardex.repos.v1.common.filter_params import TransferFilterParams
 
+
 class TransfersRepository:
     _instance: "TransfersRepository | None" = None
 
@@ -11,14 +12,14 @@ class TransfersRepository:
     @classmethod
     def get_instance(cls):
         if cls._instance is None:
-            cls._instance = TransfersRepository(
-                transfers_ds=TransfersDataSource()
-            )
+            cls._instance = TransfersRepository(transfers_ds=TransfersDataSource())
         return cls._instance
 
-    async def get_all_transfers(self, params: TransferFilterParams) -> list[TransferInDb]:
+    async def get_all_transfers(
+        self, params: TransferFilterParams
+    ) -> list[TransferInDb]:
         results = await self.transfers_ds.get_all_transfers(
-            **params.model_dump(exclude_unset=True)
+            **params.model_dump(exclude_none=True)
         )
         models = [TransferInDb.model_validate(result) for result in results]
         return models
