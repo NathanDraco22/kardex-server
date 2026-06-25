@@ -71,6 +71,13 @@ class OrdersController:
         if order.status == "draft":
             new_invoice_status = "draft"
 
+        # Recalcular totalCost desde los items con costos actualizados
+        # (process_invoice reasignará los costs con el costo real del inventario)
+        order_total_cost = sum(
+            item.cost * (item.quantity + item.bonQuantity)
+            for item in order.saleItems
+        )
+
         create_invoice = CreateInvoice(
             branchId=order.branchId,
             clientId=order.clientId,
@@ -79,7 +86,7 @@ class OrdersController:
             saleItems=order.saleItems,
             description=order.description,
             amountPaid=order.amountPaid,
-            totalCost=order.totalCost,
+            totalCost=order_total_cost,
             paymentType=order.paymentType,
             status=new_invoice_status,
             total=order.total,

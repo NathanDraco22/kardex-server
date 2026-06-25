@@ -93,6 +93,12 @@ async def process_invoice(
             for i, item in enumerate(create_invoice.saleItems):
                 item.cost = batch_result.assigned_costs[i]
 
+            # Recalcular totalCost con los costos reales del inventario
+            create_invoice.totalCost = sum(
+                item.cost * (item.quantity + item.bonQuantity)
+                for item in create_invoice.saleItems
+            )
+
             # ==========================================
             # 2. PERSISTENCIA DE INVENTARIO (DIFERENCIADA)
             # ==========================================
@@ -275,6 +281,12 @@ async def process_anon_invoice(
             # Nota: Asumimos que el orden de create_invoice.saleItems coincide con batch_items
             for i, invoice_item in enumerate(create_invoice.saleItems):
                 invoice_item.cost = batch_result.assigned_costs[i]
+
+            # Recalcular totalCost con los costos reales del inventario
+            create_invoice.totalCost = sum(
+                invoice_item.cost * (invoice_item.quantity + invoice_item.bonQuantity)
+                for invoice_item in create_invoice.saleItems
+            )
 
             # 5. PERSISTENCIA MASIVA EN BD 💾
             await InventoryEngine.execute_exit(

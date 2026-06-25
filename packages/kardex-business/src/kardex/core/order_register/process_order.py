@@ -95,6 +95,12 @@ async def process_order(
                 if item.product.id in accounts_dict:
                     item.cost = accounts_dict[item.product.id].averageCost
 
+            # Recalcular totalCost con los costos reales del inventario
+            create_order.totalCost = sum(
+                item.cost * (item.quantity + item.bonQuantity)
+                for item in create_order.saleItems
+            )
+
             # ==========================================
             # 4. RESERVA MASIVA (PERSISTENCIA)
             # ==========================================
