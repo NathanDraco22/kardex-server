@@ -19,6 +19,13 @@ async def get_entry_histories(
     return await entry_histories_controller.get_entry_history(query_params)
 
 
+@entry_histories_router.get("/by-product/{product_id}")
+async def get_entry_docs_by_product_id(
+    product_id: str,
+) -> ListResponse[EntryHistoryInDb]:
+    return await entry_histories_controller.get_entry_docs_by_product_id(product_id)
+
+
 @entry_histories_router.get("/{entry_doc_id}")
 async def get_history_by_id_with_supplier(entry_doc_id: str) -> EntryHistoryInDb:
     return await entry_histories_controller.get_history_by_id_with_supplier(

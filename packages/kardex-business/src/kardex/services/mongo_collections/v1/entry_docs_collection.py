@@ -174,6 +174,11 @@ class EntryDocsCollection(BaseMongoCollection):
                         ("createdBy.id", 1),
                     ],
                 ),
+                IndexModel(
+                    [
+                        ("items.productId", 1),
+                    ],
+                ),
             ]
         )
 
@@ -200,3 +205,31 @@ class EntryDocsCollection(BaseMongoCollection):
         cursor = await collection.aggregate(pipeline)
 
         return await cursor.to_list(length=None)
+
+    async def fetch_entry_docs_by_product_id(
+        self, product_id: str
+    ) -> list[dict[str, Any]]:
+        collection = self._collection
+
+        pipeline = [
+            {
+                "$match": {"items.productId": product_id},
+            },
+            {"$sort": {"createdAt": -1}},
+            {"$limit": 50},
+            {
+                "$lookup": {
+                    "from": "Suppliers",
+                    "localField": "supplierId",
+                    "foreignField": "id",
+                    "as": "supplier",
+                }
+            },
+            {"$unwind": "$supplier"},
+        ]
+
+        cursor = await collection.aggregate(pipeline)
+
+        result = await cursor.to_list(length=None)
+
+        return result
