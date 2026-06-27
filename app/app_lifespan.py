@@ -21,6 +21,11 @@ async def lifespan(app: FastAPI):
         KardexConfig().followTransaction = True
         KardexConfig().createFullProductProfile = False
 
+    let_negative = os.getenv("LET_NEGATIVE")
+    if let_negative is not None:
+        let_negative_value = let_negative.lower() == "true"
+        KardexConfig().letInvoiceWithNegative = let_negative_value
+
     await init_services()
     if os.getenv("MODE") != "DEV":
         await AppScheduler().start_task()

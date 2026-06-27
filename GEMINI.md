@@ -550,3 +550,11 @@ Optimización de relevancia y ordenamiento de mayor a menor coincidencia en las 
 5. **Verificación Estática y Dinámica**:
    - Se validó el correcto funcionamiento y ordenamiento mediante el script de integración `scratch/test_product_search_boost.py`.
    - Se corrieron los chequeos de calidad estáticos (`ruff check` y `ty check`) para el archivo modificado, superando todos los análisis sin advertencias ni errores.
+
+## Fecha: 2026-06-27
+### Objetivo
+Code Review de la variable de entorno `LET_NEGATIVE` y el comportamiento de `letInvoiceWithNegative`.
+
+### Resumen de Revisión
+1. **Prioridad de `LET_NEGATIVE`**: Se verificó en `app/app_lifespan.py` que si la variable de entorno `LET_NEGATIVE` existe (no es `None`), su valor booleano (`true`/`false`) tiene la última palabra y sobrescribe el valor configurado automáticamente por `is_lite`.
+2. **Comportamiento de `letInvoiceWithNegative`**: Se rastreó su uso a través de `inventory_batch_transformer.py` y `process_invoice.py` (para facturas directas y facturas anónimas). Cuando está habilitado, permite omitir la excepción `InsufficientBalanceError` en memoria durante salidas de tipo `"invoice"` y pasa `allow_negative=True` a `InventoryEngine.execute_exit`, lo que a su vez previene la restricción de stock disponible en MongoDB en `bulk_substract_product_account_data`.
