@@ -14,3 +14,4 @@ class TransferItem(BaseModel):
     salePrice: int = 0
     salePrice2: int = 0
     salePrice3: int = 0
+    salePrice4: int = 0

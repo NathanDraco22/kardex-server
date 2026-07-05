@@ -144,6 +144,7 @@ async def process_incoming_transfer(
                             "salePrice": item.salePrice,
                             "salePrice2": item.salePrice2,
                             "salePrice3": item.salePrice3,
+                            "salePrice4": item.salePrice4,
                         },
                     )
                     update_operations.append(new_update_op)

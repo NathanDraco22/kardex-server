@@ -87,7 +87,12 @@ class InventoryBatchTransformer:
             else:
                 new_sale_profiles.append(
                     CreateProductSaleProfile(
-                        branchId=branch_id, productId=p_id, salePrice=0
+                        branchId=branch_id,
+                        productId=p_id,
+                        salePrice=0,
+                        salePrice2=0,
+                        salePrice3=0,
+                        salePrice4=0,
                     )
                 )
                 if is_commerce_branch:
@@ -180,7 +185,8 @@ class InventoryBatchTransformer:
             if p_id not in existing_accounts_dict:
                 raise InsufficientBalanceError(
                     f"El producto '{p_name}' no tiene cuenta en esta sucursal.",
-                    product_id=p_id, product_name=p_name,
+                    product_id=p_id,
+                    product_name=p_name,
                 )
 
             account = existing_accounts_dict[p_id]
@@ -199,7 +205,8 @@ class InventoryBatchTransformer:
                         f"Stock {stock_type_msg} insuficiente para '{p_name}'. "
                         f"Requerido: {total_qty_needed}, "
                         f"Disponible: {limit_stock}",
-                        product_id=p_id, product_name=p_name,
+                        product_id=p_id,
+                        product_name=p_name,
                     )
 
             pair_op.append((p_id, total_qty_needed))

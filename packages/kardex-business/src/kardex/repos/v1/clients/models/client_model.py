@@ -26,6 +26,7 @@ class BaseClient(BaseModel):
     group: str = ""
     coordinates: Coordinates | None = None
     personalReferences: list[PersonalReference] = []
+    defaultPriceLevel: int = 1
 
 
 class CreateClient(BaseClient):
@@ -46,6 +47,7 @@ class UpdateClient(BaseModel):
     group: str | None = None
     coordinates: Coordinates | None = None
     personalReferences: list[PersonalReference] | None = None
+    defaultPriceLevel: int | None = None
 
 
 class ClientInDb(BaseClient):

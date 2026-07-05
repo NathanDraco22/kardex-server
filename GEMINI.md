@@ -558,3 +558,19 @@ Code Review de la variable de entorno `LET_NEGATIVE` y el comportamiento de `let
 ### Resumen de Revisión
 1. **Prioridad de `LET_NEGATIVE`**: Se verificó en `app/app_lifespan.py` que si la variable de entorno `LET_NEGATIVE` existe (no es `None`), su valor booleano (`true`/`false`) tiene la última palabra y sobrescribe el valor configurado automáticamente por `is_lite`.
 2. **Comportamiento de `letInvoiceWithNegative`**: Se rastreó su uso a través de `inventory_batch_transformer.py` y `process_invoice.py` (para facturas directas y facturas anónimas). Cuando está habilitado, permite omitir la excepción `InsufficientBalanceError` en memoria durante salidas de tipo `"invoice"` y pasa `allow_negative=True` a `InventoryEngine.execute_exit`, lo que a su vez previene la restricción de stock disponible en MongoDB en `bulk_substract_product_account_data`.
+
+## Fecha: 2026-07-04
+### Objetivo
+Discusión y análisis de diseño lógico para el manejo de variaciones de productos y presentaciones múltiples.
+
+### Resumen de Discusión
+1. **Alternativa A (Productos Hijos Independientes)**:
+   - Se evaluó el uso de un campo opcional `variation: ProductVariation | None` en [BaseProduct](file:///c:/Users/sytru/Developer/Projects/kardex_app/kardex-server/packages/kardex-business/src/kardex/repos/v1/products/models/product_model.py#L7-L17) que apunta a un `parentId` y define un `conversionFactor`.
+   - Se acordó que el stock físico residirá exclusivamente en el Padre para evitar redundancia y desincronización de datos.
+   - Las agregaciones de MongoDB calcularán dinámicamente el stock y el costo promedio de las variaciones en tiempo de consulta.
+   - El motor de inventario interceptará transacciones sobre productos hijos y redirigirá la afectación de stock físico al documento del padre en base al factor de conversión.
+2. **Alternativa B (Arreglo de Presentaciones en el Padre)**:
+   - Se analizó la viabilidad de agregar un arreglo de presentaciones directamente al producto padre. 
+   - Aunque simplificaría el motor de inventario, se descartó debido a que añade alta complejidad a la UI (selección de presentación al vender) y a la asignación de perfiles de precios independientes por sucursal (`ProductSaleProfiles`).
+3. **Estado**: Discusión teórica completada. Decisión en espera de definición final por el usuario debido a la gran escala de impacto en el sistema.
+
