@@ -74,6 +74,7 @@ async def process_create_product(
                     salePrice=0,
                     salePrice2=0,
                     salePrice3=0,
+                    salePrice4=0,
                     discounts=[],
                 )
 

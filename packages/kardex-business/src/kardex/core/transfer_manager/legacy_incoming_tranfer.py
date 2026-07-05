@@ -111,6 +111,9 @@ async def process_incoming_transfer(
                     branchId=destination_branch,
                     productId=item.id,
                     salePrice=0,  # Ojo: Entra con precio 0, alguien deberá ponerle precio luego
+                    salePrice2=0,
+                    salePrice3=0,
+                    salePrice4=0,
                 )
 
                 sale_profiles.append(sale_profile)

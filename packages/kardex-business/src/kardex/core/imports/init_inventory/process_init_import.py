@@ -76,6 +76,7 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
             salePrice=import_product.price,
             salePrice2=import_product.price2,
             salePrice3=import_product.price3,
+            salePrice4=0,
             updatedAt=now_milliseconds,
         )
 
@@ -250,6 +251,7 @@ async def process_inventory_import(
             salePrice=import_product.price,
             salePrice2=import_product.price2,
             salePrice3=import_product.price3,
+            salePrice4=0,
             updatedAt=now_milliseconds,
         )
 
