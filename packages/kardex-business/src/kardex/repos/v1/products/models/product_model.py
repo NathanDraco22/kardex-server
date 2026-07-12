@@ -8,6 +8,7 @@ class BaseProduct(BaseModel):
     name: str
     description: str | None = None
     code: str = ""
+    image: str = ""
     brandName: str
     unitName: str
     categoryName: str | None = None
@@ -28,6 +29,7 @@ class UpdateProduct(BaseModel):
     unitName: str | None = None
     categoryName: str | None = None
     tags: list[str] | None = None
+    image: str | None = None
     isActive: bool | None = None
 
 
