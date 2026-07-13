@@ -11,6 +11,7 @@ class InventoryProduct(BaseModel):
     categoryName: str | None = None
     tags: list[str]
     isActive: bool = True
+    image: str = ""
 
 
 class BaseInventory(BaseModel):
