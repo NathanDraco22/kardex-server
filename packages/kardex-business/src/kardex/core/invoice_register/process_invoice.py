@@ -139,13 +139,13 @@ async def process_invoice(
                     "id": new_invoice_id,
                     "createdAt": current_time,
                     "status": "paid"
-                    if create_invoice.paymentType == "cash"
+                    if create_invoice.paymentType != "credit"
                     else "open",
                     "amountPaid": create_invoice.total
-                    if create_invoice.paymentType == "cash"
+                    if create_invoice.paymentType != "credit"
                     else 0,
                     "paidAt": current_time
-                    if create_invoice.paymentType == "cash"
+                    if create_invoice.paymentType != "credit"
                     else None,
                     "saleItems": [
                         item.model_dump() for item in create_invoice.saleItems
@@ -194,7 +194,7 @@ async def process_invoice(
             )
 
             # B. Pago Contado (Abono)
-            if new_invoice_in_db.paymentType == "cash":
+            if new_invoice_in_db.paymentType != "credit":
                 client_account = await ClientFinanceEngine.process_movement(
                     request=FinanceTransactionRequest(
                         client_id=create_invoice.clientId,
