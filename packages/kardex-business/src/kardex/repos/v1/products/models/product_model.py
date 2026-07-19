@@ -4,6 +4,11 @@ from kardex.repos.v1.product_sale_profiles import ProductSaleProfileInDb
 from pydantic import BaseModel
 
 
+class ExtraUnit(BaseModel):
+    name: str = ""
+    conversionFactor: int = 1
+
+
 class BaseProduct(BaseModel):
     name: str
     description: str | None = None
@@ -15,6 +20,28 @@ class BaseProduct(BaseModel):
     tags: list[str]
     hasIva: bool = False
     isActive: bool = True
+    extraUnits: list[ExtraUnit] = []
+    defaultUnitIndex: int = 0  # 0 = unidad base, 1 = extraUnits[0], 2 = extraUnits[1]
+
+    @property
+    def default_unit_name(self) -> str:
+        """Nombre de la unidad por defecto para display."""
+        if self.defaultUnitIndex == 0 or not self.extraUnits:
+            return self.unitName
+        idx = self.defaultUnitIndex - 1
+        if 0 <= idx < len(self.extraUnits):
+            return self.extraUnits[idx].name
+        return self.unitName   # fallback
+
+    @property
+    def default_unit_factor(self) -> int:
+        """Factor de conversión de la unidad por defecto."""
+        if self.defaultUnitIndex == 0 or not self.extraUnits:
+            return 1
+        idx = self.defaultUnitIndex - 1
+        if 0 <= idx < len(self.extraUnits):
+            return self.extraUnits[idx].conversionFactor
+        return 1              # fallback
 
 
 class CreateProduct(BaseProduct):
@@ -31,6 +58,9 @@ class UpdateProduct(BaseModel):
     tags: list[str] | None = None
     image: str | None = None
     isActive: bool | None = None
+    extraUnits: list[ExtraUnit] | None = None
+    defaultUnitIndex: int | None = None
+
 
 
 class ProductInDb(BaseProduct):
