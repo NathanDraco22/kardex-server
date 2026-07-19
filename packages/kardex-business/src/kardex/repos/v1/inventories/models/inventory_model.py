@@ -15,6 +15,7 @@ class InventoryProduct(BaseModel):
     image: str = ""
     extraUnits: list[ExtraUnit] = []
     defaultUnitIndex: int = 0
+    wholesaleUnitIndex: int = 0
 
     @property
     def default_unit_name(self) -> str:

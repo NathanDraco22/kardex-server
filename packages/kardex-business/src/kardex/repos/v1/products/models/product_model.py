@@ -22,6 +22,7 @@ class BaseProduct(BaseModel):
     isActive: bool = True
     extraUnits: list[ExtraUnit] = []
     defaultUnitIndex: int = 0  # 0 = unidad base, 1 = extraUnits[0], 2 = extraUnits[1]
+    wholesaleUnitIndex: int = 0  # 0 = no definida, fallback a defaultUnitIndex
 
     @property
     def default_unit_name(self) -> str:
@@ -60,6 +61,7 @@ class UpdateProduct(BaseModel):
     isActive: bool | None = None
     extraUnits: list[ExtraUnit] | None = None
     defaultUnitIndex: int | None = None
+    wholesaleUnitIndex: int | None = None
 
 
 
