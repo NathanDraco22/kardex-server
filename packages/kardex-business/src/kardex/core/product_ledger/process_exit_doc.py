@@ -42,7 +42,7 @@ async def process_exit_doc(
                 InventoryExitBatchItem(
                     product_id=item.productId,
                     product_name=item.productName,
-                    quantity=item.quantity,
+                    quantity=abs(item.quantity),
                 )
                 for item in create_exit_doc.items
             ]
