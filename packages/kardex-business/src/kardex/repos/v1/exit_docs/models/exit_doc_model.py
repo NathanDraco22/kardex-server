@@ -1,15 +1,5 @@
-from pydantic import BaseModel, Field
-from kardex.repos.v1.common.models import UserInfo
-
-
-class ExitItem(BaseModel):
-    productId: str
-    productName: str
-    code: str | None = None
-    brandName: str | None = None
-    unitName: str | None = None
-    cost: int | None = None
-    quantity: int = Field(..., lt=0)
+from pydantic import BaseModel
+from kardex.repos.v1.common.models import UserInfo, ExitItem
 
 
 class Client(BaseModel):
