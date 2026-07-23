@@ -574,3 +574,17 @@ Discusión y análisis de diseño lógico para el manejo de variaciones de produ
    - Aunque simplificaría el motor de inventario, se descartó debido a que añade alta complejidad a la UI (selección de presentación al vender) y a la asignación de perfiles de precios independientes por sucursal (`ProductSaleProfiles`).
 3. **Estado**: Discusión teórica completada. Decisión en espera de definición final por el usuario debido a la gran escala de impacto en el sistema.
 
+## Fecha: 2026-07-21
+### Objetivo
+Auditoría exhaustiva de código buscando posibles bugs, condiciones de carrera, errores de cálculo en costos o stock, inconsistencias en transacciones de MongoDB y casos borde en todo el core de inventario (`packages/kardex-business/src/kardex/core`).
+
+### Resumen de Revisión
+1. **Detección de Bugs Críticos**:
+   - **`prepare_exit` / Kardex Result Stock**: Para documentos de salida con ítems duplicados del mismo producto, `new_tx.resultStock` muta el objeto en memoria en pasos intermedios irreales y genera transacciones redundantes no consolidadas.
+   - **Devoluciones de Clientes (`process_devolution.py`)**: `process_devolution` promete acreditar la cuenta del cliente en la documentación/comentarios pero NO invoca `ClientFinanceEngine.process_movement`, dejando la deuda del cliente intacta tras una devolución. Además, no inicializa `ProductSaleProfile` si el producto devuelto no tenía cuenta en la sucursal.
+   - **Despacho de Pedidos Facturados (`process_invoice.py`)**: Cuando `is_order_fulfillment=True`, se usa `bulk_dispatch_promise_stock` que exige estrictamente `promiseStock >= qty`, fallando si hay desajuste previo aun si `letInvoiceWithNegative=True`. No usa el motor unificado `InventoryEngine.execute_exit`.
+   - **Cancelación de Pedidos (`cancel_order.py`)**: `bulk_substract_from_promise_stock` recibe tuplas sin consolidar. Si un producto aparece en 2 ítems del pedido, el segundo `UpdateOne` falla al exigir `promiseStock >= qty` individual tras la primera resta parcial.
+   - **Mapeo y Enmascaramiento de Excepciones**: En varios managers (`ProductLedgerManager`, `AdjustLedgerManager`, `InvoiceRegister`) se capturan las excepciones de negocio (`InsufficientBalanceError`) para relanzar copias genéricas sin los atributos de contexto (`product_id`, `product_name`), o se capturan todos los `OperationFailure` reintentando errores ajenos a conflictos de escritura (código 112).
+   - **Bloqueo Global de Mutex**: `AdjustLedgerManager` y `InvoiceRegister` usan `asyncio.Lock()` globales en memoria que bloquean operaciones concurrentes entre distintas sucursales y lanzan `asyncio.TimeoutError` sin capturar.
+
+
