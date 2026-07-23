@@ -38,24 +38,11 @@ async def process_exit_doc(
             now_in_milliseconds = TimeTools.get_now_in_milliseconds()
             new_exit_doc_generated_id = UuidTool.generate_uuid()
 
-            new_exit_data = create_exit_doc.model_dump()
-            new_exit_data["id"] = new_exit_doc_generated_id
-            new_exit_data["createdAt"] = now_in_milliseconds
-
-            insert_result = (
-                await ExitDocsCollection.get_instance().create_exit_doc_with_session(
-                    new_exit_data,
-                    session=session,
-                )
-            )
-
-            new_exit_doc_in_db = ExitDocInDb.model_validate(insert_result)
-
             batch_items = [
                 InventoryExitBatchItem(
                     product_id=item.productId,
                     product_name=item.productName,
-                    quantity=item.quantity,
+                    quantity=abs(item.quantity),
                 )
                 for item in create_exit_doc.items
             ]
@@ -79,11 +66,27 @@ async def process_exit_doc(
                 branch_id=create_exit_doc.branchId,
                 items=batch_items,
                 existing_accounts_dict=accounts_dict,
-                document_id=new_exit_doc_in_db.id,
-                doc_number=new_exit_doc_in_db.docNumber,
+                document_id=new_exit_doc_generated_id,
+                doc_number=create_exit_doc.docNumber,
                 tx_type="exit",
                 tx_subtype="exit",
             )
+
+            for i, item in enumerate(create_exit_doc.items):
+                item.cost = batch_result.assigned_costs[i]
+
+            new_exit_data = create_exit_doc.model_dump()
+            new_exit_data["id"] = new_exit_doc_generated_id
+            new_exit_data["createdAt"] = now_in_milliseconds
+
+            insert_result = (
+                await ExitDocsCollection.get_instance().create_exit_doc_with_session(
+                    new_exit_data,
+                    session=session,
+                )
+            )
+
+            new_exit_doc_in_db = ExitDocInDb.model_validate(insert_result)
 
             await InventoryEngine.execute_exit(
                 branch_id=create_exit_doc.branchId,

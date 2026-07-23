@@ -26,3 +26,5 @@ class SaleItem(BaseModel):
     totalDiscount: int = 0
     iva: int = 0
     total: int
+    conversionFactor: int = 1
+

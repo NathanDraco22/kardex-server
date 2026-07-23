@@ -59,8 +59,8 @@ async def process_adjust_exit(
             # 2. PREPARAR DATOS (Mapeo a InventoryExitBatchItem)
             batch_items = [
                 InventoryExitBatchItem(
-                    product_id=item.productId,  # Ojo: En AdjustExit suele ser 'productId'
-                    quantity=item.quantity,
+                    product_id=item.productId,
+                    quantity=abs(item.quantity),
                     product_name=item.productName,
                 )
                 for item in adjust_exit.items

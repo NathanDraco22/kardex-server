@@ -10,6 +10,7 @@ class TransferItem(BaseModel):
     categoryName: str | None = None
     quantity: int
     cost: int
+    conversionFactor: int = 1
     expirationDate: int | None = None
     salePrice: int = 0
     salePrice2: int = 0

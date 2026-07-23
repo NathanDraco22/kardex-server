@@ -1,20 +1,9 @@
 from pydantic import BaseModel
-from kardex.repos.v1.common.models import UserInfo
+from kardex.repos.v1.common.models import UserInfo, EntryItem
 
 
 class Supplier(BaseModel):
     name: str
-
-
-class EntryItem(BaseModel):
-    productId: str
-    productName: str
-    code: str | None = None
-    brandName: str | None = None
-    unitName: str | None = None
-    cost: int
-    quantity: int
-    expirationDate: int | None = None
 
 
 class BaseEntryHistory(BaseModel):
