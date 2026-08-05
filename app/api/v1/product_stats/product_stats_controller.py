@@ -5,8 +5,6 @@ from fastapi.responses import FileResponse
 
 from kardex.tools import TimeTools, EtagTool
 
-from core.ml import ProductClassifier, ProductDataStat
-
 from services import ProjectionExcelService, ProjectionSheet, ProjectionRow
 
 from responses.v1 import ListResponse
@@ -24,7 +22,10 @@ from kardex.repos.v1.product_stats import (
     ProductStatsDataSource,
 )
 
-from kardex.repos.v1.common.filter_params import ProductStatFilterParams, ReadProductStatFilterParams
+from kardex.repos.v1.common.filter_params import (
+    ProductStatFilterParams,
+    ReadProductStatFilterParams,
+)
 
 
 class ProductStatsController:
@@ -244,31 +245,13 @@ class ProductStatsController:
                 detail="Empty product stats",
             )
 
-        product_stat_data: list[ProductDataStat] = []
-
-        for stat in all_product_stats:
-            product_average = stat.totalUnits / stat.daysAnalyzed
-            transaction_frecuency = stat.totalTransactions / stat.daysAnalyzed
-            product_stat_data.append(
-                ProductDataStat(
-                    productId=stat.productId,
-                    branchId=stat.branchId,
-                    productAverage=product_average,
-                    transactionFrequency=transaction_frecuency,
-                ),
-            )
-
-        estimation_result = ProductClassifier().estimate_classification(
-            product_stat_data
-        )
-
         update_items = [
             UpdateProductStatBatchItem(
-                productId=result.productId,
-                branchId=result.branchId,
-                estimationLevel=result.classification,
+                productId=stat.productId,
+                branchId=stat.branchId,
+                estimationLevel=1,
             )
-            for result in estimation_result
+            for stat in all_product_stats
         ]
 
         await self.product_stats_repo.update_product_batch(update_items)
@@ -282,8 +265,9 @@ class ProductStatsController:
             3: "REGULAR (3)",
             2: "BAJO (2)",
             1: "MIN (1)",
+            0: "-",
         }
-        return mapping.get(level, str(level))
+        return mapping.get(level, "-")
 
 
 product_stats_controller = ProductStatsController(

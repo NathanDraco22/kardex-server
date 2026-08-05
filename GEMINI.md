@@ -587,4 +587,13 @@ Auditoría exhaustiva de código buscando posibles bugs, condiciones de carrera,
    - **Mapeo y Enmascaramiento de Excepciones**: En varios managers (`ProductLedgerManager`, `AdjustLedgerManager`, `InvoiceRegister`) se capturan las excepciones de negocio (`InsufficientBalanceError`) para relanzar copias genéricas sin los atributos de contexto (`product_id`, `product_name`), o se capturan todos los `OperationFailure` reintentando errores ajenos a conflictos de escritura (código 112).
    - **Bloqueo Global de Mutex**: `AdjustLedgerManager` y `InvoiceRegister` usan `asyncio.Lock()` globales en memoria que bloquean operaciones concurrentes entre distintas sucursales y lanzan `asyncio.TimeoutError` sin capturar.
 
+## Fecha: 2026-08-04
+### Objetivo
+Eliminación de la dependencia `onnxruntime` del backend `kardex-server` y reubicación del modelo `product_classifier.onnx` a la carpeta `ml_pending/` en la raíz del proyecto para su futura integración en Flutter.
 
+### Resumen de Implementación
+1. **Carpeta `ml_pending/`**: Se creó e integró la carpeta directamente en la raíz contenedora del monorepo (`kardex_app/ml_pending/`), compartida por `kardex-server` y `kardex_app_front`, conteniendo el modelo `product_classifier.onnx` junto a un `README.md` explicativo con las pautas para su posterior integración On-Device ML en Flutter. Se eliminó la carpeta `app/assets/` del servidor.
+2. **Dependencias del Servidor**: Se eliminó `"onnxruntime>=1.26.0"` de `pyproject.toml` y se ejecutó `uv sync`, desinstalando con éxito `onnxruntime`, `numpy`, `protobuf` y `flatbuffers`, reduciendo significativamente el tamaño del proyecto y el uso de memoria RAM en **Railway**.
+3. **Limpieza de Servicios**: Se eliminó `app/services/ml_service.py` y la subcarpeta `app/core/ml/`. Se removieron las importaciones e inicializaciones de `ProductClassifierService` y `ProductClassifier` en `app/services/__init__.py`, `app/core/services_initializer.py` y `app/core/__init__.py`.
+4. **Endpoint de Estadísticas**: Se actualizó `estimate_product_stats` en `product_stats_controller.py` para calcular el procesamiento de estadísticas de transacciones y asignar un nivel de estimación por defecto `0` (que mapea a la etiqueta `"-"`), manteniendo la compatibilidad con clientes existentes sin arrojar errores `501`.
+5. **Verificación Estática**: Se ejecutaron con éxito las verificaciones pre-commit requeridas (`ruff check` y `ty check`), pasando todos los chequeos sin errores ni advertencias.
