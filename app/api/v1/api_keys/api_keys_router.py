@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.app_middleware.depends.auth_middleware import auth_middleware
+from app_middleware.depends.auth_middleware import auth_middleware
 from kardex.repos.v1.api_keys import (
     ApiKeyInDb,
     CreateApiKey,
