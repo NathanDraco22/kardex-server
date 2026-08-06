@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.app_middleware.depends.auth_middleware import auth_middleware
+from app_middleware.depends.auth_middleware import auth_middleware
 from kardex.repos.v1.api_keys import (
     ApiKeyInDb,
     CreateApiKey,
@@ -27,7 +27,9 @@ async def get_all_api_keys():
     return await controller.get_all_api_keys()
 
 
-@api_keys_router.post("", response_model=CreatedApiKeyResponse, status_code=status.HTTP_201_CREATED)
+@api_keys_router.post(
+    "", response_model=CreatedApiKeyResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_api_key(create_dto: CreateApiKey):
     controller = ApiKeysController()
     return await controller.create_api_key(create_dto)

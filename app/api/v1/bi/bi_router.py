@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 
-from app.app_middleware.depends.api_key_middleware import api_key_middleware
+from app_middleware.depends.api_key_middleware import api_key_middleware
 from kardex.repos.v1.bi import (
     BIDetalleVentaItem,
     BIClienteItem,
