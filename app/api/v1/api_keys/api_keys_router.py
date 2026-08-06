@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app_middleware.depends.auth_middleware import auth_middleware
+from app.app_middleware.depends.auth_middleware import auth_middleware
 from kardex.repos.v1.api_keys import (
     ApiKeyInDb,
     CreateApiKey,
     CreatedApiKeyResponse,
 )
+from responses.v1 import ListResponse
 
 from .api_keys_controller import ApiKeysController
 
@@ -21,8 +22,8 @@ class ToggleApiKeyRequest(BaseModel):
     isActive: bool
 
 
-@api_keys_router.get("", response_model=list[ApiKeyInDb])
-async def get_all_api_keys():
+@api_keys_router.get("")
+async def get_all_api_keys() -> ListResponse[ApiKeyInDb]:
     controller = ApiKeysController()
     return await controller.get_all_api_keys()
 

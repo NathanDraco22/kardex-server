@@ -4,6 +4,7 @@ from kardex.repos.v1.api_keys import (
     CreateApiKey,
     CreatedApiKeyResponse,
 )
+from responses.v1 import ListResponse
 
 
 class ApiKeysController:
@@ -15,8 +16,9 @@ class ApiKeysController:
     ) -> CreatedApiKeyResponse:
         return await self.repo.create_api_key(create_dto, created_by=created_by)
 
-    async def get_all_api_keys(self) -> list[ApiKeyInDb]:
-        return await self.repo.get_all_api_keys()
+    async def get_all_api_keys(self) -> ListResponse[ApiKeyInDb]:
+        api_keys = await self.repo.get_all_api_keys()
+        return ListResponse(count=len(api_keys), data=api_keys)
 
     async def toggle_api_key_status(
         self, key_id: str, is_active: bool
