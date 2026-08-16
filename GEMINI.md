@@ -597,3 +597,12 @@ Eliminación de la dependencia `onnxruntime` del backend `kardex-server` y reubi
 3. **Limpieza de Servicios**: Se eliminó `app/services/ml_service.py` y la subcarpeta `app/core/ml/`. Se removieron las importaciones e inicializaciones de `ProductClassifierService` y `ProductClassifier` en `app/services/__init__.py`, `app/core/services_initializer.py` y `app/core/__init__.py`.
 4. **Endpoint de Estadísticas**: Se actualizó `estimate_product_stats` en `product_stats_controller.py` para calcular el procesamiento de estadísticas de transacciones y asignar un nivel de estimación por defecto `0` (que mapea a la etiqueta `"-"`), manteniendo la compatibilidad con clientes existentes sin arrojar errores `501`.
 5. **Verificación Estática**: Se ejecutaron con éxito las verificaciones pre-commit requeridas (`ruff check` y `ty check`), pasando todos los chequeos sin errores ni advertencias.
+
+## Fecha: 2026-08-16
+### Objetivo
+Soporte de filtro por rango de fechas en el listado paginado de órdenes/cotizaciones para el nuevo módulo frontend "Buscador de Cotizaciones/Órdenes".
+
+### Resumen de Implementación
+1. **Cambio mínimo en `orders_collection.py`**: En `fetch_paginated_orders` se capturan ahora los parámetros `startDate`/`endDate` del `**kwargs` y, si ambos están presentes, se agrega al query de MongoDB el filtro `query["createdAt"] = {"$gte": start_date, "$lte": end_date}`. Se replicó el mismo patrón que ya usaba `fetch_products_in_orders`.
+2. **Sin cambios en capas superiores**: El repositorio, controller, datasource y filtros (`OrderFilterParams`) ya propagaban `startDate`/`endDate` de forma natural; la colección era la única capa que los ignoraba.
+3. **Verificación Estática**: `ruff check` y `ty check` pasaron sin errores.

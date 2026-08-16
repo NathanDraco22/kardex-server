@@ -7,6 +7,7 @@ from kardex.repos.v1.devolutions import (
     DevolutionsRepository,
 )
 from kardex.repos.v1.clients import ClientsRepository
+from kardex.repos.v1.invoices import InvoicesRepository
 from kardex.repos.v1.product_accounts import ProductAccountInDb
 from kardex.repos.v1.branches import BranchesRepository
 from kardex.repos.v1.products import ProductsRepository
@@ -24,6 +25,7 @@ class DevolutionRegister:
         branches_repo: BranchesRepository,
         products_repo: ProductsRepository,
         clients_repo: ClientsRepository,
+        invoices_repo: InvoicesRepository,
     ) -> None:
         """
         Inicializa la clase con sus dependencias (Inyección de Dependencias).
@@ -32,6 +34,7 @@ class DevolutionRegister:
         self.branches_repo = branches_repo
         self.products_repo = products_repo
         self.clients_repo = clients_repo
+        self.invoices_repo = invoices_repo
 
     async def _register_transaction(
         self,
@@ -96,6 +99,13 @@ class DevolutionRegister:
             client = await self.clients_repo.get_client_by_id(doc.clientId)
             if client is None:
                 raise ClientNotFound("CLIENT_NOT_FOUND", client_id=doc.clientId)
+
+            if doc.originalInvoiceId:
+                invoice = await self.invoices_repo.get_invoice_by_id(doc.originalInvoiceId)
+                if invoice is not None and invoice.amountPaid > 0:
+                    raise InvalidOperation(
+                        "Invoice has payments, devolution is not allowed."
+                    )
 
         product_ids = list(set(item.product.id for item in doc.returnedItems))
         products = await self.products_repo.get_product_by_ids(product_ids)
