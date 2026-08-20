@@ -30,6 +30,9 @@ class OrdersCollection(BaseMongoCollection):
 
         created_by = kwargs.pop("createdBy", None)
 
+        start_date = kwargs.pop("startDate", None)
+        end_date = kwargs.pop("endDate", None)
+
         query = {}
 
         if branch_id:
@@ -46,6 +49,9 @@ class OrdersCollection(BaseMongoCollection):
 
         if created_by:
             query["createdBy.id"] = created_by
+
+        if start_date and end_date:
+            query["createdAt"] = {"$gte": start_date, "$lte": end_date}
 
         cursor = collection.find(query).sort("createdAt", -1).skip(skip).limit(limit)
 

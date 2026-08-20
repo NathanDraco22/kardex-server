@@ -33,6 +33,23 @@ class InvoiceDevolutionsController:
             devolutions=devolutions,
         )
 
+    async def get_invoice_devolutions_by_id(
+        self, invoice_id: str
+    ) -> InvoiceDevolutionsResponse:
+        invoice = await self.invoices_repo.get_invoice_by_id(invoice_id)
+        if invoice is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invoice not found",
+            )
+        devolutions = await self.devolutions_repo.get_devolution_by_invoice_id(
+            invoice.id, None
+        )
+        return InvoiceDevolutionsResponse(
+            invoice=invoice,
+            devolutions=devolutions,
+        )
+
     async def get_anon_invoice_devolutions_by_doc_number(
         self, invoice_doc_number: str
     ) -> InvoiceDevolutionsResponse:

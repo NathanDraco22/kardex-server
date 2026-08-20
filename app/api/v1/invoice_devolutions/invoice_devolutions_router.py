@@ -29,3 +29,12 @@ async def get_anon_invoice_devolutions_by_doc_number(
             invoice_doc_number
         )
     )
+
+
+@invoice_devolutions_router.get("/{invoice_id}")
+async def get_invoice_devolutions_by_id(
+    invoice_id: str,
+) -> InvoiceDevolutionsResponse:
+    return await invoice_devolutions_controller.get_invoice_devolutions_by_id(
+        invoice_id
+    )

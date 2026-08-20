@@ -32,6 +32,7 @@ from .transactions_collection import TransactionsCollection
 from .transfers_collection import TransfersCollection
 from .units_collection import UnitsCollection
 from .user_roles_collection import UserRolesCollection
+from .api_keys_collection import ApiKeysCollection
 from .users_collection import UsersCollection
 
 __all__ = [
@@ -39,6 +40,7 @@ __all__ = [
     "AccountsCollection",
     "AdjustEntriesCollection",
     "AdjustExitsCollection",
+    "ApiKeysCollection",
     "BranchesCollection",
     "ClientGroupsCollection",
     "ClientTransactionsCollection",
@@ -71,3 +73,4 @@ __all__ = [
     "UserRolesCollection",
     "UsersCollection",
 ]
+

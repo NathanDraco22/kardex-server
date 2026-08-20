@@ -40,10 +40,15 @@ from .transfers.transfers_router import transfers_router
 from .units.units_router import units_router
 from .user_roles.user_roles_router import user_roles_router
 from .users.users_router import users_router
+from .api_keys.api_keys_router import api_keys_router
+from .bi.bi_router import bi_router
 
 router_v1 = APIRouter(tags=["apiV1"])
 
+router_v1.include_router(api_keys_router)
+router_v1.include_router(bi_router)
 router_v1.include_router(adjust_entries_router, prefix="/adjust-entries")
+
 router_v1.include_router(adjust_exits_router, prefix="/adjust-exits")
 router_v1.include_router(admin_panels_router, prefix="/admin-panels")
 router_v1.include_router(auths_router, prefix="/auths")

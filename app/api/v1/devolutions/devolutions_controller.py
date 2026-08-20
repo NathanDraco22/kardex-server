@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from kardex.core.devolution_register.devolution_register import DevolutionRegister
 from kardex.repos.v1.branches import BranchesRepository, BranchesDataSource
 from kardex.repos.v1.clients import ClientsRepository, ClientsDataSource
+from kardex.repos.v1.invoices import InvoicesRepository, InvoicesDataSource
 from kardex.repos.v1.products import ProductsRepository, ProductsDataSource
 from kardex.repos.v1.common.models.history_params import HistoryClientParams
 from kardex.repos.v1.devolutions import (
@@ -26,6 +27,7 @@ class DevolutionsController:
             branches_repo=BranchesRepository(BranchesDataSource()),
             products_repo=ProductsRepository(ProductsDataSource()),
             clients_repo=ClientsRepository(ClientsDataSource()),
+            invoices_repo=InvoicesRepository(InvoicesDataSource()),
         )
 
     async def create_devolution(self, body: CreateDevolution) -> DevolutionInDb:
