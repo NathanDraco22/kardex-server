@@ -1,15 +1,17 @@
 from fastapi import APIRouter, Depends
-from typing import Any
 
 from .reports_controller import reports_controller
 from kardex.repos.v1.common.filter_params import ReportFilterParams, TotalsFilterParams
+from kardex.repos.v1.executive_summaries import ExecutiveSummaryInDb
 from .responses import TotalsResult
 
 reports_router = APIRouter(tags=["reportsV1"])
 
 
 @reports_router.get("/general-report")
-async def get_general_report(query_params: ReportFilterParams = Depends()) -> Any:
+async def get_general_report(
+    query_params: ReportFilterParams = Depends(),
+) -> ExecutiveSummaryInDb:
     return await reports_controller.get_general_report(query_params)
 
 
