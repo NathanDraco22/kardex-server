@@ -157,11 +157,13 @@ class ReportsController:
             branchId=params.branchId,
             startDate=params.startDate,
             endDate=params.endDate,
+            createdBy=params.userId,
         )
         receipt_filter = ReceiptFilterParams(
             branchId=params.branchId,
             startDate=params.startDate,
             endDate=params.endDate,
+            createdBy=params.userId,
         )
         detail_invoices = await self.invoices_repo.get_all_invoices(invoice_filter)
         detail_receipts = await self.receipts_repo.get_all_receipts(receipt_filter)
