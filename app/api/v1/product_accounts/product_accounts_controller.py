@@ -49,6 +49,7 @@ class ProductAccountsController:
         self, product_id: str, branch_id: str, add_data: AddToProductAccount
     ) -> ProductAccountInDb:
         kwargs = add_data.model_dump(exclude_none=True)
+        kwargs.pop("expirationDate", None)
         res = await self.product_account_repo.add_product_account_stock(
             product_id, branch_id, **kwargs
         )

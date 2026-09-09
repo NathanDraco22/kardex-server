@@ -8,3 +8,4 @@ class TotalsFilterParams(BaseModel):
     branchId: str
     startDate: int
     endDate: int
+    userId: str | None = None

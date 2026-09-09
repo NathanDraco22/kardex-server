@@ -11,3 +11,4 @@ class ReceiptFilterParams(BaseFilterParams):
     paymentMethod: PaymentMethod | None = None
     nePaymentMethod: PaymentMethod | None = None
     endDate: int | None = None
+    createdBy: str | None = None

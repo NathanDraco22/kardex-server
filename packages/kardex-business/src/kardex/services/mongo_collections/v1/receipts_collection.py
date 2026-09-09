@@ -33,6 +33,10 @@ class ReceiptsCollection(BaseMongoCollection):
 
             del query["startDate"]
 
+        if kwargs.get("createdBy"):
+            query["createdBy.id"] = kwargs.get("createdBy")
+            del query["createdBy"]
+
         cursor = collection.find(query).skip(offset).limit(limit).sort("createdAt", -1)
 
         result = await cursor.to_list(length=None)
@@ -109,6 +113,10 @@ class ReceiptsCollection(BaseMongoCollection):
 
             del query["startDate"]
             del query["endDate"]
+
+        user_id = query.pop("userId", None) or query.pop("createdBy", None)
+        if user_id:
+            query["createdBy.id"] = user_id
 
         cursor = await collection.aggregate(
             [

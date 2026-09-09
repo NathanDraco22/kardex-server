@@ -341,6 +341,10 @@ class InvoicesCollection(BaseMongoCollection):
         if ne_type:
             query["paymentType"] = {"$ne": ne_type}
 
+        user_id = query.pop("userId", None) or query.pop("createdBy", None)
+        if user_id:
+            query["createdBy.id"] = user_id
+
         query = {key: value for key, value in query.items() if value is not None}
 
         cursor = await collection.aggregate(
