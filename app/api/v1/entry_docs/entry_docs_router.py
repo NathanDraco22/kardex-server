@@ -22,6 +22,13 @@ async def create_entry_doc(
     return await entry_docs_controller.create_entry_doc(body, bg_tasks)
 
 
+@entry_docs_router.post("/direct")
+async def create_entry_doc_direct(
+    body: CreateEntryDoc, bg_tasks: BackgroundTasks
+) -> EntryDocInDb:
+    return await entry_docs_controller.create_entry_doc_direct(body, bg_tasks)
+
+
 @entry_docs_router.get("")
 async def get_all_entry_docs() -> list[EntryDocInDb]:
     return await entry_docs_controller.get_all_entry_docs()

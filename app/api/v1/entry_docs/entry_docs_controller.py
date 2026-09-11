@@ -62,6 +62,13 @@ class EntryDocsController:
         bg_tasks.add_task(self._create_expiration_logs, entry_doc)
         return entry_doc
 
+    async def create_entry_doc_direct(
+        self, body: CreateEntryDoc, bg_tasks: BackgroundTasks
+    ) -> EntryDocInDb:
+        entry_doc = await self.product_ledger_manager.regis_entry_doc_direct(body)
+        bg_tasks.add_task(self._create_expiration_logs, entry_doc)
+        return entry_doc
+
     async def get_all_entry_docs(self) -> list[EntryDocInDb]:
         entry_docs = await self.entry_docs_repo.get_all_entry_docs()
         return entry_docs
