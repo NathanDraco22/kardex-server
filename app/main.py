@@ -14,6 +14,7 @@ open_api_url = "/openapi.json"
 if current_mode == "PROD":
     open_api_url = None
 
+
 app = FastAPI(
     title="Ledger Server",
     openapi_url=open_api_url,
