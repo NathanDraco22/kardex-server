@@ -52,7 +52,7 @@ class ProductAccountsCollection(BaseMongoCollection):
         return result
 
     async def add_product_account_stock(
-        self, product_id: str, branch_id: str, **kwargs
+        self, product_id: str, branch_id: str, session: Any = None, **kwargs
     ) -> dict[str, Any] | None:
         collection = self._collection
 
@@ -74,6 +74,7 @@ class ProductAccountsCollection(BaseMongoCollection):
         result = await collection.find_one_and_update(
             {"productId": product_id, "branchId": branch_id},
             update_query,
+            session=session,
             return_document=ReturnDocument.AFTER,
         )
         return result
@@ -254,6 +255,58 @@ class ProductAccountsCollection(BaseMongoCollection):
         if total_processed < len(operations):
             raise OperationFailure(
                 f"No se pudieron procesar todas las entradas de inventario. "
+                f"(Procesados: {total_processed}/{len(operations)})"
+            )
+
+        return True
+
+    async def bulk_add_product_accounts_direct(
+        self,
+        branch_id: str,
+        items: list[dict[str, Any]],
+        session: Any,
+    ) -> bool:
+        if not items:
+            return True
+
+        collection = self._collection
+        updated_at = TimeTools.get_now_in_milliseconds()
+
+        operations: list[UpdateOne] = []
+
+        for item in items:
+            update_op = UpdateOne(
+                {
+                    "productId": item["productId"],
+                    "branchId": branch_id,
+                },
+                {
+                    "$inc": {"currentStock": item["quantity"]},
+                    "$set": {
+                        "averageCost": item["cost"],
+                        "lastCost": item["cost"],
+                        "updatedAt": updated_at,
+                    },
+                    "$setOnInsert": {
+                        "createdAt": updated_at,
+                        "promiseStock": 0,
+                        "maximumCost": 0,
+                    },
+                },
+                upsert=True,
+            )
+            operations.append(update_op)
+
+        result = await collection.bulk_write(
+            operations,
+            ordered=True,
+            session=session,
+        )
+
+        total_processed = result.matched_count + result.upserted_count
+        if total_processed < len(operations):
+            raise OperationFailure(
+                f"No se pudieron procesar todas las cuentas de producto en la entrada directa. "
                 f"(Procesados: {total_processed}/{len(operations)})"
             )
 

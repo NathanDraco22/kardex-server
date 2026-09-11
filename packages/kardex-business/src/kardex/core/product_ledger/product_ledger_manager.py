@@ -34,6 +34,7 @@ from kardex.tools import (
 
 
 from .process_entry_doc import process_entry_doc
+from .process_entry_doc_direct import process_entry_doc_direct
 from .process_exit_doc import process_exit_doc
 
 
@@ -80,6 +81,41 @@ class ProductLedgerManager:
             except Exception as e:
                 raise InvalidOperation(
                     "Error processing account entry transaction \n" + str(e)
+                )
+
+        raise InvalidOperation("Server is too busy, try again later")
+
+    async def regis_entry_doc_direct(
+        self, create_entry_doc: CreateEntryDoc
+    ) -> EntryDocInDb:
+        entry_doc = await self.entry_docs_repo.get_entry_doc_by_doc_number_and_supplier(
+            supplier_id=create_entry_doc.supplierId,
+            doc_number=create_entry_doc.docNumber,
+        )
+
+        if entry_doc is not None:
+            raise DocumentAlreadyExists("DOCUMENT_EXISTS")
+
+        await self._validate_document(create_entry_doc)
+
+        max_retries = 3
+        for _ in range(max_retries):
+            try:
+                result = await process_entry_doc_direct(create_entry_doc)
+                return result
+
+            except OperationFailure as e:
+                if e.code == 112:
+                    await asyncio.sleep(0.3)
+
+                else:
+                    raise InvalidOperation(
+                        "Error processing account entry direct transaction \n" + str(e)
+                    )
+
+            except Exception as e:
+                raise InvalidOperation(
+                    "Error processing account entry direct transaction \n" + str(e)
                 )
 
         raise InvalidOperation("Server is too busy, try again later")
