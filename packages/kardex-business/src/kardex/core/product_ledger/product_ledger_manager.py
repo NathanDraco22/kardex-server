@@ -36,6 +36,7 @@ from kardex.tools import (
 from .process_entry_doc import process_entry_doc
 from .process_entry_doc_direct import process_entry_doc_direct
 from .process_exit_doc import process_exit_doc
+from .process_exit_doc_direct import process_exit_doc_direct
 
 
 class ProductLedgerManager:
@@ -153,6 +154,45 @@ class ProductLedgerManager:
             except Exception as e:
                 raise InvalidOperation(
                     "Error processing account exit transaction \n" + str(e)
+                )
+
+        raise InvalidOperation("Server is too busy, try again later")
+
+    async def regis_exit_doc_direct(
+        self, create_exit_doc: CreateExitDoc
+    ) -> ExitDocInDb:
+        exit_doc = await self.exit_docs_repo.get_exit_doc_by_doc_number_and_client(
+            client_id=create_exit_doc.clientId, doc_number=create_exit_doc.docNumber
+        )
+
+        if exit_doc is not None:
+            raise DocumentAlreadyExists("DOCUMENT_EXISTS")
+
+        await self._validate_document(create_exit_doc)
+
+        max_retries = 3
+        for _ in range(max_retries):
+            try:
+                result = await process_exit_doc_direct(create_exit_doc)
+                return result
+
+            except InsufficientBalanceError:
+                raise InsufficientBalanceError(
+                    "INSUFFICIENT_STOCK_FOR_ONE_OR_MORE_PRODUCTS"
+                )
+
+            except OperationFailure as e:
+                if e.code == 112:
+                    await asyncio.sleep(0.3)
+
+                else:
+                    raise InvalidOperation(
+                        "Error processing account exit direct transaction \n" + str(e)
+                    )
+
+            except Exception as e:
+                raise InvalidOperation(
+                    "Error processing account exit direct transaction \n" + str(e)
                 )
 
         raise InvalidOperation("Server is too busy, try again later")

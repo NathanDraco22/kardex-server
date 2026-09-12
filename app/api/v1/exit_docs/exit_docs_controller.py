@@ -24,6 +24,10 @@ class ExitDocsController:
         exit_doc = await self.product_ledger_manager.regis_exit_doc(body)
         return exit_doc
 
+    async def create_exit_doc_direct(self, body: CreateExitDoc) -> ExitDocInDb:
+        exit_doc = await self.product_ledger_manager.regis_exit_doc_direct(body)
+        return exit_doc
+
     async def get_all_exit_docs(self) -> list[ExitDocInDb]:
         exit_docs = await self.exit_docs_repo.get_all_exit_docs()
         return exit_docs

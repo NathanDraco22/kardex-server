@@ -312,6 +312,66 @@ class ProductAccountsCollection(BaseMongoCollection):
 
         return True
 
+    async def bulk_substract_product_accounts_direct(
+        self,
+        branch_id: str,
+        items: list[dict[str, Any]],
+        session: Any,
+        allow_negative: bool = False,
+    ) -> bool:
+        if not items:
+            return True
+
+        collection = self._collection
+        updated_at = TimeTools.get_now_in_milliseconds()
+
+        operations: list[UpdateOne] = []
+
+        for item in items:
+            qty = abs(item["quantity"])
+            filter_dict: dict[str, Any] = {
+                "productId": item["productId"],
+                "branchId": branch_id,
+            }
+            if not allow_negative:
+                filter_dict["$expr"] = {
+                    "$gte": [
+                        {
+                            "$subtract": [
+                                {"$ifNull": ["$currentStock", 0]},
+                                {"$ifNull": ["$promiseStock", 0]},
+                            ]
+                        },
+                        qty,
+                    ]
+                }
+
+            update_op = UpdateOne(
+                filter_dict,
+                {
+                    "$inc": {"currentStock": -qty},
+                    "$set": {
+                        "updatedAt": updated_at,
+                    },
+                },
+            )
+            operations.append(update_op)
+
+        result = await collection.bulk_write(
+            operations,
+            ordered=True,
+            session=session,
+        )
+
+        if result.matched_count < len(operations):
+            raise OperationFailure(
+                f"No se pudieron actualizar todas las cuentas de producto en la salida directa. "
+                f"(Match: {result.matched_count}/{len(operations)}). "
+                f"Es posible que el stock disponible sea insuficiente o no exista la cuenta."
+            )
+
+        return True
+
     async def bulk_substract_product_account_data(
         self,
         branch_id: str,
