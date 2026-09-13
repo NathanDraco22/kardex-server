@@ -18,6 +18,7 @@ from .product_filter_params import ProductFilterParams
 from .product_transaction_filter_params import ProductTransactionFilterParams
 from .executive_summary_filter_params import ExecutiveSummaryFilterParams
 from .receipt_filter_params import ReceiptFilterParams
+from .hold_sale_filter_params import HoldSaleFilterParams
 
 __all__ = [
     "ExpensesFilterParams",
@@ -43,4 +44,5 @@ __all__ = [
     "ProductTransactionFilterParams",
     "ExecutiveSummaryFilterParams",
     "ReceiptFilterParams",
+    "HoldSaleFilterParams",
 ]

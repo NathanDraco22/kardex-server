@@ -34,6 +34,7 @@ from .units_collection import UnitsCollection
 from .user_roles_collection import UserRolesCollection
 from .api_keys_collection import ApiKeysCollection
 from .users_collection import UsersCollection
+from .hold_sales_collection import HoldSalesCollection
 
 __all__ = [
     "AccountBalancesCollection",
@@ -72,5 +73,6 @@ __all__ = [
     "UnitsCollection",
     "UserRolesCollection",
     "UsersCollection",
+    "HoldSalesCollection",
 ]
 
