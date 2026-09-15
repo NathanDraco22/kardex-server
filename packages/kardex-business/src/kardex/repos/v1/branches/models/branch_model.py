@@ -26,6 +26,7 @@ class UpdateBranch(BaseModel):
     phone: str | None = None
     description: str | None = None
     image: str | None = None
+    isCommerce: bool | None = None
     coordinates: Coordinates | None = None
 
 

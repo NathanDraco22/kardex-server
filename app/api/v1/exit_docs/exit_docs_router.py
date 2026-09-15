@@ -18,6 +18,11 @@ async def create_exit_doc(body: CreateExitDoc) -> ExitDocInDb:
     return await exit_docs_controller.create_exit_doc(body)
 
 
+@exit_docs_router.post("/direct")
+async def create_exit_doc_direct(body: CreateExitDoc) -> ExitDocInDb:
+    return await exit_docs_controller.create_exit_doc_direct(body)
+
+
 @exit_docs_router.get("")
 async def get_all_exit_docs() -> list[ExitDocInDb]:
     return await exit_docs_controller.get_all_exit_docs()

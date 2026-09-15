@@ -3,7 +3,9 @@ from fastapi import APIRouter
 from .adjust_entries.adjust_entries_router import adjust_entries_router
 from .adjust_exits.adjust_exits_router import adjust_exits_router
 from .admin_panels.admin_panels_router import admin_panels_router
+from .api_keys.api_keys_router import api_keys_router
 from .auths.auths_router import auths_router
+from .bi.bi_router import bi_router
 from .branches.branches_router import branches_router
 from .client_groups.client_groups_router import c_groups_router
 from .client_transactions.client_transactions_router import client_transactions_router
@@ -20,6 +22,7 @@ from .expense_categories.expense_categories_router import expense_categories_rou
 from .expenses.expenses_router import expenses_router
 from .expiration_logs.expiration_logs_router import expiration_logs_router
 from .exports.exports_router import exports_router
+from .hold_sales.hold_sales_router import hold_sales_router
 from .imports.imports_router import imports_router
 from .integrations.integrations_router import integrations_router
 from .inventories.inventories_router import inventories_router
@@ -40,18 +43,15 @@ from .transfers.transfers_router import transfers_router
 from .units.units_router import units_router
 from .user_roles.user_roles_router import user_roles_router
 from .users.users_router import users_router
-from .api_keys.api_keys_router import api_keys_router
-from .bi.bi_router import bi_router
 
 router_v1 = APIRouter(tags=["apiV1"])
 
-router_v1.include_router(api_keys_router)
-router_v1.include_router(bi_router)
 router_v1.include_router(adjust_entries_router, prefix="/adjust-entries")
-
 router_v1.include_router(adjust_exits_router, prefix="/adjust-exits")
 router_v1.include_router(admin_panels_router, prefix="/admin-panels")
+router_v1.include_router(api_keys_router)
 router_v1.include_router(auths_router, prefix="/auths")
+router_v1.include_router(bi_router)
 router_v1.include_router(branches_router, prefix="/branches")
 router_v1.include_router(c_groups_router, prefix="/client-groups")
 router_v1.include_router(client_transactions_router, prefix="/client-transactions")
@@ -68,6 +68,7 @@ router_v1.include_router(expense_categories_router, prefix='/expense-categories'
 router_v1.include_router(expenses_router, prefix="/expenses")
 router_v1.include_router(expiration_logs_router, prefix="/expiration-logs")
 router_v1.include_router(exports_router, prefix="/exports")
+router_v1.include_router(hold_sales_router, prefix='/hold-sales')
 router_v1.include_router(imports_router, prefix='/imports')
 router_v1.include_router(integrations_router, prefix="/integrations")
 router_v1.include_router(inventories_router, prefix="/inventories")
