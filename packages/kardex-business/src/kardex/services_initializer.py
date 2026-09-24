@@ -1,4 +1,5 @@
 from kardex.services import MongoService
+from kardex.services.mongo_collections.v1 import ProductsCollection
 from kardex.services.mongo_indexes import create_indexes
 
 
@@ -10,4 +11,9 @@ async def init_business_services() -> None:
 
 
 async def set_new_values() -> None:
-    pass
+    products_col = ProductsCollection.get_instance()._collection
+    await products_col.update_many(
+        {"altCode": {"$exists": False}},
+        {"$set": {"altCode": ""}},
+    )
+

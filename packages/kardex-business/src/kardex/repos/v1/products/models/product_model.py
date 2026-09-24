@@ -13,6 +13,7 @@ class BaseProduct(BaseModel):
     name: str
     description: str | None = None
     code: str = ""
+    altCode: str = ""
     image: str = ""
     brandName: str
     unitName: str
@@ -52,6 +53,7 @@ class CreateProduct(BaseProduct):
 class UpdateProduct(BaseModel):
     name: str | None = None
     code: str | None = None
+    altCode: str | None = None
     description: str | None = None
     brandName: str | None = None
     unitName: str | None = None

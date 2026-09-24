@@ -85,6 +85,12 @@ class ProductsCollection(BaseMongoCollection):
                                 "$options": "i",
                             }
                         },
+                        {
+                            "altCode": {
+                                "$regex": f"^{safe_query}",
+                                "$options": "i",
+                            }
+                        },
                     ]
                 }
             },
@@ -117,12 +123,25 @@ class ProductsCollection(BaseMongoCollection):
                             0,
                         ]
                     },
+                    "altCodeBoost": {
+                        "$cond": [
+                            {
+                                "$regexMatch": {
+                                    "input": "$altCode",
+                                    "regex": f"^{safe_query}",
+                                    "options": "i",
+                                }
+                            },
+                            100,
+                            0,
+                        ]
+                    },
                 }
             },
-            {"$addFields": {"finalScore": {"$add": [{"$ifNull": ["$baseScore", 0]}, "$nameBoost", "$codeBoost"]}}},
+            {"$addFields": {"finalScore": {"$add": [{"$ifNull": ["$baseScore", 0]}, "$nameBoost", "$codeBoost", "$altCodeBoost"]}}},
             {"$sort": {"finalScore": -1, "name": 1}},
             {"$limit": 20},
-            {"$project": {"baseScore": 0, "nameBoost": 0, "codeBoost": 0, "finalScore": 0}},
+            {"$project": {"baseScore": 0, "nameBoost": 0, "codeBoost": 0, "altCodeBoost": 0, "finalScore": 0}},
         ]
         cursor = await collection.aggregate(pipeline)
 
@@ -157,95 +176,8 @@ class ProductsCollection(BaseMongoCollection):
                                     "$options": "i",
                                 }
                             },
-                        ]
-                    }
-                },
-                {
-                    "$addFields": {
-                        "baseScore": {"$meta": "textScore"},
-                        "nameBoost": {
-                            "$cond": [
-                                {
-                                    "$regexMatch": {
-                                        "input": "$name",
-                                        "regex": f"^{safe_query}",
-                                        "options": "i",
-                                    }
-                                },
-                                100,
-                                0,
-                            ]
-                        },
-                        "codeBoost": {
-                            "$cond": [
-                                {
-                                    "$regexMatch": {
-                                        "input": "$code",
-                                        "regex": f"^{safe_query}",
-                                        "options": "i",
-                                    }
-                                },
-                                100,
-                                0,
-                            ]
-                        },
-                    }
-                },
-                {"$addFields": {"finalScore": {"$add": [{"$ifNull": ["$baseScore", 0]}, "$nameBoost", "$codeBoost"]}}},
-                {
-                    "$lookup": {
-                        "from": "ProductAccounts",
-                        "localField": "id",
-                        "foreignField": "productId",
-                        "as": "account",
-                        "pipeline": [
                             {
-                                "$match": {
-                                    "branchId": branch_id,
-                                }
-                            }
-                        ],
-                    }
-                },
-                {
-                    "$unwind": "$account",
-                },
-                {
-                    "$sort": {"finalScore": -1, "name": 1},
-                },
-                {
-                    "$limit": 20,
-                },
-                {"$project": {"baseScore": 0, "nameBoost": 0, "codeBoost": 0, "finalScore": 0}},
-            ]
-        )
-
-        result = await cursor.to_list(length=None)
-
-        return result
-
-    async def searchProductInBranch(
-        self,
-        branch_id: str,
-        text_query: str,
-    ) -> list[dict[str, Any]]:
-        collection = self._collection
-        safe_query = re.escape(text_query)
-        cursor = await collection.aggregate(
-            [
-                {
-                    "$match": {
-                        "isDeleted": False,
-                        "$or": [
-                            {
-                                "$text": {
-                                    "$search": safe_query,
-                                    "$caseSensitive": False,
-                                    "$diacriticSensitive": False,
-                                }
-                            },
-                            {
-                                "code": {
+                                "altCode": {
                                     "$regex": f"^{safe_query}",
                                     "$options": "i",
                                 }
@@ -282,9 +214,134 @@ class ProductsCollection(BaseMongoCollection):
                                 0,
                             ]
                         },
+                        "altCodeBoost": {
+                            "$cond": [
+                                {
+                                    "$regexMatch": {
+                                        "input": "$altCode",
+                                        "regex": f"^{safe_query}",
+                                        "options": "i",
+                                    }
+                                },
+                                100,
+                                0,
+                            ]
+                        },
                     }
                 },
-                {"$addFields": {"finalScore": {"$add": [{"$ifNull": ["$baseScore", 0]}, "$nameBoost", "$codeBoost"]}}},
+                {"$addFields": {"finalScore": {"$add": [{"$ifNull": ["$baseScore", 0]}, "$nameBoost", "$codeBoost", "$altCodeBoost"]}}},
+                {
+                    "$lookup": {
+                        "from": "ProductAccounts",
+                        "localField": "id",
+                        "foreignField": "productId",
+                        "as": "account",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "branchId": branch_id,
+                                }
+                            }
+                        ],
+                    }
+                },
+                {
+                    "$unwind": "$account",
+                },
+                {
+                    "$sort": {"finalScore": -1, "name": 1},
+                },
+                {
+                    "$limit": 20,
+                },
+                {"$project": {"baseScore": 0, "nameBoost": 0, "codeBoost": 0, "altCodeBoost": 0, "finalScore": 0}},
+            ]
+        )
+
+        result = await cursor.to_list(length=None)
+
+        return result
+
+    async def searchProductInBranch(
+        self,
+        branch_id: str,
+        text_query: str,
+    ) -> list[dict[str, Any]]:
+        collection = self._collection
+        safe_query = re.escape(text_query)
+        cursor = await collection.aggregate(
+            [
+                {
+                    "$match": {
+                        "isDeleted": False,
+                        "$or": [
+                            {
+                                "$text": {
+                                    "$search": safe_query,
+                                    "$caseSensitive": False,
+                                    "$diacriticSensitive": False,
+                                }
+                            },
+                            {
+                                "code": {
+                                    "$regex": f"^{safe_query}",
+                                    "$options": "i",
+                                }
+                            },
+                            {
+                                "altCode": {
+                                    "$regex": f"^{safe_query}",
+                                    "$options": "i",
+                                }
+                            },
+                        ]
+                    }
+                },
+                {
+                    "$addFields": {
+                        "baseScore": {"$meta": "textScore"},
+                        "nameBoost": {
+                            "$cond": [
+                                {
+                                    "$regexMatch": {
+                                        "input": "$name",
+                                        "regex": f"^{safe_query}",
+                                        "options": "i",
+                                    }
+                                },
+                                100,
+                                0,
+                            ]
+                        },
+                        "codeBoost": {
+                            "$cond": [
+                                {
+                                    "$regexMatch": {
+                                        "input": "$code",
+                                        "regex": f"^{safe_query}",
+                                        "options": "i",
+                                    }
+                                },
+                                100,
+                                0,
+                            ]
+                        },
+                        "altCodeBoost": {
+                            "$cond": [
+                                {
+                                    "$regexMatch": {
+                                        "input": "$altCode",
+                                        "regex": f"^{safe_query}",
+                                        "options": "i",
+                                    }
+                                },
+                                100,
+                                0,
+                            ]
+                        },
+                    }
+                },
+                {"$addFields": {"finalScore": {"$add": [{"$ifNull": ["$baseScore", 0]}, "$nameBoost", "$codeBoost", "$altCodeBoost"]}}},
                 {
                     "$lookup": {
                         "from": "ProductAccounts",
@@ -327,7 +384,7 @@ class ProductsCollection(BaseMongoCollection):
                 {
                     "$limit": 21,
                 },
-                {"$project": {"baseScore": 0, "nameBoost": 0, "codeBoost": 0, "finalScore": 0}},
+                {"$project": {"baseScore": 0, "nameBoost": 0, "codeBoost": 0, "altCodeBoost": 0, "finalScore": 0}},
             ]
         )
 
@@ -633,30 +690,49 @@ class ProductsCollection(BaseMongoCollection):
 
     async def create_indexes(self):
         collection = self._collection
+        text_index_name = "TextSearchIndex"
+        desired_text_weights = {
+            "name": 7,
+            "code": 3,
+            "altCode": 3,
+            "brandName": 10,
+            "unitName": 5,
+            "categoryName": 3,
+            "searchPrefixes": 5,
+            "tags": 7,
+        }
+
+        # Inspeccionar índices existentes para eliminar cualquier índice de texto previo
+        # que sea autogenerado o que difiera del nombre/pesos actuales.
+        existing_indexes = await collection.index_information()
+        for idx_name, idx_info in existing_indexes.items():
+            is_text_index = "weights" in idx_info or any(
+                k[1] == "text" for k in idx_info.get("key", [])
+            )
+            if is_text_index:
+                current_weights = idx_info.get("weights", {})
+                if idx_name != text_index_name or current_weights != desired_text_weights:
+                    await collection.drop_index(idx_name)
+
         await collection.create_indexes(
             [
                 IndexModel([("id", 1)], unique=True),
                 IndexModel([("name", 1)]),
                 IndexModel([("code", 1)]),
+                IndexModel([("altCode", 1)]),
                 IndexModel(
                     [
                         ("name", "text"),
                         ("code", "text"),
+                        ("altCode", "text"),
                         ("brandName", "text"),
                         ("unitName", "text"),
                         ("categoryName", "text"),
                         ("tags", "text"),
                         ("searchPrefixes", "text"),
                     ],
-                    weights={
-                        "name": 7,
-                        "code": 3,
-                        "brandName": 10,
-                        "unitName": 5,
-                        "categoryName": 3,
-                        "searchPrefixes": 5,
-                        "tags": 7,
-                    },
+                    weights=desired_text_weights,
+                    name=text_index_name,
                 ),
             ]
         )
