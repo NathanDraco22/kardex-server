@@ -5,6 +5,7 @@ from responses.v1 import ListResponse
 from kardex.repos.v1.common.filter_params import ProductFilterParams
 from kardex.repos.v1.products import (
     CreateProduct,
+    CreateProductWithData,
     UpdateProduct,
     ProductInDb,
     ProductInDbInBranch,
@@ -28,6 +29,22 @@ class ProductsController:
                 )
 
         return await self.products_repo.create_product(body)
+
+    async def create_product_with_data(
+        self, body: CreateProductWithData
+    ) -> ProductInDbInBranch:
+        if body.createProduct.code is not None and body.createProduct.code != "":
+            body.createProduct.code = body.createProduct.code.upper()
+            result = await self.products_repo.get_product_by_code(
+                body.createProduct.code
+            )
+            if result is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"{result.name} ya tiene el codigo {body.createProduct.code}",
+                )
+
+        return await self.products_repo.create_product_with_data(body)
 
     async def get_all_products(self) -> ListResponse[ProductInDb]:
         products = await self.products_repo.get_all_products()
