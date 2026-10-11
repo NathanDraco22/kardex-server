@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from kardex.repos.v1.products import (
     CreateProduct,
+    CreateProductWithData,
     UpdateProduct,
     ProductInDb,
     ProductInDbInBranch,
@@ -19,6 +20,13 @@ products_router = APIRouter(tags=["productsV1"])
 @products_router.post("")
 async def create_product(body: CreateProduct) -> ProductInDb:
     return await products_controller.create_product(body)
+
+
+@products_router.post("/create-product-with-data")
+async def create_producto_with_data(
+    body: CreateProductWithData,
+) -> ProductInDbInBranch:
+    return await products_controller.create_product_with_data(body)
 
 
 @products_router.get("")
@@ -58,7 +66,9 @@ async def get_products_in_branch_by_ids(
     branch_id: str,
     body: GetProductsInBranchRequest,
 ) -> ListResponse[ProductInDbInBranch]:
-    return await products_controller.get_products_in_branch_by_ids(branch_id, body.productIds)
+    return await products_controller.get_products_in_branch_by_ids(
+        branch_id, body.productIds
+    )
 
 
 @products_router.get("/branch/{branch_id}")

@@ -6,11 +6,15 @@ from .models.product_model import (
     ProductInDb,
     ProductInDbWithAccounts,
     ProductInDbInBranch,
+    CreateProductWithData,
 )
 from kardex.core.counter_manager.counter_manager import CounterManager
 from kardex.tools import UuidTool, TimeTools, generate_prefixes
 from kardex.kardex_config import KardexConfig
 from kardex.lite.core.product_register.process_create_product import process_create_product
+from kardex.core.product_register.process_create_product_with_data import (
+    process_create_product_with_data,
+)
 
 
 from kardex.repos.v1.common.filter_params import ProductFilterParams
@@ -49,6 +53,11 @@ class ProductsRepository:
         result = await self.products_ds.create_product(new_product_data)
 
         return ProductInDb.model_validate(result)
+
+    async def create_product_with_data(
+        self, body: CreateProductWithData
+    ) -> ProductInDbInBranch:
+        return await process_create_product_with_data(body)
 
     async def get_all_products(self) -> list[ProductInDb]:
         results = await self.products_ds.get_all_products()

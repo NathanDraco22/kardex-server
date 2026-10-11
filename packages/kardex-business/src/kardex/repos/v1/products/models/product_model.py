@@ -94,3 +94,15 @@ class ProductInDbInBranch(BaseProduct):
 class GetProductsInBranchRequest(BaseModel):
     productIds: list[str]
 
+
+class InventoryInfo(BaseModel):
+    quantity: int
+    cost: int
+    price: int
+
+
+class CreateProductWithData(BaseModel):
+    createProduct: CreateProduct
+    branchId: str
+    inventoryInfo: InventoryInfo
+

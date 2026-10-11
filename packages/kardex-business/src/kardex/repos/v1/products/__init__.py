@@ -6,6 +6,8 @@ from .models.product_model import (
     ProductInDbWithAccounts,
     ProductInDbInBranch,
     GetProductsInBranchRequest,
+    InventoryInfo,
+    CreateProductWithData,
 )
 from .products_repository import ProductsRepository
 
@@ -17,6 +19,8 @@ __all__ = [
     "ProductInDbWithAccounts",
     "ProductInDbInBranch",
     "GetProductsInBranchRequest",
+    "InventoryInfo",
+    "CreateProductWithData",
     "ProductsRepository",
 ]
 
