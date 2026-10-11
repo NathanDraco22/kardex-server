@@ -4,6 +4,7 @@ from .adjust_entries.adjust_entries_router import adjust_entries_router
 from .adjust_exits.adjust_exits_router import adjust_exits_router
 from .admin_panels.admin_panels_router import admin_panels_router
 from .api_keys.api_keys_router import api_keys_router
+from .app_settings.app_settings_router import app_settings_router
 from .auths.auths_router import auths_router
 from .bi.bi_router import bi_router
 from .branches.branches_router import branches_router
@@ -50,6 +51,7 @@ router_v1.include_router(adjust_entries_router, prefix="/adjust-entries")
 router_v1.include_router(adjust_exits_router, prefix="/adjust-exits")
 router_v1.include_router(admin_panels_router, prefix="/admin-panels")
 router_v1.include_router(api_keys_router)
+router_v1.include_router(app_settings_router, prefix="/app-settings")
 router_v1.include_router(auths_router, prefix="/auths")
 router_v1.include_router(bi_router)
 router_v1.include_router(branches_router, prefix="/branches")
