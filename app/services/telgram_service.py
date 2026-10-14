@@ -39,10 +39,11 @@ class TelegramService:
 
 
 async def test_run():
-    GROUP_ID = "-5148990143"
+    GROUP_ID = os.getenv("TELEGRAM_CHAT_ID", "")
     content = "Esto es una *prueba* de _Telegram_"
 
-    await TelegramService().send_message(GROUP_ID, content)
+    if GROUP_ID:
+        await TelegramService().send_message(GROUP_ID, content)
 
 
 if __name__ == "__main__":
