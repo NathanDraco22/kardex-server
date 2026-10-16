@@ -11,6 +11,7 @@ class BaseAppSetting(BaseModel):
     alertMinStock: bool = True
     defaultPaymentTermDays: int = 30
     useHoldSales: bool = True
+    useQuickProductSearch: bool = False
 
 
 class CreateAppSetting(BaseAppSetting):
@@ -27,6 +28,7 @@ class UpdateAppSetting(BaseModel):
     alertMinStock: bool | None = None
     defaultPaymentTermDays: int | None = None
     useHoldSales: bool | None = None
+    useQuickProductSearch: bool | None = None
 
 
 class AppSettingInDb(BaseAppSetting):
