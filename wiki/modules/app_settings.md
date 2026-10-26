@@ -51,6 +51,7 @@ flowchart TD
 | `alertMinStock` | `bool` | `True` | Activa alertas de inventario mínimo o crítico. |
 | `defaultPaymentTermDays` | `int` | `30` | Plazo predeterminado en días para facturas a crédito. |
 | `useHoldSales` | `bool` | `True` | Permite pausar y reanudar ventas pendientes (ventas en espera). |
+| `useQuickProductSearch` | `bool` | `False` | Abre el buscador rápido con botones de agregar y quitar cantidad al agregar productos en móvil (facturas, órdenes y cotizaciones). |
 | `createdAt` | `int` | Unix ms | Fecha y hora de creación en milisegundos. |
 | `updatedAt` | `int \| None` | `None` | Fecha y hora de última actualización en milisegundos. |
 
