@@ -232,6 +232,28 @@ class ClientsCollection(BaseMongoCollection):
 
     async def create_indexes(self):
         collection = self._collection
+        text_index_name = "TextSearchIndex"
+        desired_text_weights = {
+            "name": 10,
+            "searchPrefixes": 5,
+            "group": 1,
+            "cardId": 1,
+            "phone": 1,
+            "id": 1,
+        }
+
+        # Inspeccionar índices existentes para eliminar cualquier índice de texto previo
+        # que sea autogenerado o que difiera del nombre/pesos actuales.
+        existing_indexes = await collection.index_information()
+        for idx_name, idx_info in existing_indexes.items():
+            is_text_index = "weights" in idx_info or any(
+                k[1] == "text" for k in idx_info.get("key", [])
+            )
+            if is_text_index:
+                current_weights = idx_info.get("weights", {})
+                if idx_name != text_index_name or current_weights != desired_text_weights:
+                    await collection.drop_index(idx_name)
+
         await collection.create_indexes(
             [
                 IndexModel(
@@ -255,14 +277,8 @@ class ClientsCollection(BaseMongoCollection):
                         ("phone", "text"),
                         ("id", "text"),
                     ],
-                    weights={
-                        "name": 10,
-                        "searchPrefixes": 5,
-                        "cardId": 1,
-                        "phone": 1,
-                        "id": 1,
-                    },
-                    name="TextSearchIndex",
+                    weights=desired_text_weights,
+                    name=text_index_name,
                 ),
                 IndexModel(
                     [
