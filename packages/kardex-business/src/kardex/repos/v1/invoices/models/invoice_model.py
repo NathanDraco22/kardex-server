@@ -7,6 +7,7 @@ from kardex.repos.v1.common.models import (
     PaymentType,
     ClientInfo,
     UserInfo,
+    OrderInfo,
 )
 
 InvoiceStatus = Literal["draft", "open", "paid", "partiallyPaid", "cancelled"]
@@ -18,6 +19,7 @@ class BaseInvoice(BaseModel):
     clientInfo: ClientInfo
     docNumber: str = ""
     orderNumber: str = ""
+    orderInfo: OrderInfo | None = None
     saleItems: list[SaleItem]
     description: str = ""
     amountPaid: int = 0
