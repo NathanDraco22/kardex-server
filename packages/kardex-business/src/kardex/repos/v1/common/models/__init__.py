@@ -1,6 +1,7 @@
 from .sale_item import ProductItem, SaleItem, PaymentType
 from .client_info import ClientInfo
 from .user_info import UserInfo
+from .order_info import OrderInfo
 from .branch_detail import CommercialBranchDetail, InventoryBranchDetail
 from .transfer_item import TransferItem
 from .entry_item import EntryItem
@@ -14,6 +15,7 @@ __all__ = [
     "PaymentType",
     "ClientInfo",
     "UserInfo",
+    "OrderInfo",
     "CommercialBranchDetail",
     "InventoryBranchDetail",
     "TransferItem",

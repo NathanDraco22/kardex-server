@@ -3,6 +3,7 @@ from kardex.repos.v1.invoices.models.invoice_model import (
     InvoiceInDb,
     CreateInvoice,
     InvoiceStatus,
+    OrderInfo,
 )
 from kardex.repos.v1.common.models.invoice_product_sale import ProductSalesTotal
 from kardex.core.order_register.order_register import OrderRegister
@@ -83,6 +84,12 @@ class OrdersController:
             clientId=order.clientId,
             clientInfo=order.clientInfo,
             orderNumber=order.docNumber,
+            orderInfo=OrderInfo(
+                id=order.id,
+                docNumber=order.docNumber,
+                createdAt=order.createdAt,
+                createdBy=order.createdBy,
+            ),
             saleItems=order.saleItems,
             description=order.description,
             amountPaid=order.amountPaid,
