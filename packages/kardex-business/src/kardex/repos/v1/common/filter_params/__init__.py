@@ -4,6 +4,7 @@ from .daily_summary_filter_params import DailySummaryFilterParams
 from .client_filter_params import ClientFilterParams
 from .client_transaction_filter_params import ClientTransactionFilterParams
 from .devolution_filter_params import DevolutionFilterParams
+from .credit_note_filter_params import CreditNoteFilterParams
 from .entry_doc_filter_params import EntryDocFilterParams
 from .entry_history_filter_params import EntryHistoryFilterParams
 from .exit_doc_filter_params import ExitDocFilterParams
@@ -27,6 +28,7 @@ __all__ = [
     "ClientFilterParams",
     "ClientTransactionFilterParams",
     "DevolutionFilterParams",
+    "CreditNoteFilterParams",
     "EntryDocFilterParams",
     "EntryHistoryFilterParams",
     "ExitDocFilterParams",

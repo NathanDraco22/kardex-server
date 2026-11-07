@@ -38,7 +38,7 @@ flowchart LR
 
 - **Fechas:** Siempre se representan como marcas de tiempo Unix en milisegundos (`int`).
 - **Moneda / Dinero:** Montos numéricos monetarios siempre se representan en centavos enteros (`int`).
-- **Nombres de colecciones:** PascalCase en plural o singular descriptivo (ej. `AppSettings`, `Products`, `Invoices`).
+- **Nombres de colecciones:** PascalCase en plural o singular descriptivo (ej. `AppSettings`, `Products`, `Invoices`, `UnitScales`).
 - **Identificadores:** Strings alfanuméricos o UUIDs generados con `UuidTool`.
 
 ---
@@ -48,3 +48,5 @@ flowchart LR
 Para conocer a fondo la especificación técnica de cada módulo del backend:
 
 - ⚙️ **[Configuraciones Globales (modules/app_settings.md)](./modules/app_settings.md)** - Gestión de parámetros de sistema: márgenes de ganancia, banderas de órdenes, cotizaciones, vencimientos, inventario negativo y caché en memoria `AppSettingsTool`.
+- ⚖️ **[Escalas de Unidades (modules/unit_scales.md)](./modules/unit_scales.md)** - Plantillas de conversión estandarizadas (Peso, Volumen, Longitud, Tiempo y personalizadas) para productos y parámetros en MongoDB.
+- 📋 **[Notas de Crédito (modules/credit_notes.md)](./modules/credit_notes.md)** - Gestión integral de notas de crédito por devolución (con reingreso al Kárdex) y por monto, emisión atómica y amortización en recibos de pago.

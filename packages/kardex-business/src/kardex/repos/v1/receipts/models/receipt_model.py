@@ -23,6 +23,12 @@ class AppliedDevolution(BaseModel):
     amountApplied: int
 
 
+class AppliedCreditNote(BaseModel):
+    creditNoteId: str
+    docNumber: str
+    amountApplied: int
+
+
 class BaseReceipt(BaseModel):
     branchId: str
     clientId: str
@@ -30,6 +36,7 @@ class BaseReceipt(BaseModel):
     docNumber: str = ""
     appliedInvoices: list[AppliedInvoice] = []
     appliedDevolutions: list[AppliedDevolution] = []
+    appliedCreditNotes: list[AppliedCreditNote] = []
     paymentMethod: PaymentMethod
     bankReference: str = ""
     total: int

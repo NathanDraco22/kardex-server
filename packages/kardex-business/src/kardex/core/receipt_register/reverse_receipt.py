@@ -6,6 +6,7 @@ from kardex.services.mongo_collections.v1 import (
     ClientTransactionsCollection,
     ClientsCollection,
     DevolutionsCollection,
+    CreditNotesCollection,
 )
 from kardex.repos.v1.invoices import InvoiceInDb
 from kardex.repos.v1.receipts import ReceiptInDb
@@ -26,6 +27,7 @@ async def reverse_receipt(
     receipt_col = ReceiptsCollection.get_instance()
     invoice_col = InvoicesCollection.get_instance()
     devolution_col = DevolutionsCollection.get_instance()
+    credit_note_col = CreditNotesCollection.get_instance()
     client_transaction_col = ClientTransactionsCollection.get_instance()
     client_account_col = ClientsCollection.get_instance()
 
@@ -90,6 +92,36 @@ async def reverse_receipt(
                 )
                 await client_transaction_col.create_client_transaction_with_session(
                     devolution_transaction.model_dump(), session=session
+                )
+
+            for applied_credit_note in receipt.appliedCreditNotes:
+                await credit_note_col.update_credit_note_status_by_id(
+                    credit_note_id=applied_credit_note.creditNoteId,
+                    status="confirmed",
+                    session=session,
+                )
+
+                updated_client_data = await client_account_col.add_to_client_balance(
+                    client_id=receipt.clientId,
+                    amount=applied_credit_note.amountApplied,
+                    timestamp=now_in_milliseconds,
+                    session=session,
+                )
+                final_client_account = ClientInDb.model_validate(updated_client_data)
+
+                cn_transaction = ClientTransactionInDb(
+                    id=UuidTool.generate_uuid(),
+                    clientId=receipt.clientId,
+                    documentId=applied_credit_note.creditNoteId,
+                    docNumber=applied_credit_note.docNumber,
+                    amount=abs(applied_credit_note.amountApplied),
+                    type="debit",
+                    subtype="credit_note",
+                    resultBalance=final_client_account.balance,
+                    createdAt=now_in_milliseconds,
+                )
+                await client_transaction_col.create_client_transaction_with_session(
+                    cn_transaction.model_dump(), session=session
                 )
 
             if receipt.total > 0:

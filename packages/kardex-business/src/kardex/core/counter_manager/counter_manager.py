@@ -31,6 +31,12 @@ class CounterManager:
         )
         return str(res.value)
 
+    async def next_credit_note_number(self, session: Any = None) -> str:
+        res = await self.counters_repository.increment_counter(
+            "creditNoteNumber", session
+        )
+        return str(res.value)
+
     async def next_product_number(self, session: Any = None) -> str:
         res = await self.counters_repository.increment_counter("productNumber", session)
         formatted = str(res.value).zfill(5)

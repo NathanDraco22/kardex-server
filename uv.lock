@@ -611,8 +611,8 @@ wheels = [
 
 [[package]]
 name = "onion"
-version = "0.1.5"
-source = { git = "https://github.com/NathanDraco22/onion-cli.git#eba5a0ce850bedb2ccfec683329c1d09f0c62c4e" }
+version = "0.6.0"
+source = { git = "https://github.com/NathanDraco22/onion-cli.git#8bea536866b042dcadf3adc22149ee4683edfdc5" }
 dependencies = [
     { name = "toml" },
     { name = "typer" },

@@ -1,17 +1,16 @@
-from kardex.repos.v1.users.models.user_model import UserRole
+from kardex.repos.v1.user_roles import BaseUserRole
 
 
 class Modules:
     ALL = "all"
-    CLIENTS = "clients"
-    SUPPLIERS = "suppliers"
-    PRODUCTS = "products"
     COMMERCIAL = "commercial"
-    FINANCE = "finance"
+    SUPPLIERS = "suppliers"
+    CLIENTS = "clients"
+    PRODUCTS = "products"
     INVENTORY = "inventory"
+    USERS = "users"
+    ROLES = "roles"
     ADVANCED_TOOLS = "advancedTools"
-    SETTINGS = "settings"
-    PENDING_INVOICES = "pendingInvoices"
     EXPENSES = "expenses"
 
 
@@ -25,11 +24,13 @@ class CommercialSubModules:
     CREATE_DEVOLUTION = "createDevolution"
     DEVOLUTION_HISTORY = "devolutionHistory"
     PROCESS_DEVOLUTION = "processDevolution"
+    CREATE_CREDIT_NOTE = "createCreditNote"
+    CREDIT_NOTE_HISTORY = "creditNoteHistory"
 
 
 default_roles = [
-    UserRole(name="Admin", access=[Modules.ALL]),
-    UserRole(
+    BaseUserRole(name="Admin", access=[Modules.ALL]),
+    BaseUserRole(
         name="Pre-Venta",
         access=[
             Modules.COMMERCIAL,
@@ -39,9 +40,11 @@ default_roles = [
             CommercialSubModules.INVOICE_HISTORY,
             CommercialSubModules.CREATE_DEVOLUTION,
             CommercialSubModules.DEVOLUTION_HISTORY,
+            CommercialSubModules.CREATE_CREDIT_NOTE,
+            CommercialSubModules.CREDIT_NOTE_HISTORY,
         ],
     ),
-    UserRole(
+    BaseUserRole(
         name="Vendedor",
         access=[
             Modules.COMMERCIAL,
@@ -52,9 +55,11 @@ default_roles = [
             CommercialSubModules.INVOICE_HISTORY,
             CommercialSubModules.CREATE_DEVOLUTION,
             CommercialSubModules.DEVOLUTION_HISTORY,
+            CommercialSubModules.CREATE_CREDIT_NOTE,
+            CommercialSubModules.CREDIT_NOTE_HISTORY,
         ],
     ),
-    UserRole(
+    BaseUserRole(
         name="Operador",
         access=[
             Modules.COMMERCIAL,
@@ -67,6 +72,8 @@ default_roles = [
             CommercialSubModules.CREATE_DEVOLUTION,
             CommercialSubModules.DEVOLUTION_HISTORY,
             CommercialSubModules.PROCESS_DEVOLUTION,
+            CommercialSubModules.CREATE_CREDIT_NOTE,
+            CommercialSubModules.CREDIT_NOTE_HISTORY,
             Modules.SUPPLIERS,
             Modules.CLIENTS,
             Modules.PRODUCTS,
@@ -74,7 +81,7 @@ default_roles = [
             Modules.EXPENSES,
         ],
     ),
-    UserRole(
+    BaseUserRole(
         name="Supervisor",
         access=[
             Modules.COMMERCIAL,
@@ -87,6 +94,8 @@ default_roles = [
             CommercialSubModules.CREATE_DEVOLUTION,
             CommercialSubModules.DEVOLUTION_HISTORY,
             CommercialSubModules.PROCESS_DEVOLUTION,
+            CommercialSubModules.CREATE_CREDIT_NOTE,
+            CommercialSubModules.CREDIT_NOTE_HISTORY,
             Modules.SUPPLIERS,
             Modules.CLIENTS,
             Modules.PRODUCTS,
@@ -99,12 +108,6 @@ default_roles = [
 
 
 class RoleManager:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(RoleManager, cls).__new__(cls)
-        return cls._instance
-
-    def get_default_roles(self) -> list[UserRole]:
+    @staticmethod
+    def get_default_roles() -> list[BaseUserRole]:
         return default_roles

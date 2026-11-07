@@ -8,6 +8,7 @@ from .client_transactions_collection import ClientTransactionsCollection
 from .clients_collection import ClientsCollection
 from .core_settings_collection import CoreSettingsCollection
 from .counters_collection import CountersCollection
+from .credit_notes_collection import CreditNotesCollection
 from .daily_summaries_collection import DailySummariesCollection
 from .devolutions_collection import DevolutionsCollection
 from .entry_docs_collection import EntryDocsCollection
@@ -36,6 +37,7 @@ from .api_keys_collection import ApiKeysCollection
 from .users_collection import UsersCollection
 from .hold_sales_collection import HoldSalesCollection
 from .app_settings_collection import AppSettingsCollection
+from .unit_scales_collection import UnitScalesCollection
 
 __all__ = [
     "AccountBalancesCollection",
@@ -49,6 +51,7 @@ __all__ = [
     "ClientsCollection",
     "CoreSettingsCollection",
     "CountersCollection",
+    "CreditNotesCollection",
     "DailySummariesCollection",
     "DevolutionsCollection",
     "EntryDocsCollection",
@@ -76,5 +79,5 @@ __all__ = [
     "UsersCollection",
     "HoldSalesCollection",
     "AppSettingsCollection",
+    "UnitScalesCollection",
 ]
-

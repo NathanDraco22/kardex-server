@@ -8,6 +8,7 @@ TransactionSubType = Literal[
     "discount",
     "devolution",
     "receipt",
+    "credit_note",
 ]
 
 
