@@ -627,3 +627,14 @@ Agregar la moneda global configurable al módulo `app_settings`.
 2. **Retrocompatibilidad**: Los documentos existentes de MongoDB sin el campo se validan con `NIO` por defecto, sin requerir migración.
 3. **Documentación**: Se actualizó `wiki/modules/app_settings.md` con el nuevo campo y su propósito visual.
 4. **Verificación**: `ruff check` y `ty check` pasaron sin errores.
+
+## Fecha: 2026-11-08
+### Objetivo
+Agregar la moneda secundaria informativa y su tasa de cambio al módulo `app_settings`.
+
+### Resumen de Implementación
+1. **Modelo de configuración**: Se agregó `secondaryCurrency` con tipo `CurrencyCode` y valor por defecto `"USD"`, y `exchangeRate` como `float` con valor por defecto `0.0` y validación `ge=0`. `UpdateAppSetting` acepta ambos como opcionales para PATCH parcial.
+2. **Retrocompatibilidad**: Los documentos existentes sin estos campos se validan automáticamente con `USD` y `0.0`, sin migración.
+3. **Alcance informativo**: La tasa representa cuántas unidades de `currency` equivalen a 1 unidad de `secondaryCurrency`. No se usa para convertir montos ni modificar precios, tickets o reportes.
+4. **Documentación**: Se actualizó `wiki/modules/app_settings.md` con ambos campos.
+5. **Verificación**: `ruff check`, `ty check` e importación de `app.main` sin errores.

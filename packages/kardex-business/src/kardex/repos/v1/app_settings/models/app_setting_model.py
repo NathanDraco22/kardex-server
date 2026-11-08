@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 CurrencyCode = Literal["NIO", "USD", "HNL", "GTQ", "CRC", "COP", "MXN", "EUR"]
 
@@ -17,6 +17,8 @@ class BaseAppSetting(BaseModel):
     useHoldSales: bool = True
     useQuickProductSearch: bool = False
     currency: CurrencyCode = "NIO"
+    secondaryCurrency: CurrencyCode = "USD"
+    exchangeRate: float = Field(default=0.0, ge=0)
 
 
 class CreateAppSetting(BaseAppSetting):
@@ -35,6 +37,8 @@ class UpdateAppSetting(BaseModel):
     useHoldSales: bool | None = None
     useQuickProductSearch: bool | None = None
     currency: CurrencyCode | None = None
+    secondaryCurrency: CurrencyCode | None = None
+    exchangeRate: float | None = Field(default=None, ge=0)
 
 
 class AppSettingInDb(BaseAppSetting):
