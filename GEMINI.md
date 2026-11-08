@@ -649,3 +649,15 @@ Habilitar la visualización del total de facturas en la moneda secundaria.
 3. **Alcance**: El campo solo habilita la línea informativa en el visor, ticket térmico y PDF A4 de facturas. No altera montos, pagos, cuentas por cobrar ni inventario.
 4. **Documentación**: Se actualizó `wiki/modules/app_settings.md` con el nuevo campo.
 5. **Verificación**: `ruff check`, `ty check` e importación de `app.main` sin errores.
+
+## Fecha: 2026-11-08
+### Objetivo
+Estandarizar la numeración de facturas generadas por saldos iniciales usando `CounterManager`.
+
+### Resumen de Implementación
+1. **Alta de cliente con saldo**: `process_create_client_with_balance` ahora obtiene el folio con `CounterManager().next_invoice_number(session)`, en lugar de reutilizar el número de cliente.
+2. **Saldo inicial individual**: `create_initial_balance` usa el contador de facturas en lugar del `id` del cliente para el `docNumber`.
+3. **Saldo inicial masivo**: `_execute_multiple_initial_balance` dejó de generar folios largos con timestamp y número aleatorio; ahora usa `next_invoice_number(session)` dentro de la misma transacción.
+4. **Integridad del movimiento**: El `document_id` del movimiento financiero ahora coincide con el `id` UUID real de la factura creada (antes apuntaba al folio temporal en el flujo masivo).
+5. **Verificación**: `ruff check` y `ty check` pasaron sin errores.
+
