@@ -13,6 +13,7 @@ TransactionSubType = Literal[
     "transfer",
     "adjustment",
     "loss",
+    "credit_note",
 ]
 
 

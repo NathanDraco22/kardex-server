@@ -150,3 +150,9 @@ class ProductTransactionsCollection(BaseMongoCollection):
         ]
         cursor = await collection.aggregate(pipeline)
         await cursor.to_list(length=None)
+
+    async def delete_transactions_by_document_id_with_session(
+        self, document_id: str, session: Any
+    ) -> None:
+        collection = self._collection
+        await collection.delete_many({"documentId": document_id}, session=session)

@@ -12,6 +12,8 @@ from .client_groups.client_groups_router import c_groups_router
 from .client_transactions.client_transactions_router import client_transactions_router
 from .clients.clients_router import clients_router
 from .core_settings.core_settings_router import core_settings_router
+from .credit_notes.credit_notes_router import credit_notes_router
+from .composite.composite_router import composite_router
 from .daily_summaries.daily_summaries_router import daily_summaries_router
 from .devolutions.devolutions_router import devolutions_router
 from .entry_docs.entry_docs_router import entry_docs_router
@@ -41,6 +43,7 @@ from .receipts.receipts_router import receipts_router
 from .reports.reports_router import reports_router
 from .suppliers.suppliers_router import suppliers_router
 from .transfers.transfers_router import transfers_router
+from .unit_scales.unit_scales_router import unit_scales_router
 from .units.units_router import units_router
 from .user_roles.user_roles_router import user_roles_router
 from .users.users_router import users_router
@@ -59,6 +62,8 @@ router_v1.include_router(c_groups_router, prefix="/client-groups")
 router_v1.include_router(client_transactions_router, prefix="/client-transactions")
 router_v1.include_router(clients_router, prefix="/clients")
 router_v1.include_router(core_settings_router, prefix="/core-settings")
+router_v1.include_router(credit_notes_router, prefix='/credit-notes')
+router_v1.include_router(composite_router, prefix="/composite")
 router_v1.include_router(daily_summaries_router, prefix="/daily-summaries")
 router_v1.include_router(devolutions_router, prefix="/devolutions")
 router_v1.include_router(entry_docs_router, prefix="/entry-docs")
@@ -88,6 +93,7 @@ router_v1.include_router(reports_router, prefix="/reports")
 router_v1.include_router(sale_prof_router, prefix="/product-sale-profiles")
 router_v1.include_router(suppliers_router, prefix="/suppliers")
 router_v1.include_router(transfers_router, prefix="/transfers")
+router_v1.include_router(unit_scales_router, prefix='/unit-scales')
 router_v1.include_router(units_router, prefix="/units")
 router_v1.include_router(user_roles_router, prefix="/user-roles")
 router_v1.include_router(users_router, prefix="/users")

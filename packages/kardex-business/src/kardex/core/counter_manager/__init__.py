@@ -1,1 +1,3 @@
-from .counter_manager import *
+from .counter_manager import CounterManager
+
+__all__ = ["CounterManager"]

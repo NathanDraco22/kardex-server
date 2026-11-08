@@ -3,6 +3,9 @@ from kardex.core.default_values.create_default_roles import create_default_roles
 from kardex.core.default_values.create_default_expense_categories import (
     create_default_expense_categories,
 )
+from kardex.core.default_values.create_default_unit_scales import (
+    create_default_unit_scales,
+)
 from kardex.core.default_values.defult_etags import set_default_etags
 from kardex.core.default_values.create_default_integration import (
     create_default_integration,
@@ -20,6 +23,7 @@ async def init_services() -> None:
     await init_business_services()
     await create_default_roles()
     await create_default_expense_categories()
+    await create_default_unit_scales()
     await set_default_etags()
     await create_default_integration()
     await create_default_app_settings()

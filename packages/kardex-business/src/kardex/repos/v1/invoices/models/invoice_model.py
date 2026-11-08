@@ -31,6 +31,10 @@ class BaseInvoice(BaseModel):
     paidAt: int | None = None
     createdBy: UserInfo
 
+    @property
+    def totalRemaining(self) -> int:
+        return max(0, self.total - self.amountPaid)
+
 
 class CreateInvoice(BaseInvoice):
     pass
