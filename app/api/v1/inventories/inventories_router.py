@@ -1,5 +1,9 @@
 from fastapi import APIRouter, Depends
-from kardex.repos.v1.inventories import InventoryInDb
+from kardex.repos.v1.inventories import (
+    InventoryInDb,
+    ResetBranchInventoryRequest,
+    ResetBranchInventoryResponse,
+)
 from responses.v1 import ListResponse
 
 from app_middleware import auth_middleware
@@ -15,3 +19,10 @@ inventories_router = APIRouter(
 @inventories_router.get("")
 async def get_all_inventories(branchId: str) -> ListResponse[InventoryInDb]:
     return await inventories_controller.get_all_inventories_by_branch(branchId)
+
+
+@inventories_router.post("/reset-stock")
+async def reset_branch_inventory(
+    body: ResetBranchInventoryRequest,
+) -> ResetBranchInventoryResponse:
+    return await inventories_controller.reset_branch_inventory(body)
