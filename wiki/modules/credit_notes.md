@@ -141,7 +141,21 @@ Cuando un cliente con compras a crédito realiza un pago o abono:
 
 ---
 
-## 7. Permisos y Seguridad (`role_manager.py`)
+## 7. Reversión y Eliminación Atómica (`reverse_credit_note.py`)
+
+Si una nota de crédito fue emitida por error o cancelada antes de ser aplicada en un recibo oficial:
+
+1. **Restricción de Estado:** Solo se permite eliminar notas con estado diferente a `applied` (`open`, `confirmed` o `cancelled`). Si la nota ya fue aplicada, la operación es rechazada con un error HTTP 400 impidiendo inconsistencias contables en recibos emitidos.
+2. **Reversión de Inventario (Devolución):**
+   - Para notas de tipo `devolution`, se inicia una sesión atómica de MongoDB (`client.start_session()`).
+   - Se deduce el stock físico en `Products` correspondiente a cada `returnedItem` (`stock -= qty`), revirtiendo el reingreso previo.
+   - Se eliminan de `ProductTransactions` todos los movimientos asociados al documento (`documentId == credit_note.id` o `documentDocNumber == credit_note.docNumber`).
+3. **Eliminación del Registro:** Se elimina permanentemente el documento de la colección `CreditNotes`.
+4. **Notas por Monto:** Para notas de tipo `amount`, la reversión no afecta inventario y simplemente elimina el saldo a favor pendiente del registro.
+
+---
+
+## 8. Permisos y Seguridad (`role_manager.py`)
 
 Se agregaron los siguientes permisos dentro del módulo comercial:
 
@@ -150,7 +164,7 @@ Se agregaron los siguientes permisos dentro del módulo comercial:
 
 ---
 
-## 8. Catálogo de Endpoints REST (`/api/v1/credit-notes`)
+## 9. Catálogo de Endpoints REST (`/api/v1/credit-notes`)
 
 Todos los endpoints requieren autenticación mediante JWT (`auth_middleware`):
 
@@ -163,3 +177,4 @@ Todos los endpoints requieren autenticación mediante JWT (`auth_middleware`):
 | `GET` | `/api/v1/credit-notes/invoice/{invoice_id}` | Notas vinculadas a una factura en particular | `ListResponse[CreditNoteInDb]` |
 | `GET` | `/api/v1/credit-notes/doc/{doc_number}` | Búsqueda por folio consecutivo | `CreditNoteInDb` |
 | `GET` | `/api/v1/credit-notes/{id}` | Búsqueda por identificador UUID | `CreditNoteInDb` |
+| `DELETE` | `/api/v1/credit-notes/{id}` | Elimina la nota y revierte stock si es devolución | `CreditNoteInDb` |

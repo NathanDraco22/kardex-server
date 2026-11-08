@@ -56,3 +56,8 @@ async def get_credit_note_by_doc_number(doc_number: str) -> CreditNoteInDb:
 @credit_notes_router.get("/{credit_note_id}")
 async def get_credit_note_by_id(credit_note_id: str) -> CreditNoteInDb:
     return await credit_notes_controller.get_credit_note_by_id(credit_note_id)
+
+
+@credit_notes_router.delete("/{credit_note_id}")
+async def delete_credit_note_by_id(credit_note_id: str) -> CreditNoteInDb:
+    return await credit_notes_controller.delete_credit_note_by_id(credit_note_id)

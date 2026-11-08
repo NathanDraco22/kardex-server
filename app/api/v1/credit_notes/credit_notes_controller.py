@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 
-from kardex.core.credit_note_register import CreditNoteRegister
+from kardex.core.credit_note_register import CreditNoteRegister, reverse_credit_note
 from kardex.repos.v1.branches import BranchesRepository, BranchesDataSource
 from kardex.repos.v1.clients import ClientsRepository, ClientsDataSource
 from kardex.repos.v1.invoices import InvoicesRepository, InvoicesDataSource
@@ -87,6 +87,15 @@ class CreditNotesController:
     ) -> ListResponse[CreditNoteInDb]:
         credit_notes = await self.credit_notes_repo.get_credit_note_history(**kwargs)
         return ListResponse(count=len(credit_notes), data=credit_notes)
+
+    async def delete_credit_note_by_id(self, credit_note_id: str) -> CreditNoteInDb:
+        try:
+            return await reverse_credit_note(credit_note_id)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            )
 
 
 credit_notes_controller = CreditNotesController(

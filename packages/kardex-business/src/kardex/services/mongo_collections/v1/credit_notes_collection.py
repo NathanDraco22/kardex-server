@@ -112,6 +112,15 @@ class CreditNotesCollection(BaseMongoCollection):
         result = await collection.find_one_and_delete({"id": credit_note_id})
         return result
 
+    async def delete_credit_note_by_id_with_session(
+        self, credit_note_id: str, session: Any
+    ) -> dict[str, Any] | None:
+        collection = self._collection
+        result = await collection.find_one_and_delete(
+            {"id": credit_note_id}, session=session
+        )
+        return result
+
     async def create_indexes(self):
         collection = self._collection
         await collection.create_indexes(
