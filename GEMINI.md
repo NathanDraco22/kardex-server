@@ -638,3 +638,14 @@ Agregar la moneda secundaria informativa y su tasa de cambio al módulo `app_set
 3. **Alcance informativo**: La tasa representa cuántas unidades de `currency` equivalen a 1 unidad de `secondaryCurrency`. No se usa para convertir montos ni modificar precios, tickets o reportes.
 4. **Documentación**: Se actualizó `wiki/modules/app_settings.md` con ambos campos.
 5. **Verificación**: `ruff check`, `ty check` e importación de `app.main` sin errores.
+
+## Fecha: 2026-11-08
+### Objetivo
+Habilitar la visualización del total de facturas en la moneda secundaria.
+
+### Resumen de Implementación
+1. **Modelo de configuración**: Se agregó `showInvoiceTotalInSecondaryCurrency` como `bool` con valor por defecto `False`. `UpdateAppSetting` lo acepta como opcional para PATCH parcial.
+2. **Retrocompatibilidad**: Los documentos existentes sin el campo se validan automáticamente con `False`, sin migración.
+3. **Alcance**: El campo solo habilita la línea informativa en el visor, ticket térmico y PDF A4 de facturas. No altera montos, pagos, cuentas por cobrar ni inventario.
+4. **Documentación**: Se actualizó `wiki/modules/app_settings.md` con el nuevo campo.
+5. **Verificación**: `ruff check`, `ty check` e importación de `app.main` sin errores.
