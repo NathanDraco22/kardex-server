@@ -13,6 +13,7 @@ from .client_transactions.client_transactions_router import client_transactions_
 from .clients.clients_router import clients_router
 from .core_settings.core_settings_router import core_settings_router
 from .credit_notes.credit_notes_router import credit_notes_router
+from .composite.composite_router import composite_router
 from .daily_summaries.daily_summaries_router import daily_summaries_router
 from .devolutions.devolutions_router import devolutions_router
 from .entry_docs.entry_docs_router import entry_docs_router
@@ -62,6 +63,7 @@ router_v1.include_router(client_transactions_router, prefix="/client-transaction
 router_v1.include_router(clients_router, prefix="/clients")
 router_v1.include_router(core_settings_router, prefix="/core-settings")
 router_v1.include_router(credit_notes_router, prefix='/credit-notes')
+router_v1.include_router(composite_router, prefix="/composite")
 router_v1.include_router(daily_summaries_router, prefix="/daily-summaries")
 router_v1.include_router(devolutions_router, prefix="/devolutions")
 router_v1.include_router(entry_docs_router, prefix="/entry-docs")
