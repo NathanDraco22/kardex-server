@@ -97,3 +97,18 @@ Registrada en `app/config/onion-config.toml`:
           upsert=True,
       )
   ```
+
+---
+
+## 6. Integridad Contable e Interacción con el Inventario Físico
+
+> [!IMPORTANT]
+> **El Kárdex Transaccional en Backend es 100% Entero (int):**
+> En kardex-server, todas las colecciones contables de inventario (ProductAccountCollection, ProductTransactionsCollection, InvoiceItems, etc.) almacenan existencias y cantidades como números enteros (int) referidos a la **Unidad Base Mínima Indivisible** (ej. Gramos, Mililitros, Centímetros, Unidades).
+
+### Reglas de Integración con el Frontend (kardex_app_front):
+1. **Facturación y Salidas:** Cuando el cliente compra una cantidad fraccionaria en una unidad comercial (ej. .5$ Libras de Arroz con factor 454 respecto al Gramo), el frontend resuelve la equivalencia matemática entera antes de enviar la petición:
+   \text{SaleItem.quantity} = (\text{cantidadComercial} \times \text{conversionFactor}).\text{round}() = (0.5 \times 454).\text{round}() = 227 \text{ Gramos}
+2. **Presentación Inversa (displayQuantity):** Para reportes, facturas y comprobantes, el backend entrega el entero quantity: 227 y el conversionFactor: 454. El cliente deriva la cantidad visual dividiendo entre el factor: $\frac{227}{454} = 0.5 \text{ Libras}$.
+3. **Ausencia de Descalces de Punto Flotante:** Al no permitir números de coma flotante en los balances de stock de MongoDB, se garantiza consistencia atómica total en las transacciones del motor de inventario (InventoryEngine).
+

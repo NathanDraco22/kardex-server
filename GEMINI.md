@@ -606,3 +606,14 @@ Soporte de filtro por rango de fechas en el listado paginado de órdenes/cotizac
 1. **Cambio mínimo en `orders_collection.py`**: En `fetch_paginated_orders` se capturan ahora los parámetros `startDate`/`endDate` del `**kwargs` y, si ambos están presentes, se agrega al query de MongoDB el filtro `query["createdAt"] = {"$gte": start_date, "$lte": end_date}`. Se replicó el mismo patrón que ya usaba `fetch_products_in_orders`.
 2. **Sin cambios en capas superiores**: El repositorio, controller, datasource y filtros (`OrderFilterParams`) ya propagaban `startDate`/`endDate` de forma natural; la colección era la única capa que los ignoraba.
 3. **Verificación Estática**: `ruff check` y `ty check` pasaron sin errores.
+
+## Fecha: 2026-11-08
+### Objetivo
+Endurecimiento de los endpoints de importaciones CSV y soporte del contrato de sucursal para el nuevo módulo frontend de importaciones.
+
+### Resumen de Implementación
+1. **Router de importaciones**: Se agregó `Depends(auth_middleware)` a las cuatro rutas y una dependencia compartida `get_branch_id` que acepta los headers `X-Branch` y `branch-id`. Se añadió el modelo `ImportResponse` con `status`, `message` e `importedCount`.
+2. **Parser CSV robusto**: `imports_controller.py` ahora valida extensión, tamaño máximo (10 MB), codificación UTF-8 con BOM, delimitador `,` o `;`, columnas obligatorias, montos decimales a centavos, cantidades enteras, booleanos y `tags` (lista JSON o valores separados por `;`). Los errores devuelven `400` con número de fila y campo.
+3. **Inventario inicial**: Se valida que no exista previamente el documento de inventario inicial por sucursal y se cambió el `id` del documento de `0000` a `0000-{branchId}` para evitar colisiones entre sucursales.
+4. **ProductImport**: Se agregó un validador de `tags` que tolera cadenas vacías, listas JSON y valores separados por `;`. También se agregó soporte para el cuarto precio (`price4`), aplicado en `salePrice4` durante la importación.
+5. **Verificación**: `ruff check`, `ty check`, importación de `app.main` y pruebas del parser con BOM, `;`, campos vacíos y columnas faltantes pasaron correctamente.

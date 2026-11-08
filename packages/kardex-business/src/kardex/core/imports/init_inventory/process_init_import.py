@@ -41,6 +41,7 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
     )
 
     now_milliseconds = TimeTools.get_now_in_milliseconds()
+    init_doc_id = f"0000-{branch_id}"
 
     new_products: list[ProductInDb] = []
     new_product_accounts: list[ProductAccountInDb] = []
@@ -76,7 +77,7 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
             salePrice=import_product.price,
             salePrice2=import_product.price2,
             salePrice3=import_product.price3,
-            salePrice4=0,
+            salePrice4=import_product.price4,
             updatedAt=now_milliseconds,
         )
 
@@ -100,7 +101,7 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
             type="entry",
             subtype="adjustment",
             docNumber="0000",
-            documentId="0000",
+            documentId=init_doc_id,
             quantity=import_product.quantity,
             averageCost=import_product.cost,
             resultStock=import_product.quantity,
@@ -153,7 +154,7 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
     ]
 
     new_init_entry_doc = AdjustEntryInDb(
-        id="0000",
+        id=init_doc_id,
         branchId=branch_id,
         docNumber="0000",
         description="Inventario inicial",
@@ -251,7 +252,7 @@ async def process_inventory_import(
             salePrice=import_product.price,
             salePrice2=import_product.price2,
             salePrice3=import_product.price3,
-            salePrice4=0,
+            salePrice4=import_product.price4,
             updatedAt=now_milliseconds,
         )
 
