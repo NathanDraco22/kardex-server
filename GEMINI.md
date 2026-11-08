@@ -617,3 +617,13 @@ Endurecimiento de los endpoints de importaciones CSV y soporte del contrato de s
 3. **Inventario inicial**: Se valida que no exista previamente el documento de inventario inicial por sucursal y se cambió el `id` del documento de `0000` a `0000-{branchId}` para evitar colisiones entre sucursales.
 4. **ProductImport**: Se agregó un validador de `tags` que tolera cadenas vacías, listas JSON y valores separados por `;`. También se agregó soporte para el cuarto precio (`price4`), aplicado en `salePrice4` durante la importación.
 5. **Verificación**: `ruff check`, `ty check`, importación de `app.main` y pruebas del parser con BOM, `;`, campos vacíos y columnas faltantes pasaron correctamente.
+
+## Fecha: 2026-11-08
+### Objetivo
+Agregar la moneda global configurable al módulo `app_settings`.
+
+### Resumen de Implementación
+1. **Modelo de configuración**: Se agregó `currency` a `BaseAppSetting` con tipo `Literal["NIO", "USD", "HNL", "GTQ", "CRC", "COP", "MXN", "EUR"]` y valor por defecto `"NIO"`. `UpdateAppSetting` acepta el campo como opcional para PATCH parcial.
+2. **Retrocompatibilidad**: Los documentos existentes de MongoDB sin el campo se validan con `NIO` por defecto, sin requerir migración.
+3. **Documentación**: Se actualizó `wiki/modules/app_settings.md` con el nuevo campo y su propósito visual.
+4. **Verificación**: `ruff check` y `ty check` pasaron sin errores.
