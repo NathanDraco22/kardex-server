@@ -48,7 +48,22 @@ class UnitScalesCollection(BaseMongoCollection):
 
         return result
 
-    async def delete_unit_scale_by_id(self, unit_scale_id: str) -> dict[str, Any] | None:
+    async def delete_unit_scale_by_id(
+        self, unit_scale_id: str
+    ) -> dict[str, Any] | None:
         collection = self._collection
         result = await collection.find_one_and_delete({"id": unit_scale_id})
         return result
+
+    async def delete_unit_scales_by_name_and_base_unit(
+        self,
+        old_scales: list[tuple[str, str]],
+    ) -> None:
+        """Elimina solo las semillas viejas que coinciden en nombre y base."""
+        if not old_scales:
+            return
+
+        filters = [
+            {"name": name, "baseUnit": base_unit} for name, base_unit in old_scales
+        ]
+        await self._collection.delete_many({"$or": filters})

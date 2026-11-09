@@ -11,6 +11,9 @@ class TransferItem(BaseModel):
     quantity: int
     cost: int
     conversionFactor: int = 1
+    selectedUnitName: str | None = None
+    standardUnitName: str | None = None
+    standardUnitFactor: int | None = None
     expirationDate: int | None = None
     salePrice: int = 0
     salePrice2: int = 0
