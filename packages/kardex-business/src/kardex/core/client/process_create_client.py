@@ -1,4 +1,3 @@
-import random
 from typing import Tuple, Any
 from kardex.tools import UuidTool, TimeTools
 from kardex.tools.search_tools import generate_prefixes
@@ -62,7 +61,9 @@ async def process_create_client_with_balance(
             # ==========================================
             new_invoice_id = UuidTool.generate_uuid()
 
-            invoice_doc_number = client_number
+            invoice_doc_number = await CounterManager().next_invoice_number(
+                session=session
+            )
 
             client_info = ClientInfo(
                 name=new_client_in_db.name,
@@ -163,7 +164,9 @@ async def create_initial_balance(
 
             new_invoice_id = UuidTool.generate_uuid()
 
-            invoice_doc_number = client.id
+            invoice_doc_number = await CounterManager().next_invoice_number(
+                session=session
+            )
 
             client_info = ClientInfo(
                 name=client.name,
@@ -302,14 +305,11 @@ async def _execute_multiple_initial_balance(
         branch_id = req.branch_id
         product_name = req.product_name
 
-        first_letter = client.name[0].upper()
+        new_invoice_id = UuidTool.generate_uuid()
 
-        suffix = random.randint(0, 1000000)
-
-        new_invoice_id = (
-            first_letter + str(TimeTools.get_now_in_milliseconds()) + str(suffix)
+        invoice_doc_number = await CounterManager().next_invoice_number(
+            session=session
         )
-        invoice_doc_number = new_invoice_id
 
         client_info = ClientInfo(
             name=client.name,
@@ -363,7 +363,7 @@ async def _execute_multiple_initial_balance(
         new_invoice_data = create_invoice_data.model_dump()
         new_invoice_data.update(
             {
-                "id": UuidTool.generate_uuid(),
+                "id": new_invoice_id,
                 "createdAt": current_time,
                 "paidAt": None,
             }

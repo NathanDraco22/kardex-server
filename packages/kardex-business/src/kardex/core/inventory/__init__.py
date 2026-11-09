@@ -9,6 +9,7 @@ from .inventory_batch_transformer import (
 )
 
 from .inventory_engine import InventoryEngine
+from .process_reset_inventory import process_reset_inventory
 
 __all__ = [
     "InventoryBatchTransformer",
@@ -18,4 +19,5 @@ __all__ = [
     "ExitBatchResult",
     "InsufficientBalanceError",
     "InventoryEngine",
+    "process_reset_inventory",
 ]

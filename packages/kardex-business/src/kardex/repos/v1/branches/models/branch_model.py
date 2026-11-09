@@ -9,6 +9,7 @@ class BaseBranch(BaseModel):
     email: str = ""
     phone: str = ""
     image: str = ""
+    imageUrl: str | None = None
     description: str = ""
     isCommerce: bool = True
     coordinates: Coordinates | None = None
@@ -26,6 +27,7 @@ class UpdateBranch(BaseModel):
     phone: str | None = None
     description: str | None = None
     image: str | None = None
+    imageUrl: str | None = None
     isCommerce: bool | None = None
     coordinates: Coordinates | None = None
 

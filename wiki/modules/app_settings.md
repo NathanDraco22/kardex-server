@@ -52,6 +52,10 @@ flowchart TD
 | `defaultPaymentTermDays` | `int` | `30` | Plazo predeterminado en días para facturas a crédito. |
 | `useHoldSales` | `bool` | `True` | Permite pausar y reanudar ventas pendientes (ventas en espera). |
 | `useQuickProductSearch` | `bool` | `False` | Abre el buscador rápido con botones de agregar y quitar cantidad al agregar productos en móvil (facturas, órdenes y cotizaciones). |
+| `currency` | `Literal["NIO", "USD", "HNL", "GTQ", "CRC", "COP", "MXN", "EUR"]` | `"NIO"` | Moneda global del sistema. Define el símbolo visual usado en la app, tickets y reportes. No realiza conversión de montos. |
+| `secondaryCurrency` | `Literal["NIO", "USD", "HNL", "GTQ", "CRC", "COP", "MXN", "EUR"]` | `"USD"` | Moneda secundaria informativa del sistema. Se muestra junto a la moneda principal; no convierte montos ni modifica cálculos. |
+| `exchangeRate` | `float` | `0.0` | Tasa de cambio informativa: 1 unidad de la moneda secundaria equivale a `exchangeRate` unidades de la moneda principal. Debe ser mayor o igual a 0. |
+| `showInvoiceTotalInSecondaryCurrency` | `bool` | `False` | Muestra el total equivalente en la moneda secundaria debajo del total final en el visor, ticket térmico y PDF A4 de facturas. |
 | `createdAt` | `int` | Unix ms | Fecha y hora de creación en milisegundos. |
 | `updatedAt` | `int \| None` | `None` | Fecha y hora de última actualización en milisegundos. |
 

@@ -46,17 +46,35 @@ class CreditNotesCollection(BaseMongoCollection):
         return result
 
     async def fetch_credit_notes_by_invoice_id(
-        self, invoice_id: str, client_id: str | None = None
+        self,
+        invoice_id: str,
+        client_id: str | None = None,
+        session: Any = None,
     ) -> list[dict[str, Any]]:
         collection = self._collection
         query: dict[str, Any] = {"originalInvoiceId": invoice_id}
         if client_id is not None:
             query["clientId"] = client_id
-        cursor = collection.find(query).sort("createdAt", -1)
+        cursor = collection.find(query, session=session).sort("createdAt", -1)
         result = await cursor.to_list(length=None)
         return result
 
-    async def fetch_credit_note_by_id(self, credit_note_id: str) -> dict[str, Any] | None:
+    async def fetch_credit_note_by_idempotency_key(
+        self,
+        branch_id: str,
+        idempotency_key: str,
+        session: Any = None,
+    ) -> dict[str, Any] | None:
+        collection = self._collection
+        result = await collection.find_one(
+            {"branchId": branch_id, "idempotencyKey": idempotency_key},
+            session=session,
+        )
+        return result
+
+    async def fetch_credit_note_by_id(
+        self, credit_note_id: str
+    ) -> dict[str, Any] | None:
         collection = self._collection
         result = await collection.find_one({"id": credit_note_id})
         return result
@@ -107,7 +125,9 @@ class CreditNotesCollection(BaseMongoCollection):
         )
         return result
 
-    async def delete_credit_note_by_id(self, credit_note_id: str) -> dict[str, Any] | None:
+    async def delete_credit_note_by_id(
+        self, credit_note_id: str
+    ) -> dict[str, Any] | None:
         collection = self._collection
         result = await collection.find_one_and_delete({"id": credit_note_id})
         return result
@@ -133,6 +153,12 @@ class CreditNotesCollection(BaseMongoCollection):
                 IndexModel([("status", 1)]),
                 IndexModel([("originalInvoiceId", 1)]),
                 IndexModel([("createdBy.id", 1)]),
+                IndexModel(
+                    [("branchId", 1), ("idempotencyKey", 1)],
+                    unique=True,
+                    name="ux_branch_idempotency_key",
+                    partialFilterExpression={"idempotencyKey": {"$type": "string"}},
+                ),
             ]
         )
 

@@ -1,4 +1,8 @@
-from pydantic import BaseModel
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+CurrencyCode = Literal["NIO", "USD", "HNL", "GTQ", "CRC", "COP", "MXN", "EUR"]
 
 
 class BaseAppSetting(BaseModel):
@@ -12,6 +16,10 @@ class BaseAppSetting(BaseModel):
     defaultPaymentTermDays: int = 30
     useHoldSales: bool = True
     useQuickProductSearch: bool = False
+    currency: CurrencyCode = "NIO"
+    secondaryCurrency: CurrencyCode = "USD"
+    exchangeRate: float = Field(default=0.0, ge=0)
+    showInvoiceTotalInSecondaryCurrency: bool = False
 
 
 class CreateAppSetting(BaseAppSetting):
@@ -29,6 +37,10 @@ class UpdateAppSetting(BaseModel):
     defaultPaymentTermDays: int | None = None
     useHoldSales: bool | None = None
     useQuickProductSearch: bool | None = None
+    currency: CurrencyCode | None = None
+    secondaryCurrency: CurrencyCode | None = None
+    exchangeRate: float | None = Field(default=None, ge=0)
+    showInvoiceTotalInSecondaryCurrency: bool | None = None
 
 
 class AppSettingInDb(BaseAppSetting):

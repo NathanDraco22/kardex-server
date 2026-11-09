@@ -10,4 +10,6 @@ class EntryItem(BaseModel):
     cost: int
     quantity: int
     conversionFactor: int = 1
+    standardUnitName: str | None = None
+    standardUnitFactor: int | None = None
     expirationDate: int | None = None

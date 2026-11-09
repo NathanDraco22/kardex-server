@@ -27,4 +27,7 @@ class SaleItem(BaseModel):
     iva: int = 0
     total: int
     conversionFactor: int = 1
-
+    invoiceItemIndex: int | None = None
+    selectedUnitName: str | None = None
+    standardUnitName: str | None = None
+    standardUnitFactor: int | None = None

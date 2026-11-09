@@ -27,6 +27,7 @@ class BaseCreditNote(BaseModel):
     appliedReceiptId: str | None = None
     appliedReceiptDocNumber: str | None = None
     appliedAt: int | None = None
+    idempotencyKey: str | None = None
 
 
 class CreateCreditNote(BaseCreditNote):

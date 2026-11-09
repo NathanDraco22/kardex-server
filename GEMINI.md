@@ -623,3 +623,96 @@ Soporte de filtro por rango de fechas en el listado paginado de órdenes/cotizac
 1. **Cambio mínimo en `orders_collection.py`**: En `fetch_paginated_orders` se capturan ahora los parámetros `startDate`/`endDate` del `**kwargs` y, si ambos están presentes, se agrega al query de MongoDB el filtro `query["createdAt"] = {"$gte": start_date, "$lte": end_date}`. Se replicó el mismo patrón que ya usaba `fetch_products_in_orders`.
 2. **Sin cambios en capas superiores**: El repositorio, controller, datasource y filtros (`OrderFilterParams`) ya propagaban `startDate`/`endDate` de forma natural; la colección era la única capa que los ignoraba.
 3. **Verificación Estática**: `ruff check` y `ty check` pasaron sin errores.
+
+## Fecha: 2026-11-08
+### Objetivo
+Endurecimiento de los endpoints de importaciones CSV y soporte del contrato de sucursal para el nuevo módulo frontend de importaciones.
+
+### Resumen de Implementación
+1. **Router de importaciones**: Se agregó `Depends(auth_middleware)` a las cuatro rutas y una dependencia compartida `get_branch_id` que acepta los headers `X-Branch` y `branch-id`. Se añadió el modelo `ImportResponse` con `status`, `message` e `importedCount`.
+2. **Parser CSV robusto**: `imports_controller.py` ahora valida extensión, tamaño máximo (10 MB), codificación UTF-8 con BOM, delimitador `,` o `;`, columnas obligatorias, montos decimales a centavos, cantidades enteras, booleanos y `tags` (lista JSON o valores separados por `;`). Los errores devuelven `400` con número de fila y campo.
+3. **Inventario inicial**: Se valida que no exista previamente el documento de inventario inicial por sucursal y se cambió el `id` del documento de `0000` a `0000-{branchId}` para evitar colisiones entre sucursales.
+4. **ProductImport**: Se agregó un validador de `tags` que tolera cadenas vacías, listas JSON y valores separados por `;`. También se agregó soporte para el cuarto precio (`price4`), aplicado en `salePrice4` durante la importación.
+5. **Verificación**: `ruff check`, `ty check`, importación de `app.main` y pruebas del parser con BOM, `;`, campos vacíos y columnas faltantes pasaron correctamente.
+
+## Fecha: 2026-11-08
+### Objetivo
+Agregar la moneda global configurable al módulo `app_settings`.
+
+### Resumen de Implementación
+1. **Modelo de configuración**: Se agregó `currency` a `BaseAppSetting` con tipo `Literal["NIO", "USD", "HNL", "GTQ", "CRC", "COP", "MXN", "EUR"]` y valor por defecto `"NIO"`. `UpdateAppSetting` acepta el campo como opcional para PATCH parcial.
+2. **Retrocompatibilidad**: Los documentos existentes de MongoDB sin el campo se validan con `NIO` por defecto, sin requerir migración.
+3. **Documentación**: Se actualizó `wiki/modules/app_settings.md` con el nuevo campo y su propósito visual.
+4. **Verificación**: `ruff check` y `ty check` pasaron sin errores.
+
+## Fecha: 2026-11-08
+### Objetivo
+Agregar la moneda secundaria informativa y su tasa de cambio al módulo `app_settings`.
+
+### Resumen de Implementación
+1. **Modelo de configuración**: Se agregó `secondaryCurrency` con tipo `CurrencyCode` y valor por defecto `"USD"`, y `exchangeRate` como `float` con valor por defecto `0.0` y validación `ge=0`. `UpdateAppSetting` acepta ambos como opcionales para PATCH parcial.
+2. **Retrocompatibilidad**: Los documentos existentes sin estos campos se validan automáticamente con `USD` y `0.0`, sin migración.
+3. **Alcance informativo**: La tasa representa cuántas unidades de `currency` equivalen a 1 unidad de `secondaryCurrency`. No se usa para convertir montos ni modificar precios, tickets o reportes.
+4. **Documentación**: Se actualizó `wiki/modules/app_settings.md` con ambos campos.
+5. **Verificación**: `ruff check`, `ty check` e importación de `app.main` sin errores.
+
+## Fecha: 2026-11-08
+### Objetivo
+Habilitar la visualización del total de facturas en la moneda secundaria.
+
+### Resumen de Implementación
+1. **Modelo de configuración**: Se agregó `showInvoiceTotalInSecondaryCurrency` como `bool` con valor por defecto `False`. `UpdateAppSetting` lo acepta como opcional para PATCH parcial.
+2. **Retrocompatibilidad**: Los documentos existentes sin el campo se validan automáticamente con `False`, sin migración.
+3. **Alcance**: El campo solo habilita la línea informativa en el visor, ticket térmico y PDF A4 de facturas. No altera montos, pagos, cuentas por cobrar ni inventario.
+4. **Documentación**: Se actualizó `wiki/modules/app_settings.md` con el nuevo campo.
+5. **Verificación**: `ruff check`, `ty check` e importación de `app.main` sin errores.
+
+## Fecha: 2026-11-08
+### Objetivo
+Estandarizar la numeración de facturas generadas por saldos iniciales usando `CounterManager`.
+
+### Resumen de Implementación
+1. **Alta de cliente con saldo**: `process_create_client_with_balance` ahora obtiene el folio con `CounterManager().next_invoice_number(session)`, en lugar de reutilizar el número de cliente.
+2. **Saldo inicial individual**: `create_initial_balance` usa el contador de facturas en lugar del `id` del cliente para el `docNumber`.
+3. **Saldo inicial masivo**: `_execute_multiple_initial_balance` dejó de generar folios largos con timestamp y número aleatorio; ahora usa `next_invoice_number(session)` dentro de la misma transacción.
+4. **Integridad del movimiento**: El `document_id` del movimiento financiero ahora coincide con el `id` UUID real de la factura creada (antes apuntaba al folio temporal en el flujo masivo).
+5. **Verificación**: `ruff check` y `ty check` pasaron sin errores.
+
+## Escalas de Unidades con Fracciones Comerciales (Noviembre 2026)
+### Objetivo
+Reemplazar las escalas por defecto basadas en gramo/mililitro/centímetro por micro-escalas comerciales con `scaleType`.
+
+### Resumen de Implementación
+1. **Modelo**: `BaseUnitScale.scaleType` (`weight`, `volume`, `length`, `pack`, `fractionPack`, `custom`), también en `CreateUnitScale`, `UpdateUnitScale` y `UnitScaleInDb`. Los documentos viejos se leen como `custom`.
+2. **Semillas**: `Libra`, `Litro` y `Metro` con base cuarto; `fractionPack` para Caja x10/x12/x20/x24/x30/x50/x60/x100 y Docena. `pack` y `time` no se siembran por ahora.
+3. **Limpieza**: se eliminan las semillas viejas solo si coinciden nombre y unidad base (`Peso`/`Gramo`, `Volumen`/`Mililitro`, `Longitud`/`Centímetro`, `Tiempo`/`Segundo`), para no borrar escalas personalizadas.
+4. **Documentación**: `wiki/modules/unit_scales.md` actualizado con `fractionPack`, `pack`, reglas de fracción y precios.
+5. **Verificación**: `ruff check` y `ty check` pasaron sin errores; se confirmaron 12 escalas semilla con sus factores e índices.
+
+## Decisiones P0 de Unidades, Notas de Crédito y Devoluciones (Noviembre 2026)
+- Se cerró el alcance **P0 = C3 + C7**. Las **bonificaciones** quedan diferidas por decisión de negocio (la app aún no las muestra/explota visualmente) y las **devoluciones directas** quedan deprecadas, reemplazadas por notas de crédito.
+- **C3 (backend):** solo notas de crédito; líneas identificadas por `invoiceItemIndex`; tope acumulado por línea/factura; devolución parcial permitida; rechazo de cantidades no múltiplas del `conversionFactor`; `floor` en cantidad y dinero; el backend recalcula `amount` desde las líneas; `idempotencyKey`; sin lock por factura (riesgo residual aceptado).
+- **C7 (contrato frontend):** la unidad libre guarda el texto visible completo; `validator` desde el controlador; sincronización al guardar; el placeholder `Unidad Base` no se persiste; confirmación única.
+- **P1** (cantidades/display/búsqueda rápida/transferencias) quedó implementado en la fase posterior (ver entrada siguiente); la revalidación de stock al cobrar no se cambió. **P2** (semillas, PATCH null, precio 0, etiquetas, N=2/4, `showButtons`) queda pendiente.
+- **Producción:** la maneja el usuario; no se agrega migración ni guard de producción.
+- Sesión de solo documentación: no se modificó código ni tests.
+
+## P1 de Unidades: Metadata, Display, Búsqueda Rápida y Transferencias (Noviembre 2026)
+### Objetivo
+Documentar la implementación P1 de cantidades, presentación, búsqueda rápida y borradores de transferencia, con foco en el contrato backend.
+
+### Resumen de Implementación
+1. **Metadata backend:** `SaleItem` acepta `selectedUnitName`, `standardUnitName` y `standardUnitFactor`; `EntryItem`, `ExitItem` y `TransferItem` aceptan `standardUnitName`/`standardUnitFactor` (y `TransferItem` también `selectedUnitName`). Todos son opcionales y retrocompatibles; no requieren migración.
+2. **Display:** la regla de presentación vive en el frontend (`UnitDisplayFormatter`): la unidad superior solo se usa si la cantidad base es divisible por su factor; si no, se muestra en la unidad estándar (ej. `1.5 Quintal → 150 Libra`). El backend sigue guardando cantidades y dinero como `int`.
+3. **Búsqueda rápida (frontend-only):** no inserta ítems con cantidad base `0`; con stock `0` y `restrictStock` no inserta; sin `restrictStock` permite cantidad positiva y el backend decide.
+4. **Borradores de transferencia (frontend-only):** `v3` guarda `baseUnitName`, `standardUnitName`, `standardUnitFactor`, `selectedUnitIndex`, `conversionFactor` y `selectedUnitName` por fila. `v2` reconvierte cantidad/costo con el factor guardado; `v1` o base cambiada infiere `defaultUnitIndex`, marca `needsUnitReview` y permite continuar con advertencia.
+5. **Stock:** la política no cambió; el backend sigue decidiendo con `LET_NEGATIVE`/LITE.
+6. **Verificación:** `ruff check` y `ty check` OK; `pytest` **14/14**; `git diff --check` OK. En frontend, `flutter analyze` limpio y `flutter test` **83/83**.
+
+### Limitaciones Residuales
+- Las tablas/list views de inventario y transferencia (frontend) guardan cantidad display `int`; no admiten fracciones en unidad estándar.
+- Con `defaultUnitIndex = 0`, la regla considera “superiores” a todas las unidades extra; revisar en escalas personalizadas.
+- Los documentos viejos sin metadata conservan el fallback decimal en la unidad seleccionada.
+- No se ejecutó hot reload ni prueba manual de UI.
+- **No hay commit.**
+

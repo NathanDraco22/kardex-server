@@ -10,3 +10,5 @@ class ExitItem(BaseModel):
     cost: int | None = None
     quantity: int = Field(..., lt=0)
     conversionFactor: int = 1
+    standardUnitName: str | None = None
+    standardUnitFactor: int | None = None
