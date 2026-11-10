@@ -721,3 +721,14 @@ Agregar la imagen corporativa global (`companyLogoUrl`) a `AppSettings` para uso
 3. **Frontend:** `AppSettingsScreen` sube JPG/PNG con `ImageUploader` y guarda la URL al instante; el home, el Panel Administrativo y el selector multi-sucursal consumen el logo mediante `CompanyLogo`.
 4. **Verificación:** `ruff check` y `ty check` OK; `flutter analyze` limpio y test de serialización aprobado.
 5. **No hay commit.**
+
+## Fecha: 2026-11-10 (Parte 2)
+### Objetivo
+Agregar totales y desglose por tipo de gasto (`expenses`) al endpoint `GET /api/v1/reports/total-results-by-date-range`, de forma retrocompatible.
+
+### Resumen de Implementación
+1. **Modelos:** `ExpenseTypeTotal` y `ExpenseTotals` en `repos/v1/expenses/models/expense_totals_model.py`, exportados desde el paquete de gastos.
+2. **Agregado Mongo:** `ExpensesCollection.get_expenses_totals_in_range` filtra por `date` (no `createdAt`), `branchId`, `isDeleted=False`, `isActive=True` y opcionalmente `createdBy.id`; agrupa por `type` con `total`, `paid` (solo `status == "paid"` sobre `amount`) y `count`, y calcula `pending = total - paid`.
+3. **Capas:** datasource y repository delegan/validan el resultado como `ExpenseTotals`; el controller lo inyecta en `TotalsResult` con manejo de errores no fatal (`logger.exception` + `expenses=None`).
+4. **Índice:** se agregó `IndexModel([("branchId", 1), ("date", -1)])` a `ExpensesCollection.create_indexes()` sin eliminar los existentes.
+5. **Verificación:** `ruff check` y `ty check` OK; sin cambios en el router de reportes, `/expenses` ni `get_expenses_summary_in_range`. No hay commit.

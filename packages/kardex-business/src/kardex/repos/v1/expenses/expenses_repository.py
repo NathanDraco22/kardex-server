@@ -5,6 +5,7 @@ from kardex.repos.v1.common.filter_params import ExpensesFilterParams
 
 from .data.expenses_datasource import ExpensesDataSource
 from .models.expense_model import CreateExpense, UpdateExpense, ExpenseInDb
+from .models.expense_totals_model import ExpenseTotals
 
 
 class ExpensesRepository:
@@ -80,3 +81,14 @@ class ExpensesRepository:
     async def get_expenses_summary_in_range(self, start_date: int, end_date: int) -> dict[str, Any]:
         return await self.expenses_ds.get_expenses_summary_in_range(start_date, end_date)
 
+    async def get_expenses_totals_in_range(
+        self,
+        start_date: int,
+        end_date: int,
+        branch_id: str,
+        user_id: str | None = None,
+    ) -> ExpenseTotals:
+        result = await self.expenses_ds.get_expenses_totals_in_range(
+            start_date, end_date, branch_id, user_id
+        )
+        return ExpenseTotals.model_validate(result)

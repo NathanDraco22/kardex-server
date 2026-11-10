@@ -172,6 +172,78 @@ class ExpensesCollection(BaseMongoCollection):
             "expensesPaid": global_paid,
         }
 
+    async def get_expenses_totals_in_range(
+        self,
+        start_date: int,
+        end_date: int,
+        branch_id: str,
+        user_id: str | None = None,
+    ) -> dict[str, Any]:
+        collection = self._collection
+
+        query: dict[str, Any] = {
+            "isDeleted": False,
+            "isActive": True,
+            "branchId": branch_id,
+            "date": {"$gte": start_date, "$lte": end_date},
+        }
+
+        if user_id is not None:
+            query["createdBy.id"] = user_id
+
+        pipeline = [
+            {"$match": query},
+            {
+                "$group": {
+                    "_id": "$type",
+                    "total": {"$sum": "$amount"},
+                    "paid": {
+                        "$sum": {
+                            "$cond": [{"$eq": ["$status", "paid"]}, "$amount", 0]
+                        }
+                    },
+                    "count": {"$sum": 1},
+                }
+            },
+            {"$sort": {"_id": 1}},
+        ]
+
+        cursor = await collection.aggregate(pipeline)
+        results = await cursor.to_list(length=None)
+        await cursor.close()
+
+        by_type: list[dict[str, Any]] = []
+        global_total = 0
+        global_paid = 0
+        global_count = 0
+
+        for row in results:
+            total = row.get("total", 0)
+            paid = row.get("paid", 0)
+            count = row.get("count", 0)
+
+            by_type.append(
+                {
+                    "type": row.get("_id"),
+                    "total": total,
+                    "paid": paid,
+                    "pending": total - paid,
+                    "count": count,
+                }
+            )
+
+            global_total += total
+            global_paid += paid
+            global_count += count
+
+        return {
+            "total": global_total,
+            "paid": global_paid,
+            "pending": global_total - global_paid,
+            "count": global_count,
+            "byType": by_type,
+        }
+
     async def create_indexes(self):
 
         collection = self._collection
@@ -183,5 +255,6 @@ class ExpensesCollection(BaseMongoCollection):
                 IndexModel([("dateId", 1)]),
                 IndexModel([("createdAt", -1)]),
                 IndexModel([("type", 1), ("createdAt", -1)]),
+                IndexModel([("branchId", 1), ("date", -1)]),
             ]
         )

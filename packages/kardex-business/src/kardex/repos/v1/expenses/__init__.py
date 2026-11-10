@@ -7,6 +7,7 @@ from .models.expense_model import (
     ExpenseType,
     AddToAmountRequest,
 )
+from .models.expense_totals_model import ExpenseTypeTotal, ExpenseTotals
 from .expenses_repository import ExpensesRepository
 
 
@@ -19,4 +20,6 @@ __all__ = [
     "ExpensesStatus",
     "ExpenseType",
     "AddToAmountRequest",
+    "ExpenseTypeTotal",
+    "ExpenseTotals",
 ]
