@@ -42,10 +42,10 @@ def build_fraction_pack_scale(
         return CreateUnitScale(
             name=f"{label} - Fracción",
             scaleType="fractionPack",
-            baseUnit=f"Cuarto de {label} ({quarter_units} u)",
+            baseUnit=f"1/4 {label} ({quarter_units} u)",
             units=[
                 ExtraUnit(
-                    name=f"Media {label} ({half_units} u)",
+                    name=f"1/2 {label} ({half_units} u)",
                     conversionFactor=2,
                 ),
                 ExtraUnit(
@@ -63,7 +63,7 @@ def build_fraction_pack_scale(
         return CreateUnitScale(
             name=f"{label} - Fracción",
             scaleType="fractionPack",
-            baseUnit=f"Media {label} ({half_units} u)",
+            baseUnit=f"1/2 {label} ({half_units} u)",
             units=[
                 ExtraUnit(
                     name=f"{label} ({units_per_pack} u)",
@@ -83,7 +83,7 @@ default_unit_scales: list[CreateUnitScale] = [
     CreateUnitScale(
         name="Libra",
         scaleType="weight",
-        baseUnit="Cuarto de Libra",
+        baseUnit="1/4 Libra",
         units=[
             ExtraUnit(name="Libra", conversionFactor=4),
             ExtraUnit(name="Arroba (25 lb)", conversionFactor=100),
@@ -95,7 +95,7 @@ default_unit_scales: list[CreateUnitScale] = [
     CreateUnitScale(
         name="Litro",
         scaleType="volume",
-        baseUnit="Cuarto de Litro",
+        baseUnit="1/4 Litro",
         units=[
             ExtraUnit(name="Litro", conversionFactor=4),
             ExtraUnit(name="Bidón 5 L", conversionFactor=20),
@@ -107,7 +107,7 @@ default_unit_scales: list[CreateUnitScale] = [
     CreateUnitScale(
         name="Metro",
         scaleType="length",
-        baseUnit="Cuarto de Metro",
+        baseUnit="1/4 Metro",
         units=[
             ExtraUnit(name="Metro", conversionFactor=4),
             ExtraUnit(name="Rollo 50 m", conversionFactor=200),

@@ -20,6 +20,7 @@ class BaseAppSetting(BaseModel):
     secondaryCurrency: CurrencyCode = "USD"
     exchangeRate: float = Field(default=0.0, ge=0)
     showInvoiceTotalInSecondaryCurrency: bool = False
+    companyLogoUrl: str | None = None
 
 
 class CreateAppSetting(BaseAppSetting):
@@ -41,6 +42,7 @@ class UpdateAppSetting(BaseModel):
     secondaryCurrency: CurrencyCode | None = None
     exchangeRate: float | None = Field(default=None, ge=0)
     showInvoiceTotalInSecondaryCurrency: bool | None = None
+    companyLogoUrl: str | None = None
 
 
 class AppSettingInDb(BaseAppSetting):
