@@ -716,3 +716,25 @@ Documentar la implementación P1 de cantidades, presentación, búsqueda rápida
 - No se ejecutó hot reload ni prueba manual de UI.
 - **No hay commit.**
 
+## Renombres de Fracciones y Contrato de Costos (Noviembre 2026)
+### Objetivo
+Alinear las semillas de unidades con los nombres `1/4 ...`/`1/2 ...` y documentar la presentación de costos base vs unidad seleccionada.
+
+### Resumen
+1. **Semillas:** `create_default_unit_scales.py` usa `1/4 Libra`, `1/4 Litro`, `1/4 Metro`, `1/4 Caja xN (M u)`, `1/2 Caja xN (M u)`, `1/4 Docena (3 u)` y `1/2 Docena (6 u)`.
+2. **Sin cambios de contrato:** factores, `defaultUnitIndex`, cantidades (`int`) y dinero (`int`) no cambian.
+3. **Base de datos:** si ya existen escalas con los nombres viejos, `create_unit_scale_if_absent` no las renombra; hay que recrearlas o migrarlas. Con BD vacía, el reinicio crea los nombres nuevos.
+4. **Presentación:** el frontend muestra la fila base primero en la comparación de costos (`UnitCostComparison`) y ya no muestra el factor crudo en las etiquetas de unidad.
+5. **Verificación:** `ruff check` y `ty check` OK; `pytest` **14/14**; sin commit.
+
+
+## Fecha: 2026-11-10
+### Objetivo
+Agregar la imagen corporativa global (`companyLogoUrl`) a `AppSettings` para uso estético en el frontend.
+
+### Resumen
+1. **Modelo:** `BaseAppSetting` y `UpdateAppSetting` incluyen `companyLogoUrl: str | None = None`; los documentos existentes son retrocompatibles sin migración.
+2. **Persistencia:** el PATCH parcial existente guarda la URL y refresca la caché de `AppSettingsTool`; no se modificaron repositorios, datasources ni controladores.
+3. **Frontend:** `AppSettingsScreen` sube JPG/PNG con `ImageUploader` y guarda la URL al instante; el home, el Panel Administrativo y el selector multi-sucursal consumen el logo mediante `CompanyLogo`.
+4. **Verificación:** `ruff check` y `ty check` OK; `flutter analyze` limpio y test de serialización aprobado.
+5. **No hay commit.**

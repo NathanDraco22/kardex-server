@@ -79,9 +79,9 @@ class UnitScaleInDb(BaseUnitScale):
 
 | `scaleType` | Base | ¿Venta por unidad? | Uso |
 | :--- | :--- | :---: | :--- |
-| `weight` | `Cuarto de Libra` | No | Peso continuo |
-| `volume` | `Cuarto de Litro` (250 ml) | No | Volumen continuo |
-| `length` | `Cuarto de Metro` (25 cm) | No | Longitud continua |
+| `weight` | `1/4 Libra` | No | Peso continuo |
+| `volume` | `1/4 Litro` (250 ml) | No | Volumen continuo |
+| `length` | `1/4 Metro` (25 cm) | No | Longitud continua |
 | `pack` | `Unidad` (1) | **Sí** | Empaque con venta por unidad |
 | `fractionPack` | Media/cuarto de empaque | No | Empaque fraccionado |
 | `custom` | La que defina el usuario | Según factores | Casos especiales |
@@ -98,9 +98,9 @@ Al inicializar los servicios (`services_initializer.py`), `create_default_unit_s
 
 | Escala | `scaleType` | Base | Extras | Default | Mayorista |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Libra** | `weight` | `Cuarto de Libra` | `Libra` ×4, `Arroba (25 lb)` ×100, `Quintal (100 lb)` ×400 | Libra | Arroba/Quintal |
-| **Litro** | `volume` | `Cuarto de Litro` | `Litro` ×4, `Bidón 5 L` ×20, `Bidón 20 L` ×80 | Litro | Bidón 20 L |
-| **Metro** | `length` | `Cuarto de Metro` | `Metro` ×4, `Rollo 50 m` ×200, `Rollo 100 m` ×400 | Metro | Rollo 100 m |
+| **Libra** | `weight` | `1/4 Libra` | `Libra` ×4, `Arroba (25 lb)` ×100, `Quintal (100 lb)` ×400 | Libra | Arroba/Quintal |
+| **Litro** | `volume` | `1/4 Litro` | `Litro` ×4, `Bidón 5 L` ×20, `Bidón 20 L` ×80 | Litro | Bidón 20 L |
+| **Metro** | `length` | `1/4 Metro` | `Metro` ×4, `Rollo 50 m` ×200, `Rollo 100 m` ×400 | Metro | Rollo 100 m |
 
 ### 4.2. `fractionPack`
 
@@ -112,21 +112,21 @@ Para un empaque de `N` unidades:
 
 | Preset | Base | Extras | Default |
 | :--- | :--- | :--- | :--- |
-| **Caja x10** | `Media Caja x10 (5 u)` | `Caja x10 (10 u)` ×2 | Caja x10 |
-| **Caja x12** | `Cuarto de Caja x12 (3 u)` | `Media Caja x12 (6 u)` ×2; `Caja x12 (12 u)` ×4 | Caja x12 |
-| **Caja x20** | `Cuarto de Caja x20 (5 u)` | `Media Caja x20 (10 u)` ×2; `Caja x20 (20 u)` ×4 | Caja x20 |
-| **Caja x24** | `Cuarto de Caja x24 (6 u)` | `Media Caja x24 (12 u)` ×2; `Caja x24 (24 u)` ×4 | Caja x24 |
-| **Caja x30** | `Media Caja x30 (15 u)` | `Caja x30 (30 u)` ×2 | Caja x30 |
-| **Caja x50** | `Media Caja x50 (25 u)` | `Caja x50 (50 u)` ×2 | Caja x50 |
-| **Caja x60** | `Cuarto de Caja x60 (15 u)` | `Media Caja x60 (30 u)` ×2; `Caja x60 (60 u)` ×4 | Caja x60 |
-| **Caja x100** | `Cuarto de Caja x100 (25 u)` | `Media Caja x100 (50 u)` ×2; `Caja x100 (100 u)` ×4 | Caja x100 |
-| **Docena** | `Cuarto de Docena (3 u)` | `Media Docena (6 u)` ×2; `Docena (12 u)` ×4 | Docena |
+| **Caja x10** | `1/2 Caja x10 (5 u)` | `Caja x10 (10 u)` ×2 | Caja x10 |
+| **Caja x12** | `1/4 Caja x12 (3 u)` | `1/2 Caja x12 (6 u)` ×2; `Caja x12 (12 u)` ×4 | Caja x12 |
+| **Caja x20** | `1/4 Caja x20 (5 u)` | `1/2 Caja x20 (10 u)` ×2; `Caja x20 (20 u)` ×4 | Caja x20 |
+| **Caja x24** | `1/4 Caja x24 (6 u)` | `1/2 Caja x24 (12 u)` ×2; `Caja x24 (24 u)` ×4 | Caja x24 |
+| **Caja x30** | `1/2 Caja x30 (15 u)` | `Caja x30 (30 u)` ×2 | Caja x30 |
+| **Caja x50** | `1/2 Caja x50 (25 u)` | `Caja x50 (50 u)` ×2 | Caja x50 |
+| **Caja x60** | `1/4 Caja x60 (15 u)` | `1/2 Caja x60 (30 u)` ×2; `Caja x60 (60 u)` ×4 | Caja x60 |
+| **Caja x100** | `1/4 Caja x100 (25 u)` | `1/2 Caja x100 (50 u)` ×2; `Caja x100 (100 u)` ×4 | Caja x100 |
+| **Docena** | `1/4 Docena (3 u)` | `1/2 Docena (6 u)` ×2; `Docena (12 u)` ×4 | Docena |
 
 `Caja x12` y `Docena` son numéricamente equivalentes. Se puede sembrar una sola o ambas con nombres distintos.
 
 ### 4.3. `pack`
 
-`pack` no se siembra por defecto; es una opción avanzada para productos que se venden por unidad suelta. Su base es `Unidad` y sus extras son `Media Caja xN` (factor `N/2`) y `Caja xN` (factor `N`). Permite vender 1 unidad, media caja o caja completa.
+`pack` no se siembra por defecto; es una opción avanzada para productos que se venden por unidad suelta. Su base es `Unidad` y sus extras son `1/2 Caja xN` (factor `N/2`) y `Caja xN` (factor `N`). Permite vender 1 unidad, media caja o caja completa.
 
 ---
 
@@ -137,6 +137,7 @@ Las escalas anteriores (`Peso` con gramos, `Volumen` con mililitros, `Longitud` 
 - No hay productos en producción usando esas escalas.
 - `create_unit_scale_if_absent` solo inserta; no actualiza ni borra documentos existentes. Por eso el arranque debe eliminar explícitamente los nombres viejos antes de sembrar los nuevos.
 - Los nombres nuevos (`Libra`, `Litro`, `Metro`, `Caja xN - Fracción`, `Docena - Fracción`) no colisionan con los viejos.
+- **Renombre `1/4`/`1/2`:** si la BD ya contiene las escalas por defecto con bases `Cuarto de ...` o extras `Media ...`, `create_unit_scale_if_absent` no las actualiza porque solo inserta. Hay que eliminarlas/recrearlas o ejecutar una migración. Con la BD vacía, el arranque crea directamente `1/4 Libra`, `1/4 Litro`, `1/4 Metro`, `1/4 Caja xN`, `1/2 Caja xN`, `1/4 Docena` y `1/2 Docena`.
 - Si en el futuro hay producción, esta limpieza debe convertirse en una migración versionada, no en un borrado indiscriminado.
 - En el alcance P0 actual no se agrega migración ni guard de producción; la operación de producción la maneja el usuario.
 
