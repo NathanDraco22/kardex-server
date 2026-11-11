@@ -33,6 +33,7 @@ class AdjustmentRequestContext:
 
     request: AdjustmentRequestInDb
     approved_by: UserInfo
+    approver_role: str
     session: Any
 
     now: int = field(default_factory=TimeTools.get_now_in_milliseconds)

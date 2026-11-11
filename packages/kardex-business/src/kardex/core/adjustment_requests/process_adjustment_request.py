@@ -9,6 +9,7 @@ from .pipeline import AdjustmentRequestContext, build_adjustment_request_pipelin
 async def process_adjustment_request(
     adjustment_request: AdjustmentRequestInDb,
     approved_by: UserInfo,
+    approver_role: str,
 ) -> AdjustmentRequestInDb:
     """Orquesta la aprobación de una solicitud dentro de una sola transacción.
 
@@ -22,6 +23,7 @@ async def process_adjustment_request(
             context = AdjustmentRequestContext(
                 request=adjustment_request,
                 approved_by=approved_by,
+                approver_role=approver_role,
                 session=session,
             )
 

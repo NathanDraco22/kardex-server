@@ -9,6 +9,7 @@ from kardex.repos.v1.adjustment_requests import (
     AdjustmentRequestsRepository,
 )
 from kardex.repos.v1.common.models import UserInfo
+from kardex.repos.v1.users import UsersRepository
 from kardex.tools import (
     InsufficientBalanceError,
     InvalidOperation,
@@ -19,10 +20,11 @@ from .process_adjustment_request import process_adjustment_request
 
 
 class AdjustmentRequestManager:
-    def __init__(self) -> None:
+    def __init__(self, users_repo: UsersRepository | None = None) -> None:
         self.adjustment_requests_repo = AdjustmentRequestsRepository(
             adjustment_requests_ds=AdjustmentRequestsDataSource()
         )
+        self.users_repo = users_repo or UsersRepository.get_instance()
 
     async def approve(
         self,
@@ -41,7 +43,18 @@ class AdjustmentRequestManager:
         if adjustment_request.status != "pending":
             raise InvalidOperation("ONLY_PENDING_REQUESTS_CAN_BE_APPROVED")
 
-        if approved_by.id == adjustment_request.createdBy.id:
+        approver = await self.users_repo.get_user_by_id(approved_by.id)
+
+        if approver is None or not approver.isActive:
+            raise InvalidOperation("APPROVER_NOT_FOUND")
+
+        if approver.role not in ("Admin", "Supervisor"):
+            raise InvalidOperation("APPROVAL_REQUIRES_SUPERVISOR_OR_ADMIN")
+
+        if (
+            approved_by.id == adjustment_request.createdBy.id
+            and approver.role != "Admin"
+        ):
             raise InvalidOperation("SELF_APPROVAL_NOT_ALLOWED")
 
         if not any(item.difference != 0 for item in adjustment_request.items):
@@ -59,6 +72,7 @@ class AdjustmentRequestManager:
                     return await process_adjustment_request(
                         adjustment_request,
                         approved_by,
+                        approver.role,
                     )
 
                 except InsufficientBalanceError as error:

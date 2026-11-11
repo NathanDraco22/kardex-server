@@ -8,7 +8,7 @@ from ..context import AdjustmentRequestContext
 
 
 class ValidateRequestStep(PipelineStep[AdjustmentRequestContext]):
-    """Valida que la solicitud siga pendiente y que el aprobador sea otro usuario."""
+    """Valida que la solicitud siga pendiente y que el aprobador tenga permiso."""
 
     async def execute(self, context: AdjustmentRequestContext) -> None:
         request = context.request
@@ -19,7 +19,13 @@ class ValidateRequestStep(PipelineStep[AdjustmentRequestContext]):
         if request.status != "pending":
             raise InvalidOperation("ONLY_PENDING_REQUESTS_CAN_BE_APPROVED")
 
-        if context.approved_by.id == request.createdBy.id:
+        if context.approver_role not in ("Admin", "Supervisor"):
+            raise InvalidOperation("APPROVAL_REQUIRES_SUPERVISOR_OR_ADMIN")
+
+        if (
+            context.approved_by.id == request.createdBy.id
+            and context.approver_role != "Admin"
+        ):
             raise InvalidOperation("SELF_APPROVAL_NOT_ALLOWED")
 
 

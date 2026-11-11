@@ -60,10 +60,12 @@ def _make_request(
 def _make_context(
     request: AdjustmentRequestInDb | None = None,
     approved_by: UserInfo | None = None,
+    approver_role: str = "Supervisor",
 ) -> AdjustmentRequestContext:
     return AdjustmentRequestContext(
         request=request or _make_request(),
         approved_by=approved_by or APPROVER,
+        approver_role=approver_role,
         session=None,
     )
 
@@ -131,8 +133,26 @@ async def test_validate_request_step_allows_another_user():
 
 
 @pytest.mark.asyncio
-async def test_validate_request_step_rejects_self_approval():
-    context = _make_context(approved_by=CREATOR)
+async def test_validate_request_step_rejects_operator_role():
+    context = _make_context(approver_role="Operador")
+
+    with pytest.raises(
+        InvalidOperation,
+        match="APPROVAL_REQUIRES_SUPERVISOR_OR_ADMIN",
+    ):
+        await ValidateRequestStep().execute(context)
+
+
+@pytest.mark.asyncio
+async def test_validate_request_step_allows_admin_self_approval():
+    context = _make_context(approved_by=CREATOR, approver_role="Admin")
+
+    await ValidateRequestStep().execute(context)
+
+
+@pytest.mark.asyncio
+async def test_validate_request_step_rejects_supervisor_self_approval():
+    context = _make_context(approved_by=CREATOR, approver_role="Supervisor")
 
     with pytest.raises(InvalidOperation, match="SELF_APPROVAL_NOT_ALLOWED"):
         await ValidateRequestStep().execute(context)

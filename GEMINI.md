@@ -758,3 +758,15 @@ Refactorizar `process_adjustment_request` al patron Pipeline-Steps, con contexto
 5. **Inyeccion:** cada step recibe colecciones/repositorios por constructor; el builder arma el pipeline con los singletons del proyecto.
 6. **Tests:** `test/test_adjustment_request_pipeline.py` cubre orden/skip del pipeline, split de items, validaciones de estado/autoaprobacion y construccion del resultado.
 7. **Verificacion:** `ruff check`, `ty check` y `pytest` OK. No hay cambios de API, manager, frontend ni comportamiento funcional. No hay commit.
+
+## Fecha: 2026-11-11
+### Objetivo
+Restringir la aprobación de `AdjustmentRequest` a los roles `Supervisor` y `Admin`, permitiendo la autoaprobación únicamente al rol `Admin`.
+
+### Resumen de Implementacion
+1. **Manager:** `AdjustmentRequestManager` recibe `UsersRepository`, resuelve el aprobador por `approvedBy.id`, rechaza usuarios inexistentes/inactivos (`APPROVER_NOT_FOUND`) y valida el rol (`APPROVAL_REQUIRES_SUPERVISOR_OR_ADMIN`).
+2. **Autoaprobación:** se mantiene `SELF_APPROVAL_NOT_ALLOWED` para Supervisores y Operadores; el rol `Admin` puede aprobar su propia solicitud.
+3. **Pipeline:** `AdjustmentRequestContext` incorpora `approver_role`; `ValidateRequestStep` aplica la misma regla dentro de la transacción.
+4. **Creación:** sin cambios; las solicitudes creadas por un Admin siguen guardándose como `pending` hasta su aprobación explícita.
+5. **Tests:** se actualizó `test/test_adjustment_request_pipeline.py` con casos de Operador, Supervisor y Admin (10 pruebas).
+6. **Verificación:** `ruff check`, `ty check` y `pytest test/test_adjustment_request_pipeline.py` OK. No hay commit.
