@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from .adjust_entries.adjust_entries_router import adjust_entries_router
 from .adjust_exits.adjust_exits_router import adjust_exits_router
+from .adjustment_requests.adjustment_requests_router import adjustment_requests_router
 from .admin_panels.admin_panels_router import admin_panels_router
 from .api_keys.api_keys_router import api_keys_router
 from .app_settings.app_settings_router import app_settings_router
@@ -52,6 +53,7 @@ router_v1 = APIRouter(tags=["apiV1"])
 
 router_v1.include_router(adjust_entries_router, prefix="/adjust-entries")
 router_v1.include_router(adjust_exits_router, prefix="/adjust-exits")
+router_v1.include_router(adjustment_requests_router, prefix="/adjustment-requests")
 router_v1.include_router(admin_panels_router, prefix="/admin-panels")
 router_v1.include_router(api_keys_router)
 router_v1.include_router(app_settings_router, prefix="/app-settings")

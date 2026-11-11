@@ -2,6 +2,7 @@ from .account_balances_collection import AccountBalancesCollection
 from .accounts_collection import AccountsCollection
 from .adjust_entries_collection import AdjustEntriesCollection
 from .adjust_exits_collection import AdjustExitsCollection
+from .adjustment_requests_collection import AdjustmentRequestsCollection
 from .branches_collection import BranchesCollection
 from .client_groups_collection import ClientGroupsCollection
 from .client_transactions_collection import ClientTransactionsCollection
@@ -44,6 +45,7 @@ __all__ = [
     "AccountsCollection",
     "AdjustEntriesCollection",
     "AdjustExitsCollection",
+    "AdjustmentRequestsCollection",
     "ApiKeysCollection",
     "BranchesCollection",
     "ClientGroupsCollection",

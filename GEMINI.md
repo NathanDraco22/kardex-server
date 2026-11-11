@@ -732,3 +732,29 @@ Agregar totales y desglose por tipo de gasto (`expenses`) al endpoint `GET /api/
 3. **Capas:** datasource y repository delegan/validan el resultado como `ExpenseTotals`; el controller lo inyecta en `TotalsResult` con manejo de errores no fatal (`logger.exception` + `expenses=None`).
 4. **Índice:** se agregó `IndexModel([("branchId", 1), ("date", -1)])` a `ExpensesCollection.create_indexes()` sin eliminar los existentes.
 5. **Verificación:** `ruff check` y `ty check` OK; sin cambios en el router de reportes, `/expenses` ni `get_expenses_summary_in_range`. No hay commit.
+
+## Fecha: 2026-11-10 (Parte 3)
+### Objetivo
+Implementar el backend de `AdjustmentRequest`: solicitudes de conteo fisico con flujo de aprobacion y aplicacion atomica de ajustes de inventario.
+
+### Resumen de Implementacion
+1. **Generacion CLI:** `onion repo-mongo adjustment_request --version 1 --output-dir packages/kardex-business/src/kardex` y `onion router adjustment_request --version 1 --output-dir app`; se elimino el `kardex/config/onion-config.toml` generado y se registro `AdjustmentRequests` en `app/config/onion-config.toml`.
+2. **Modelos:** `BaseAdjustmentRequest`, `CreateAdjustmentRequest`, `UpdateAdjustmentRequest`, `AdjustmentRequestInDb`, `AdjustmentRequestItem`, `CreateAdjustmentRequestItem`, `ApproveAdjustmentRequest` y `CancelAdjustmentRequest` con timestamps Unix ms, `isDeleted` y estado `pending|approved|cancelled`.
+3. **Snapshot de inventario:** create/update recalculan `systemStock`, `difference`, `subtotal`, `entryTotal` y `exitTotal` desde `ProductAccounts`; nunca confian en valores del cliente.
+4. **Aprobacion:** `AdjustmentRequestManager.approve` valida estado pendiente, autoria distinta al aprobador y ejecuta `process_adjustment_request` en una sola transaccion Mongo con mutex compartido y reintentos para el codigo 112. Genera `AdjustExit` y/o `AdjustEntry` segun el signo de la diferencia almacenada.
+5. **Inmutabilidad y cancelacion:** update/delete/cancel solo operan sobre solicitudes pendientes; cancelar no altera stock.
+6. **API:** router `/adjustment-requests` con CRUD, `approve` y `cancel`; listado con `ListResponse(count, data)` y notificaciones Telegram por cada documento generado.
+7. **Verificacion:** `ruff check` y `ty check` OK; pruebas de humo de repositorio y manager con dobles en memoria. No hay commit.
+
+## Fecha: 2026-11-10 (Parte 4)
+### Objetivo
+Refactorizar `process_adjustment_request` al patron Pipeline-Steps, con contexto compartido, pasos independientes y resultado final tipado.
+
+### Resumen de Implementacion
+1. **Base generica:** `pipeline/base.py` define `PipelineStep`, `Pipeline`, `PipelineResult` y `should_execute` para omitir pasos sin trabajo.
+2. **Contexto:** `AdjustmentRequestContext` concentra request, aprobador, sesion, sucursal, items separados, cuentas, lotes, documentos y resultado final.
+3. **Steps:** se separaron validacion, split de items, carga de sucursal/productos/cuentas, preparacion/ejecucion/persistencia de salida, preparacion/ejecucion/persistencia de entrada, aprobacion y construccion del resultado.
+4. **Orquestador:** `process_adjustment_request.py` quedo reducido a abrir la transaccion Mongo, ejecutar el pipeline y devolver `context.result.request`; la transaccion y el control de concurrencia siguen fuera de los steps.
+5. **Inyeccion:** cada step recibe colecciones/repositorios por constructor; el builder arma el pipeline con los singletons del proyecto.
+6. **Tests:** `test/test_adjustment_request_pipeline.py` cubre orden/skip del pipeline, split de items, validaciones de estado/autoaprobacion y construccion del resultado.
+7. **Verificacion:** `ruff check`, `ty check` y `pytest` OK. No hay cambios de API, manager, frontend ni comportamiento funcional. No hay commit.
