@@ -44,3 +44,10 @@ async def delete_expiration_log_by_id(expiration_log_id: str) -> ExpirationLogIn
 @expiration_logs_router.get("/near/{branch_id}")
 async def has_near_expiration_date(branch_id: str) -> dict[str, bool]:
     return await expiration_logs_controller.has_near_expiration_date(branch_id)
+
+
+@expiration_logs_router.get("/near/{branch_id}/list")
+async def get_near_expiration_logs(
+    branch_id: str, limit: int = 10
+) -> ListResponse[ExpirationLogInDb]:
+    return await expiration_logs_controller.get_near_expiration_logs(branch_id, limit)

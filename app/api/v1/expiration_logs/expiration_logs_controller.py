@@ -83,6 +83,14 @@ class ExpirationLogsController:
         )
         return {"hasExpiration": has_expiration}
 
+    async def get_near_expiration_logs(
+        self, branch_id: str, limit: int = 10
+    ) -> ListResponse[ExpirationLogInDb]:
+        logs = await self.expiration_logs_repo.get_near_expiration_logs(
+            branch_id=branch_id, limit=limit
+        )
+        return ListResponse(count=len(logs), data=logs)
+
 
 expiration_logs_controller = ExpirationLogsController(
     expiration_logs_repo=ExpirationLogsRepository(
