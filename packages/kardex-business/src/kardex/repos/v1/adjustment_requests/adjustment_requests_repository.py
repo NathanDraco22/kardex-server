@@ -211,6 +211,8 @@ class AdjustmentRequestsRepository:
         if len(products) != len(product_ids):
             raise ProductNotFound("PRODUCT_NOT_FOUND")
 
+        products_by_id = {product.id: product for product in products}
+
         accounts = await ProductAccountsCollection.get_instance().get_accounts_by_branch_id(
             branch_id=branch_id,
             product_ids=product_ids,
@@ -221,6 +223,10 @@ class AdjustmentRequestsRepository:
         items: list[AdjustmentRequestItem] = []
 
         for create_item in create_items:
+            product = products_by_id.get(create_item.productId)
+            if product is None:
+                raise ProductNotFound("PRODUCT_NOT_FOUND")
+
             account = accounts_by_product.get(create_item.productId)
             system_stock = int(account.get("currentStock") or 0) if account else 0
             average_cost = int(account.get("averageCost") or 0) if account else 0
@@ -239,6 +245,7 @@ class AdjustmentRequestsRepository:
             items.append(
                 AdjustmentRequestItem(
                     **create_item.model_dump(),
+                    image=product.image,
                     systemStock=system_stock,
                     difference=difference,
                     subtotal=subtotal,

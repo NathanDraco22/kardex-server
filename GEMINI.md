@@ -770,3 +770,14 @@ Restringir la aprobación de `AdjustmentRequest` a los roles `Supervisor` y `Adm
 4. **Creación:** sin cambios; las solicitudes creadas por un Admin siguen guardándose como `pending` hasta su aprobación explícita.
 5. **Tests:** se actualizó `test/test_adjustment_request_pipeline.py` con casos de Operador, Supervisor y Admin (10 pruebas).
 6. **Verificación:** `ruff check`, `ty check` y `pytest test/test_adjustment_request_pipeline.py` OK. No hay commit.
+
+## Fecha: 2026-11-11 (Parte 2)
+### Objetivo
+Guardar como snapshot la imagen del producto en cada ítem de `AdjustmentRequest` para mostrarla en el formulario y detalle del frontend.
+
+### Resumen de Implementacion
+1. **Modelo:** `AdjustmentRequestItem` agrega `image: str = ""`; los documentos históricos sin el campo se validan con cadena vacía.
+2. **Repositorio:** `_build_items` indexa los productos consultados por ID y asigna `image=product.image` al construir cada ítem, sin confiar en el payload del cliente.
+3. **Compatibilidad:** el campo es aditivo; creación, edición, aprobación y cancelación conservan el comportamiento actual.
+4. **Tests:** `test/test_adjustment_request_item_image.py` cubre serialización y compatibilidad con documentos antiguos.
+5. **Verificación:** `ruff check`, `ty check` y `pytest` OK. No hay migraciones de Mongo ni cambios de API obligatorios.

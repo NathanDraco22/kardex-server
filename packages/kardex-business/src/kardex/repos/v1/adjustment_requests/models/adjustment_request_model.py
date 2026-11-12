@@ -22,6 +22,7 @@ class CreateAdjustmentRequestItem(BaseModel):
 
 
 class AdjustmentRequestItem(CreateAdjustmentRequestItem):
+    image: str = ""
     systemStock: int
     difference: int
     subtotal: int
