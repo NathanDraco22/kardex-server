@@ -29,9 +29,24 @@ class CreditNotesCollection(BaseMongoCollection):
     async def fetch_all_active_credit_notes(self, **kwargs) -> list[dict[str, Any]]:
         collection = self._collection
         query = {key: value for key, value in kwargs.items() if value is not None}
-        query["status"] = {"$in": ["confirmed", "open"]}
+        query["status"] = {"$in": ["emitted", "approved", "confirmed", "open"]}
         cursor = collection.find(query).sort("createdAt", -1)
         result = await cursor.to_list(length=None)
+        return result
+
+    async def update_credit_note_fields_by_id(
+        self,
+        credit_note_id: str,
+        fields: dict[str, Any],
+        session: Any = None,
+    ) -> dict[str, Any] | None:
+        collection = self._collection
+        result = await collection.find_one_and_update(
+            {"id": credit_note_id},
+            {"$set": fields},
+            return_document=ReturnDocument.AFTER,
+            session=session,
+        )
         return result
 
     async def fetch_credit_notes_by_client_id(

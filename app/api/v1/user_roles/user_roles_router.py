@@ -1,5 +1,10 @@
 from fastapi import APIRouter
-from kardex.repos.v1.user_roles import CreateUserRole, UpdateUserRole, UserRoleInDb
+from kardex.repos.v1.user_roles import (
+    CreateUserRole,
+    ModulesCatalogResponse,
+    UpdateUserRole,
+    UserRoleInDb,
+)
 from responses.v1 import ListResponse
 
 from .user_roles_controller import user_roles_controller
@@ -16,6 +21,11 @@ async def create_user_role(body: CreateUserRole) -> UserRoleInDb:
 @user_roles_router.get("")
 async def get_all_user_roles() -> ListResponse[UserRoleInDb]:
     return await user_roles_controller.get_all_user_roles()
+
+
+@user_roles_router.get("/modules")
+async def get_modules_catalog() -> ModulesCatalogResponse:
+    return user_roles_controller.get_modules_catalog()
 
 
 @user_roles_router.get("/{user_role_id}")

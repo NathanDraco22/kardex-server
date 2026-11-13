@@ -19,3 +19,22 @@ class UserRoleInDb(BaseUserRole):
     id: str
     createdAt: int
     updatedAt: int | None = None
+    isDefault: bool = False
+
+
+class SubModuleItem(BaseModel):
+    key: str
+    name: str
+    description: str
+
+
+class ModuleItem(BaseModel):
+    key: str
+    name: str
+    description: str
+    submodules: list[SubModuleItem] = []
+
+
+class ModulesCatalogResponse(BaseModel):
+    allAccessKey: str
+    modules: list[ModuleItem]

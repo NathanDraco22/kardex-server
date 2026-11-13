@@ -1,5 +1,10 @@
 from fastapi import APIRouter, Depends
-from kardex.repos.v1.credit_notes import CreateCreditNote, CreditNoteInDb
+from kardex.repos.v1.credit_notes import (
+    CreateCreditNote,
+    ApproveCreditNote,
+    RejectCreditNote,
+    CreditNoteInDb,
+)
 from kardex.repos.v1.common.filter_params import CreditNoteFilterParams
 from responses.v1 import ListResponse
 
@@ -14,6 +19,20 @@ credit_notes_router = APIRouter(
 @credit_notes_router.post("")
 async def create_credit_note(body: CreateCreditNote) -> CreditNoteInDb:
     return await credit_notes_controller.create_credit_note(body)
+
+
+@credit_notes_router.post("/{credit_note_id}/approve")
+async def approve_credit_note(
+    credit_note_id: str, body: ApproveCreditNote
+) -> CreditNoteInDb:
+    return await credit_notes_controller.approve_credit_note(credit_note_id, body)
+
+
+@credit_notes_router.post("/{credit_note_id}/reject")
+async def reject_credit_note(
+    credit_note_id: str, body: RejectCreditNote
+) -> CreditNoteInDb:
+    return await credit_notes_controller.reject_credit_note(credit_note_id, body)
 
 
 @credit_notes_router.get("")

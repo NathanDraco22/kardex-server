@@ -54,6 +54,20 @@ async def process_receipt(
                     f"does not match Total Applied to Invoices ({total_applied})."
                 )
 
+            # Validar que cada nota de crédito esté aprobada
+            for applied_credit_note in create_receipt.appliedCreditNotes:
+                cn_data = await credit_note_col.fetch_credit_note_by_id(
+                    applied_credit_note.creditNoteId
+                )
+                if not cn_data:
+                    raise Exception(
+                        f"Nota de crédito {applied_credit_note.creditNoteId} no encontrada."
+                    )
+                if cn_data.get("status") not in ("approved", "confirmed"):
+                    raise Exception(
+                        f"La nota de crédito #{cn_data.get('docNumber', '')} no está aprobada (estado: {cn_data.get('status')})."
+                    )
+
             # 2. Crear el documento de recibo
             new_receipt_data = create_receipt.model_dump()
             new_receipt_data["id"] = UuidTool.generate_uuid()

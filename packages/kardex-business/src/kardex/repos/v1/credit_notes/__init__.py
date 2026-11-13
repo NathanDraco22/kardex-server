@@ -2,6 +2,8 @@ from .data.credit_notes_datasource import CreditNotesDataSource
 from .models.credit_note_model import (
     BaseCreditNote,
     CreateCreditNote,
+    ApproveCreditNote,
+    RejectCreditNote,
     UpdateCreditNote,
     CreditNoteInDb,
     CreditNoteType,
@@ -13,6 +15,8 @@ __all__ = [
     "CreditNotesDataSource",
     "BaseCreditNote",
     "CreateCreditNote",
+    "ApproveCreditNote",
+    "RejectCreditNote",
     "UpdateCreditNote",
     "CreditNoteInDb",
     "CreditNoteType",

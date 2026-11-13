@@ -8,7 +8,15 @@ from kardex.repos.v1.common.models import (
 )
 
 CreditNoteType = Literal["devolution", "amount"]
-CreditNoteStatus = Literal["open", "confirmed", "cancelled", "applied"]
+CreditNoteStatus = Literal[
+    "emitted",
+    "open",
+    "approved",
+    "confirmed",
+    "rejected",
+    "cancelled",
+    "applied",
+]
 
 
 class BaseCreditNote(BaseModel):
@@ -22,8 +30,13 @@ class BaseCreditNote(BaseModel):
     returnedItems: list[SaleItem] = []
     amount: int
     description: str = ""
-    status: CreditNoteStatus = "confirmed"
+    status: CreditNoteStatus = "emitted"
     createdBy: UserInfo
+    approvedBy: UserInfo | None = None
+    approvedAt: int | None = None
+    rejectedBy: UserInfo | None = None
+    rejectedAt: int | None = None
+    rejectionReason: str | None = None
     appliedReceiptId: str | None = None
     appliedReceiptDocNumber: str | None = None
     appliedAt: int | None = None
@@ -34,8 +47,22 @@ class CreateCreditNote(BaseCreditNote):
     pass
 
 
+class ApproveCreditNote(BaseModel):
+    approvedBy: UserInfo
+
+
+class RejectCreditNote(BaseModel):
+    rejectedBy: UserInfo
+    reason: str = ""
+
+
 class UpdateCreditNote(BaseModel):
     status: CreditNoteStatus | None = None
+    approvedBy: UserInfo | None = None
+    approvedAt: int | None = None
+    rejectedBy: UserInfo | None = None
+    rejectedAt: int | None = None
+    rejectionReason: str | None = None
     appliedReceiptId: str | None = None
     appliedReceiptDocNumber: str | None = None
     appliedAt: int | None = None

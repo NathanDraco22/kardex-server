@@ -193,6 +193,15 @@ class UsersCollection(BaseMongoCollection):
         )
         return result
 
+    async def count_users_by_role(self, role_id: str) -> int:
+        collection = self._collection
+        return await collection.count_documents(
+            {
+                "role": role_id,
+                "isDeleted": False,
+            }
+        )
+
     async def create_indexes(self):
         collection = self._collection
         await collection.create_indexes(

@@ -1,16 +1,24 @@
 from fastapi import HTTPException, status
 
-from kardex.core.credit_note_register import CreditNoteRegister, reverse_credit_note
+from kardex.core.credit_note_register import (
+    CreditNoteRegister,
+    reverse_credit_note,
+    approve_credit_note,
+    reject_credit_note,
+)
 from kardex.repos.v1.branches import BranchesRepository, BranchesDataSource
 from kardex.repos.v1.clients import ClientsRepository, ClientsDataSource
 from kardex.repos.v1.invoices import InvoicesRepository, InvoicesDataSource
 from kardex.repos.v1.credit_notes import (
     CreateCreditNote,
+    ApproveCreditNote,
+    RejectCreditNote,
     CreditNoteInDb,
     CreditNotesRepository,
     CreditNotesDataSource,
 )
 from kardex.repos.v1.common.filter_params import CreditNoteFilterParams
+from kardex.tools import InvalidOperation
 from responses.v1 import ListResponse
 
 
@@ -92,6 +100,28 @@ class CreditNotesController:
         try:
             return await reverse_credit_note(credit_note_id)
         except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            )
+
+    async def approve_credit_note(
+        self, credit_note_id: str, body: ApproveCreditNote
+    ) -> CreditNoteInDb:
+        try:
+            return await approve_credit_note(credit_note_id, body.approvedBy)
+        except (ValueError, InvalidOperation) as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            )
+
+    async def reject_credit_note(
+        self, credit_note_id: str, body: RejectCreditNote
+    ) -> CreditNoteInDb:
+        try:
+            return await reject_credit_note(credit_note_id, body.rejectedBy, body.reason)
+        except (ValueError, InvalidOperation) as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(e),
