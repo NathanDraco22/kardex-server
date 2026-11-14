@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from pymongo import ReturnDocument, IndexModel
@@ -32,6 +33,17 @@ class UserRolesCollection(BaseMongoCollection):
         collection = self._collection
         result = await collection.find_one({"id": user_role_id})
         return result
+
+    async def fetch_user_role_by_name(
+        self, name: str, exclude_id: str | None = None
+    ) -> dict[str, Any] | None:
+        collection = self._collection
+        query: dict[str, Any] = {
+            "name": {"$regex": f"^{re.escape(name.strip())}$", "$options": "i"}
+        }
+        if exclude_id is not None:
+            query["id"] = {"$ne": exclude_id}
+        return await collection.find_one(query)
 
     async def update_user_role_by_id(
         self,

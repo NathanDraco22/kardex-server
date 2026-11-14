@@ -738,3 +738,63 @@ Agregar la imagen corporativa global (`companyLogoUrl`) a `AppSettings` para uso
 3. **Frontend:** `AppSettingsScreen` sube JPG/PNG con `ImageUploader` y guarda la URL al instante; el home, el Panel Administrativo y el selector multi-sucursal consumen el logo mediante `CompanyLogo`.
 4. **Verificación:** `ruff check` y `ty check` OK; `flutter analyze` limpio y test de serialización aprobado.
 5. **No hay commit.**
+
+## Fecha: 2026-11-10 (Parte 2)
+### Objetivo
+Agregar totales y desglose por tipo de gasto (`expenses`) al endpoint `GET /api/v1/reports/total-results-by-date-range`, de forma retrocompatible.
+
+### Resumen de Implementación
+1. **Modelos:** `ExpenseTypeTotal` y `ExpenseTotals` en `repos/v1/expenses/models/expense_totals_model.py`, exportados desde el paquete de gastos.
+2. **Agregado Mongo:** `ExpensesCollection.get_expenses_totals_in_range` filtra por `date` (no `createdAt`), `branchId`, `isDeleted=False`, `isActive=True` y opcionalmente `createdBy.id`; agrupa por `type` con `total`, `paid` (solo `status == "paid"` sobre `amount`) y `count`, y calcula `pending = total - paid`.
+3. **Capas:** datasource y repository delegan/validan el resultado como `ExpenseTotals`; el controller lo inyecta en `TotalsResult` con manejo de errores no fatal (`logger.exception` + `expenses=None`).
+4. **Índice:** se agregó `IndexModel([("branchId", 1), ("date", -1)])` a `ExpensesCollection.create_indexes()` sin eliminar los existentes.
+5. **Verificación:** `ruff check` y `ty check` OK; sin cambios en el router de reportes, `/expenses` ni `get_expenses_summary_in_range`. No hay commit.
+
+## Fecha: 2026-11-10 (Parte 3)
+### Objetivo
+Implementar el backend de `AdjustmentRequest`: solicitudes de conteo fisico con flujo de aprobacion y aplicacion atomica de ajustes de inventario.
+
+### Resumen de Implementacion
+1. **Generacion CLI:** `onion repo-mongo adjustment_request --version 1 --output-dir packages/kardex-business/src/kardex` y `onion router adjustment_request --version 1 --output-dir app`; se elimino el `kardex/config/onion-config.toml` generado y se registro `AdjustmentRequests` en `app/config/onion-config.toml`.
+2. **Modelos:** `BaseAdjustmentRequest`, `CreateAdjustmentRequest`, `UpdateAdjustmentRequest`, `AdjustmentRequestInDb`, `AdjustmentRequestItem`, `CreateAdjustmentRequestItem`, `ApproveAdjustmentRequest` y `CancelAdjustmentRequest` con timestamps Unix ms, `isDeleted` y estado `pending|approved|cancelled`.
+3. **Snapshot de inventario:** create/update recalculan `systemStock`, `difference`, `subtotal`, `entryTotal` y `exitTotal` desde `ProductAccounts`; nunca confian en valores del cliente.
+4. **Aprobacion:** `AdjustmentRequestManager.approve` valida estado pendiente, autoria distinta al aprobador y ejecuta `process_adjustment_request` en una sola transaccion Mongo con mutex compartido y reintentos para el codigo 112. Genera `AdjustExit` y/o `AdjustEntry` segun el signo de la diferencia almacenada.
+5. **Inmutabilidad y cancelacion:** update/delete/cancel solo operan sobre solicitudes pendientes; cancelar no altera stock.
+6. **API:** router `/adjustment-requests` con CRUD, `approve` y `cancel`; listado con `ListResponse(count, data)` y notificaciones Telegram por cada documento generado.
+7. **Verificacion:** `ruff check` y `ty check` OK; pruebas de humo de repositorio y manager con dobles en memoria. No hay commit.
+
+## Fecha: 2026-11-10 (Parte 4)
+### Objetivo
+Refactorizar `process_adjustment_request` al patron Pipeline-Steps, con contexto compartido, pasos independientes y resultado final tipado.
+
+### Resumen de Implementacion
+1. **Base generica:** `pipeline/base.py` define `PipelineStep`, `Pipeline`, `PipelineResult` y `should_execute` para omitir pasos sin trabajo.
+2. **Contexto:** `AdjustmentRequestContext` concentra request, aprobador, sesion, sucursal, items separados, cuentas, lotes, documentos y resultado final.
+3. **Steps:** se separaron validacion, split de items, carga de sucursal/productos/cuentas, preparacion/ejecucion/persistencia de salida, preparacion/ejecucion/persistencia de entrada, aprobacion y construccion del resultado.
+4. **Orquestador:** `process_adjustment_request.py` quedo reducido a abrir la transaccion Mongo, ejecutar el pipeline y devolver `context.result.request`; la transaccion y el control de concurrencia siguen fuera de los steps.
+5. **Inyeccion:** cada step recibe colecciones/repositorios por constructor; el builder arma el pipeline con los singletons del proyecto.
+6. **Tests:** `test/test_adjustment_request_pipeline.py` cubre orden/skip del pipeline, split de items, validaciones de estado/autoaprobacion y construccion del resultado.
+7. **Verificacion:** `ruff check`, `ty check` y `pytest` OK. No hay cambios de API, manager, frontend ni comportamiento funcional. No hay commit.
+
+## Fecha: 2026-11-11
+### Objetivo
+Restringir la aprobación de `AdjustmentRequest` a los roles `Supervisor` y `Admin`, permitiendo la autoaprobación únicamente al rol `Admin`.
+
+### Resumen de Implementacion
+1. **Manager:** `AdjustmentRequestManager` recibe `UsersRepository`, resuelve el aprobador por `approvedBy.id`, rechaza usuarios inexistentes/inactivos (`APPROVER_NOT_FOUND`) y valida el rol (`APPROVAL_REQUIRES_SUPERVISOR_OR_ADMIN`).
+2. **Autoaprobación:** se mantiene `SELF_APPROVAL_NOT_ALLOWED` para Supervisores y Operadores; el rol `Admin` puede aprobar su propia solicitud.
+3. **Pipeline:** `AdjustmentRequestContext` incorpora `approver_role`; `ValidateRequestStep` aplica la misma regla dentro de la transacción.
+4. **Creación:** sin cambios; las solicitudes creadas por un Admin siguen guardándose como `pending` hasta su aprobación explícita.
+5. **Tests:** se actualizó `test/test_adjustment_request_pipeline.py` con casos de Operador, Supervisor y Admin (10 pruebas).
+6. **Verificación:** `ruff check`, `ty check` y `pytest test/test_adjustment_request_pipeline.py` OK. No hay commit.
+
+## Fecha: 2026-11-11 (Parte 2)
+### Objetivo
+Guardar como snapshot la imagen del producto en cada ítem de `AdjustmentRequest` para mostrarla en el formulario y detalle del frontend.
+
+### Resumen de Implementacion
+1. **Modelo:** `AdjustmentRequestItem` agrega `image: str = ""`; los documentos históricos sin el campo se validan con cadena vacía.
+2. **Repositorio:** `_build_items` indexa los productos consultados por ID y asigna `image=product.image` al construir cada ítem, sin confiar en el payload del cliente.
+3. **Compatibilidad:** el campo es aditivo; creación, edición, aprobación y cancelación conservan el comportamiento actual.
+4. **Tests:** `test/test_adjustment_request_item_image.py` cubre serialización y compatibilidad con documentos antiguos.
+5. **Verificación:** `ruff check`, `ty check` y `pytest` OK. No hay migraciones de Mongo ni cambios de API obligatorios.

@@ -1,5 +1,5 @@
 from typing import Any
-from kardex.services.mongo_collections.v1 import UserRolesCollection
+from kardex.services.mongo_collections.v1 import UserRolesCollection, UsersCollection
 
 
 class UserRolesDataSource:
@@ -33,3 +33,13 @@ class UserRolesDataSource:
     async def delete_user_role_by_id(self, user_role_id: str) -> dict[str, Any] | None:
         collection = UserRolesCollection.get_instance()
         return await collection.delete_user_role_by_id(user_role_id)
+
+    async def get_user_role_by_name(
+        self, name: str, exclude_id: str | None = None
+    ) -> dict[str, Any] | None:
+        collection = UserRolesCollection.get_instance()
+        return await collection.fetch_user_role_by_name(name, exclude_id=exclude_id)
+
+    async def count_users_with_role(self, user_role_id: str) -> int:
+        collection = UsersCollection.get_instance()
+        return await collection.count_users_by_role(user_role_id)

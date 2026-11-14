@@ -97,7 +97,7 @@ async def reverse_receipt(
             for applied_credit_note in receipt.appliedCreditNotes:
                 await credit_note_col.update_credit_note_status_by_id(
                     credit_note_id=applied_credit_note.creditNoteId,
-                    status="confirmed",
+                    status="approved",
                     session=session,
                 )
 

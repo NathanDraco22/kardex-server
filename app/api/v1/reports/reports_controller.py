@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from kardex.tools import TimeTools
 from kardex.repos.v1.daily_summaries import (
@@ -11,6 +12,7 @@ from kardex.repos.v1.executive_summaries import (
 )
 from kardex.repos.v1.receipts import ReceiptsRepository
 from kardex.repos.v1.invoices import InvoicesRepository
+from kardex.repos.v1.expenses import ExpensesRepository
 from kardex.repos.v1.common.models import (
     InventoryBranchDetail,
     CommercialBranchDetail,
@@ -26,6 +28,9 @@ from kardex.repos.v1.common.filter_params import (
 from .responses import TotalsResult
 
 
+logger = logging.getLogger(__name__)
+
+
 class ReportsController:
     def __init__(
         self,
@@ -37,6 +42,7 @@ class ReportsController:
         self.report_manager = ReportManager()
         self.receipts_repo = ReceiptsRepository.get_instance()
         self.invoices_repo = InvoicesRepository.get_instance()
+        self.expenses_repo = ExpensesRepository.get_instance()
 
     async def get_general_report(
         self, params: ReportFilterParams
@@ -168,12 +174,24 @@ class ReportsController:
         detail_invoices = await self.invoices_repo.get_all_invoices(invoice_filter)
         detail_receipts = await self.receipts_repo.get_all_receipts(receipt_filter)
 
+        try:
+            expenses = await self.expenses_repo.get_expenses_totals_in_range(
+                start_date=params.startDate,
+                end_date=params.endDate,
+                branch_id=params.branchId,
+                user_id=params.userId,
+            )
+        except Exception:
+            logger.exception("No se pudieron calcular los totales de gastos")
+            expenses = None
+
         return TotalsResult(
             branchId=params.branchId,
             invoices=invoices_totals,
             receipts=receipts,
             detailInvoices=detail_invoices,
             detailReceipts=detail_receipts,
+            expenses=expenses,
         )
 
 

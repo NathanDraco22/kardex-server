@@ -4,7 +4,6 @@ from .search_tools import generate_prefixes
 from .query_builder import build_query
 from .etag_tool import EtagTool
 from .app_exceptions import NotModified
-from .branches_tool import BranchesTool
 from .kardex_exceptions import (
     KardexException,
     InsufficientBalanceError,
@@ -19,6 +18,7 @@ from .kardex_exceptions import (
     DirectStockAdjustmentBlocked,
     MongoMigrationException,
 )
+from .branches_tool import BranchesTool
 
 
 __all__ = [

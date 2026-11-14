@@ -83,6 +83,15 @@ class ExpirationLogsController:
         )
         return {"hasExpiration": has_expiration}
 
+    async def get_near_expiration_logs(
+        self, branch_id: str, limit: int = 10
+    ) -> ListResponse[ExpirationLogInDb]:
+        target_date = TimeTools.get_now_in_100days_in_milliseconds()
+        logs = await self.expiration_logs_repo.get_near_expiration_logs(
+            branch_id=branch_id, limit=limit, target_date=target_date
+        )
+        return ListResponse(count=len(logs), data=logs)
+
 
 expiration_logs_controller = ExpirationLogsController(
     expiration_logs_repo=ExpirationLogsRepository(

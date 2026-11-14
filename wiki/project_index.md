@@ -2,6 +2,18 @@
 
 Bienvenido a la documentación arquitectónica y técnica de **Kardex Server**.
 
+> **Documento heredado.** Se conserva por su valor histórico y por la visión general de datos. El punto de entrada actual es [`INDEX.md`](./INDEX.md).
+>
+> **Navegación rápida para agentes**
+>
+> - 🧭 [`INDEX.md`](./INDEX.md) — hub: estructura, dónde está cada cosa y catálogo de enlaces.
+> - 🏗️ [`architecture.md`](./architecture.md) — capas, flujo y multi-tenant.
+> - 🧱 [`conventions.md`](./conventions.md) — convenciones de código y datos.
+> - 🔐 [`security.md`](./security.md) — guards y routers protegidos.
+> - ⚙️ [`operations.md`](./operations.md) — ejecución, entorno y verificación.
+> - 🗂️ [`modules/INDEX.md`](./modules/INDEX.md) — catálogo de los **48 módulos** del API con router, repo, colección y proceso.
+> - 📚 Documentos de módulo: [`app_settings.md`](./modules/app_settings.md), [`unit_scales.md`](./modules/unit_scales.md), [`credit_notes.md`](./modules/credit_notes.md), [`composite.md`](./modules/composite.md).
+
 ---
 
 ## 1. Visión General del Proyecto
@@ -45,7 +57,7 @@ flowchart LR
 
 ## 4. Índice de Documentación Modular
 
-Para conocer a fondo la especificación técnica de cada módulo del backend:
+El mapa completo de routers, repositorios y colecciones está en **[`modules/INDEX.md`](./modules/INDEX.md)** (48 módulos del API). A continuación, los documentos con especificación técnica profunda:
 
 - ⚙️ **[Configuraciones Globales (modules/app_settings.md)](./modules/app_settings.md)** - Gestión de parámetros de sistema: márgenes de ganancia, banderas de órdenes, cotizaciones, vencimientos, inventario negativo y caché en memoria `AppSettingsTool`.
 - ⚖️ **[Escalas de Unidades (modules/unit_scales.md)](./modules/unit_scales.md)** - Plantillas de conversión estandarizadas (Peso, Volumen, Longitud, Tiempo y personalizadas) para productos y parámetros en MongoDB.

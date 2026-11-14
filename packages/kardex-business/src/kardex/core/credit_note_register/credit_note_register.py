@@ -106,6 +106,15 @@ class CreditNoteRegister:
                 raise InvalidOperation(
                     f"Original invoice {doc.originalInvoiceId} not found."
                 )
+            if invoice.status == "cancelled":
+                raise InvalidOperation(
+                    "Cannot create a credit note for a cancelled invoice."
+                )
+            if invoice.paymentType != "credit":
+                raise InvalidOperation(
+                    "Credit notes by devolution only apply to credit invoices. "
+                    "Use devolutions for cash invoices."
+                )
             if not doc.returnedItems:
                 raise InvalidOperation(
                     "Devolution credit notes must include returned items."

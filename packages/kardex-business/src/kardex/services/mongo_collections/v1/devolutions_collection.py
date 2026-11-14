@@ -147,3 +147,27 @@ class DevolutionsCollection(BaseMongoCollection):
         result = await cursor.to_list(length=None)
 
         return result
+
+    async def fetch_confirmed_devolutions_total(
+        self, start_date: int, end_date: int
+    ) -> int:
+        collection = self._collection
+        pipeline = [
+            {
+                "$match": {
+                    "status": "confirmed",
+                    "createdAt": {"$gte": start_date, "$lte": end_date},
+                }
+            },
+            {
+                "$group": {
+                    "_id": None,
+                    "total": {"$sum": "$total"},
+                }
+            },
+        ]
+        cursor = await collection.aggregate(pipeline)
+        results = await cursor.to_list(length=1)
+        if not results:
+            return 0
+        return int(results[0].get("total", 0))

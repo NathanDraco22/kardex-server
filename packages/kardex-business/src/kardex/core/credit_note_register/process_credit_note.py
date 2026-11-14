@@ -93,7 +93,7 @@ def sum_previously_returned_quantities(
     invoice_item_index: int,
     product_id: str,
 ) -> int:
-    """Suma lo ya devuelto por linea de factura en notas de credito no canceladas.
+    """Suma lo ya devuelto por linea de factura en notas de credito no canceladas ni rechazadas.
 
     Las notas antiguas sin `invoiceItemIndex` no se pueden atribuir con certeza a
     una linea concreta, por lo que se ignoran aqui. El frontend aplica un fallback
@@ -101,7 +101,7 @@ def sum_previously_returned_quantities(
     """
     total = 0
     for credit_note in credit_notes:
-        if credit_note.get("status") == "cancelled":
+        if credit_note.get("status") in ("cancelled", "rejected"):
             continue
         for item in credit_note.get("returnedItems") or []:
             if item.get("invoiceItemIndex") != invoice_item_index:
@@ -213,21 +213,18 @@ async def process_credit_note(
     create_credit_note: CreateCreditNote,
 ) -> CreditNoteInDb:
     """
-    Procesa la creación de una nota de crédito de forma atómica:
+    Procesa la emisión inicial de una nota de crédito de forma atómica:
     1. Si llega idempotencyKey y ya existe una nota para la sucursal, la devuelve.
     2. Si type == 'devolution':
        - Valida y recalcula los items contra la factura original y notas previas.
-       - Reingresa los items al inventario (ProductAccount).
-       - Registra ProductTransaction (type='entry', subtype='credit_note').
+       - NO toca inventario físico ni kárdex (el reingreso ocurre formalmente al APROBAR).
     3. Si type == 'amount':
-       - Solo registra el documento de crédito por el monto establecido (sin tocar inventario).
+       - Solo valida y registra el documento por el monto establecido.
     4. Asigna número de documento correlativo si no viene especificado.
-    5. Guarda la nota de crédito en MongoDB con status='confirmed'.
+    5. Guarda la nota de crédito en MongoDB con status='emitted'.
     """
     mongo_client = MongoService().client
     credit_note_col = CreditNotesCollection.get_instance()
-    prd_account_col = ProductAccountsCollection.get_instance()
-    prd_transaction_col = ProductTransactionsCollection.get_instance()
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():
@@ -243,7 +240,7 @@ async def process_credit_note(
             now_in_milliseconds = TimeTools.get_now_in_milliseconds()
             credit_note_id = UuidTool.generate_uuid()
 
-            # 1. Si es de tipo devolución, validamos contra la factura y reingresamos stock
+            # 1. Si es de tipo devolución, validamos contra la factura original
             if create_credit_note.type == "devolution":
                 if not create_credit_note.returnedItems:
                     raise InvalidOperation(
@@ -256,54 +253,10 @@ async def process_credit_note(
                     await CounterManager().next_credit_note_number(session=session)
                 )
 
-            if create_credit_note.type == "devolution":
-                created_product_transactions: List[ProductTransactionInDb] = []
-
-                for item in create_credit_note.returnedItems:
-                    quantity_to_add = abs(item.quantity)
-                    if quantity_to_add == 0:
-                        continue
-
-                    updated_account_data = (
-                        await prd_account_col.update_product_account_balance_data(
-                            product_id=item.product.id,
-                            branch_id=create_credit_note.branchId,
-                            add_to_current_stock=quantity_to_add,
-                            last_cost=item.cost,
-                            session=session,
-                        )
-                    )
-                    updated_product_account = ProductAccountInDb.model_validate(
-                        updated_account_data
-                    )
-
-                    new_prod_transaction = ProductTransactionInDb(
-                        id=UuidTool.generate_uuid(),
-                        documentId=credit_note_id,
-                        docNumber=create_credit_note.docNumber,
-                        type="entry",
-                        subtype="credit_note",
-                        productId=item.product.id,
-                        branchId=create_credit_note.branchId,
-                        quantity=quantity_to_add,
-                        averageCost=updated_product_account.averageCost,
-                        resultStock=updated_product_account.currentStock,
-                        createdAt=now_in_milliseconds,
-                    )
-                    created_product_transactions.append(new_prod_transaction)
-
-                if created_product_transactions:
-                    product_transactions_data = [
-                        t.model_dump() for t in created_product_transactions
-                    ]
-                    await prd_transaction_col.create_many_product_transactions_with_session(
-                        product_transactions_data, session=session
-                    )
-
-            # 2. Crear el documento de la nota de crédito
+            # 2. Crear el documento de la nota de crédito en estado "emitted"
             new_credit_note_data = create_credit_note.model_dump()
             new_credit_note_data["id"] = credit_note_id
-            new_credit_note_data["status"] = "confirmed"
+            new_credit_note_data["status"] = "emitted"
             new_credit_note_data["createdAt"] = now_in_milliseconds
             new_credit_note_data["updatedAt"] = None
 

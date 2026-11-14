@@ -9,6 +9,10 @@ from kardex.repos.v1.expiration_logs import (
     CreateExpirationLog,
     ProductInfo,
 )
+from kardex.repos.v1.suppliers import (
+    SuppliersRepository,
+    SuppliersDataSource,
+)
 from kardex.repos.v1.entry_docs import (
     CreateEntryDoc,
     EntryDocInDb,
@@ -24,13 +28,22 @@ class EntryDocsController:
         entry_docs_repo: EntryDocsRepository,
         product_ledger_manager: ProductLedgerManager,
         expiration_logs_repo: ExpirationLogsRepository,
+        suppliers_repo: SuppliersRepository,
     ) -> None:
         self.entry_docs_repo = entry_docs_repo
         self.product_ledger_manager = product_ledger_manager
         self.expiration_logs_repo = expiration_logs_repo
+        self.suppliers_repo = suppliers_repo
 
     async def _create_expiration_logs(self, entry_doc: EntryDocInDb) -> None:
         try:
+            supplier_id = entry_doc.supplierId
+            supplier_name: str | None = None
+            if supplier_id:
+                supplier = await self.suppliers_repo.get_supplier_by_id(supplier_id)
+                if supplier:
+                    supplier_name = supplier.name
+
             entry_items = entry_doc.items
             creation_logs: list[CreateExpirationLog] = []
             for entry_item in entry_items:
@@ -47,6 +60,8 @@ class EntryDocsController:
                     product=product_info,
                     branchId=entry_doc.branchId,
                     expirationDate=expiration_date,
+                    supplierId=supplier_id,
+                    supplierName=supplier_name,
                 )
                 creation_logs.append(new_expiration_log)
 
@@ -135,5 +150,8 @@ entry_docs_controller = EntryDocsController(
     product_ledger_manager=ProductLedgerManager(),
     expiration_logs_repo=ExpirationLogsRepository(
         expiration_logs_ds=ExpirationLogsDataSource(),
+    ),
+    suppliers_repo=SuppliersRepository(
+        suppliers_ds=SuppliersDataSource(),
     ),
 )

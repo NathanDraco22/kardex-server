@@ -2,6 +2,18 @@
 
 Welcome, Agent. This document contains the architectural rules, conventions, and tool usage for this project. **Read this before performing any modification.**
 
+> [!IMPORTANT]
+> ### 🧭 REGLA DE ORO — Contexto obligatorio antes de tocar código
+> No explores el árbol a ciegas. Lee, en este orden:
+> 1. 📖 [`wiki/INDEX.md`](wiki/INDEX.md) — qué es el proyecto, dónde está cada cosa y qué hace.
+> 2. 🗂️ [`wiki/modules/INDEX.md`](wiki/modules/INDEX.md) — catálogo de los **48 módulos** del API (router → controller → repo → colección).
+> 3. 🧱 [`wiki/conventions.md`](wiki/conventions.md) — convenciones de código, datos y colecciones.
+> 4. 🏗️ [`wiki/architecture.md`](wiki/architecture.md) — capas, flujo de una petición y multi-tenant.
+> 5. 🔐 [`wiki/security.md`](wiki/security.md) y ⚙️ [`wiki/operations.md`](wiki/operations.md) — guards, headers, ejecución y verificación.
+> 6. 📚 La ficha del módulo en [`wiki/modules/`](wiki/modules/) si existe.
+>
+> Si el módulo no tiene ficha, usa `wiki/modules/INDEX.md` para ubicar sus archivos. Este AGENTS.md sigue siendo la fuente de verdad para reglas de arquitectura y CLI.
+
 ## 🏗 Project Architecture: Onion Architecture
 The project follows a strict **Onion Architecture** (Clean Architecture) pattern. Data must flow from the outside in, never the reverse.
 

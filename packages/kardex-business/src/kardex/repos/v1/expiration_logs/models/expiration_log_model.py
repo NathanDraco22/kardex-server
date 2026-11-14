@@ -16,6 +16,8 @@ class BaseExpirationLog(BaseModel):
     branchId: str
     lotNumber: str | None = None
     expirationDate: int
+    supplierId: str | None = None
+    supplierName: str | None = None
 
 
 class CreateExpirationLog(BaseExpirationLog):

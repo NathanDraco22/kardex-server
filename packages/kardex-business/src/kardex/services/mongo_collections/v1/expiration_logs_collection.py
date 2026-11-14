@@ -76,3 +76,16 @@ class ExpirationLogsCollection(BaseMongoCollection):
         )
 
         return result is not None
+
+    async def fetch_near_expiration_logs(
+        self, branch_id: str, limit: int = 10, target_date: int | None = None
+    ) -> list[dict[str, Any]]:
+        collection = self._collection
+        query: dict[str, Any] = {"branchId": branch_id}
+        if target_date is not None:
+            query["expirationDate"] = {"$lte": target_date}
+
+        cursor = collection.find(query).sort("expirationDate", 1).limit(limit)
+        result = await cursor.to_list(length=limit)
+        await cursor.close()
+        return result

@@ -193,6 +193,73 @@ def test_sum_previously_returned_skips_cancelled_notes():
     assert sum_previously_returned_quantities(credit_notes, 0, "product-1") == 0
 
 
+def test_sum_previously_returned_skips_rejected_notes():
+    credit_notes = [
+        {
+            "status": "rejected",
+            "returnedItems": [
+                {
+                    "invoiceItemIndex": 0,
+                    "product": {"id": "product-1"},
+                    "quantity": 5,
+                },
+            ],
+        },
+    ]
+
+    assert sum_previously_returned_quantities(credit_notes, 0, "product-1") == 0
+
+
+def test_sum_previously_returned_counts_emitted_and_approved_notes():
+    credit_notes = [
+        {
+            "status": "emitted",
+            "returnedItems": [
+                {
+                    "invoiceItemIndex": 0,
+                    "product": {"id": "product-1"},
+                    "quantity": 2,
+                },
+            ],
+        },
+        {
+            "status": "approved",
+            "returnedItems": [
+                {
+                    "invoiceItemIndex": 0,
+                    "product": {"id": "product-1"},
+                    "quantity": 3,
+                },
+            ],
+        },
+    ]
+
+    assert sum_previously_returned_quantities(credit_notes, 0, "product-1") == 5
+
+
+def test_credit_note_defaults_status_to_emitted():
+    credit_note = _make_credit_note()
+    assert credit_note.status == "emitted"
+
+
+def test_credit_note_model_accepts_audit_fields():
+    credit_note = CreateCreditNote(
+        branchId="branch-1",
+        clientId="client-1",
+        clientInfo=ClientInfo(name="Cliente"),
+        type="devolution",
+        amount=100,
+        createdBy=UserInfo(id="user-1", name="Usuario"),
+        approvedBy=UserInfo(id="user-2", name="Aprobador"),
+        approvedAt=123456789,
+        rejectedBy=UserInfo(id="user-3", name="Rechazador"),
+        rejectedAt=987654321,
+        rejectionReason="No procede la garantía",
+    )
+    assert credit_note.approvedBy.name == "Aprobador"
+    assert credit_note.rejectionReason == "No procede la garantía"
+
+
 def test_sale_item_accepts_invoice_item_index():
     item = SaleItem(
         product=ProductItem(

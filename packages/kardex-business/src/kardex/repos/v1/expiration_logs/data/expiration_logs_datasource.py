@@ -41,3 +41,11 @@ class ExpirationLogsDataSource:
     async def has_near_expiration_date(self, target_date: int, branch_id: str) -> bool:
         collection = ExpirationLogsCollection.get_instance()
         return await collection.has_near_expiration_date(target_date, branch_id)
+
+    async def get_near_expiration_logs(
+        self, branch_id: str, limit: int = 10, target_date: int | None = None
+    ) -> list[dict[str, Any]]:
+        collection = ExpirationLogsCollection.get_instance()
+        return await collection.fetch_near_expiration_logs(
+            branch_id=branch_id, limit=limit, target_date=target_date
+        )

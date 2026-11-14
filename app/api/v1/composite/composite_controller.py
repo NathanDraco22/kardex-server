@@ -30,12 +30,16 @@ class CompositeController:
         invoices_task = self.invoices_repo.get_pending_to_paid_invoices(client_id)
         devolutions_task = self.devolutions_repo.get_all_active_devolutions(dev_params)
         credit_notes_task = self.credit_notes_repo.get_credit_notes_by_client_id(
-            client_id=client_id, status="confirmed"
+            client_id=client_id
         )
 
-        invoices, devolutions, credit_notes = await asyncio.gather(
+        invoices, devolutions, raw_credit_notes = await asyncio.gather(
             invoices_task, devolutions_task, credit_notes_task
         )
+
+        credit_notes = [
+            cn for cn in raw_credit_notes if cn.status in ("approved", "confirmed")
+        ]
 
         total_invoices = sum(max(0, inv.total - inv.amountPaid) for inv in invoices)
         total_devolutions = sum(dev.total for dev in devolutions)

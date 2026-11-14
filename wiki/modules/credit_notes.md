@@ -52,16 +52,20 @@ La nota de crédito soporta dos tipos de operación:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> confirmed: Emisión Atómica (devolution / amount)
-    confirmed --> applied: Aplicada en Recibo (appliedCreditNotes)
-    confirmed --> cancelled: Anulación / Cancelación
-    applied --> confirmed: Reversión de Recibo (reverse_receipt)
+    [*] --> emitted: Emisión (devolution / amount) [Stock NO se toca]
+    emitted --> approved: Aprobación Formal [Reingreso a Stock si es devolución]
+    emitted --> rejected: Rechazo [Registra motivo]
+    approved --> applied: Aplicada en Recibo (appliedCreditNotes)
+    approved --> cancelled: Anulación / Cancelación [Revierte Stock si fue devolución]
+    applied --> approved: Reversión de Recibo (reverse_receipt)
 ```
 
-- **`open`**: Estado inicial para borradores (si aplica).
-- **`confirmed`**: Nota emitida formalmente, con stock reingresado (si es devolución). Disponible para ser aplicada a cuentas por cobrar.
+- **`emitted`**: Estado inicial al crear la nota. No afecta el inventario físico ni descuenta saldo de la factura.
+- **`approved`**: Nota formalmente aprobada. Si es devolución, reingresa el stock físico a `Products` y crea `ProductTransaction`. Descuenta de la factura asociada y queda habilitada para aplicarse en recibos. (Equivalente semántico al legacy `confirmed`).
+- **`rejected`**: Nota desestimada con motivo explícito (`rejectionReason`). No afecta inventario ni facturas.
 - **`applied`**: Aplicada en un recibo oficial de pago (`appliedReceiptId`), reduciendo la deuda del cliente con `ClientTransaction` (`subtype="credit_note"`).
-- **`cancelled`**: Anulada, revirtiendo sus efectos contables y de inventario.
+- **`cancelled`**: Anulada, revirtiendo sus efectos contables y de inventario si ya estaba aprobada.
+- **`open`**: Estado opcional para borradores.
 
 ---
 
@@ -75,8 +79,11 @@ class CreditNoteType(str, Enum):
     amount = "amount"
 
 class CreditNoteStatus(str, Enum):
+    emitted = "emitted"
     open = "open"
+    approved = "approved"
     confirmed = "confirmed"
+    rejected = "rejected"
     cancelled = "cancelled"
     applied = "applied"
 
@@ -91,14 +98,27 @@ class BaseCreditNote(BaseModel):
     returnedItems: list[SaleItem] = []
     amount: int                                  # Monto monetario en centavos
     description: str = ""
-    status: CreditNoteStatus = CreditNoteStatus.confirmed
+    status: CreditNoteStatus = CreditNoteStatus.emitted
     createdBy: UserInfo
+    approvedBy: UserInfo | None = None
+    approvedAt: int | None = None
+    rejectedBy: UserInfo | None = None
+    rejectedAt: int | None = None
+    rejectionReason: str | None = None
     appliedReceiptId: str | None = None
     appliedReceiptDocNumber: str | None = None
     appliedAt: int | None = None
 
 class CreateCreditNote(BaseCreditNote):
     pass
+
+class ApproveCreditNote(BaseModel):
+    approvedBy: UserInfo
+
+class RejectCreditNote(BaseModel):
+    rejectedBy: UserInfo
+    reason: str = ""
+```
 
 class UpdateCreditNote(BaseModel):
     status: CreditNoteStatus | None = None
@@ -162,6 +182,10 @@ Se agregaron los siguientes permisos dentro del módulo comercial:
 - `CREATE_CREDIT_NOTE`: Autoriza la emisión de notas de crédito por devolución o monto.
 - `CREDIT_NOTE_HISTORY`: Autoriza la consulta del historial maestro y auditoría de notas de crédito.
 
+> [!IMPORTANT]
+> **Pendiente y Roadmap Futuro de Aprobación:**
+> Actualmente, cualquier usuario autenticado en el sistema puede **aprobar** o **rechazar** una nota de crédito emitida. Queda registrado como pendiente técnico incorporar un permiso granular específico (e.g., `APPROVE_CREDIT_NOTE`) para limitar la aprobación a perfiles con rol de Administrador o Supervisor.
+
 ---
 
 ## 9. Catálogo de Endpoints REST (`/api/v1/credit-notes`)
@@ -170,11 +194,13 @@ Todos los endpoints requieren autenticación mediante JWT (`auth_middleware`):
 
 | Método | Endpoint | Descripción | Respuesta |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/credit-notes` | Emite y procesa una nueva nota de crédito | `CreditNoteInDb` |
+| `POST` | `/api/v1/credit-notes` | Emite una nueva nota de crédito en estado `emitted` (sin tocar stock) | `CreditNoteInDb` |
+| `POST` | `/api/v1/credit-notes/{id}/approve` | Aprueba la nota (reingresa stock a Kárdex si es devolución) | `CreditNoteInDb` |
+| `POST` | `/api/v1/credit-notes/{id}/reject` | Rechaza la nota indicando motivo de rechazo | `CreditNoteInDb` |
 | `GET` | `/api/v1/credit-notes` | Lista paginada con filtros (`status`, `type`, fechas, cliente) | `ListResponse[CreditNoteInDb]` |
-| `GET` | `/api/v1/credit-notes/all/active` | Consulta notas activas (`open` y `confirmed`) | `ListResponse[CreditNoteInDb]` |
+| `GET` | `/api/v1/credit-notes/all/active` | Consulta notas activas (`emitted`, `approved`, `confirmed`, `open`) | `ListResponse[CreditNoteInDb]` |
 | `GET` | `/api/v1/credit-notes/client/{client_id}` | Notas de crédito asociadas a un cliente específico | `ListResponse[CreditNoteInDb]` |
 | `GET` | `/api/v1/credit-notes/invoice/{invoice_id}` | Notas vinculadas a una factura en particular | `ListResponse[CreditNoteInDb]` |
 | `GET` | `/api/v1/credit-notes/doc/{doc_number}` | Búsqueda por folio consecutivo | `CreditNoteInDb` |
 | `GET` | `/api/v1/credit-notes/{id}` | Búsqueda por identificador UUID | `CreditNoteInDb` |
-| `DELETE` | `/api/v1/credit-notes/{id}` | Elimina la nota y revierte stock si es devolución | `CreditNoteInDb` |
+| `DELETE` | `/api/v1/credit-notes/{id}` | Elimina la nota y revierte stock solo si estaba aprobada | `CreditNoteInDb` |

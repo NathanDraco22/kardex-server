@@ -108,6 +108,7 @@ class DailyReportMaker:
             totalInvoices=res.totalInvoices,
             totalReceiptCash=res.totalReceiptCash,
             totalReceiptDevolutions=res.totalReceiptDevolutions,
+            totalCashDevolutions=res.totalCashDevolutions,
             totalReceipts=res.totalReceipts,
             receiptCount=res.receiptCount,
             branches=branch_details,

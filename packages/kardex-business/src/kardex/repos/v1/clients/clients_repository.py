@@ -1,17 +1,14 @@
 from __future__ import annotations
 
-from kardex.core.client.process_create_client import InitialBalanceClient
+from typing import TYPE_CHECKING
+
 from kardex.tools import TimeTools
 from kardex.tools.search_tools import generate_prefixes
 from kardex.core.counter_manager.counter_manager import CounterManager
 from kardex.repos.v1.common.filter_params import ClientFilterParams
 
-from kardex.core.client.process_create_client import (
-    create_multiple_initial_balance,
-)
-from kardex.core.client.process_create_client import (
-    create_initial_balance,
-)
+if TYPE_CHECKING:
+    from kardex.core.client.process_create_client import InitialBalanceClient
 
 from .data.clients_datasource import ClientsDataSource
 from .models.client_model import CreateClient, UpdateClient, ClientInDb
@@ -55,6 +52,8 @@ class ClientsRepository:
         branch_id: str,
         product_name: str,
     ) -> ClientInDb:
+        from kardex.core.client.process_create_client import create_initial_balance
+
         return await create_initial_balance(
             client, initial_balance, branch_id, product_name
         )
@@ -63,6 +62,10 @@ class ClientsRepository:
         self,
         balances: list[InitialBalanceClient],
     ) -> list[ClientInDb]:
+        from kardex.core.client.process_create_client import (
+            create_multiple_initial_balance,
+        )
+
         return await create_multiple_initial_balance(balances)
 
     async def get_all_clients(self, params: ClientFilterParams) -> list[ClientInDb]:

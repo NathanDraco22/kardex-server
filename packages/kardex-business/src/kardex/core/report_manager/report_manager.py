@@ -17,6 +17,7 @@ from kardex.repos.v1.receipts.models.branch_receipt_amount_total import (
 from kardex.repos.v1.branches import BranchesRepository, BranchesDataSource, BranchInDb
 from kardex.repos.v1.inventories import InventoriesRepository, InventoriesDataSource
 from kardex.repos.v1.expenses import ExpensesRepository, ExpensesDataSource
+from kardex.repos.v1.devolutions import DevolutionsRepository, DevolutionsDataSource
 
 
 class DailyInvoiceReportResult(BaseModel):
@@ -37,6 +38,7 @@ class DailySummaryReportResult(BaseModel):
     totalInvoices: int
     receiptResults: list[tuple[str, BranchAppliedReceiptsAmountsSummary]]
     totalReceiptDevolutions: int = 0
+    totalCashDevolutions: int = 0
     totalReceiptCash: int = 0
     totalReceipts: int = 0
     receiptCount: int = 0
@@ -54,6 +56,7 @@ class ReportManager:
         self.inventories_repo = InventoriesRepository(InventoriesDataSource())
         self.receipts_repo = ReceiptsRepository(ReceiptsDataSource())
         self.expenses_repo = ExpensesRepository(ExpensesDataSource())
+        self.devolutions_repo = DevolutionsRepository(DevolutionsDataSource())
 
     async def get_total_invoices_by_date_range(
         self, start_date: int, end_date: int
@@ -105,6 +108,12 @@ class ReportManager:
             startDate=start_date, endDate=end_date
         )
 
+        total_cash_devolutions = (
+            await self.devolutions_repo.get_confirmed_devolutions_total(
+                start_date=start_date, end_date=end_date
+            )
+        )
+
         invoices_by_branch = {model.branchId: model for model in result}
         receipts_by_branch = {model.branchId: model for model in total_receipt}
 
@@ -119,6 +128,7 @@ class ReportManager:
             totalInvoices=0,
             receiptResults=[],
             totalReceiptDevolutions=0,
+            totalCashDevolutions=total_cash_devolutions,
             totalReceiptCash=0,
             totalReceipts=0,
             receiptCount=0,

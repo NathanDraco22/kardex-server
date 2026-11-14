@@ -35,8 +35,12 @@ async def reverse_credit_note(credit_note_id: str) -> CreditNoteInDb:
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():
-            # 1. Si fue devolución, revertimos el stock
-            if credit_note.type == "devolution" and credit_note.returnedItems:
+            # 1. Si estaba aprobada/confirmada y fue devolución, revertimos el stock
+            if (
+                credit_note.status in ("approved", "confirmed")
+                and credit_note.type == "devolution"
+                and credit_note.returnedItems
+            ):
                 for item in credit_note.returnedItems:
                     quantity_to_remove = abs(item.quantity)
                     if quantity_to_remove == 0:

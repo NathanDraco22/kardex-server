@@ -93,3 +93,11 @@ class ExpirationLogsRepository:
         return await self.expiration_logs_ds.has_near_expiration_date(
             target_date, branch_id
         )
+
+    async def get_near_expiration_logs(
+        self, branch_id: str, limit: int = 10, target_date: int | None = None
+    ) -> list[ExpirationLogInDb]:
+        results = await self.expiration_logs_ds.get_near_expiration_logs(
+            branch_id=branch_id, limit=limit, target_date=target_date
+        )
+        return [ExpirationLogInDb.model_validate(result) for result in results]
