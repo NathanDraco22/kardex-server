@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, Header
 from kardex.repos.v1.core_settings.models.core_setting_model import DecodedCoreSetting
 from kardex.repos.v1.core_settings import CreateCoreSetting, UpdateCoreSetting, CoreSettingInDb
 
@@ -48,14 +48,14 @@ async def update_core_setting_by_nickname(
 @core_settings_router.delete("/{core_setting_id}")
 async def delete_core_setting_by_id(
     core_setting_id: str,
-    token: str | None = None,
+    content_token: str | None = Header(default=None, alias="X-Content-Token"),
 ) -> CoreSettingInDb:
     """Elimina un tenant por id.
 
-    ``token`` es el ``content_token`` (query param) con el nickname del tenant;
-    el registro debe pertenecer a ese tenant.
+    ``X-Content-Token`` lleva el ``content_token`` con el nickname del tenant;
+    el registro debe pertenecer a ese tenant. No se acepta el token en la URL.
     """
 
     return await core_settings_controller.delete_core_setting_by_id(
-        core_setting_id, token
+        core_setting_id, content_token
     )

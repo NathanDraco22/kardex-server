@@ -1,11 +1,20 @@
 from typing import Any
 
-from pymongo import ReturnDocument
+from pymongo import IndexModel, ReturnDocument
 from kardex.services import BaseMongoCollection
 
 
 class CoreSettingsCollection(BaseMongoCollection):
     collection_name = "CoreSettings"
+
+    async def create_indexes(self) -> None:
+        # Un solo CoreSettings por tenant; protege contra POST concurrentes.
+        collection = self._collection
+        await collection.create_indexes(
+            [
+                IndexModel([("nickname", 1)], unique=True),
+            ]
+        )
 
     async def create_core_setting(self, core_setting: dict) -> None:
         collection = self._collection

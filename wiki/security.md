@@ -127,3 +127,4 @@ Checklist:
 - **CORS:** `app/main.py` permite `allow_origins=["*"]`. Si el despliegue lo requiere, restringir antes de producción.
 - **OpenAPI:** se oculta con `MODE=PROD` (`openapi_url=None`).
 - **Usuarios inactivos:** `auth_middleware` consulta `UsersTool` y rechaza usuarios desactivados.
+- **Expiración de JWT (riesgo conocido):** `TokenManager.decode_token` usa `verify_exp: False`, por lo que el servidor no rechaza tokens caducados. Está fuera del alcance de esta rama y debe corregirse en un cambio aparte.

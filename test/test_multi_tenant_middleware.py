@@ -92,6 +92,27 @@ def test_nickname_is_normalized_and_alias_header_is_accepted():
     assert response.json()["tenant"] == "tiendaa"
 
 
+@pytest.mark.asyncio
+async def test_middleware_loads_the_three_synchronous_caches(monkeypatch):
+    calls: list[str] = []
+
+    def recorder(name: str):
+        async def _ensure(self, nickname: str | None = None) -> None:
+            calls.append(name)
+
+        return _ensure
+
+    monkeypatch.setattr(BranchesTool, "ensure_loaded", recorder("branches"))
+    monkeypatch.setattr(UsersTool, "ensure_loaded", recorder("users"))
+    monkeypatch.setattr(EtagTool, "ensure_loaded", recorder("etag"))
+
+    client = _make_client()
+    response = client.get("/api/v1/whoami", headers={"X-Servin": "tienda-a"})
+
+    assert response.status_code == 200
+    assert sorted(calls) == ["branches", "etag", "users"]
+
+
 def test_context_does_not_leak_between_requests():
     client = _make_client()
 

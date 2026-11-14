@@ -133,12 +133,12 @@ Un reintento del `POST` es **idempotente**: si el tenant ya está completo (`Met
 
 El Service Manager autentica con un `id_token` (`{sub, origin, exp}`) en `Authorization` y envía la configuración del negocio en un **content token** aparte:
 
-| Método | Ruta | Body / query | Nickname usado |
+| Método | Ruta | Body / header | Nickname usado |
 | :--- | :--- | :--- | :--- |
 | `PATCH` | `/api/v1/core-settings/{nickname}` | `{"token": "<content_token>"}` (obligatorio) | El del content token; debe coincidir con el path y con `X-Servin` si viene. |
-| `DELETE` | `/api/v1/core-settings/{id}?token=<content_token>` | Query `token` (obligatorio) | El del content token; el registro debe pertenecer a ese tenant. |
+| `DELETE` | `/api/v1/core-settings/{id}` | Header `X-Content-Token: <content_token>` (obligatorio) | El del content token; el registro debe pertenecer a ese tenant. |
 
-Si falta el content token → **400**; si el nickname no coincide → **403**.
+El `content_token` **no** viaja en la URL. Si falta → **400**; si el nickname no coincide → **403**.
 
 ### Aplicar migraciones a los tenants existentes
 
@@ -164,7 +164,19 @@ El runner enumera `list_database_names()`, descarta `admin/local/config`, exige 
 | menor | crea índices y actualiza `Meta` |
 | mayor | `WARN` "servidor más viejo que los datos"; no toca |
 
-`--adopt` escribe `Meta` (`kind`, `nickname` normalizado, `isProvisioned:true`, `indexesVersion:0`) en bases legacy, normaliza `CoreSettings.nickname` y después aplica índices. `--dry-run` solo reporta.
+`--adopt` escribe `Meta` (`kind`, `nickname` normalizado, `isProvisioned:false`, `indexesVersion:0`) en bases legacy, normaliza `CoreSettings.nickname` y después aplica índices (que cierran `Meta` en `true`/target). `--dry-run` solo reporta.
+
+Requisitos de adopción:
+
+- La base **no** debe tener `Meta` (de ningún `kind`); si tiene una `Meta` ajena se ignora para no sobrescribirla.
+- El nombre físico de la base debe ser ya el nickname normalizado. Si tiene mayúsculas o espacios, el runner falla con un mensaje que indica renombrarla:
+
+```bash
+mongodump --uri="$MONGO_URL" --db="TiendaLegacy" --out=/tmp/tenant
+mongorestore --uri="$MONGO_URL" --nsFrom="TiendaLegacy.*" --nsTo="tiendalegacy.*" /tmp/tenant
+```
+
+- El nickname debe cumplir el patrón y no ser reservado (`admin`, `local`, `config`, `kardexcontrol`).
 
 También ejecuta el backfill de `Products.altCode` (antes `set_new_values` en el arranque).
 

@@ -33,6 +33,7 @@ from kardex.services.mongo_collections.v1 import (
     ReceiptsCollection,
     UsersCollection,
     UserRolesCollection,
+    CoreSettingsCollection,
     MetaCollection,
 )
 from kardex.services.mongo_collections.v1.meta_collection import (
@@ -42,7 +43,7 @@ from kardex.services.mongo_collections.v1.meta_collection import (
 # Se sube en el mismo PR que cambia una definicion de indice.
 CURRENT_INDEX_VERSION = 1
 
-# 30 colecciones que definen ``create_indexes``. El runner y el
+# 31 colecciones que definen ``create_indexes``. El runner y el
 # aprovisionamiento las ejecutan en paralelo por tenant.
 INDEXED_COLLECTIONS: tuple[type[BaseMongoCollection], ...] = (
     ProductsCollection,
@@ -75,6 +76,7 @@ INDEXED_COLLECTIONS: tuple[type[BaseMongoCollection], ...] = (
     ReceiptsCollection,
     UsersCollection,
     UserRolesCollection,
+    CoreSettingsCollection,
 )
 
 

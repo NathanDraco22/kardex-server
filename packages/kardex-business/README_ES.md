@@ -137,18 +137,18 @@ class SomeRepository:
 
 ### Conexión MongoDB
 
-**MongoService** es el singleton de más alto nivel:
+**MongoService** es el singleton de más alto nivel. La base se resuelve por request desde `kardexCtx` (database-per-tenant); no hay fallback a `DB_NAME`:
 
 ```python
 class MongoService:
-    def __init__(self) -> None:
-        self._client = AsyncIOMotorClient(
-            os.environ.get("MONGO_URL", "mongodb://localhost:27017")
-        )
-        self._db_name = os.environ.get("DB_NAME", "LedgerDB")
+    async def init_client(self) -> None:
+        self.client = AsyncMongoClient(os.environ["MONGO_URL"])
 
-    def get_collection(self, name: str) -> AsyncCollection:
-        return self._client[self._db_name][name]
+    def get_collection(self, name: str, database_name: str | None = None):
+        target = database_name or kardexCtx.get().businessNickname
+        if not target:
+            raise TenantContextMissingError("No tenant in context")
+        return self.client.get_database(target).get_collection(name)
 ```
 
 ### Configuración
@@ -165,14 +165,18 @@ class MongoService:
 
 ### Inicialización
 
-Al iniciar, `services_initializer.py` ejecuta:
+El arranque solo abre el cliente Mongo (`MongoService().init_client()`). Los índices y los datos semilla son **por tenant**:
 
 ```python
-await init_business_services()
-# → MongoService().init_service()
-# → create_indexes()  # Crea índices en más de 25 colecciones
-# → set_new_values()  # Inicializa valores por defecto
+# POST /api/v1/core-settings
+await provision_tenant(nickname, owner_name=owner_name)
+# → defaults idempotentes (cliente, sucursal, roles, root, propietario, settings, integración)
+# → Meta(isProvisioned=False, indexesVersion=0)
+# → finalize_tenant_indexes() en BackgroundTasks
+# → Meta(isProvisioned=True, indexesVersion=CURRENT_INDEX_VERSION)
 ```
+
+Para tenants existentes: `python tools/migrate_tenants.py [--indexes] [--data] [--adopt] [--dry-run]`.
 
 ---
 

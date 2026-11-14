@@ -4,7 +4,7 @@ from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
 from kardex.kardex_config import kardexCtx
-from kardex.tools import normalize_nickname
+from kardex.tools import InvalidTenantNickname, is_valid_tenant_nickname, normalize_nickname
 from kardex.tools.kardex_exceptions import TenantContextMissingError
 
 
@@ -16,6 +16,7 @@ def get_tenant_static_path(nickname: str | None = None) -> Path:
 
     Los Excel de proyeccion y lista de precios no pueden ser globales: dos
     negocios con el mismo nombre de archivo se pisarian y filtrarian datos.
+    El nickname se valida y la ruta resuelta debe quedar dentro de ``static``.
     """
 
     target = normalize_nickname(nickname or kardexCtx.get().businessNickname)
@@ -23,7 +24,19 @@ def get_tenant_static_path(nickname: str | None = None) -> Path:
     if not target:
         raise TenantContextMissingError("No tenant in context")
 
-    tenant_path = STATIC_PATH / target
+    if not is_valid_tenant_nickname(target):
+        raise InvalidTenantNickname(
+            f"Invalid tenant nickname: {target}", nickname=target
+        )
+
+    base_path = STATIC_PATH.resolve()
+    tenant_path = (base_path / target).resolve()
+
+    if not tenant_path.is_relative_to(base_path):
+        raise InvalidTenantNickname(
+            f"Tenant path escapes static directory: {target}", nickname=target
+        )
+
     tenant_path.mkdir(parents=True, exist_ok=True)
     return tenant_path
 

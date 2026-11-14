@@ -1,9 +1,13 @@
 from fastapi import BackgroundTasks, HTTPException, status
+from pymongo.errors import DuplicateKeyError
 
 from kardex.core.security import TokenManager
 from kardex.core.tenant import finalize_tenant_indexes, provision_tenant
 from kardex.kardex_config import KardexContext, kardexCtx
-from kardex.services.mongo_collections.v1 import MetaCollection
+from kardex.services.mongo_collections.v1 import (
+    CoreSettingsCollection,
+    MetaCollection,
+)
 from kardex.tools import (
     is_valid_tenant_nickname,
     normalize_nickname,
@@ -146,9 +150,23 @@ class CoreSettingsController:
                 )
             else:
                 normalized_body = body.model_copy(update={"nickname": nickname})
-                res = await self.core_settings_repo.create_core_setting(
-                    normalized_body
-                )
+                # Indice unico en ``nickname``: dos POST concurrentes no pueden
+                # dejar dos CoreSettings en la misma base.
+                await CoreSettingsCollection.get_instance().create_indexes()
+
+                try:
+                    res = await self.core_settings_repo.create_core_setting(
+                        normalized_body
+                    )
+                except DuplicateKeyError:
+                    existing = await self.get_all_core_settings()
+                    if not existing:
+                        raise HTTPException(
+                            status_code=status.HTTP_409_CONFLICT,
+                            detail="CoreSetting already exists",
+                        )
+                    # Otro request gano la carrera: idempotente.
+                    res = DecodedCoreSetting.model_validate(decoded)
 
             if res is None:
                 raise HTTPException(

@@ -811,3 +811,18 @@ Corregir los hallazgos de la auditoria independiente sobre la rama `lite-multi-t
 6. **Tipos y tests (B9/M3/B10/B8):** se corrigieron los 9 diagnosticos de `ty` en los tests de notas de credito (casts), `run_with_tenant_context` preserva `branchId`, `branches_controller.delete_branch_by_id` refresca el ETag, y se agregaron pruebas de runner en proceso limpio, PATCH con tokens reales, Excel por tenant, primer ETag no vacio, doble POST idempotente y limpieza de caches entre tests.
 7. **Documentacion (B5):** `AGENTS.md`, `wiki/INDEX.md`, `wiki/project_index.md`, `wiki/modules/app_settings.md`, `wiki/modules/unit_scales.md`, `wiki/security.md`, `wiki/operations.md` y `packages/kardex-business/README.md` actualizados.
 8. **Verificacion:** `ruff check` OK; `ty check` OK (0 diagnosticos); `pytest` 96 passed / 11 skipped (integracion sin Mongo). Commit nuevo en `lite-multi-tenant`, sin push.
+
+## Fecha: 2026-11-14 (Segunda ronda de auditoria)
+### Objetivo
+Cerrar el Alto y los Medios/Bajos de la re-auditoria: cliente compartido del runner, endpoint publico de branding, adopcion segura de bases legacy, path traversal, token del DELETE y unicidad de CoreSettings.
+
+### Resumen de Implementacion
+1. **R1 runner:** `run()` reutiliza `MongoService.client` si ya existe y no lo cierra; si lo crea, lo cierra y elimina el atributo al salir. Tests de ambos casos.
+2. **R2 app-settings:** `GET /api/v1/app-settings/current` queda publico (branding antes del login); el resto de endpoints exige `auth_middleware` por endpoint. Tests de 200 publico y 401 en POST/GET/PATCH/DELETE.
+3. **R3 adopcion:** cualquier `Meta` (de cualquier `kind`) descarta la base; no se sobrescribe metadata ajena. Test con `Meta.kind="otra-cosa"` + `Products`.
+4. **R4 adopcion segura:** `validate_adoptable_nickname` exige patron, no reservados y nombre fisico ya normalizado (si no, error con instrucciones `mongodump`/`mongorestore`); `Meta` nace `isProvisioned:false` / `indexesVersion:0` y `ensure_indexes_for_tenant` la cierra. Tests unitarios e integracion.
+5. **R6 path traversal:** `get_tenant_static_path` valida `is_valid_tenant_nickname` y que la ruta resuelta quede dentro de `static/`.
+6. **R7 DELETE:** el content token viaja en `X-Content-Token`, no en query string; router, controller, docs y tests actualizados.
+7. **R8 concurrencia:** `CoreSettingsCollection.create_indexes` con indice unico en `nickname` (31 colecciones indexadas); el controller asegura el indice antes del insert y traduce `DuplicateKeyError` a idempotencia. Test unitario de la carrera y test de integracion del indice.
+8. **R9/R10:** `README_ES.md` y `wiki/architecture.md` corregidos; riesgo conocido de `verify_exp=False` documentado en `wiki/security.md`.
+9. **Verificacion:** `ruff` y `ty` en 0; `pytest` 123 passed / 15 skipped (integracion sin Mongo). Commit nuevo en `lite-multi-tenant`, sin push.

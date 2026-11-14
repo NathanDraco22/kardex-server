@@ -9,7 +9,9 @@ if str(SERVER_ROOT) not in sys.path:
     sys.path.insert(0, str(SERVER_ROOT))
 
 from kardex.tools import BranchesTool, EtagTool
+from kardex.tools.app_settings_tool import AppSettingsTool
 from kardex.tools.users_tool import UsersTool
+from kardex.repos.v1.app_settings import AppSettingInDb
 
 
 @pytest.fixture(autouse=True)
@@ -69,3 +71,44 @@ def test_tenant_header_is_checked_before_auth(client: TestClient):
 
     assert response.status_code == 400
     assert "tenant header" in response.json()["detail"]
+
+
+def test_app_settings_current_is_public(client: TestClient, monkeypatch):
+    async def fake_current_app_settings(self) -> AppSettingInDb:
+        return AppSettingInDb(id="Default", createdAt=1700000000000)
+
+    monkeypatch.setattr(
+        AppSettingsTool,
+        "get_current_app_settings",
+        fake_current_app_settings,
+    )
+
+    response = client.get(
+        "/api/v1/app-settings/current", headers={"X-Servin": "tienda-a"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["id"] == "Default"
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "payload"),
+    [
+        ("POST", "/api/v1/app-settings", {}),
+        ("GET", "/api/v1/app-settings", None),
+        ("GET", "/api/v1/app-settings/Default", None),
+        ("PATCH", "/api/v1/app-settings/Default", {}),
+        ("DELETE", "/api/v1/app-settings/Default", None),
+    ],
+)
+def test_app_settings_admin_routes_require_token(
+    client: TestClient, method: str, path: str, payload: dict | None
+):
+    response = client.request(
+        method,
+        path,
+        headers={"X-Servin": "tienda-a"},
+        json=payload,
+    )
+
+    assert response.status_code == 401, f"{method} {path}"

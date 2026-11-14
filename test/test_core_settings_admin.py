@@ -19,8 +19,9 @@ from kardex.repos.v1.core_settings import (
     DecodedCoreSetting,
     UpdateCoreSetting,
 )
-from kardex.services.mongo_collections.v1 import MetaCollection
+from kardex.services.mongo_collections.v1 import CoreSettingsCollection, MetaCollection
 from kardex.tools import normalize_nickname
+from pymongo.errors import DuplicateKeyError
 
 
 # Forma real del header que envia service-manager-server en Authorization.
@@ -170,6 +171,7 @@ async def test_create_rejects_invalid_nickname(monkeypatch):
 @pytest.mark.asyncio
 async def test_create_is_idempotent_when_tenant_is_provisioned(monkeypatch):
     _patch_token_manager(monkeypatch, CONTENT_TOKEN_PAYLOAD)
+    _patch_noop_collection(monkeypatch)
     state = {"provisioned": False}
 
     async def fake_read_meta(self) -> dict:
@@ -226,3 +228,105 @@ async def test_create_reprovisions_an_incomplete_tenant(monkeypatch):
     assert normalize_nickname(result.nickname) == "tienda-a"
     assert calls["provision"] == 1
     repo.create_core_setting.assert_not_awaited()
+
+
+def _patch_noop_collection(monkeypatch) -> None:
+    async def fake_create_indexes(self) -> None:
+        return None
+
+    monkeypatch.setattr(
+        CoreSettingsCollection, "create_indexes", fake_create_indexes
+    )
+
+
+@pytest.mark.asyncio
+async def test_delete_requires_content_token(monkeypatch):
+    _patch_token_manager(monkeypatch, CONTENT_TOKEN_PAYLOAD)
+    controller = _controller()
+
+    with pytest.raises(HTTPException) as exc:
+        await controller.delete_core_setting_by_id("cs-1", None)
+
+    assert exc.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_delete_validates_record_owner(monkeypatch):
+    _patch_token_manager(monkeypatch, CONTENT_TOKEN_PAYLOAD)
+    foreign_setting = _core_setting().model_copy(update={"nickname": "tienda-b"})
+    repo = AsyncMock()
+    repo.get_core_setting_by_id.return_value = foreign_setting
+    controller = _controller(repo)
+
+    with pytest.raises(HTTPException) as exc:
+        await controller.delete_core_setting_by_id("cs-1", "content-token")
+
+    assert exc.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_delete_removes_record_of_the_content_tenant(monkeypatch):
+    _patch_token_manager(monkeypatch, CONTENT_TOKEN_PAYLOAD)
+    repo = AsyncMock()
+    repo.get_core_setting_by_id.return_value = _core_setting()
+    repo.delete_core_setting_by_id.return_value = _core_setting()
+    controller = _controller(repo)
+
+    result = await controller.delete_core_setting_by_id("cs-1", "content-token")
+
+    assert result.id == "cs-1"
+    repo.delete_core_setting_by_id.assert_awaited_once_with("cs-1")
+
+
+@pytest.mark.asyncio
+async def test_create_translates_duplicate_key_to_idempotency(monkeypatch):
+    _patch_token_manager(monkeypatch, CONTENT_TOKEN_PAYLOAD)
+    _patch_noop_collection(monkeypatch)
+    calls = {"provision": 0}
+
+    async def fake_read_meta(self) -> dict:
+        return {"isProvisioned": False, "indexesVersion": 0}
+
+    async def fake_provision_tenant(*args, **kwargs) -> None:
+        calls["provision"] += 1
+
+    monkeypatch.setattr(MetaCollection, "read_tenant_meta", fake_read_meta)
+    monkeypatch.setattr(
+        core_settings_module, "provision_tenant", fake_provision_tenant
+    )
+
+    repo = AsyncMock()
+    # Primera lectura: vacio. Tras el DuplicateKeyError: otro request gano.
+    repo.get_all_core_settings.side_effect = [[], [_core_setting()]]
+    repo.create_core_setting.side_effect = DuplicateKeyError("dup")
+    controller = _controller(repo)
+    body = CreateCoreSetting(nickname="tienda-a", token="content-token")
+
+    result = await controller.create_core_setting(body, None)
+
+    assert result.nickname == "tienda-a"
+    assert repo.create_core_setting.await_count == 1
+    assert calls["provision"] == 1
+
+
+def test_delete_route_uses_header_instead_of_query_token():
+    from fastapi.routing import APIRoute
+
+    import api.v1.core_settings.core_settings_router as router_module
+
+    delete_route = next(
+        route
+        for route in router_module.core_settings_router.routes
+        if isinstance(route, APIRoute)
+        and route.path.endswith("{core_setting_id}")
+        and route.methods is not None
+        and "DELETE" in route.methods
+    )
+
+    header_aliases = {
+        param.alias for param in delete_route.dependant.header_params
+    }
+    query_names = {param.name for param in delete_route.dependant.query_params}
+
+    assert "X-Content-Token" in header_aliases
+    assert "token" not in query_names

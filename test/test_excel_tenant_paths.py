@@ -9,7 +9,7 @@ if str(SERVER_ROOT) not in sys.path:
 
 import services.excel_service as excel_service
 from kardex.kardex_config import KardexContext, kardexCtx
-from kardex.tools import TenantContextMissingError
+from kardex.tools import InvalidTenantNickname, TenantContextMissingError
 from services.excel_service import ProjectionExcelService, PriceListService
 
 
@@ -58,3 +58,23 @@ def test_excel_path_normalizes_nickname(monkeypatch, tmp_path):
         kardexCtx.reset(token)
 
     assert path.name == "tiendaa"
+
+
+@pytest.mark.parametrize(
+    "nickname", ["../../escape", "..", "admin", "config", "a"]
+)
+def test_excel_path_rejects_invalid_or_reserved_nicknames(
+    monkeypatch, tmp_path, nickname: str
+):
+    monkeypatch.setattr(excel_service, "STATIC_PATH", tmp_path)
+
+    with pytest.raises(InvalidTenantNickname):
+        excel_service.get_tenant_static_path(nickname)
+
+
+def test_excel_path_never_escapes_static_directory(monkeypatch, tmp_path):
+    monkeypatch.setattr(excel_service, "STATIC_PATH", tmp_path)
+
+    path = excel_service.get_tenant_static_path("tienda-a")
+
+    assert path.is_relative_to(tmp_path.resolve())

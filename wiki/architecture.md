@@ -35,7 +35,7 @@ Router → Controller → Repository → DataSource → MongoCollection
 | Collection | `kardex/services/mongo_collections/v1/<entidad>_collection.py` | Operaciones Mongo de una colección (`collection_name`). | Orquestación entre entidades. |
 | Procesos | `kardex/core/<proceso>/` | Operaciones atómicas que cruzan varias entidades. | Exponer HTTP. |
 | Tools | `kardex/tools/` | Utilidades transversales (tiempo, UUID, ETag, búsqueda, settings). | Estado de request. |
-| Web local | `app/` | FastAPI, middleware, scheduler, servicios externos. | Lógica de dominio reutilizable. |
+| Web local | `app/` | FastAPI, middleware, notificador y servicios externos. | Lógica de dominio reutilizable. |
 
 > El paquete `packages/kardex-business` **no puede importar FastAPI**. Si necesitas `HTTPException`, estás en la capa equivocada: lanza una `KardexException` y deja que `app/regis_exception_handlers.py` la traduzca.
 

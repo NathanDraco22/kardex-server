@@ -35,12 +35,42 @@ from kardex.services.mongo_indexes import (
     ensure_indexes_for_tenant,
     get_target_indexes_version,
 )
-from kardex.tools import normalize_nickname
+from kardex.tools import is_valid_tenant_nickname, normalize_nickname
 
 SYSTEM_DATABASES = {"admin", "local", "config"}
 
 CORE_SETTINGS_COLLECTION = "CoreSettings"
 PRODUCTS_COLLECTION = "Products"
+
+
+class AdoptTenantError(ValueError):
+    """La base legacy no se puede adoptar sin intervencion manual."""
+
+
+def validate_adoptable_nickname(nickname: str) -> str:
+    """Valida que el nombre fisico de una base legacy sea adoptable.
+
+    El servidor resuelve siempre el nickname normalizado, asi que una base con
+    mayusculas/espacios no se puede adoptar: habria que renombrarla de forma
+    fisica con ``mongodump``/``mongorestore``.
+    """
+
+    normalized = normalize_nickname(nickname)
+
+    if not is_valid_tenant_nickname(normalized):
+        raise AdoptTenantError(
+            f"nickname invalido o reservado: {nickname!r}"
+        )
+
+    if normalized != nickname:
+        raise AdoptTenantError(
+            f"la base {nickname!r} no esta normalizada; renombrala antes de "
+            f'adoptar: mongodump --db "{nickname}" ... && '
+            f'mongorestore --nsFrom "{nickname}.*" '
+            f'--nsTo "{normalized}.*"'
+        )
+
+    return normalized
 
 
 async def list_tenant_databases(
@@ -87,7 +117,9 @@ async def list_adoptable_databases(
             {"_id": TENANT_META_ID}
         )
 
-        if meta is not None and meta.get("kind") == TENANT_META_KIND:
+        # Cualquier Meta (aunque sea de otro producto) descarta la base: no
+        # sobrescribimos metadata ajena.
+        if meta is not None:
             continue
 
         collections = await client[name].list_collection_names()
@@ -108,10 +140,11 @@ async def adopt_tenant(
 ) -> None:
     """Escribe ``Meta`` y normaliza nicknames en una base legacy.
 
-    No renombra la base fisica (fuera de alcance): solo alinea lo almacenado.
+    No renombra la base fisica: si el nombre no esta normalizado lanza
+    ``AdoptTenantError`` para que se renombre con mongodump/mongorestore.
     """
 
-    normalized = normalize_nickname(nickname)
+    normalized = validate_adoptable_nickname(nickname)
 
     core_settings = client[nickname][CORE_SETTINGS_COLLECTION]
     cursor = core_settings.find({})
@@ -124,14 +157,14 @@ async def adopt_tenant(
                 {"$set": {"nickname": normalized_current}},
             )
 
-    # indexesVersion=0 obliga a que la fase de indices reconstruya lo que falte.
-    # Se escribe en la base fisica (``nickname``), aunque el valor almacenado se
-    # normalice: renombrar la base queda fuera de alcance.
+    # Meta nace incompleta: ``ensure_indexes_for_tenant`` la cerrara con
+    # isProvisioned=True e indexesVersion=target. Si el proceso muere a mitad,
+    # el runner la detecta y la repara.
     meta_collection = MetaCollection.get_instance(nickname)
     await meta_collection.write_tenant_meta(
         build_tenant_meta(
             normalized,
-            is_provisioned=True,
+            is_provisioned=False,
             indexes_version=0,
         )
     )
@@ -151,16 +184,24 @@ async def migrate_alt_code(nickname: str, dry_run: bool) -> int:
 
 
 async def run(args: argparse.Namespace) -> int:
-    only = normalize_nickname(args.tenant) if args.tenant else None
+    # El nombre fisico de la base es sensible a mayusculas: no se normaliza el
+    # filtro para poder reportar bases legacy mal nombradas.
+    only = args.tenant.strip() if args.tenant else None
 
     # Adoptar implica reconstruir indices: la ficha nace con indexesVersion=0.
     run_indexes = args.indexes or args.adopt or not args.data
     run_data = args.data or not args.indexes
 
     # El runner usa el mismo MongoService que las colecciones: MetaCollection y
-    # ProductsCollection resuelven ``self.client`` desde este singleton.
+    # ProductsCollection resuelven ``self.client`` desde este singleton. Si ya
+    # habia un cliente (proceso embebido / pruebas), se reutiliza y NO se cierra.
     service = MongoService()
-    await service.init_client()
+    previous_client = getattr(service, "client", None)
+    owns_client = previous_client is None
+
+    if owns_client:
+        await service.init_client()
+
     client = service.client
 
     summary = {
@@ -189,9 +230,22 @@ async def run(args: argparse.Namespace) -> int:
                 )
                 return 1
 
+            adoptable: list[str] = []
+
             for nickname in candidates:
+                try:
+                    validate_adoptable_nickname(nickname)
+                except AdoptTenantError as error:
+                    summary["failed"] += 1
+                    print(
+                        f"  ERROR adopt tenant={nickname}: {error}",
+                        file=sys.stderr,
+                    )
+                    continue
+
                 if args.dry_run:
                     print(f"tenant={nickname} adopt: would-adopt")
+                    adoptable.append(nickname)
                     continue
 
                 try:
@@ -206,8 +260,9 @@ async def run(args: argparse.Namespace) -> int:
 
                 summary["adopted"] += 1
                 print(f"tenant={nickname} adopt: adopted")
+                adoptable.append(nickname)
 
-            tenants = sorted(set(tenants) | set(candidates))
+            tenants = sorted(set(tenants) | set(adoptable))
 
             if only is not None and only not in tenants:
                 print(f"WARN tenant={only}: no existe ni es adoptable")
@@ -257,7 +312,10 @@ async def run(args: argparse.Namespace) -> int:
                 summary["failed"] += 1
                 print(f"  ERROR tenant={nickname}: {error}", file=sys.stderr)
     finally:
-        await client.close()
+        if owns_client:
+            await client.close()
+            if hasattr(service, "client"):
+                del service.client
 
     print("Resumen:")
     print(f"  tenants revisados : {summary['reviewed']}")
@@ -289,7 +347,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help=(
             "Adoptar bases legacy sin Meta que tengan CoreSettings o Products "
-            "(escribe Meta y normaliza nicknames)."
+            "(escribe Meta y normaliza nicknames). La base debe llamarse ya "
+            "como el nickname normalizado."
         ),
     )
     parser.add_argument(
