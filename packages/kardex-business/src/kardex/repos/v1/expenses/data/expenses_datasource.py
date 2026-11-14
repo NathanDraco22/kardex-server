@@ -4,9 +4,11 @@ from kardex.services.mongo_collections.v1 import ExpensesCollection
 
 class ExpensesDataSource:
 
-    async def create_expense(self, expense: dict[str, Any]) -> dict[str, Any]:
+    async def create_expense(
+        self, expense: dict[str, Any], session: Any = None
+    ) -> dict[str, Any]:
         collection = ExpensesCollection.get_instance()
-        await collection.create_expense(expense)
+        await collection.create_expense(expense, session=session)
         return expense
 
     async def get_all_expenses(self, **kwargs) -> list[dict[str, Any]]:
@@ -27,9 +29,11 @@ class ExpensesDataSource:
         collection = ExpensesCollection.get_instance()
         return await collection.update_expense_by_id(expense_id, expense)
 
-    async def delete_expense_by_id(self, expense_id: str) -> dict[str, Any] | None:
+    async def delete_expense_by_id(
+        self, expense_id: str, session: Any = None
+    ) -> dict[str, Any] | None:
         collection = ExpensesCollection.get_instance()
-        return await collection.delete_expense_by_id(expense_id)
+        return await collection.delete_expense_by_id(expense_id, session=session)
 
     async def add_to_amount_paid(self, expense_id: str, amount_paid: int) -> dict[str, Any] | None:
         collection = ExpensesCollection.get_instance()

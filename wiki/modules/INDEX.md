@@ -1,6 +1,6 @@
 # Índice de Módulos del API (`wiki/modules/INDEX.md`)
 
-Catálogo completo de los **48 módulos** montados en `app/api/v1/router.py`. Sirve para que un agente pase de una tarea de negocio al router, repositorio y colección correctos sin explorar el árbol a ciegas.
+Catálogo completo de los **50 módulos** montados en `app/api/v1/router.py`. Sirve para que un agente pase de una tarea de negocio al router, repositorio y colección correctos sin explorar el árbol a ciegas.
 
 > **Cómo usar:** usa este documento cuando ya sepas el dominio (ventas, inventario, catálogos, finanzas, configuración) y necesites los archivos exactos. El detalle profundo solo existe hoy para 4 módulos; el resto se documenta aquí a nivel de mapa.
 >
@@ -126,7 +126,7 @@ real de `services/mongo_collections/v1/`.
 
 ---
 
-## 4. Finanzas, Reportes y BI (8 módulos)
+## 4. Finanzas, Reportes y BI (10 módulos)
 
 | Módulo | Prefix | Repo | Colección | Proceso | Guard | Doc |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -138,6 +138,8 @@ real de `services/mongo_collections/v1/`.
 | `exports` | `/exports` | `products` | — (Excel) | — | ⚠ | — |
 | `bi` | `/bi` | `bi` | — (agrega) | — | **API Key** | — |
 | `admin_panels` | `/admin-panels` | — (`invoices`) | — (agrega) | — | JWT | — |
+| `shifts` | `/shifts` | `shifts` | `Shifts` | `shift_register` | JWT | — |
+| `shift_cash_movements` | `/shift-cash-movements` | `shift_cash_movements` | `ShiftCashMovements` (+ `Expenses`) | `shift_cash_movement_register` | JWT | — |
 
 **Endpoints clave**
 
@@ -147,12 +149,19 @@ real de `services/mongo_collections/v1/`.
 - `GET /exports/price-list` (descarga Excel/CSV vía `app/services/excel_service.py`).
 - `GET /bi/invoices`, `/bi/invoice-items`, `/bi/cash-flow`, `/bi/inventory`, `/bi/customers`.
 - `GET /admin-panels/...` (gráficas de los últimos 7 días).
+- `POST /shifts`, `GET /shifts`, `GET /shifts/active/{user_id}`, `GET /shifts/{id}`, `GET /shifts/{id}/preview`, `POST /shifts/{id}/close`, `PATCH /shifts/{id}`.
+- `POST /shift-cash-movements`, `GET /shift-cash-movements`, `GET /shift-cash-movements/{id}`, `DELETE /shift-cash-movements/{id}`.
 
 **Notas de dominio**
 
 - `reports`, `exports`, `bi` y `admin_panels` son **agregadores de solo lectura**: no tienen colección propia.
 - `bi` está pensado para Power BI y se autentica con API Key, no con JWT.
 - El reporte de gastos usa `createdAt` como fecha de registro; `date` es la fecha del documento.
+- **Turnos y Caja** (`shifts` + `shift-cash-movements`) es una funcionalidad **opcional** (`AppSettings.useShifts`, default `false`). Con la bandera apagada nada cambia: los documentos comerciales guardan `shiftId: null`.
+- Un usuario solo puede tener **un turno `open`** a la vez; lo garantiza el índice único parcial `ux_open_shift_per_user`, no un check-then-insert.
+- `Invoices`, `Receipts`, `Devolutions`, `CreditNotes` y `Expenses` aceptan `shiftId` opcional; el backend lo valida (turno existente, `open` y misma sucursal) cuando no es `None`.
+- `close_shift` calcula el consolidado con agregaciones de Mongo (`Invoices` pagadas/crédito, `Receipts` no borrados, `Devolutions` solo `confirmed`, `CreditNotes` aprobadas/aplicadas y movimientos manuales) y lo persiste de forma inmutable. `GET /shifts/{id}/preview` devuelve `ShiftPreview`, que no incluye datos de cierre.
+- Una salida de caja (`type="out"`) con `registerAsExpense=true` crea un `Expense` operativo pagado en la misma transacción y lo vincula con `expenseId`. El borrado es lógico (`isDeleted`/`deletedAt`) y solo se permite mientras el turno siga `open`.
 
 ---
 
@@ -197,7 +206,7 @@ Solo estos 4 tienen documento propio en `wiki/modules/`:
 - [`credit_notes.md`](./credit_notes.md)
 - [`composite.md`](./composite.md)
 
-Los otros **44** se cubren por ahora con este índice. Prioridad sugerida para futuras fichas (por impacto y complejidad):
+Los otros **46** se cubren por ahora con este índice. Prioridad sugerida para futuras fichas (por impacto y complejidad):
 
 | Prioridad | Módulos | Motivo |
 | :--- | :--- | :--- |

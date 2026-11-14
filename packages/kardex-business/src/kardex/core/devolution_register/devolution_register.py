@@ -12,6 +12,7 @@ from kardex.repos.v1.product_accounts import ProductAccountInDb
 from kardex.repos.v1.branches import BranchesRepository
 from kardex.repos.v1.products import ProductsRepository
 from kardex.core.default_values import SALE_CLIENT_ID
+from kardex.core.shift_register.validate_shift_link import validate_shift_link
 from kardex.tools import InvalidOperation, BranchNotFound, ClientNotFound, ProductNotFound
 
 
@@ -123,3 +124,8 @@ class DevolutionRegister:
 
         if doc.status != "open":
             raise InvalidOperation("Devolution is not open.")
+
+        # La validacion estricta del turno ocurre al crear la devolucion.
+        # Al confirmar se tolera un turno ya cerrado para no dejar devoluciones
+        # irresolubles; el consolidado del turno cerrado no se recalcula.
+        await validate_shift_link(doc.shiftId, doc.branchId, require_open=False)

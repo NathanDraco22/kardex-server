@@ -504,6 +504,58 @@ class InvoicesCollection(BaseMongoCollection):
 
         return result
 
+    async def get_payment_type_totals_by_shift(
+        self, shift_id: str
+    ) -> list[dict[str, Any]]:
+        collection = self._collection
+
+        pipeline = [
+            {"$match": {"shiftId": shift_id, "status": {"$ne": "cancelled"}}},
+            {
+                "$group": {
+                    "_id": "$paymentType",
+                    "total": {"$sum": "$total"},
+                    "count": {"$sum": 1},
+                }
+            },
+        ]
+
+        cursor = await collection.aggregate(pipeline)
+        results = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return results
+
+    async def fetch_documents_by_shift(
+        self, shift_id: str, limit: int
+    ) -> list[dict[str, Any]]:
+        collection = self._collection
+
+        pipeline = [
+            {"$match": {"shiftId": shift_id}},
+            {"$sort": {"createdAt": 1}},
+            {"$limit": limit + 1},
+            {
+                "$project": {
+                    "_id": 0,
+                    "id": 1,
+                    "docNumber": 1,
+                    "total": 1,
+                    "paymentType": 1,
+                    "bankReference": 1,
+                    "status": 1,
+                    "clientInfo.name": 1,
+                    "createdAt": 1,
+                }
+            },
+        ]
+
+        cursor = await collection.aggregate(pipeline)
+        results = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return results
+
     async def create_indexes(self):
         collection = self._collection
         await collection.create_indexes(
@@ -519,5 +571,6 @@ class InvoicesCollection(BaseMongoCollection):
                 IndexModel([("createdAt", -1)]),
                 IndexModel([("paidAt", -1)]),
                 IndexModel([("createdBy.id", 1)]),
+                IndexModel([("shiftId", 1)]),
             ]
         )

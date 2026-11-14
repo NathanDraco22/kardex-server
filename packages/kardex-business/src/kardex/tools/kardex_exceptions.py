@@ -64,3 +64,27 @@ class DirectStockAdjustmentBlocked(KardexException):
 class MongoMigrationException(KardexException):
     def __init__(self, message: str):
         super().__init__(message)
+
+
+class ActiveShiftAlreadyExistsError(KardexException):
+    def __init__(self, message: str, user_id: str | None = None):
+        self.user_id = user_id
+        super().__init__(message)
+
+
+class ShiftNotFound(KardexException):
+    def __init__(self, message: str, shift_id: str | None = None):
+        self.shift_id = shift_id
+        super().__init__(message)
+
+
+class CashMovementNotFound(KardexException):
+    def __init__(self, message: str, movement_id: str | None = None):
+        self.movement_id = movement_id
+        super().__init__(message)
+
+
+class ShiftNotOpen(KardexException):
+    def __init__(self, message: str, shift_id: str | None = None):
+        self.shift_id = shift_id
+        super().__init__(message)

@@ -8,9 +8,9 @@ from kardex.tools import TimeTools
 class ExpensesCollection(BaseMongoCollection):
     collection_name = "Expenses"
 
-    async def create_expense(self, expense: dict) -> None:
+    async def create_expense(self, expense: dict, session: Any = None) -> None:
         collection = self._collection
-        await collection.insert_one(expense)
+        await collection.insert_one(expense, session=session)
 
     async def fetch_all_expenses(self, **kwargs) -> list[dict[str, Any]]:
         collection = self._collection
@@ -70,12 +70,20 @@ class ExpensesCollection(BaseMongoCollection):
             session=session,
         )
 
-    async def delete_expense_by_id(self, expense_id: str) -> dict[str, Any] | None:
+    async def delete_expense_by_id(
+        self, expense_id: str, session: Any = None
+    ) -> dict[str, Any] | None:
         collection = self._collection
         result = await collection.find_one_and_update(
             {"id": expense_id, "isDeleted": False},
-            {"$set": {"isDeleted": True}},
+            {
+                "$set": {
+                    "isDeleted": True,
+                    "deletedAt": TimeTools.get_now_in_milliseconds(),
+                }
+            },
             return_document=ReturnDocument.AFTER,
+            session=session,
         )
         return result
 
@@ -256,5 +264,6 @@ class ExpensesCollection(BaseMongoCollection):
                 IndexModel([("createdAt", -1)]),
                 IndexModel([("type", 1), ("createdAt", -1)]),
                 IndexModel([("branchId", 1), ("date", -1)]),
+                IndexModel([("shiftId", 1)]),
             ]
         )

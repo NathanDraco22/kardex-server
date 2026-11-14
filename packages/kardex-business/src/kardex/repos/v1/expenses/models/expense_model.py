@@ -24,6 +24,7 @@ class BaseExpense(BaseModel):
     expirationDate: int | None = None
     createdBy: UserInfo
     paidAt: int | None = None
+    shiftId: str | None = None
 
 
 class CreateExpense(BaseExpense):

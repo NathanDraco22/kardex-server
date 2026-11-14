@@ -156,6 +156,58 @@ class CreditNotesCollection(BaseMongoCollection):
         )
         return result
 
+    async def get_totals_by_status_by_shift(
+        self, shift_id: str
+    ) -> list[dict[str, Any]]:
+        collection = self._collection
+
+        pipeline = [
+            {"$match": {"shiftId": shift_id}},
+            {
+                "$group": {
+                    "_id": "$status",
+                    "total": {"$sum": "$amount"},
+                    "count": {"$sum": 1},
+                }
+            },
+        ]
+
+        cursor = await collection.aggregate(pipeline)
+        results = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return results
+
+    async def fetch_documents_by_shift(
+        self, shift_id: str, limit: int
+    ) -> list[dict[str, Any]]:
+        collection = self._collection
+
+        pipeline = [
+            {"$match": {"shiftId": shift_id}},
+            {"$sort": {"createdAt": 1}},
+            {"$limit": limit + 1},
+            {
+                "$project": {
+                    "_id": 0,
+                    "id": 1,
+                    "docNumber": 1,
+                    "amount": 1,
+                    "status": 1,
+                    "type": 1,
+                    "clientInfo.name": 1,
+                    "originalInvoiceDocNumber": 1,
+                    "createdAt": 1,
+                }
+            },
+        ]
+
+        cursor = await collection.aggregate(pipeline)
+        results = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return results
+
     async def create_indexes(self):
         collection = self._collection
         await collection.create_indexes(
@@ -168,6 +220,7 @@ class CreditNotesCollection(BaseMongoCollection):
                 IndexModel([("status", 1)]),
                 IndexModel([("originalInvoiceId", 1)]),
                 IndexModel([("createdBy.id", 1)]),
+                IndexModel([("shiftId", 1)]),
                 IndexModel(
                     [("branchId", 1), ("idempotencyKey", 1)],
                     unique=True,

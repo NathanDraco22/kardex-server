@@ -21,6 +21,7 @@ class BaseAppSetting(BaseModel):
     exchangeRate: float = Field(default=0.0, ge=0)
     showInvoiceTotalInSecondaryCurrency: bool = False
     companyLogoUrl: str | None = None
+    useShifts: bool = False
 
 
 class CreateAppSetting(BaseAppSetting):
@@ -43,6 +44,7 @@ class UpdateAppSetting(BaseModel):
     exchangeRate: float | None = Field(default=None, ge=0)
     showInvoiceTotalInSecondaryCurrency: bool | None = None
     companyLogoUrl: str | None = None
+    useShifts: bool | None = None
 
 
 class AppSettingInDb(BaseAppSetting):

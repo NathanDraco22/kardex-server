@@ -17,6 +17,10 @@ from .kardex_exceptions import (
     InvalidOperation,
     DirectStockAdjustmentBlocked,
     MongoMigrationException,
+    ActiveShiftAlreadyExistsError,
+    ShiftNotFound,
+    CashMovementNotFound,
+    ShiftNotOpen,
 )
 from .branches_tool import BranchesTool
 
@@ -41,4 +45,8 @@ __all__ = [
     "InvalidOperation",
     "DirectStockAdjustmentBlocked",
     "MongoMigrationException",
+    "ActiveShiftAlreadyExistsError",
+    "ShiftNotFound",
+    "CashMovementNotFound",
+    "ShiftNotOpen",
 ]

@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 
 from kardex.core.devolution_register.devolution_register import DevolutionRegister
+from kardex.core.shift_register.validate_shift_link import validate_shift_link
 from kardex.repos.v1.branches import BranchesRepository, BranchesDataSource
 from kardex.repos.v1.clients import ClientsRepository, ClientsDataSource
 from kardex.repos.v1.invoices import InvoicesRepository, InvoicesDataSource
@@ -31,6 +32,7 @@ class DevolutionsController:
         )
 
     async def create_devolution(self, body: CreateDevolution) -> DevolutionInDb:
+        await validate_shift_link(body.shiftId, body.branchId)
         return await self.devolutions_repo.create_devolution(body)
 
     async def get_all_devolutions(

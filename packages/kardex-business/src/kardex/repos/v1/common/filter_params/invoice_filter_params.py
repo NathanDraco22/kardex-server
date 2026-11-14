@@ -14,6 +14,7 @@ class InvoiceFilterParams(BaseFilterParams):
     byPaidAt: bool = False
     status: InvoiceStatus | None = None
     createdBy: str | None = None
+    shiftId: str | None = None
 
 class AdjustFilterParams(BaseFilterParams):
     branchId: str | None = None

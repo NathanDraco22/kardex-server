@@ -41,6 +41,7 @@ class BaseReceipt(BaseModel):
     bankReference: str = ""
     total: int
     createdBy: UserInfo
+    shiftId: str | None = None
 
 
 class CreateReceipt(BaseReceipt):

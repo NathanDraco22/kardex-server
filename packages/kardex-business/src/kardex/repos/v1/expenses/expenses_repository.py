@@ -21,11 +21,13 @@ class ExpensesRepository:
             cls._instance = cls(ExpensesDataSource())
         return cls._instance
 
-    async def create_expense(self, create_expense: CreateExpense) -> ExpenseInDb:
+    async def create_expense(
+        self, create_expense: CreateExpense, session: Any = None
+    ) -> ExpenseInDb:
         # Generar docNumber si viene vacío o no está especificado
         doc_number = create_expense.docNumber
         if not doc_number or doc_number.strip() == "":
-            doc_number = await CounterManager().next_expense_number()
+            doc_number = await CounterManager().next_expense_number(session)
 
         new_expense = ExpenseInDb(
             **create_expense.model_dump(exclude={"docNumber"}),
@@ -36,7 +38,7 @@ class ExpensesRepository:
             isDeleted=False
         )
 
-        await self.expenses_ds.create_expense(new_expense.model_dump())
+        await self.expenses_ds.create_expense(new_expense.model_dump(), session=session)
         return new_expense
 
     async def get_all_expenses(self, params: ExpensesFilterParams) -> list[ExpenseInDb]:
@@ -66,8 +68,12 @@ class ExpensesRepository:
             return None
         return ExpenseInDb.model_validate(result)
 
-    async def delete_expense_by_id(self, expense_id: str) -> ExpenseInDb | None:
-        result = await self.expenses_ds.delete_expense_by_id(expense_id)
+    async def delete_expense_by_id(
+        self, expense_id: str, session: Any = None
+    ) -> ExpenseInDb | None:
+        result = await self.expenses_ds.delete_expense_by_id(
+            expense_id, session=session
+        )
         if result is None:
             return None
         return ExpenseInDb.model_validate(result)

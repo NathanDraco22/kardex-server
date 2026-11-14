@@ -12,3 +12,4 @@ class ReceiptFilterParams(BaseFilterParams):
     nePaymentMethod: PaymentMethod | None = None
     endDate: int | None = None
     createdBy: str | None = None
+    shiftId: str | None = None

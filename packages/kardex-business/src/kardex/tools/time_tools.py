@@ -26,3 +26,10 @@ class TimeTools:
     @staticmethod
     def get_now_in_100days_in_milliseconds() -> int:
         return int((datetime.now() + timedelta(days=100)).timestamp() * 1000)
+
+    @staticmethod
+    def timestamp_to_date_id(timestamp: int) -> str:
+        date = datetime.fromtimestamp(
+            timestamp / 1000, tz=TimeTools.default_timezone
+        )
+        return date.strftime("%Y-%m-%d")

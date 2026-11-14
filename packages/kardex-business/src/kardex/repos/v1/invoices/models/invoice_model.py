@@ -30,6 +30,7 @@ class BaseInvoice(BaseModel):
     total: int
     paidAt: int | None = None
     createdBy: UserInfo
+    shiftId: str | None = None
 
     @property
     def totalRemaining(self) -> int:

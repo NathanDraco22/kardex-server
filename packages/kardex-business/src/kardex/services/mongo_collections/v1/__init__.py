@@ -29,6 +29,8 @@ from .product_stats_collection import ProductStatsCollection
 from .product_transactions_collection import ProductTransactionsCollection
 from .products_collection import ProductsCollection
 from .receipts_collection import ReceiptsCollection
+from .shift_cash_movements_collection import ShiftCashMovementsCollection
+from .shifts_collection import ShiftsCollection
 from .suppliers_collection import SuppliersCollection
 from .transactions_collection import TransactionsCollection
 from .transfers_collection import TransfersCollection
@@ -73,6 +75,8 @@ __all__ = [
     "ProductTransactionsCollection",
     "ProductsCollection",
     "ReceiptsCollection",
+    "ShiftCashMovementsCollection",
+    "ShiftsCollection",
     "SuppliersCollection",
     "TransactionsCollection",
     "TransfersCollection",

@@ -13,6 +13,7 @@ from pymongo.errors import OperationFailure
 
 
 from kardex.core.default_values import SALE_CLIENT_ID
+from kardex.core.shift_register.validate_shift_link import validate_shift_link
 from kardex.tools import InsufficientBalanceError, DocumentAlreadyExists, BranchNotFound, InvalidOperation
 
 from kardex.repos.v1.clients import ClientInDb
@@ -92,3 +93,5 @@ class InvoiceRegister:
         branch = BranchesTool().get_branch_by_id(doc.branchId)
         if branch is None:
             raise BranchNotFound("BRANCH_NOT_FOUND", branch_id=doc.branchId)
+
+        await validate_shift_link(doc.shiftId, doc.branchId)
