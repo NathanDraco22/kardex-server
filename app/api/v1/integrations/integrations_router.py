@@ -1,12 +1,16 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from kardex.repos.v1.integrations import UpdateIntegration, IntegrationInDb
 from responses.v1 import ListResponse
 
+from app_middleware import auth_middleware
 
 from .integrations_controller import integrations_controller
 
 
-integrations_router = APIRouter(tags=["integrationsV1"])
+integrations_router = APIRouter(
+    tags=["integrationsV1"],
+    dependencies=[Depends(auth_middleware)],
+)
 
 
 @integrations_router.get("")

@@ -38,11 +38,12 @@ Thin web layer with FastAPI — imports everything from `kardex.*`.
 
 - **`api/v1/`**: Controllers + routers — endpoints, request validation, response mapping.
 - **`tools/`**: `__init__.py` re-exports from `kardex.tools.*`, plus local tools (`integration_tool.py`, `users_tool.py`).
-- **`core/scheduler/`**: Scheduler + app_notifier (stays local).
-- **`core/services_initializer.py`**: Startup initialization (calls package).
+- **`core/app_notifier/`**: Notificaciones Telegram disparadas por request (el scheduler fue eliminado).
 - **`services/`**: `excel_service.py`, `telgram_service.py` (local). `MongoService` re-exported from package.
 - **`regis_exception_handlers.py`**: Centralized exception-to-HTTP mapping for all `KardexException` subclasses.
-- **`app_middleware/`**: Auth middleware, cache headers.
+- **`app_middleware/`**: Tenant obligatorio (`X-Servin`), auth, API keys y cache headers.
+
+> El arranque solo abre el cliente Mongo (`MongoService().init_client()`). Los datos semilla y los índices son por tenant y corren en `kardex/core/tenant/provision_tenant.py` o en `tools/migrate_tenants.py`.
 
 ---
 

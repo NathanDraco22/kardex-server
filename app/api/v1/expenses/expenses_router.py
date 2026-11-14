@@ -4,10 +4,15 @@ from kardex.repos.v1.common.filter_params import ExpensesFilterParams
 from kardex.repos.v1.expenses import CreateExpense, UpdateExpense, ExpenseInDb, AddToAmountRequest
 from responses.v1 import ListResponse
 
+from app_middleware import auth_middleware
+
 from .expenses_controller import expenses_controller
 
 
-expenses_router = APIRouter(tags=["expensesV1"])
+expenses_router = APIRouter(
+    tags=["expensesV1"],
+    dependencies=[Depends(auth_middleware)],
+)
 
 
 @expenses_router.post("")

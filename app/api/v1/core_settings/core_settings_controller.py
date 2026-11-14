@@ -59,6 +59,43 @@ class CoreSettingsController:
 
         return nickname
 
+    @staticmethod
+    def _decode_content_token(token: str | None) -> dict:
+        """Decodifica el token de contenido (Ed25519) que lleva el nickname.
+
+        El Service Manager autentica el request con un ``id_token``
+        (``sub``/``origin``/``exp``, sin nickname) en ``Authorization`` y manda
+        la configuracion del negocio en un ``content_token`` aparte.
+        """
+
+        if not token:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing content token",
+            )
+
+        decoded = TokenManager.super_token_verify(token)
+
+        if decoded is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token",
+            )
+
+        return decoded
+
+    @staticmethod
+    def _assert_header_matches(nickname: str) -> None:
+        """Si el request trae header de tenant, debe coincidir con el token."""
+
+        header_nickname = normalize_nickname(kardexCtx.get().businessNickname)
+
+        if header_nickname and header_nickname != nickname:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Tenant mismatch",
+            )
+
     async def create_core_setting(
         self,
         body: CreateCoreSetting,
@@ -96,10 +133,10 @@ class CoreSettingsController:
             is_provisioned = bool(meta and meta.get("isProvisioned") is True)
 
             if settings and is_provisioned:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="CoreSetting already exists",
-                )
+                # Idempotente: el Service Manager reintenta si no recibio el 200
+                # y el tenant ya esta completo. No se re-aprovisiona.
+                repeated = DecodedCoreSetting.model_validate(decoded)
+                return repeated.model_copy(update={"nickname": nickname})
 
             if settings:
                 # Reintento tras un aprovisionamiento incompleto: no se
@@ -159,9 +196,10 @@ class CoreSettingsController:
         self,
         core_setting_id: str,
         body: UpdateCoreSetting,
-        token_payload: dict | None = None,
     ) -> CoreSettingInDb:
-        nickname = self._assert_path_matches_token(core_setting_id, token_payload)
+        decoded = self._decode_content_token(body.token)
+        nickname = self._assert_path_matches_token(core_setting_id, decoded)
+        self._assert_header_matches(nickname)
 
         token_ctx = kardexCtx.set(KardexContext(businessNickname=nickname))
         try:
@@ -183,9 +221,11 @@ class CoreSettingsController:
     async def delete_core_setting_by_id(
         self,
         core_setting_id: str,
-        token_payload: dict | None = None,
+        content_token: str | None = None,
     ) -> CoreSettingInDb:
-        nickname = self._token_nickname(token_payload)
+        decoded = self._decode_content_token(content_token)
+        nickname = self._token_nickname(decoded)
+        self._assert_header_matches(nickname)
 
         token_ctx = kardexCtx.set(KardexContext(businessNickname=nickname))
         try:
@@ -200,7 +240,7 @@ class CoreSettingsController:
                 )
 
             # El path es un id, no un nickname: se valida el dueno del registro
-            # contra el claim del super token.
+            # contra el content token.
             if normalize_nickname(existing.nickname) != nickname:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,

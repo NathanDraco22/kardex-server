@@ -84,3 +84,24 @@ async def test_cache_tools_require_tenant():
 
     with pytest.raises(TenantContextMissingError):
         await BranchesTool().ensure_loaded()
+
+
+@pytest.mark.asyncio
+async def test_first_request_of_a_tenant_has_non_empty_etag(monkeypatch):
+    async def fake_update_branches_etags(self, nickname=None):
+        self.set_tag("branches_count", "0", nickname=nickname)
+
+    monkeypatch.setattr(
+        EtagTool, "update_branches_etags", fake_update_branches_etags
+    )
+
+    tool = EtagTool()
+    token = _set_tenant("tienda-etag")
+    try:
+        await tool.ensure_loaded()
+        etag = tool.get_branches_etag()
+    finally:
+        kardexCtx.reset(token)
+
+    assert etag is not None
+    assert etag.value != ""

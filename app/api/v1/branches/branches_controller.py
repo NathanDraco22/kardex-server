@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from kardex.tools import BranchesTool
+from kardex.tools import BranchesTool, EtagTool
 from kardex.repos.v1.branches import (
     CreateBranch,
     UpdateBranch,
@@ -58,6 +58,7 @@ class BranchesController:
             )
 
         await BranchesTool().refresh_current_branches()
+        await EtagTool().update_branches_etags()
         return deleted_branch
 
 

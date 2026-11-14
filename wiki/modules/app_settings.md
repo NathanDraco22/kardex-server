@@ -87,9 +87,9 @@ flowchart TD
 
 ---
 
-### 2.5. Inicialización en el Arranque (`Lifespan`)
+### 2.5. Aprovisionamiento (`provision_tenant`)
 - **Función:** `create_default_app_settings()` en `packages/kardex-business/src/kardex/core/default_values/create_default_app_settings.py`.
-- **Ejecución:** En `app/core/services_initializer.py`, durante el arranque de FastAPI (`lifespan` en `app_lifespan.py`).
+- **Ejecución:** desde `provision_tenant()` (`kardex/core/tenant/provision_tenant.py`), dentro del request `POST /api/v1/core-settings` de un tenant nuevo. Ya **no** corre en el `lifespan`.
 - Si la colección `AppSettings` no contiene el registro `"Default"`, se inicializa atómicamente con los valores por defecto del sistema.
 
 ---

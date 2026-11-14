@@ -48,6 +48,7 @@ async def run_with_tenant_context(
     nickname: str,
     fn: Callable[..., Awaitable[T]],
     *args: Any,
+    branch_id: str = "",
     **kwargs: Any,
 ) -> T:
     """Ejecuta ``fn`` fijando explicitamente el tenant.
@@ -56,9 +57,18 @@ async def run_with_tenant_context(
     dependencia con ``yield`` ocurre despues de las tareas de fondo en FastAPI
     0.136+, pero no queremos depender de ese detalle interno (cambio entre
     versiones y configurable con ``Depends(scope=...)``).
+
+    ``branch_id`` es opcional: si no se indica se preserva la sucursal del
+    contexto actual (el request que encolo la tarea).
     """
 
-    token = kardexCtx.set(KardexContext(businessNickname=normalize_nickname(nickname)))
+    current = kardexCtx.get()
+    token = kardexCtx.set(
+        KardexContext(
+            businessNickname=normalize_nickname(nickname),
+            branchId=branch_id or current.branchId,
+        )
+    )
     try:
         return await fn(*args, **kwargs)
     finally:

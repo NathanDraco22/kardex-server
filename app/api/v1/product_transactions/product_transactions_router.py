@@ -5,8 +5,12 @@ from kardex.repos.v1.product_transactions import ProductTransactionInDb
 
 from .product_transactions_controller import product_transactions_controller
 from kardex.repos.v1.common.filter_params import ProductTransactionFilterParams
+from app_middleware import auth_middleware
 
-prod_tx_router = APIRouter(tags=["product_transactionsV1"])
+prod_tx_router = APIRouter(
+    tags=["product_transactionsV1"],
+    dependencies=[Depends(auth_middleware)],
+)
 
 
 @prod_tx_router.get("")

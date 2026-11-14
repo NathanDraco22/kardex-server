@@ -32,6 +32,7 @@ pytestmark = pytest.mark.skipif(
 
 TENANT = "mt_test_migrate"
 FOREIGN = "mt_test_foreign"
+LEGACY = "mt_test_legacy"
 
 
 async def _service() -> MongoService:
@@ -43,7 +44,7 @@ async def _service() -> MongoService:
 
 async def _drop_databases() -> None:
     service = await _service()
-    for name in (TENANT, FOREIGN):
+    for name in (TENANT, FOREIGN, LEGACY):
         await service.client.drop_database(name)
 
 
@@ -139,5 +140,74 @@ async def test_runner_dry_run_does_not_write():
         assert meta is not None
         assert meta["indexesVersion"] == 0
         assert meta["kind"] == TENANT_META_KIND
+    finally:
+        await _drop_databases()
+
+
+@pytest.mark.asyncio
+async def test_adopt_dry_run_does_not_write():
+    await _drop_databases()
+
+    try:
+        service = await _service()
+        await service.client[LEGACY]["CoreSettings"].insert_one(
+            {
+                "_id": "cs-1",
+                "id": "cs-1",
+                "nickname": "  TiendaLegacy ",
+                "token": "content-token",
+                "createdAt": 1,
+            }
+        )
+
+        exit_code = await run(
+            parse_args(["--adopt", "--tenant", LEGACY, "--dry-run"])
+        )
+
+        meta = await MetaCollection.get_instance(LEGACY).read_tenant_meta()
+        document = await service.client[LEGACY]["CoreSettings"].find_one(
+            {"_id": "cs-1"}
+        )
+
+        assert exit_code == 0
+        assert meta is None
+        assert document is not None
+        assert document["nickname"] == "  TiendaLegacy "
+    finally:
+        await _drop_databases()
+
+
+@pytest.mark.asyncio
+async def test_adopt_creates_meta_and_normalizes_nicknames():
+    await _drop_databases()
+
+    try:
+        service = await _service()
+        await service.client[LEGACY]["CoreSettings"].insert_one(
+            {
+                "_id": "cs-1",
+                "id": "cs-1",
+                "nickname": "  TiendaLegacy ",
+                "token": "content-token",
+                "createdAt": 1,
+            }
+        )
+
+        exit_code = await run(parse_args(["--adopt", "--tenant", LEGACY]))
+
+        meta = await MetaCollection.get_instance(LEGACY).read_tenant_meta()
+        document = await service.client[LEGACY]["CoreSettings"].find_one(
+            {"_id": "cs-1"}
+        )
+
+        assert exit_code == 0
+        assert meta is not None
+        assert meta["kind"] == TENANT_META_KIND
+        assert meta["nickname"] == LEGACY
+        assert meta["isProvisioned"] is True
+        assert meta["indexesVersion"] == get_target_indexes_version()
+
+        assert document is not None
+        assert document["nickname"] == LEGACY
     finally:
         await _drop_databases()

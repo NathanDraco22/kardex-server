@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from kardex.repos.v1.user_roles import (
     CreateUserRole,
     ModulesCatalogResponse,
@@ -7,10 +7,15 @@ from kardex.repos.v1.user_roles import (
 )
 from responses.v1 import ListResponse
 
+from app_middleware import auth_middleware
+
 from .user_roles_controller import user_roles_controller
 
 
-user_roles_router = APIRouter(tags=["user_rolesV1"])
+user_roles_router = APIRouter(
+    tags=["user_rolesV1"],
+    dependencies=[Depends(auth_middleware)],
+)
 
 
 @user_roles_router.post("")

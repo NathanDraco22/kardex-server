@@ -3,8 +3,29 @@ from pathlib import Path
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
+from kardex.kardex_config import kardexCtx
+from kardex.tools import normalize_nickname
+from kardex.tools.kardex_exceptions import TenantContextMissingError
+
 
 STATIC_PATH = Path.cwd() / "static"
+
+
+def get_tenant_static_path(nickname: str | None = None) -> Path:
+    """Carpeta de archivos generados del tenant: ``static/<nickname>/``.
+
+    Los Excel de proyeccion y lista de precios no pueden ser globales: dos
+    negocios con el mismo nombre de archivo se pisarian y filtrarian datos.
+    """
+
+    target = normalize_nickname(nickname or kardexCtx.get().businessNickname)
+
+    if not target:
+        raise TenantContextMissingError("No tenant in context")
+
+    tenant_path = STATIC_PATH / target
+    tenant_path.mkdir(parents=True, exist_ok=True)
+    return tenant_path
 
 
 @dataclass
@@ -81,12 +102,13 @@ class ProjectionExcelService:
         if "Sheet" in workbook.sheetnames:
             workbook.remove(workbook["Sheet"])
 
-        workbook.save(STATIC_PATH / "projection.xlsx")
+        projection_path = get_tenant_static_path() / "projection.xlsx"
+        workbook.save(projection_path)
 
-        return STATIC_PATH / "projection.xlsx"
+        return projection_path
 
     def get_projection_xslx(self) -> Path:
-        return STATIC_PATH / "projection.xlsx"
+        return get_tenant_static_path() / "projection.xlsx"
 
 
 @dataclass
@@ -151,9 +173,10 @@ class PriceListService:
         if "Sheet" in workbook.sheetnames:
             workbook.remove(workbook["Sheet"])
 
-        workbook.save(STATIC_PATH / "price_list.xlsx")
+        price_list_path = get_tenant_static_path() / "price_list.xlsx"
+        workbook.save(price_list_path)
 
-        return STATIC_PATH / "price_list.xlsx"
+        return price_list_path
 
     def get_price_list_xslx(self) -> Path:
-        return STATIC_PATH / "price_list.xlsx"
+        return get_tenant_static_path() / "price_list.xlsx"

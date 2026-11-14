@@ -797,3 +797,17 @@ Convertir `kardex-server` a multi-tenant (database-per-tenant) con tenant obliga
 8. **Runner:** `kardex/core/tenant/migrate_tenants.py` con CLI en `tools/migrate_tenants.py` (`--indexes`, `--data`, `--tenant`, `--dry-run`); enumera DBs, exige `Meta.kind == "kardex-tenant"`, aplica versiones y migra `altCode` (antes `set_new_values` del arranque).
 9. **Arranque:** `app_lifespan.py` solo aplica las banderas Lite y `MongoService().init_client()`. Se elimino `app/core/scheduler/` y los reportes programados; `AppNotifier` conserva solo notificaciones disparadas por request.
 10. **Verificacion:** `ruff check` OK; `ty check` solo reporta 9 diagnosticos preexistentes en tests de notas de credito (dobles `SimpleNamespace`); `pytest` 67 passed / 9 skipped (integracion sin Mongo local). Commits por fase en `lite-multi-tenant`, sin push.
+
+## Fecha: 2026-11-13 (Correcciones de auditoria)
+### Objetivo
+Corregir los hallazgos de la auditoria independiente sobre la rama `lite-multi-tenant`: runner sin cliente Mongo, PATCH/DELETE de core-settings con el token equivocado, Excel globales por tenant, routers de negocio sin auth, POST no idempotente y deuda de tipos/tests.
+
+### Resumen de Implementacion
+1. **Runner (B1/B4/M1/M2):** `migrate_tenants.run` inicializa `MongoService().init_client()` y usa `service.client`; cierra el cliente en `finally`, captura `PyMongoError` al enumerar y responde 1 con mensaje limpio. Nuevo `--adopt` que escribe `Meta` en bases legacy (con `CoreSettings`/`Products`), normaliza nicknames y luego aplica indices; `--dry-run` no escribe.
+2. **Core settings (B2):** `PATCH` toma el nickname del `content_token` del body (no del `id_token` del header, que solo tiene `sub/origin/exp`); exige el token (400 si falta), valida path y `X-Servin` (403). `DELETE` recibe `?token=<content_token>`, fija el contexto con su nickname y valida el dueno del registro.
+3. **Excel por tenant (B3):** `app/services/excel_service.py` resuelve `static/<nickname>/projection.xlsx` y `static/<nickname>/price_list.xlsx` via `get_tenant_static_path()`, con `mkdir(parents=True)` y `TenantContextMissingError` si no hay contexto.
+4. **Auth en routers (A1):** `auth_middleware` agregado a `app_settings`, `products`, `product_categories`, `product_prices`, `product_accounts`, `product_stats`, `product_transactions`, `expenses`, `expense_categories`, `exports`, `integrations`, `reports`, `user_roles` y `daily_summaries`. `auths` sigue publico, `bi` usa API key y `core_settings` super token.
+5. **POST idempotente (A2):** si el tenant ya esta provisionado (`Meta.isProvisioned=true`) responde 200 sin re-aprovisionar; si `CoreSettings` existe pero `Meta` falta o esta a medias, repara las semillas.
+6. **Tipos y tests (B9/M3/B10/B8):** se corrigieron los 9 diagnosticos de `ty` en los tests de notas de credito (casts), `run_with_tenant_context` preserva `branchId`, `branches_controller.delete_branch_by_id` refresca el ETag, y se agregaron pruebas de runner en proceso limpio, PATCH con tokens reales, Excel por tenant, primer ETag no vacio, doble POST idempotente y limpieza de caches entre tests.
+7. **Documentacion (B5):** `AGENTS.md`, `wiki/INDEX.md`, `wiki/project_index.md`, `wiki/modules/app_settings.md`, `wiki/modules/unit_scales.md`, `wiki/security.md`, `wiki/operations.md` y `packages/kardex-business/README.md` actualizados.
+8. **Verificacion:** `ruff check` OK; `ty check` OK (0 diagnosticos); `pytest` 96 passed / 11 skipped (integracion sin Mongo). Commit nuevo en `lite-multi-tenant`, sin push.

@@ -32,18 +32,30 @@ async def get_core_setting_by_id(core_setting_id: str) -> CoreSettingInDb:
 async def update_core_setting_by_nickname(
     core_setting_nickname: str,
     body: UpdateCoreSetting,
-    token_payload: dict = Depends(validate_super_token),
 ) -> CoreSettingInDb:
+    """Actualiza un tenant.
+
+    ``Authorization`` lleva el ``id_token`` de plataforma (sin nickname) y el
+    body lleva el ``content_token`` con el nickname; el nickname del path debe
+    coincidir con el del content token.
+    """
+
     return await core_settings_controller.update_core_setting_by_nickname(
-        core_setting_nickname, body, token_payload
+        core_setting_nickname, body
     )
 
 
 @core_settings_router.delete("/{core_setting_id}")
 async def delete_core_setting_by_id(
     core_setting_id: str,
-    token_payload: dict = Depends(validate_super_token),
+    token: str | None = None,
 ) -> CoreSettingInDb:
+    """Elimina un tenant por id.
+
+    ``token`` es el ``content_token`` (query param) con el nickname del tenant;
+    el registro debe pertenecer a ese tenant.
+    """
+
     return await core_settings_controller.delete_core_setting_by_id(
-        core_setting_id, token_payload
+        core_setting_id, token
     )

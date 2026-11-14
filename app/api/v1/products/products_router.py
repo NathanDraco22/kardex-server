@@ -11,10 +11,16 @@ from kardex.repos.v1.products import (
 from responses.v1 import ListResponse
 
 from kardex.repos.v1.common.filter_params import ProductFilterParams
+
+from app_middleware import auth_middleware
+
 from .products_controller import products_controller
 
 
-products_router = APIRouter(tags=["productsV1"])
+products_router = APIRouter(
+    tags=["productsV1"],
+    dependencies=[Depends(auth_middleware)],
+)
 
 
 @products_router.post("")

@@ -9,14 +9,16 @@ from .daily_summaries_controller import daily_summaries_controller
 from kardex.repos.v1.common.filter_params import DailySummaryFilterParams
 
 
-daily_summaries_router = APIRouter(tags=["daily_summariesV1"])
+daily_summaries_router = APIRouter(
+    tags=["daily_summariesV1"],
+    dependencies=[Depends(auth_middleware)],
+)
 
 
 @daily_summaries_router.get(
     "",
     dependencies=[
         Depends(cache_header_response_midnight),
-        Depends(auth_middleware),
     ],
 )
 async def get_all_daily_summaries(

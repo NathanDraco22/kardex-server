@@ -24,7 +24,7 @@ Punto de entrada de la wiki del backend. **Lee esto antes de explorar el código
 
 | Carpeta | Qué hace |
 | :--- | :--- |
-| `app/` | Capa web FastAPI (delgada). Routers, controllers, middleware, scheduler y servicios externos. |
+| `app/` | Capa web FastAPI (delgada). Routers, controllers, middleware, notificador y servicios externos. |
 | `app/api/v1/` | Un subdirectorio por módulo: `<modulo>_router.py` + `<modulo>_controller.py`. |
 | `app/app_middleware/depends/` | Guards: tenant obligatorio, JWT, API Key, super-token y contexto. |
 | `app/core/` | Notificador y arranque de servicios. |
@@ -85,10 +85,10 @@ Punto de entrada de la wiki del backend. **Lee esto antes de explorar el código
 
 | Enlace | Qué encontrarás |
 | :--- | :--- |
-| [`architecture.md`](./architecture.md) | Capas, flujo de una petición, árbol de carpetas, multi-tenant y flujos de negocio (facturación, notas de crédito, recibos, ajustes, importaciones, scheduler, Lite). |
+| [`architecture.md`](./architecture.md) | Capas, flujo de una petición, árbol de carpetas, multi-tenant y flujos de negocio (facturación, notas de crédito, recibos, ajustes, importaciones, aprovisionamiento, Lite). |
 | [`conventions.md`](./conventions.md) | Naming, `camelCase`, centavos, timestamps, repositorios, excepciones, colecciones, filtros, tests y pre-commit. |
 | [`security.md`](./security.md) | Guards, headers de tenant/sucursal, routers sin guard y cómo proteger un módulo nuevo. |
-| [`operations.md`](./operations.md) | Instalación, ejecución, Docker, variables de entorno, OpenAPI, scheduler y problemas comunes. |
+| [`operations.md`](./operations.md) | Instalación, ejecución, Docker, variables de entorno, OpenAPI, aprovisionamiento, runner de migraciones y problemas comunes. |
 
 ### 🗂️ Módulos del API
 

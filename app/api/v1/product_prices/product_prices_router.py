@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from kardex.repos.v1.product_prices import (
     CreateProductPrice,
     UpdateProductPrice,
@@ -7,10 +7,15 @@ from kardex.repos.v1.product_prices import (
 
 from responses.v1 import ListResponse
 
+from app_middleware import auth_middleware
+
 from .product_prices_controller import product_prices_controller
 
 
-product_prices_router = APIRouter(tags=["product_pricesV1"])
+product_prices_router = APIRouter(
+    tags=["product_pricesV1"],
+    dependencies=[Depends(auth_middleware)],
+)
 
 
 @product_prices_router.post("")

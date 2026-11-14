@@ -10,10 +10,14 @@ from kardex.repos.v1.product_stats import (
 from responses.v1 import ListResponse
 from .product_stats_controller import product_stats_controller
 from kardex.repos.v1.common.filter_params import ProductStatFilterParams, ReadProductStatFilterParams
+from app_middleware import auth_middleware
 from .bodies import CreateXlsxFileBody
 
 
-product_stats_router = APIRouter(tags=["product_statsV1"])
+product_stats_router = APIRouter(
+    tags=["product_statsV1"],
+    dependencies=[Depends(auth_middleware)],
+)
 
 
 @product_stats_router.get("")

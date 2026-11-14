@@ -4,6 +4,7 @@ Uso desde la raiz de ``kardex-server``:
 
     python tools/migrate_tenants.py --dry-run
     python tools/migrate_tenants.py --indexes --tenant tiendaA
+    python tools/migrate_tenants.py --adopt --dry-run
 
 La implementacion vive en ``kardex.core.tenant.migrate_tenants``.
 """

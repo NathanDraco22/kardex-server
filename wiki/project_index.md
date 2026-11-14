@@ -42,7 +42,7 @@ flowchart LR
 2. **Capa Web Local (`app/`):**
    - Delgada capa de transporte HTTP con FastAPI.
    - Define los controladores y routers organizados por entidad y versión (`app/api/v1/`).
-   - Centraliza el ciclo de vida de la aplicación (`app_lifespan.py`), inicializaciones (`services_initializer.py`) y manejadores globales de excepciones (`regis_exception_handlers.py`).
+   - Centraliza el ciclo de vida de la aplicación (`app_lifespan.py`), el arranque del cliente Mongo y los manejadores globales de excepciones (`regis_exception_handlers.py`). Los datos semilla y los índices ya no se ejecutan al arrancar: son por tenant (`core/tenant/provision_tenant.py` y `tools/migrate_tenants.py`).
 
 ---
 

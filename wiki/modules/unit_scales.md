@@ -92,7 +92,7 @@ class UnitScaleInDb(BaseUnitScale):
 
 ## 4. Escalas por Defecto (`default_values`)
 
-Al inicializar los servicios (`services_initializer.py`), `create_default_unit_scales()` siembra las siguientes escalas.
+Al aprovisionar un tenant (`provision_tenant()` en `kardex/core/tenant/provision_tenant.py`), `create_default_unit_scales()` siembra las siguientes escalas. Ya no se ejecuta en el arranque del servidor.
 
 ### 4.1. Continuas
 

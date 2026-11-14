@@ -1,11 +1,16 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from kardex.repos.v1.expense_categories import CreateExpenseCategory, UpdateExpenseCategory, ExpenseCategoryInDb
 from responses.v1 import ListResponse
+
+from app_middleware import auth_middleware
 
 from .expense_categories_controller import expense_categories_controller
 
 
-expense_categories_router = APIRouter(tags=["expense_categoriesV1"])
+expense_categories_router = APIRouter(
+    tags=["expense_categoriesV1"],
+    dependencies=[Depends(auth_middleware)],
+)
 
 
 @expense_categories_router.post("")

@@ -67,3 +67,23 @@ async def test_concurrent_background_tasks_do_not_share_tenant():
     )
 
     assert results == ["tienda-a", "tienda-b"]
+
+
+@pytest.mark.asyncio
+async def test_run_with_tenant_context_preserves_branch_id():
+    async def current_branch() -> str:
+        return kardexCtx.get().branchId
+
+    token = kardexCtx.set(
+        KardexContext(businessNickname="tienda-a", branchId="branch-1")
+    )
+    try:
+        inherited = await run_with_tenant_context("tienda-b", current_branch)
+        explicit = await run_with_tenant_context(
+            "tienda-b", current_branch, branch_id="branch-2"
+        )
+    finally:
+        kardexCtx.reset(token)
+
+    assert inherited == "branch-1"
+    assert explicit == "branch-2"

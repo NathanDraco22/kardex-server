@@ -127,7 +127,18 @@ Ajusta `KardexConfig` al arrancar (`app/app_lifespan.py`):
 3. `Meta` inicial (`isProvisioned: false`, `indexesVersion: 0`).
 4. Los índices se crean en `BackgroundTasks` (`finalize_tenant_indexes`) y cierran `Meta` con `isProvisioned: true` e `indexesVersion: CURRENT_INDEX_VERSION`.
 
-Un reintento del `POST` repara un aprovisionamiento incompleto: las semillas son `*_if_absent` y el propietario se busca por `username`.
+Un reintento del `POST` es **idempotente**: si el tenant ya está completo (`Meta.isProvisioned=true`) responde **200** sin re-aprovisionar. Si `CoreSettings` existe pero `Meta` falta o está a medias, repara las semillas que falten.
+
+### Actualizar un tenant existente (PATCH / DELETE)
+
+El Service Manager autentica con un `id_token` (`{sub, origin, exp}`) en `Authorization` y envía la configuración del negocio en un **content token** aparte:
+
+| Método | Ruta | Body / query | Nickname usado |
+| :--- | :--- | :--- | :--- |
+| `PATCH` | `/api/v1/core-settings/{nickname}` | `{"token": "<content_token>"}` (obligatorio) | El del content token; debe coincidir con el path y con `X-Servin` si viene. |
+| `DELETE` | `/api/v1/core-settings/{id}?token=<content_token>` | Query `token` (obligatorio) | El del content token; el registro debe pertenecer a ese tenant. |
+
+Si falta el content token → **400**; si el nickname no coincide → **403**.
 
 ### Aplicar migraciones a los tenants existentes
 
@@ -140,6 +151,9 @@ $env:PYTHONPATH = "app"; .venv\Scripts\python.exe tools\migrate_tenants.py
 
 # Solo un tenant
 $env:PYTHONPATH = "app"; .venv\Scripts\python.exe tools\migrate_tenants.py --indexes --tenant tienda-a
+
+# Adoptar bases legacy (sin Meta) que tengan CoreSettings o Products
+$env:PYTHONPATH = "app"; .venv\Scripts\python.exe tools\migrate_tenants.py --adopt --dry-run
 ```
 
 El runner enumera `list_database_names()`, descarta `admin/local/config`, exige `Meta.kind == "kardex-tenant"` y aplica:
@@ -149,6 +163,8 @@ El runner enumera `list_database_names()`, descarta `admin/local/config`, exige 
 | igual | omite |
 | menor | crea índices y actualiza `Meta` |
 | mayor | `WARN` "servidor más viejo que los datos"; no toca |
+
+`--adopt` escribe `Meta` (`kind`, `nickname` normalizado, `isProvisioned:true`, `indexesVersion:0`) en bases legacy, normaliza `CoreSettings.nickname` y después aplica índices. `--dry-run` solo reporta.
 
 También ejecuta el backfill de `Products.altCode` (antes `set_new_values` en el arranque).
 

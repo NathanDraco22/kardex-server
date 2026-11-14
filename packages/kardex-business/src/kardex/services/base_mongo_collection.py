@@ -16,6 +16,12 @@ class BaseMongoCollection:
 
     Las instancias explicitas (``get_instance(nickname)``) si fijan el tenant y
     se usan en el runner de migraciones, el aprovisionamiento y las pruebas.
+
+    ``_instances`` solo crece con nicknames explicitos (runner/tests/
+    aprovisionamiento), nunca con trafico de requests: el caso normal siempre
+    devuelve ``_default_instance`` con ``nickname=""``. ``__init_subclass__``
+    reinicia ambos atributos por subclase para que dos colecciones no compartan
+    diccionario.
     """
 
     collection_name: str = ""

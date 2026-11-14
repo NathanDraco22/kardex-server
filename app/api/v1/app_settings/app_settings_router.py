@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from kardex.repos.v1.app_settings import (
     CreateAppSetting,
     UpdateAppSetting,
@@ -6,9 +6,14 @@ from kardex.repos.v1.app_settings import (
 )
 from responses.v1 import ListResponse
 
+from app_middleware import auth_middleware
+
 from .app_settings_controller import app_settings_controller
 
-app_settings_router = APIRouter(tags=["app_settingsV1"])
+app_settings_router = APIRouter(
+    tags=["app_settingsV1"],
+    dependencies=[Depends(auth_middleware)],
+)
 
 
 @app_settings_router.post("")

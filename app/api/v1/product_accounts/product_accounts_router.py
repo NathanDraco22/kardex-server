@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from kardex.repos.v1.product_accounts import (
     ProductAccountInDb,
     UpdateProductAccount,
@@ -7,9 +7,14 @@ from kardex.repos.v1.product_accounts import (
 )
 from responses.v1 import ListResponse
 
+from app_middleware import auth_middleware
+
 from .product_accounts_controller import product_accounts_controller
 
-product_accounts_router = APIRouter(tags=["product_accountsV1"])
+product_accounts_router = APIRouter(
+    tags=["product_accountsV1"],
+    dependencies=[Depends(auth_middleware)],
+)
 
 
 @product_accounts_router.get("/products/{product_id}/accounts")

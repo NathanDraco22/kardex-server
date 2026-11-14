@@ -82,28 +82,18 @@ Reglas:
 
 ---
 
-## 4. Routers sin guard a nivel de router
+## 4. Guards por router
 
-Al día de hoy, estos módulos **no** declaran `dependencies=[Depends(...)]` en su `APIRouter`:
-
-| Módulo | Observación |
+| Módulo | Guard |
 | :--- | :--- |
-| `auths` | Esperado: el login debe ser público. Revisa el resto de endpoints. |
-| `app_settings` | Configuración global; verifica si debe ser pública o protegida. |
-| `products` | CRUD de productos sin guard de router. |
-| `product_categories` | CRUD de categorías sin guard de router. |
-| `product_prices` | Matriz de precios sin guard de router. |
-| `product_accounts` | Stock por sucursal sin guard de router. |
-| `product_stats` | Estadísticas sin guard de router. |
-| `product_transactions` | Kárdex sin guard de router. |
-| `expenses` | Gastos sin guard de router. |
-| `expense_categories` | Categorías de gasto sin guard de router. |
-| `exports` | Exportación de listas de precio sin guard de router. |
-| `reports` | Reportes sin guard de router. |
-| `user_roles` | Roles y permisos sin guard de router. |
-| `integrations` | Integraciones (Telegram) sin guard de router. |
+| `auths` | Público por diseño (`login`, `refresh-token`, `servin-status`, `user-status`, `change-password`). No añadir `auth_middleware`. |
+| `bi` | `api_key_middleware` (Power BI). El cliente debe enviar también `X-Servin`. |
+| `core_settings` | `validate_super_token` (Ed25519). `POST`/`PATCH`/`DELETE` exigen además el content token con el nickname. |
+| Resto de módulos de negocio | `auth_middleware` a nivel de `APIRouter`. |
 
-> ⚠️ Esto se verificó a nivel de `APIRouter`. **No implica que los endpoints sean públicos intencionalmente.** Antes de consumir o exponer uno, revisa el endpoint concreto y confirma con el equipo. Si vas a modificar uno de estos módulos, considera añadir `auth_middleware` como parte del cambio (salvo `auths/login`).
+Los routers de negocio que antes no tenían guard (`app_settings`, `products`, `product_categories`, `product_prices`, `product_accounts`, `product_stats`, `product_transactions`, `expenses`, `expense_categories`, `exports`, `reports`, `user_roles`, `integrations`, `daily_summaries`) ya lo declaran. Sin token responden **401**; sin header de tenant, **400**.
+
+> Al agregar un módulo nuevo, declara `dependencies=[Depends(auth_middleware)]` en su `APIRouter`.
 
 ---
 

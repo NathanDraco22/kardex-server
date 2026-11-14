@@ -1,5 +1,6 @@
 import asyncio
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import AsyncMock
 
 import pytest
@@ -8,9 +9,16 @@ from kardex.core.credit_note_register.credit_note_register import CreditNoteRegi
 from kardex.core.default_values import SALE_CLIENT_ID
 from kardex.core.devolution_register.devolution_register import DevolutionRegister
 from kardex.core.report_manager.report_manager import ReportManager
+from kardex.repos.v1.branches import BranchesRepository
+from kardex.repos.v1.clients import ClientsRepository
 from kardex.repos.v1.common.models import ClientInfo, ProductItem, SaleItem, UserInfo
 from kardex.repos.v1.credit_notes import CreateCreditNote
-from kardex.repos.v1.devolutions import DevolutionInDb
+from kardex.repos.v1.devolutions import (
+    DevolutionsRepository,
+    DevolutionInDb,
+)
+from kardex.repos.v1.invoices import InvoicesRepository
+from kardex.repos.v1.products import ProductsRepository
 from kardex.tools import InvalidOperation
 
 
@@ -70,9 +78,9 @@ def _make_credit_note_register(invoice) -> CreditNoteRegister:
     clients_repo = SimpleNamespace(get_client_by_id=AsyncMock(return_value=SimpleNamespace(id="client-1")))
     invoices_repo = SimpleNamespace(get_invoice_by_id=AsyncMock(return_value=invoice))
     return CreditNoteRegister(
-        branches_repo=branches_repo,
-        clients_repo=clients_repo,
-        invoices_repo=invoices_repo,
+        branches_repo=cast(BranchesRepository, branches_repo),
+        clients_repo=cast(ClientsRepository, clients_repo),
+        invoices_repo=cast(InvoicesRepository, invoices_repo),
     )
 
 
@@ -83,11 +91,11 @@ def _make_devolution_register(invoice) -> DevolutionRegister:
     clients_repo = SimpleNamespace(get_client_by_id=AsyncMock(return_value=SimpleNamespace(id="client-1")))
     invoices_repo = SimpleNamespace(get_invoice_by_id=AsyncMock(return_value=invoice))
     return DevolutionRegister(
-        devolutions_repo=devolutions_repo,
-        branches_repo=branches_repo,
-        products_repo=products_repo,
-        clients_repo=clients_repo,
-        invoices_repo=invoices_repo,
+        devolutions_repo=cast(DevolutionsRepository, devolutions_repo),
+        branches_repo=cast(BranchesRepository, branches_repo),
+        products_repo=cast(ProductsRepository, products_repo),
+        clients_repo=cast(ClientsRepository, clients_repo),
+        invoices_repo=cast(InvoicesRepository, invoices_repo),
     )
 
 

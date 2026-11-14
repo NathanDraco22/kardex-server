@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from kardex.repos.v1.product_categories import (
     CreateProductCategory,
     UpdateProductCategory,
@@ -7,10 +7,15 @@ from kardex.repos.v1.product_categories import (
 
 from responses.v1 import ListResponse
 
+from app_middleware import auth_middleware
+
 from .product_categories_controller import product_categories_controller
 
 
-product_categories_router = APIRouter(tags=["product_categoriesV1"])
+product_categories_router = APIRouter(
+    tags=["product_categoriesV1"],
+    dependencies=[Depends(auth_middleware)],
+)
 
 
 @product_categories_router.post("")
