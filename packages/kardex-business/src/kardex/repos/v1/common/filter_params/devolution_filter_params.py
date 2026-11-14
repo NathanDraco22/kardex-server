@@ -7,3 +7,4 @@ class DevolutionFilterParams(BaseModel):
     branchId: str | None = None
     clientId: str | None = None
     status: DevolutionStatus | None = None
+    shiftId: str | None = None

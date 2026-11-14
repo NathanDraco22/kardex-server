@@ -11,6 +11,7 @@ def build_query(date_field: str, **kargs) -> QueryResult:
         "supplierId": kargs.get("supplierId"),
         "branchId": kargs.get("branchId"),
         "status": kargs.get("status"),
+        "shiftId": kargs.get("shiftId"),
     }
 
     offset = int(kargs.get("offset") or 0)

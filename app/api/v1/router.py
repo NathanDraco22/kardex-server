@@ -42,6 +42,8 @@ from .product_transactions.product_transactions_router import prod_tx_router
 from .products.products_router import products_router
 from .receipts.receipts_router import receipts_router
 from .reports.reports_router import reports_router
+from .shift_cash_movements.shift_cash_movements_router import shift_cash_movements_router
+from .shifts.shifts_router import shifts_router
 from .suppliers.suppliers_router import suppliers_router
 from .transfers.transfers_router import transfers_router
 from .unit_scales.unit_scales_router import unit_scales_router
@@ -93,6 +95,8 @@ router_v1.include_router(products_router, prefix="/products")
 router_v1.include_router(receipts_router, prefix="/receipts")
 router_v1.include_router(reports_router, prefix="/reports")
 router_v1.include_router(sale_prof_router, prefix="/product-sale-profiles")
+router_v1.include_router(shift_cash_movements_router, prefix="/shift-cash-movements")
+router_v1.include_router(shifts_router, prefix="/shifts")
 router_v1.include_router(suppliers_router, prefix="/suppliers")
 router_v1.include_router(transfers_router, prefix="/transfers")
 router_v1.include_router(unit_scales_router, prefix='/unit-scales')

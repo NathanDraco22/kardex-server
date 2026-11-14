@@ -96,3 +96,15 @@ class CounterManager:
         )
         formatted = str(res.value).zfill(4)
         return formatted
+
+    async def next_shift_number(self, session: Any = None) -> str:
+        res = await self.counters_repository.increment_counter("shiftNumber", session)
+        formatted = str(res.value).zfill(4)
+        return formatted
+
+    async def next_cash_movement_number(self, session: Any = None) -> str:
+        res = await self.counters_repository.increment_counter(
+            "cashMovementNumber", session
+        )
+        formatted = str(res.value).zfill(4)
+        return formatted

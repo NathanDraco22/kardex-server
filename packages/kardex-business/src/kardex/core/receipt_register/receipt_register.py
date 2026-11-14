@@ -9,6 +9,7 @@ from kardex.repos.v1.receipts import ReceiptsRepository, ReceiptsDataSource
 from kardex.repos.v1.clients import ClientsRepository, ClientsDataSource, ClientInDb
 from kardex.repos.v1.branches import BranchesRepository, BranchesDataSource
 from kardex.tools import BranchNotFound, ClientNotFound, DocumentAlreadyExists, InvalidOperation, ReceiptNotFound, ReceiptAlreadyDeleted
+from kardex.core.shift_register.validate_shift_link import validate_shift_link
 
 from .process_receipt import process_receipt
 from .reverse_receipt import reverse_receipt
@@ -35,6 +36,8 @@ class ReceiptRegister:
         if client is None:
             raise ClientNotFound("CLIENT_NOT_FOUND", client_id=doc.clientId)
         # Aquí podrías añadir validaciones extra, como verificar que las facturas aplicadas existan.
+
+        await validate_shift_link(doc.shiftId, doc.branchId)
 
     async def regis_receipt(
         self, create_receipt: CreateReceipt

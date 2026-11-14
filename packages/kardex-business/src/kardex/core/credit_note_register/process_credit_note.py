@@ -1,17 +1,14 @@
 from dataclasses import dataclass
-from typing import Any, Iterable, List
+from typing import Any, Iterable
 
 from kardex.repos.v1.credit_notes import CreateCreditNote, CreditNoteInDb
 from kardex.repos.v1.invoices import InvoiceInDb
-from kardex.repos.v1.product_accounts import ProductAccountInDb
-from kardex.repos.v1.product_transactions import ProductTransactionInDb
 from kardex.services.mongo_collections.v1 import (
     CreditNotesCollection,
     InvoicesCollection,
-    ProductAccountsCollection,
-    ProductTransactionsCollection,
 )
 from kardex.core.counter_manager.counter_manager import CounterManager
+from kardex.core.shift_register.validate_shift_link import validate_shift_link
 from kardex.tools import InvalidOperation, UuidTool, TimeTools
 from kardex.services import MongoService
 
@@ -239,6 +236,10 @@ async def process_credit_note(
 
             now_in_milliseconds = TimeTools.get_now_in_milliseconds()
             credit_note_id = UuidTool.generate_uuid()
+
+            await validate_shift_link(
+                create_credit_note.shiftId, create_credit_note.branchId
+            )
 
             # 1. Si es de tipo devolución, validamos contra la factura original
             if create_credit_note.type == "devolution":

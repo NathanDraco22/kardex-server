@@ -13,6 +13,10 @@ from kardex.tools.kardex_exceptions import (
     SameBranchTransferError,
     InvalidOperation,
     DirectStockAdjustmentBlocked,
+    ActiveShiftAlreadyExistsError,
+    ShiftNotFound,
+    CashMovementNotFound,
+    ShiftNotOpen,
 )
 
 
@@ -76,6 +80,10 @@ _exception_handlers = {
     SameBranchTransferError: handle_bad_request,
     InvalidOperation: handle_bad_request,
     DirectStockAdjustmentBlocked: handle_forbidden,
+    ActiveShiftAlreadyExistsError: handle_document_exists,
+    ShiftNotFound: handle_not_found,
+    CashMovementNotFound: handle_not_found,
+    ShiftNotOpen: handle_bad_request,
 }
 
 

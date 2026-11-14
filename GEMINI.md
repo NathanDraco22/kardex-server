@@ -781,3 +781,30 @@ Guardar como snapshot la imagen del producto en cada ítem de `AdjustmentRequest
 3. **Compatibilidad:** el campo es aditivo; creación, edición, aprobación y cancelación conservan el comportamiento actual.
 4. **Tests:** `test/test_adjustment_request_item_image.py` cubre serialización y compatibilidad con documentos antiguos.
 5. **Verificación:** `ruff check`, `ty check` y `pytest` OK. No hay migraciones de Mongo ni cambios de API obligatorios.
+
+## Fecha: 2026-11-14
+### Objetivo
+Implementar en `kardex-server` (rama `main`) el backend de la funcionalidad opcional de **Turnos y Caja**: apertura/cierre/arqueo de turnos por cajero y movimientos manuales de efectivo, con vinculacion aditiva de `shiftId` en facturas, recibos, devoluciones, notas de credito y gastos.
+
+### Resumen de Implementacion
+1. **Scaffolding Onion:** `onion repo-mongo shift shift-cash-movement` en `packages/kardex-business` y `onion router` en `app/`. Se elimino el `kardex/config/onion-config.toml` espurio, se registraron `Shifts` y `ShiftCashMovements` en `app/config/onion-config.toml` y se exportaron las colecciones en `mongo_collections/v1/__init__.py`. `mongo_service.py` y `base_mongo_collection.py` quedaron intactos.
+2. **Modelos y filtros:** `ShiftInDb`, `ShiftPreview` (sin `closedAt`/`closedBy`), `CreateShift`, `CloseShiftRequest`, `UpdateShift`, `ShiftCashMovementInDb`; filtros `ShiftFilterParams` y `ShiftCashMovementFilterParams`. Dinero en `int`, campos `camelCase`, `amount > 0`, `countedCash >= 0`.
+3. **Excepciones:** `ActiveShiftAlreadyExistsError` (409), `ShiftNotFound` (404), `CashMovementNotFound` (404) y `ShiftNotOpen` (400) en `kardex_exceptions.py`, registradas en `app/regis_exception_handlers.py`.
+4. **Indices:** `Shifts` (`id` y `docNumber` unicos, `(openedBy.id, status)` unico parcial `ux_open_shift_per_user`, `(branchId, status, openedAt -1)`) y `ShiftCashMovements` (`id`, `docNumber` unicos, `shiftId`, `(branchId, createdAt -1)`). Se agrego `IndexModel([("shiftId", 1)])` no unico a `Invoices`, `Receipts`, `Devolutions`, `CreditNotes` y `Expenses`. Todo se ejecuta desde `mongo_indexes.create_indexes()` y no depende de `CURRENT_INDEX_VERSION`.
+5. **Atomicidad:** `open_shift` genera `docNumber` antes del insert y traduce `DuplicateKeyError` (11000) a 409. `process_cash_movement` y `delete_cash_movement` usan `start_session()` + `start_transaction()`; `ExpensesRepository.create_expense`/`delete_expense_by_id` aceptan `session` opcional (retrocompatible).
+6. **Consolidado:** agregaciones Mongo por turno (`` + ``) y funcion pura `compute_shift_totals` en `core/shift_register/shift_totals.py`. `expectedCash = initialCash + facturas cash + recibos cash + entradas - devoluciones confirmadas - salidas`. Devoluciones solo `confirmed`; notas de credito `approved`/`confirmed`/`applied` solo informativo; recibos con `isDeleted != True`.
+7. **HTTP:** 7 endpoints en `/shifts` y 4 en `/shift-cash-movements`, ambos routers con `dependencies=[Depends(auth_middleware)]`, controllers delgados y `ListResponse[T]` en listados. `DELETE` de movimientos solo con turno `open` y borrado logico del movimiento y del gasto vinculado.
+8. **Bandera:** `AppSettings.useShifts` (`false` por defecto) en `BaseAppSetting` y `UpdateAppSetting`; con `false` el comportamiento actual no cambia y `shiftId` queda `null`.
+9. **Verificacion:** `ruff check` OK; `ty check` OK sobre `app` y el paquete; `pytest test/test_shifts.py` (8 pruebas) OK. Quedan 9 diagnosticos preexistentes de `ty` en `test/test_credit_note_policy.py` y `test/test_credit_note_vs_devolution.py`, ajenos a esta feature y sin modificar. No hay commit.
+
+## Fecha: 2026-11-15
+### Objetivo
+Agregar el endpoint composite de arqueo de turno (`GET /api/v1/composite/shift-arqueo/{shift_id}`) para que el frontend obtenga turno, consolidado, movimientos y documentos en una sola llamada, sin cambiar el cierre ni la logica contable.
+
+### Resumen de Implementacion
+1. **Funciones puras:** `shift_totals.py` suma `totals_from_shift_document`, `is_document_counted` (con constantes de estados/colecciones) y `resolve_totals_source`.
+2. **Armado:** `core/shift_register/shift_arqueo.py` expone `build_shift_arqueo`; turno `open` recalcula en vivo, turno `closed` devuelve el consolidado persistido (`stored`). Usa `asyncio.gather` para totales + 5 listados y consulta `limit + 1` para calcular `truncated`.
+3. **Modelos:** `ShiftArqueoDocument`, `ShiftArqueoTotals`, `ShiftArqueoMeta` y `ShiftArqueoResponse` en `repos/v1/shifts/models/shift_arqueo_model.py` (exportados desde `repos.v1.shifts`).
+4. **Colecciones:** `fetch_documents_by_shift` con ``, ` createdAt`, `` y proyeccion minima en invoices, receipts, devolutions y credit_notes. Movimientos reutilizan el repositorio existente.
+5. **HTTP:** endpoint aditivo en `composite_router` con `includeDocuments` y `documentsLimit` (1..1000); controller delega en `build_shift_arqueo`.
+6. **Docs y tests:** ficha en `wiki/modules/composite.md` y 4 pruebas puras nuevas en `test/test_shifts.py` (roundtrip de totales, defaults, reglas counted y live/stored). `ruff`, `ty` y `pytest` (57 pruebas) OK. No hay commit.

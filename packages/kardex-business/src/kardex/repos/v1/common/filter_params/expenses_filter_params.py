@@ -16,6 +16,7 @@ class ExpensesFilterParams(BaseModel):
     minAmount: int | None = None
     maxAmount: int | None = None
     supplierId: str | None = None
+    shiftId: str | None = None
 
     def to_query_params(self) -> dict[str, Any]:
         raw_dict = self.model_dump(exclude_none=True)

@@ -23,6 +23,7 @@ class BaseDevolution(BaseModel):
     totalCost: int
     total: int
     createdBy: UserInfo
+    shiftId: str | None = None
 
 
 class CreateDevolution(BaseDevolution):

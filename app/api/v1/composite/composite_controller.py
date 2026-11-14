@@ -1,9 +1,11 @@
 import asyncio
 
+from kardex.core.shift_register.shift_arqueo import build_shift_arqueo
 from kardex.repos.v1.common.filter_params import DevolutionFilterParams
 from kardex.repos.v1.credit_notes import CreditNotesDataSource, CreditNotesRepository
 from kardex.repos.v1.devolutions import DevolutionsDataSource, DevolutionsRepository
 from kardex.repos.v1.invoices import InvoicesDataSource, InvoicesRepository
+from kardex.repos.v1.shifts import ShiftArqueoResponse
 
 from .composite_models import (
     ClientPendingInvoicesCompositeResponse,
@@ -56,6 +58,18 @@ class CompositeController:
                 totalCreditNotes=total_credit_notes,
                 netTotalPayable=net_total,
             ),
+        )
+
+    async def get_shift_arqueo(
+        self,
+        shift_id: str,
+        include_documents: bool = True,
+        documents_limit: int = 500,
+    ) -> ShiftArqueoResponse:
+        return await build_shift_arqueo(
+            shift_id=shift_id,
+            include_documents=include_documents,
+            limit=documents_limit,
         )
 
 

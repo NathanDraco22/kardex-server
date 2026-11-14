@@ -10,3 +10,4 @@ class CreditNoteFilterParams(BaseModel):
     clientId: str | None = None
     type: CreditNoteType | None = None
     status: CreditNoteStatus | None = None
+    shiftId: str | None = None

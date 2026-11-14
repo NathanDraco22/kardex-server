@@ -81,6 +81,60 @@ Obtiene todas las facturas pendientes de cobro, devoluciones activas a favor y n
 
 ---
 
+### `GET /api/v1/composite/shift-arqueo/{shift_id}`
+
+Arqueo completo de un turno en **una sola llamada** (evita 6 roundtrips: turno + consolidado + movimientos + facturas + recibos + devoluciones + notas de crédito). Agregado puramente de lectura: no cierra el turno ni modifica nada.
+
+- **Seguridad:** `auth_middleware` a nivel de `composite_router`.
+- **Query Parameters:**
+  - `includeDocuments` (`bool`, default `true`): si es `false` no ejecuta los 5 listados; devuelve listas vacías y `meta.truncated = null`.
+  - `documentsLimit` (`int`, `ge=1`, `le=1000`, default `500`): tamaño máximo por listado.
+
+#### Respuesta JSON (`ShiftArqueoResponse`):
+```json
+{
+  "shift": { "id": "shift_1", "status": "open", "initialCash": 100000, "...": "ShiftInDb" },
+  "totals": {
+    "invoiceCashTotal": 50000,
+    "expectedCash": 173000,
+    "grandTotal": 127000,
+    "...": "24 campos de ShiftTotals"
+  },
+  "cashMovements": [
+    { "id": "mv_1", "shiftId": "shift_1", "type": "in", "amount": 5000, "...": "ShiftCashMovementInDb" }
+  ],
+  "invoices": [
+    {
+      "id": "inv_1",
+      "docNumber": "000452",
+      "amount": 50000,
+      "paymentMethod": "cash",
+      "status": "paid",
+      "type": null,
+      "clientName": "Cliente",
+      "createdAt": 1731456000000,
+      "referenceDocNumber": null,
+      "counted": true
+    }
+  ],
+  "receipts": [],
+  "devolutions": [],
+  "creditNotes": [],
+  "meta": { "totalsSource": "live", "documentsLimit": 500, "truncated": false }
+}
+```
+
+#### Reglas de negocio
+
+- **`totalsSource`:** turno `open` → recalcula con `aggregate_shift_totals()` (`"live"`). Turno `closed` → usa el consolidado **persistido** en el documento (`totals_from_shift_document`) y devuelve `"stored"`, para que el arqueo coincida con el ticket impreso y no cambie con el tiempo.
+- **`counted`:** mismas reglas que el consolidado. Facturas: `status != "cancelled"` (las canceladas se listan con `counted: false`). Recibos y movimientos: siempre `true` (los `isDeleted` se excluyen en la query). Devoluciones: solo `status == "confirmed"`. Notas de crédito: `status in ("approved", "confirmed", "applied")`.
+- **Queries:** facturas `{"shiftId": id}` (incluye canceladas); recibos `{"shiftId": id, "isDeleted": {"$ne": true}}`; devoluciones y notas de crédito `{"shiftId": id}`; movimientos `{"shiftId": id, "isDeleted": {"$ne": true}}`.
+- **Orden:** `createdAt` ascendente en los 5 listados (los movimientos se invierten tras leer los más recientes).
+- **`truncated`:** cada consulta pide `limit + 1`; si alguna colección o los movimientos exceden `limit`, se recorta a `limit` y `truncated` pasa a `true`. Con `includeDocuments=false` vale `null`, que significa "documentos no solicitados" (no "lista completa").
+- El consolidado lo calcula `kardex/core/shift_register/shift_totals.py`; el armado vive en `kardex/core/shift_register/shift_arqueo.py` y **no** altera `close_shift`.
+
+---
+
 ## 3. Modelos Pydantic (`composite_models.py`)
 
 - **`PendingCheckoutSummary`:**
@@ -93,6 +147,8 @@ Obtiene todas las facturas pendientes de cobro, devoluciones activas a favor y n
   - `devolutions: list[DevolutionInDb]`
   - `creditNotes: list[CreditNoteInDb]`
   - `summary: PendingCheckoutSummary`
+
+> Los modelos de `shift-arqueo` viven en `kardex/repos/v1/shifts/models/shift_arqueo_model.py` (`ShiftArqueoDocument`, `ShiftArqueoTotals`, `ShiftArqueoMeta`, `ShiftArqueoResponse`) porque reutilizan `ShiftInDb` y `ShiftCashMovementInDb`; se exportan desde `kardex.repos.v1.shifts`. Se dejaron fuera de `composite_models.py` para no crear dependencias del paquete de dominio hacia la capa web.
 
 ---
 
