@@ -319,6 +319,7 @@ class ReceiptsCollection(BaseMongoCollection):
                     "docNumber": 1,
                     "total": 1,
                     "paymentMethod": 1,
+                    "bankReference": 1,
                     "clientInfo.name": 1,
                     "createdAt": 1,
                 }

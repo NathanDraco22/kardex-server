@@ -542,6 +542,7 @@ class InvoicesCollection(BaseMongoCollection):
                     "docNumber": 1,
                     "total": 1,
                     "paymentType": 1,
+                    "bankReference": 1,
                     "status": 1,
                     "clientInfo.name": 1,
                     "createdAt": 1,
