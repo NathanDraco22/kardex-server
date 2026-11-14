@@ -22,6 +22,7 @@ class BaseAppSetting(BaseModel):
     showInvoiceTotalInSecondaryCurrency: bool = False
     companyLogoUrl: str | None = None
     useShifts: bool = False
+    taxIdLabel: str = Field(default="RUC", min_length=1, max_length=32)
 
 
 class CreateAppSetting(BaseAppSetting):
@@ -45,6 +46,7 @@ class UpdateAppSetting(BaseModel):
     showInvoiceTotalInSecondaryCurrency: bool | None = None
     companyLogoUrl: str | None = None
     useShifts: bool | None = None
+    taxIdLabel: str | None = Field(default=None, min_length=1, max_length=32)
 
 
 class AppSettingInDb(BaseAppSetting):
