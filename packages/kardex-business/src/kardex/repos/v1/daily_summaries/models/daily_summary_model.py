@@ -16,6 +16,7 @@ class BaseDailySummary(BaseModel):
     totalInvoices: int = 0
     totalReceiptCash: int = 0
     totalReceiptDevolutions: int = 0
+    totalCashDevolutions: int = 0
     totalReceipts: int = 0
     receiptCount: int = 0
     branches: list[CommercialBranchDetail]
@@ -48,6 +49,8 @@ class BaseDailySummary(BaseModel):
             totalReceiptCash=self.totalReceiptCash + other.totalReceiptCash,
             totalReceiptDevolutions=self.totalReceiptDevolutions
             + other.totalReceiptDevolutions,
+            totalCashDevolutions=self.totalCashDevolutions
+            + other.totalCashDevolutions,
             totalReceipts=self.totalReceipts + other.totalReceipts,
             receiptCount=self.receiptCount + other.receiptCount,
         )

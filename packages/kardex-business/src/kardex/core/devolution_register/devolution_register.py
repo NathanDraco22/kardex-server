@@ -100,12 +100,21 @@ class DevolutionRegister:
             if client is None:
                 raise ClientNotFound("CLIENT_NOT_FOUND", client_id=doc.clientId)
 
-            if doc.originalInvoiceId:
-                invoice = await self.invoices_repo.get_invoice_by_id(doc.originalInvoiceId)
-                if invoice is not None and invoice.amountPaid > 0:
-                    raise InvalidOperation(
-                        "Invoice has payments, devolution is not allowed."
-                    )
+        if doc.originalInvoiceId:
+            invoice = await self.invoices_repo.get_invoice_by_id(doc.originalInvoiceId)
+            if invoice is None:
+                raise InvalidOperation(
+                    f"Original invoice {doc.originalInvoiceId} not found."
+                )
+            if invoice.status == "cancelled":
+                raise InvalidOperation(
+                    "Cannot create a devolution for a cancelled invoice."
+                )
+            if invoice.paymentType == "credit":
+                raise InvalidOperation(
+                    "Devolutions only apply to cash invoices. "
+                    "Use credit notes for credit invoices."
+                )
 
         product_ids = list(set(item.product.id for item in doc.returnedItems))
         products = await self.products_repo.get_product_by_ids(product_ids)

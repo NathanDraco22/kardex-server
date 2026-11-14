@@ -47,3 +47,9 @@ class DevolutionsDataSource:
     async def get_devolution_history(self, **kwargs) -> list[dict[str, Any]]:
         collection = DevolutionsCollection.get_instance()
         return await collection.fetch_history_devolutions(**kwargs)
+
+    async def get_confirmed_devolutions_total(
+        self, start_date: int, end_date: int
+    ) -> int:
+        collection = DevolutionsCollection.get_instance()
+        return await collection.fetch_confirmed_devolutions_total(start_date, end_date)

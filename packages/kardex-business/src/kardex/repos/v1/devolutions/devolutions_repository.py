@@ -115,3 +115,10 @@ class DevolutionsRepository:
         results = await self.devolutions_ds.get_devolution_history(**params_data)
         models = [DevolutionInDb.model_validate(result) for result in results]
         return models
+
+    async def get_confirmed_devolutions_total(
+        self, start_date: int, end_date: int
+    ) -> int:
+        return await self.devolutions_ds.get_confirmed_devolutions_total(
+            start_date, end_date
+        )
