@@ -781,3 +781,19 @@ Guardar como snapshot la imagen del producto en cada ítem de `AdjustmentRequest
 3. **Compatibilidad:** el campo es aditivo; creación, edición, aprobación y cancelación conservan el comportamiento actual.
 4. **Tests:** `test/test_adjustment_request_item_image.py` cubre serialización y compatibilidad con documentos antiguos.
 5. **Verificación:** `ruff check`, `ty check` y `pytest` OK. No hay migraciones de Mongo ni cambios de API obligatorios.
+
+## Fecha: 2026-11-13
+### Objetivo
+Convertir `kardex-server` a multi-tenant (database-per-tenant) con tenant obligatorio en toda la rama `lite-multi-tenant`, implementando las fases 0 a 4 de `MULTI_TENANT_LITE_BRANCH.md`.
+
+### Resumen de Implementacion
+1. **Contexto obligatorio:** `app_middleware/depends/multi_tenant.py` (renombrado desde `multi-tenant.py`) exige `X-Servin` o `x-tenant-nickname`, valida `^[a-z0-9][a-z0-9_-]{2,48}$`, rechaza `admin/local/config/kardexcontrol`, normaliza `.strip().lower()` y publica `kardexCtx` en request scope con `yield` + `reset`. Se cablea como dependencia de `router_v1`, por lo que `/api/v1/*` sin header responde 400 sin fallback.
+2. **Resolucion de DB:** `MongoService.get_collection` y `BaseMongoCollection._collection` resuelven solo por contexto o nickname explicito y lanzan `TenantContextMissingError` (mapeada a 500). Se elimino el uso de `DB_NAME` en runtime. `BaseMongoCollection` separa instancia por defecto (`nickname=""`) de instancias explicitas por tenant.
+3. **Auth:** login y `refresh-token` emiten el claim `tenant`; `auth_middleware` y `refresh_token` exigen que coincida con el header (403 `Tenant mismatch`), cerrando la colision del usuario `0001` entre tenants.
+4. **Caches por tenant:** `BranchesTool`, `UsersTool`, `AppSettingsTool`, `IntegrationTool` y `EtagTool` usan diccionarios keyed by nickname; `ensure_loaded()` en las tres primeras se invoca con `asyncio.gather` en el middleware. Sin precarga en el arranque.
+5. **Background tasks:** helper `run_with_tenant_context` aplicado a las 5 tareas de `entry_docs`, `transfers`, `adjust_entries`, `adjust_exits` y `adjustment_requests`.
+6. **Aprovisionamiento:** `kardex/core/tenant/provision_tenant.py` crea defaults idempotentes, propietario por `username` y `Meta` con estado intermedio; los indices se ejecutan en `BackgroundTasks` mediante `finalize_tenant_indexes`. `POST /core-settings` decodifica el super token, normaliza y compara el nickname, fija el contexto antes de leer y permite reparar aprovisionamientos incompletos. `PATCH` valida el path contra el claim y `DELETE` valida el dueno del registro.
+7. **Indices:** `mongo_indexes.py` expone `CURRENT_INDEX_VERSION`, `get_target_indexes_version()`, `create_tenant_indexes()` (30 colecciones en paralelo) y `ensure_indexes_for_tenant()` con regla `stored < target` (aplica), `==` (skip) y `>` (WARN sin tocar). Se agregaron `Receipts`, `Users` y `UserRoles` y se unificaron los 5 `create_index` en `create_indexes`.
+8. **Runner:** `kardex/core/tenant/migrate_tenants.py` con CLI en `tools/migrate_tenants.py` (`--indexes`, `--data`, `--tenant`, `--dry-run`); enumera DBs, exige `Meta.kind == "kardex-tenant"`, aplica versiones y migra `altCode` (antes `set_new_values` del arranque).
+9. **Arranque:** `app_lifespan.py` solo aplica las banderas Lite y `MongoService().init_client()`. Se elimino `app/core/scheduler/` y los reportes programados; `AppNotifier` conserva solo notificaciones disparadas por request.
+10. **Verificacion:** `ruff check` OK; `ty check` solo reporta 9 diagnosticos preexistentes en tests de notas de credito (dobles `SimpleNamespace`); `pytest` 67 passed / 9 skipped (integracion sin Mongo local). Commits por fase en `lite-multi-tenant`, sin push.

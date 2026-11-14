@@ -80,28 +80,28 @@ Para operaciones que tocan varias entidades (facturar, transferir, aprobar un aj
 kardex-server/
 ├── app/                                  # Capa web (FastAPI)
 │   ├── main.py                           # FastAPI app + CORS + router v1
-│   ├── app_lifespan.py                   # init_services + scheduler
+│   ├── app_lifespan.py                   # flags Lite + init_client
 │   ├── regis_exception_handlers.py       # KardexException -> HTTP
 │   ├── api/v1/<modulo>/                  # <modulo>_router.py + <modulo>_controller.py
 │   ├── responses/v1/list_response.py     # ListResponse[T]
 │   ├── params/pagination_params.py
-│   ├── app_middleware/depends/           # auth, api-key, tenant, cache headers
-│   ├── core/scheduler/                   # tareas programadas + recordatorios
-│   ├── core/app_notifier/
-│   ├── core/services_initializer.py      # datos semilla al arrancar
+│   ├── app_middleware/depends/           # tenant, auth, api-key, cache headers
+│   ├── core/app_notifier/                # notificaciones Telegram por request
 │   ├── services/                         # excel_service, telgram_service
 │   └── repos/v1/                         # VACÍO (residuo de plantilla; no usar)
 ├── packages/kardex-business/src/kardex/  # Dominio puro (sin FastAPI)
 │   ├── repos/v1/<entidad>/               # repository + data/ + models/
 │   ├── repos/v1/common/                  # filter_params y modelos compartidos
 │   ├── core/<proceso>/                   # procesos de negocio atómicos
+│   ├── core/tenant/                      # provision_tenant + runner de migraciones
 │   ├── services/mongo_collections/v1/    # una colección por archivo
 │   ├── services/mongo_indexes.py
-│   ├── tools/                            # TimeTools, UuidTool, EtagTool, etc.
+│   ├── tools/                            # TimeTools, UuidTool, EtagTool, tenant_context
 │   ├── lite/core/                        # variantes de la edición Lite
 │   └── kardex_config.py                  # KardexConfig + kardexCtx
 ├── test/                                 # pytest
 ├── wiki/                                 # documentación
+├── tools/migrate_tenants.py              # CLI del runner de migraciones
 ├── app/config/onion-config.toml          # registro de colecciones
 └── Dockerfile
 ```
@@ -111,6 +111,8 @@ kardex-server/
 ---
 
 ## 6. Multi-tenant y contexto de sucursal
+
+El servidor es **database-per-tenant**: cada negocio tiene su propia base de datos en el mismo cluster MongoDB. El nombre de la base es el **nickname** del tenant.
 
 Cada request publica un contexto en un `ContextVar`:
 
@@ -123,14 +125,22 @@ class KardexContext:
 kardexCtx = contextvars.ContextVar("kardexCtx", default=KardexContext())
 ```
 
-| Header | Significado |
-| :--- | :--- |
-| `X-Servin` | Identificador de la sucursal activa |
-| `x-tenant-nickname` | Alias del negocio/tenant |
+| Header | Significado | Ejemplo |
+| :--- | :--- | :--- |
+| `X-Servin` (o `x-tenant-nickname`) | **Tenant**: nickname del negocio; también es el nombre de la base de datos | `tienda-a` |
+| `X-Branch` (o `x-branch-id`) | Sucursal activa dentro del tenant | `ORIGIN_BRANCH` |
 
-Los repositorios y procesos leen `kardexCtx` para saber sobre qué sucursal operar. **No hardcodees `branchId`**: usa el header o el parámetro del endpoint.
+Reglas:
 
-El detalle de guards y routers protegidos está en [`security.md`](./security.md).
+1. **El tenant es obligatorio.** `multi_tenant_middleware` se declara como dependencia de `router_v1`, así que toda ruta `/api/v1/*` sin `X-Servin` responde **400** `Missing required tenant header ('X-Servin' or 'x-tenant-nickname')`. No hay fallback a `DB_NAME`.
+2. El nickname se normaliza con `.strip().lower()` en el middleware, `CoreSettings`, paths, `Meta` y runners. Patrón: `^[a-z0-9][a-z0-9_-]{2,48}$`; reservados: `admin`, `local`, `config`, `kardexcontrol`.
+3. `MongoService.get_collection` y `BaseMongoCollection._collection` resuelven la base por `kardexCtx` o por un nickname explícito. Sin tenant se lanza `TenantContextMissingError` (500): el acceso nunca cae en una base fija.
+4. El JWT lleva el claim `tenant`; `auth_middleware` y `refresh-token` exigen que coincida con el header (403 `Tenant mismatch`).
+5. Las cachés (`BranchesTool`, `UsersTool`, `AppSettingsTool`, `IntegrationTool`, `EtagTool`) son diccionarios por nickname. `BranchesTool`, `UsersTool` y `EtagTool` se cargan con `ensure_loaded()` en el middleware; no hay precarga en el arranque.
+6. Las tareas de fondo que tocan Mongo usan `run_with_tenant_context(nickname, fn, ...)`.
+7. Cada base de tenant tiene una colección **`Meta`** (`_id: "tenant"`, `kind: "kardex-tenant"`, `indexesVersion`, `isProvisioned`) que versiona índices y permite reparar aprovisionamientos. No se consulta por request.
+
+**No hardcodees `branchId`**: usa `X-Branch` o el parámetro del endpoint. El detalle de guards y routers protegidos está en [`security.md`](./security.md); el aprovisionamiento y el runner, en [`operations.md`](./operations.md).
 
 ---
 
@@ -188,10 +198,12 @@ Detalle completo: [`modules/credit_notes.md`](./modules/credit_notes.md).
 
 `POST /imports/preview` valida el archivo y devuelve totales/errores **sin escribir**. Luego `POST /imports/{init-inventory|inventory|clients|suppliers}` ejecuta la carga. El inventario inicial usa la sucursal virtual `0000-<branchId>`.
 
-### 7.8 Scheduler y datos semilla
+### 7.8 Arranque y aprovisionamiento
 
-- `app/core/scheduler/app_scheduler.py` ejecuta recordatorios y reporte diario. **No arranca cuando `MODE=DEV`**.
-- `app/core/services_initializer.py` crea roles, categorías de gasto, escalas, integración, app settings y usuario root al iniciar.
+- `app/app_lifespan.py` solo aplica las banderas de Lite y abre el cliente Mongo (`MongoService().init_client()`). **No** crea índices ni datos semilla: eso es por tenant.
+- Un tenant nuevo se crea con `POST /api/v1/core-settings` (super token Ed25519): escribe `CoreSettings`, ejecuta `provision_tenant` (defaults idempotentes + propietario por `username`) y deja los índices en `BackgroundTasks`.
+- `provision_tenant` escribe `Meta` dos veces (`isProvisioned: false`/`indexesVersion: 0` y luego `true`/`CURRENT_INDEX_VERSION`). El runner `tools/migrate_tenants.py` detecta y repara tenants incompletos.
+- Los reportes programados (diario/ejecutivo) y el scheduler **ya no existen**. `DailySummaries` y `ExecutiveSummaries` quedan en solo lectura.
 
 ---
 

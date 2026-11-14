@@ -10,10 +10,10 @@ Ubicación: `app/app_middleware/depends/`.
 
 | Guard | Archivo | Qué valida | Uso |
 | :--- | :--- | :--- | :--- |
-| `auth_middleware` | `auth_middleware.py` | `Authorization: Bearer <JWT>`, token válido y usuario no inactivo. | Estándar de la mayoría de routers. |
+| `multi_tenant_middleware` | `multi_tenant.py` | Header de tenant obligatorio, patrón y reservados; publica `KardexContext`. | Dependencia global de `router_v1`. |
+| `auth_middleware` | `auth_middleware.py` | `Authorization: Bearer <JWT>`, token válido, claim `tenant` == header y usuario no inactivo. | Estándar de la mayoría de routers. |
 | `api_key_middleware` | `api_key_middleware.py` | API Key para integraciones externas. | `/bi` (Power BI). |
-| `validate_super_token` | `multi-tenant.py` y dependencia de core | Token de superusuario/plataforma. | `/core-settings`. |
-| `multi_tenant_middleware` | `multi-tenant.py` | Publica el `KardexContext` del request. | Contexto de tenant/sucursal. |
+| `validate_super_token` | dependencia de `core_settings` | Token de superusuario/plataforma (Ed25519). | `/core-settings`. |
 
 Se montan a nivel de router:
 
@@ -54,7 +54,7 @@ sequenceDiagram
 
 ## 3. Multi-tenant y sucursal
 
-El contexto viaja en headers y se guarda en un `ContextVar`:
+El servidor es **database-per-tenant**. El contexto viaja en headers y se guarda en un `ContextVar`:
 
 ```python
 @dataclass
@@ -67,15 +67,18 @@ kardexCtx = contextvars.ContextVar("kardexCtx", default=KardexContext())
 
 | Header | Significado | Ejemplo |
 | :--- | :--- | :--- |
-| `X-Servin` | Sucursal activa | `branch-001` |
-| `x-tenant-nickname` | Alias del negocio/tenant | `mi-negocio` |
+| `X-Servin` (o `x-tenant-nickname`) | **Tenant**: nombre de la base de datos | `tienda-a` |
+| `X-Branch` (o `x-branch-id`) | Sucursal activa | `ORIGIN_BRANCH` |
 
 Reglas:
 
-1. No hardcodees `branchId` en repos ni procesos.
-2. Respeta el header o el path/query param del endpoint.
-3. Los procesos de `kardex/core/` leen `kardexCtx` para resolver la sucursal.
-4. Si agregas un endpoint que opera por sucursal, declara el parámetro explícitamente.
+1. **Sin header de tenant, toda ruta `/api/v1` responde 400.** No hay fallback a `DB_NAME`.
+2. El nickname se normaliza con `.strip().lower()`; patrón `^[a-z0-9][a-z0-9_-]{2,48}$` y reservados `admin/local/config/kardexcontrol`.
+3. No hardcodees `branchId` en repos ni procesos.
+4. Los procesos de `kardex/core/` leen `kardexCtx` para resolver la base y la sucursal.
+5. El JWT lleva el claim `tenant`; `auth_middleware` y `refresh-token` lo comparan con el header y responden 403 si no coincide.
+6. Las tareas de fondo usan `run_with_tenant_context(nickname, fn, ...)`.
+7. Clientes externos con `X-API-KEY` también deben enviar `X-Servin`.
 
 ---
 
@@ -130,7 +133,7 @@ Checklist:
 ## 6. Notas específicas
 
 - **BI (`/bi`):** se autentica con API Key porque lo consume Power BI, no un usuario de la app.
-- **Core settings (`/core-settings`):** exige super-token; es configuración de plataforma, no de negocio.
+- **Core settings (`/core-settings`):** exige super-token Ed25519. `POST` valida `body.nickname` contra el claim y aprovisiona el tenant; `PATCH` exige `path == claim.nickname`; `DELETE` valida el dueño del registro.
 - **CORS:** `app/main.py` permite `allow_origins=["*"]`. Si el despliegue lo requiere, restringir antes de producción.
 - **OpenAPI:** se oculta con `MODE=PROD` (`openapi_url=None`).
 - **Usuarios inactivos:** `auth_middleware` consulta `UsersTool` y rechaza usuarios desactivados.

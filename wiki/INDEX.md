@@ -12,9 +12,9 @@ Punto de entrada de la wiki del backend. **Lee esto antes de explorar el código
 
 | Dato | Valor |
 | :--- | :--- |
-| Rama de trabajo | `main` |
+| Rama de trabajo | `lite-multi-tenant` |
 | Entrada HTTP | `app/main.py` → prefijo global `/api/v1` |
-| Base de datos | MongoDB, base `LedgerDB` (env `DB_NAME`) |
+| Base de datos | MongoDB, **una base por tenant** (`X-Servin`); metadata técnica en `Meta` |
 | Modo dual | `LITE_MODE` (reglas de inventario/facturación distintas) |
 | Paquete de dominio | `packages/kardex-business/src/kardex/` |
 
@@ -26,8 +26,8 @@ Punto de entrada de la wiki del backend. **Lee esto antes de explorar el código
 | :--- | :--- |
 | `app/` | Capa web FastAPI (delgada). Routers, controllers, middleware, scheduler y servicios externos. |
 | `app/api/v1/` | Un subdirectorio por módulo: `<modulo>_router.py` + `<modulo>_controller.py`. |
-| `app/app_middleware/depends/` | Guards: JWT, API Key, super-token y contexto de tenant. |
-| `app/core/` | Scheduler, recordatorios, notificador y arranque de servicios. |
+| `app/app_middleware/depends/` | Guards: tenant obligatorio, JWT, API Key, super-token y contexto. |
+| `app/core/` | Notificador y arranque de servicios. |
 | `app/services/` | Servicios locales: generación de Excel y Telegram. |
 | `app/responses/v1/` | `ListResponse[T]` compartido. |
 | `app/params/` | Parámetros de paginación. |
@@ -61,8 +61,8 @@ Punto de entrada de la wiki del backend. **Lee esto antes de explorar el código
 | Auth, API keys o tenant | `app/app_middleware/depends/` |
 | Excepciones de negocio | `kardex/tools/kardex_exceptions.py` |
 | Mapeo de excepción a HTTP | `app/regis_exception_handlers.py` |
-| Tareas programadas | `app/core/scheduler/` |
-| Datos semilla al arrancar | `app/core/services_initializer.py` |
+| Tareas programadas | *(eliminadas; usa el runner `tools/migrate_tenants.py`)* |
+| Datos semilla / aprovisionamiento | `kardex/core/tenant/provision_tenant.py` |
 | Banderas de negocio | `kardex/kardex_config.py` |
 | Tests | `test/` |
 | Configuración de entorno | `../AGENTS.md` y [`operations.md`](./operations.md) |
@@ -145,7 +145,8 @@ Punto de entrada de la wiki del backend. **Lee esto antes de explorar el código
 | `test/test_demo.py` está vacío (0 bytes). | No lo tomes como suite de referencia. |
 | `expiration_logs_collection.py` declara `collection_name = "ExpirationLog"` y `onion-config.toml` registra `ExpirationLogs`. | Verifica el nombre antes de consultar esa colección directamente. |
 | 14 routers no declaran guard a nivel de router. | Revisa [`security.md`](./security.md) antes de asumir que un endpoint es público. |
-| El scheduler no corre con `MODE=DEV`. | Tareas programadas y recordatorios no se ejecutan en local. |
+| El tenant es obligatorio en `/api/v1`. | Sin `X-Servin`/`x-tenant-nickname` la respuesta es 400; no hay fallback a `DB_NAME`. |
+| El scheduler fue eliminado. | `DailySummaries`/`ExecutiveSummaries` quedan en solo lectura. |
 
 ---
 
