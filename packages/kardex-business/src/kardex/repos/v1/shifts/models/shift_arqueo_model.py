@@ -12,6 +12,7 @@ class ShiftArqueoDocument(BaseModel):
     docNumber: str
     amount: int
     paymentMethod: str | None = None
+    bankReference: str | None = None
     status: str | None = None
     type: str | None = None
     clientName: str | None = None

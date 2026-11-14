@@ -57,11 +57,18 @@ def _to_arqueo_document(
     if collection in (COLLECTION_DEVOLUTIONS, COLLECTION_CREDIT_NOTES):
         reference_doc_number = row.get("originalInvoiceDocNumber")
 
+    bank_reference = (
+        row.get("bankReference")
+        if collection in (COLLECTION_INVOICES, COLLECTION_RECEIPTS)
+        else None
+    )
+
     return ShiftArqueoDocument(
         id=str(row.get("id") or ""),
         docNumber=str(row.get("docNumber") or ""),
         amount=_as_int(row.get(amount_key)),
         paymentMethod=_payment_method(collection, row),
+        bankReference=bank_reference,
         status=row.get("status"),
         type=row.get("type") if collection == COLLECTION_CREDIT_NOTES else None,
         clientName=client_info.get("name"),
