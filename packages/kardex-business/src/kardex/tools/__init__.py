@@ -19,6 +19,7 @@ from .kardex_exceptions import (
     MongoMigrationException,
     TenantContextMissingError,
     InvalidTenantNickname,
+    TenantIndexBuildError,
 )
 from .branches_tool import BranchesTool
 from .tenant_context import (
@@ -52,6 +53,7 @@ __all__ = [
     "MongoMigrationException",
     "TenantContextMissingError",
     "InvalidTenantNickname",
+    "TenantIndexBuildError",
     "TENANT_NICKNAME_PATTERN",
     "RESERVED_TENANT_NICKNAMES",
     "normalize_nickname",

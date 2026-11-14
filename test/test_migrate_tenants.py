@@ -49,7 +49,14 @@ async def _service() -> MongoService:
 
 async def _drop_databases() -> None:
     service = await _service()
-    for name in (TENANT, FOREIGN, LEGACY, UPPER_LEGACY, DUPLICATE):
+    for name in (
+        TENANT,
+        FOREIGN,
+        LEGACY,
+        UPPER_LEGACY,
+        DUPLICATE,
+        "mt_test_without_meta",
+    ):
         await service.client.drop_database(name)
 
 
@@ -283,10 +290,15 @@ async def test_adopt_writes_intermediate_meta_until_indexes_run():
         await adopt_tenant(service.client, LEGACY)
 
         meta = await MetaCollection.get_instance(LEGACY).read_tenant_meta()
+        document = await service.client[LEGACY]["CoreSettings"].find_one(
+            {"_id": "cs-1"}
+        )
 
         assert meta is not None
         assert meta["isProvisioned"] is False
         assert meta["indexesVersion"] == 0
+        assert document is not None
+        assert document["nickname"] == LEGACY
 
         action = await ensure_indexes_for_tenant(LEGACY)
 
@@ -313,5 +325,75 @@ async def test_core_settings_unique_index_blocks_duplicates():
 
         with pytest.raises(DuplicateKeyError):
             await collection.insert_one({"nickname": DUPLICATE, "id": "cs-2"})
+    finally:
+        await _drop_databases()
+
+
+@pytest.mark.asyncio
+async def test_ensure_indexes_updates_from_version_one_to_two():
+    await _drop_databases()
+
+    try:
+        await write_tenant_meta_document(TENANT, True, 1)
+
+        action = await ensure_indexes_for_tenant(TENANT)
+
+        meta = await MetaCollection.get_instance(TENANT).read_tenant_meta()
+
+        assert action == "updated"
+        assert meta is not None
+        assert meta["indexesVersion"] == get_target_indexes_version()
+        assert meta["indexesVersion"] >= 2
+    finally:
+        await _drop_databases()
+
+
+@pytest.mark.asyncio
+async def test_adopt_deduplicates_core_settings_keeping_oldest():
+    await _drop_databases()
+
+    try:
+        service = await _service()
+        collection = service.client[LEGACY]["CoreSettings"]
+        await collection.insert_one(
+            {"_id": "cs-old", "id": "cs-old", "nickname": "  TiendaLegacy ", "createdAt": 1}
+        )
+        await collection.insert_one(
+            {"_id": "cs-new", "id": "cs-new", "nickname": "Otra", "createdAt": 2}
+        )
+
+        removed = await adopt_tenant(service.client, LEGACY)
+
+        documents = await collection.find({}).to_list(length=None)
+
+        assert removed == ["cs-new"]
+        assert [document["_id"] for document in documents] == ["cs-old"]
+        assert documents[0]["nickname"] == LEGACY
+        # El indice unico ya se puede construir.
+        assert await ensure_indexes_for_tenant(LEGACY) == "updated"
+    finally:
+        await _drop_databases()
+
+
+@pytest.mark.asyncio
+async def test_adopt_dry_run_reports_duplicates_without_deleting():
+    await _drop_databases()
+
+    try:
+        service = await _service()
+        collection = service.client[LEGACY]["CoreSettings"]
+        await collection.insert_one(
+            {"_id": "cs-old", "id": "cs-old", "nickname": LEGACY, "createdAt": 1}
+        )
+        await collection.insert_one(
+            {"_id": "cs-new", "id": "cs-new", "nickname": LEGACY, "createdAt": 2}
+        )
+
+        removed = await adopt_tenant(service.client, LEGACY, dry_run=True)
+
+        documents = await collection.find({}).to_list(length=None)
+
+        assert removed == ["cs-new"]
+        assert len(documents) == 2
     finally:
         await _drop_databases()

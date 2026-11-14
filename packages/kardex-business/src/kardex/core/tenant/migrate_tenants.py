@@ -35,7 +35,11 @@ from kardex.services.mongo_indexes import (
     ensure_indexes_for_tenant,
     get_target_indexes_version,
 )
-from kardex.tools import is_valid_tenant_nickname, normalize_nickname
+from kardex.tools import (
+    TenantIndexBuildError,
+    is_valid_tenant_nickname,
+    normalize_nickname,
+)
 
 SYSTEM_DATABASES = {"admin", "local", "config"}
 
@@ -134,28 +138,71 @@ async def list_adoptable_databases(
     return sorted(candidates)
 
 
+async def deduplicate_core_settings(
+    client: AsyncMongoClient[dict[str, Any]],
+    nickname: str,
+    dry_run: bool,
+) -> list[str]:
+    """Conserva el ``CoreSettings`` mas antiguo y elimina el resto.
+
+    El indice unico de ``CoreSettings.nickname`` falla si una base legacy tiene
+    mas de un documento (o si colisionan al normalizar el nickname). La
+    adopcion unifica todos al nickname de la base, asi que solo puede quedar
+    uno.
+    """
+
+    collection = client[nickname][CORE_SETTINGS_COLLECTION]
+    documents = await collection.find({}).sort(
+        [("createdAt", 1), ("_id", 1)]
+    ).to_list(length=None)
+
+    if len(documents) <= 1:
+        return []
+
+    keeper = documents[0]
+    duplicates = documents[1:]
+    duplicate_ids = [str(document["_id"]) for document in duplicates]
+    label = "se eliminarian" if dry_run else "eliminados"
+
+    print(
+        f"  CoreSettings duplicados ({label}): {duplicate_ids}; "
+        f"se conserva {keeper['_id']!r}"
+    )
+
+    if not dry_run:
+        await collection.delete_many(
+            {"_id": {"$in": [document["_id"] for document in duplicates]}}
+        )
+
+    return duplicate_ids
+
+
 async def adopt_tenant(
     client: AsyncMongoClient[dict[str, Any]],
     nickname: str,
-) -> None:
-    """Escribe ``Meta`` y normaliza nicknames en una base legacy.
+    dry_run: bool = False,
+) -> list[str]:
+    """Escribe ``Meta`` y alinea nicknames en una base legacy.
 
     No renombra la base fisica: si el nombre no esta normalizado lanza
     ``AdoptTenantError`` para que se renombre con mongodump/mongorestore.
+    Devuelve los ids de ``CoreSettings`` duplicados detectados.
     """
 
     normalized = validate_adoptable_nickname(nickname)
+    collection = client[nickname][CORE_SETTINGS_COLLECTION]
 
-    core_settings = client[nickname][CORE_SETTINGS_COLLECTION]
-    cursor = core_settings.find({})
-    async for document in cursor:
-        current = document.get("nickname")
-        normalized_current = normalize_nickname(current)
-        if current != normalized_current:
-            await core_settings.update_one(
-                {"_id": document["_id"]},
-                {"$set": {"nickname": normalized_current}},
-            )
+    removed_ids = await deduplicate_core_settings(client, nickname, dry_run)
+
+    if dry_run:
+        return removed_ids
+
+    # El nickname guardado debe ser siempre el de la base (el que resuelve el
+    # header normalizado y por el que filtra PATCH), no el valor viejo.
+    await collection.update_many(
+        {"nickname": {"$ne": normalized}},
+        {"$set": {"nickname": normalized}},
+    )
 
     # Meta nace incompleta: ``ensure_indexes_for_tenant`` la cerrara con
     # isProvisioned=True e indexesVersion=target. Si el proceso muere a mitad,
@@ -168,6 +215,8 @@ async def adopt_tenant(
             indexes_version=0,
         )
     )
+
+    return removed_ids
 
 
 async def migrate_alt_code(nickname: str, dry_run: bool) -> int:
@@ -207,6 +256,7 @@ async def run(args: argparse.Namespace) -> int:
     summary = {
         "reviewed": 0,
         "adopted": 0,
+        "deduped": 0,
         "updated": 0,
         "skipped": 0,
         "failed": 0,
@@ -244,12 +294,16 @@ async def run(args: argparse.Namespace) -> int:
                     continue
 
                 if args.dry_run:
+                    removed_ids = await adopt_tenant(
+                        client, nickname, dry_run=True
+                    )
+                    summary["deduped"] += len(removed_ids)
                     print(f"tenant={nickname} adopt: would-adopt")
                     adoptable.append(nickname)
                     continue
 
                 try:
-                    await adopt_tenant(client, nickname)
+                    removed_ids = await adopt_tenant(client, nickname)
                 except PyMongoError as error:
                     summary["failed"] += 1
                     print(
@@ -259,6 +313,7 @@ async def run(args: argparse.Namespace) -> int:
                     continue
 
                 summary["adopted"] += 1
+                summary["deduped"] += len(removed_ids)
                 print(f"tenant={nickname} adopt: adopted")
                 adoptable.append(nickname)
 
@@ -283,6 +338,14 @@ async def run(args: argparse.Namespace) -> int:
             )
 
             try:
+                if run_data:
+                    # Deduplicar antes de construir indices: el unico de
+                    # CoreSettings.nickname fallaria con datos legacy repetidos.
+                    removed_ids = await deduplicate_core_settings(
+                        client, nickname, args.dry_run
+                    )
+                    summary["deduped"] += len(removed_ids)
+
                 if run_indexes:
                     if args.dry_run:
                         if stored < target_version:
@@ -308,7 +371,7 @@ async def run(args: argparse.Namespace) -> int:
                     summary["altCode"] += modified
                     label = "altCode pendientes" if args.dry_run else "altCode migrados"
                     print(f"  {label}: {modified}")
-            except PyMongoError as error:
+            except (PyMongoError, TenantIndexBuildError) as error:
                 summary["failed"] += 1
                 print(f"  ERROR tenant={nickname}: {error}", file=sys.stderr)
     finally:
@@ -320,6 +383,7 @@ async def run(args: argparse.Namespace) -> int:
     print("Resumen:")
     print(f"  tenants revisados : {summary['reviewed']}")
     print(f"  adoptados         : {summary['adopted']}")
+    print(f"  CoreSettings dedup: {summary['deduped']}")
     print(f"  actualizados      : {summary['updated']}")
     print(f"  omitidos          : {summary['skipped']}")
     print(f"  fallidos          : {summary['failed']}")

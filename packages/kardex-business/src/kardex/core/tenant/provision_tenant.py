@@ -5,6 +5,8 @@ propietario se verifica por ``username`` (``create_user`` incrementa
 ``Counters``; un reintento por ``id`` generaria ``0002``).
 """
 
+from pymongo.errors import DuplicateKeyError
+
 from kardex.kardex_config import KardexContext, kardexCtx
 from kardex.core.default_values import (
     create_default_app_settings,
@@ -92,14 +94,23 @@ async def _create_owner_if_absent(owner_name: str) -> None:
     if existing is not None:
         return
 
-    await users_repo.create_user(
-        CreateUser(
-            username=owner_name,
-            password="12345",
-            role="Admin",
-            branches=[ORIGIN_BRANCH_ID],
+    try:
+        await users_repo.create_user(
+            CreateUser(
+                username=owner_name,
+                password="12345",
+                role="Admin",
+                branches=[ORIGIN_BRANCH_ID],
+            )
         )
-    )
+    except DuplicateKeyError:
+        # Dos POST concurrentes del mismo tenant: el indice unico de
+        # ``username`` gano la carrera. El id consumido en Counters queda como
+        # hueco (inofensivo); lo importante es no fallar el aprovisionamiento.
+        existing = await users_repo.get_user_by_username(owner_name)
+
+        if existing is None:
+            raise
 
 
 async def finalize_tenant_indexes(nickname: str) -> None:

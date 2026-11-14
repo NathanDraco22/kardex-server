@@ -826,3 +826,16 @@ Cerrar el Alto y los Medios/Bajos de la re-auditoria: cliente compartido del run
 7. **R8 concurrencia:** `CoreSettingsCollection.create_indexes` con indice unico en `nickname` (31 colecciones indexadas); el controller asegura el indice antes del insert y traduce `DuplicateKeyError` a idempotencia. Test unitario de la carrera y test de integracion del indice.
 8. **R9/R10:** `README_ES.md` y `wiki/architecture.md` corregidos; riesgo conocido de `verify_exp=False` documentado en `wiki/security.md`.
 9. **Verificacion:** `ruff` y `ty` en 0; `pytest` 123 passed / 15 skipped (integracion sin Mongo). Commit nuevo en `lite-multi-tenant`, sin push.
+
+## Fecha: 2026-11-14 (Cierre de migracion legacy)
+### Objetivo
+Cerrar las condiciones de migracion legacy previas a produccion: nickname canonico en CoreSettings adoptado, version de indices 2 con la coleccion 31, deduplicacion segura antes del indice unico y carrera del propietario.
+
+### Resumen de Implementacion
+1. **R4-a:** `adopt_tenant` escribe siempre el nickname validado de la base fisica en todos los `CoreSettings` (no el valor viejo normalizado). Tras adoptar `mt_test_legacy`, el documento queda `mt_test_legacy`.
+2. **R8-a:** `CURRENT_INDEX_VERSION = 2`. La version 2 agrega `CoreSettingsCollection` (31 colecciones) con indice unico en `nickname`; un tenant en version 1 pasa de `skipped` a `updated`.
+3. **R8-b:** `deduplicate_core_settings` conserva el `CoreSettings` con menor `createdAt` (tie-break por `_id`), elimina el resto y loguea los ids; en `--dry-run` solo reporta. El runner deduplica antes de construir indices y `ensure_indexes_for_tenant` traduce `OperationFailure`/`DuplicateKeyError` a `TenantIndexBuildError`, marcando el tenant como fallido y continuando.
+4. **R8-c:** la creacion del propietario captura `DuplicateKeyError`, reconsulta por `username` y continua si ya existe; si no, relanza.
+5. **Correccion de contrato:** el `DELETE /api/v1/core-settings/{id}` usa el header `X-Content-Token` (no query string). Ya estaba implementado en la ronda anterior; se deja explicito aqui junto con el conteo de **31 colecciones**.
+6. **Higiene:** `mt_test_without_meta` se limpia en `_drop_databases()`; tests nuevos de R4-a, R8-a, R8-b y R8-c.
+7. **Verificacion:** `ruff` y `ty` en 0; `pytest` 128 passed / 18 skipped (integracion sin Mongo). Commit nuevo en `lite-multi-tenant`, sin push.

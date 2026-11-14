@@ -180,7 +180,7 @@ mongorestore --uri="$MONGO_URL" --nsFrom="TiendaLegacy.*" --nsTo="tiendalegacy.*
 
 También ejecuta el backfill de `Products.altCode` (antes `set_new_values` en el arranque).
 
-> `CURRENT_INDEX_VERSION` se sube en el mismo PR que cambia una definición de índice. `INDEXES_VERSION` es solo un override de emergencia.
+> `CURRENT_INDEX_VERSION` (hoy **2**: 31 colecciones, incluida `CoreSettings` con índice único en `nickname`) se sube en el mismo PR que cambia una definición de índice. `INDEXES_VERSION` es solo un override de emergencia.
 
 ### Scheduler
 

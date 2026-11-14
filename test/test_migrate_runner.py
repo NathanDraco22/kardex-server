@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
-from pymongo.errors import PyMongoError
+from pymongo.errors import OperationFailure, PyMongoError
 
 SERVER_ROOT = Path(__file__).resolve().parents[1]
 if str(SERVER_ROOT) not in sys.path:
@@ -14,7 +14,9 @@ from kardex.core.tenant.migrate_tenants import (
     AdoptTenantError,
     validate_adoptable_nickname,
 )
-from kardex.services import MongoService
+from kardex.services import MongoService, mongo_indexes
+from kardex.services.mongo_collections.v1 import MetaCollection
+from kardex.tools import TenantIndexBuildError
 
 
 class _FakeClient:
@@ -175,3 +177,28 @@ def test_validate_adoptable_nickname_rejects_uppercase_database_name():
         validate_adoptable_nickname("TiendaLegacy")
 
     assert "mongorestore" in str(exc.value)
+
+
+def test_current_index_version_covers_core_settings_index():
+    assert mongo_indexes.CURRENT_INDEX_VERSION == 2
+
+
+@pytest.mark.asyncio
+async def test_ensure_indexes_reports_index_build_errors(monkeypatch, capsys):
+    async def fake_read_meta(self) -> dict:
+        return {"isProvisioned": True, "indexesVersion": 1}
+
+    async def fake_create_indexes(nickname: str) -> None:
+        raise OperationFailure("E11000 duplicate key error")
+
+    monkeypatch.setattr(MetaCollection, "read_tenant_meta", fake_read_meta)
+    monkeypatch.setattr(
+        mongo_indexes, "create_tenant_indexes", fake_create_indexes
+    )
+
+    with pytest.raises(TenantIndexBuildError) as exc:
+        await mongo_indexes.ensure_indexes_for_tenant("tienda-a")
+
+    assert exc.value.nickname == "tienda-a"
+    assert "CoreSettings" in str(exc.value)
+    assert capsys.readouterr().err == ""
