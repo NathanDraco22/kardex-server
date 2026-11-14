@@ -3,9 +3,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from core.services_initializer import init_services
 from core.scheduler.app_scheduler import AppScheduler
 from kardex.kardex_config import KardexConfig
+from kardex.services import MongoService
 
 
 @asynccontextmanager
@@ -26,7 +26,10 @@ async def lifespan(app: FastAPI):
         let_negative_value = let_negative.lower() == "true"
         KardexConfig().letInvoiceWithNegative = let_negative_value
 
-    await init_services()
+    # Solo el cliente Mongo: indices y datos semilla son por tenant y se
+    # aprovisionan con ``provision_tenant`` / ``migrate_tenants``.
+    await MongoService().init_client()
+
     if os.getenv("MODE") != "DEV":
         await AppScheduler().start_task()
     yield

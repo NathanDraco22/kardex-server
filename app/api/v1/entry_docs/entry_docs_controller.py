@@ -2,6 +2,8 @@ from fastapi import HTTPException, status, BackgroundTasks
 
 from responses.v1.list_response import ListResponse
 from kardex.core.product_ledger.product_ledger_manager import ProductLedgerManager
+from kardex.kardex_config import kardexCtx
+from kardex.tools import run_with_tenant_context
 from kardex.repos.v1.common.filter_params import EntryDocFilterParams
 from kardex.repos.v1.expiration_logs import (
     ExpirationLogsRepository,
@@ -74,14 +76,24 @@ class EntryDocsController:
         self, body: CreateEntryDoc, bg_tasks: BackgroundTasks
     ) -> EntryDocInDb:
         entry_doc = await self.product_ledger_manager.regis_entry_doc(body)
-        bg_tasks.add_task(self._create_expiration_logs, entry_doc)
+        bg_tasks.add_task(
+            run_with_tenant_context,
+            kardexCtx.get().businessNickname,
+            self._create_expiration_logs,
+            entry_doc,
+        )
         return entry_doc
 
     async def create_entry_doc_direct(
         self, body: CreateEntryDoc, bg_tasks: BackgroundTasks
     ) -> EntryDocInDb:
         entry_doc = await self.product_ledger_manager.regis_entry_doc_direct(body)
-        bg_tasks.add_task(self._create_expiration_logs, entry_doc)
+        bg_tasks.add_task(
+            run_with_tenant_context,
+            kardexCtx.get().businessNickname,
+            self._create_expiration_logs,
+            entry_doc,
+        )
         return entry_doc
 
     async def get_all_entry_docs(self) -> list[EntryDocInDb]:

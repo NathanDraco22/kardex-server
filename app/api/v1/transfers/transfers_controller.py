@@ -1,6 +1,8 @@
 from fastapi import HTTPException, status, BackgroundTasks
 
 from kardex.core.transfer_manager.transfer_manager import TransferManager
+from kardex.kardex_config import kardexCtx
+from kardex.tools import run_with_tenant_context
 
 from responses.v1 import ListResponse
 from kardex.repos.v1.transfers import (
@@ -99,7 +101,12 @@ class TransfersController:
             transfer_id, intent
         )
 
-        bg_tasks.add_task(self._regis_log, transfer)
+        bg_tasks.add_task(
+            run_with_tenant_context,
+            kardexCtx.get().businessNickname,
+            self._regis_log,
+            transfer,
+        )
 
         return transfer
 

@@ -1,15 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, Iterable, List
+from typing import Any, Iterable
 
 from kardex.repos.v1.credit_notes import CreateCreditNote, CreditNoteInDb
 from kardex.repos.v1.invoices import InvoiceInDb
-from kardex.repos.v1.product_accounts import ProductAccountInDb
-from kardex.repos.v1.product_transactions import ProductTransactionInDb
 from kardex.services.mongo_collections.v1 import (
     CreditNotesCollection,
     InvoicesCollection,
-    ProductAccountsCollection,
-    ProductTransactionsCollection,
 )
 from kardex.core.counter_manager.counter_manager import CounterManager
 from kardex.tools import InvalidOperation, UuidTool, TimeTools

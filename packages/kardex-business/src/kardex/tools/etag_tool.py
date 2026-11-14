@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from kardex.kardex_config import kardexCtx
+from kardex.tools.kardex_exceptions import TenantContextMissingError
 
 
 @dataclass
@@ -9,6 +11,12 @@ class Etag:
 
 
 class EtagTool:
+    """ETags en memoria, aislados por tenant.
+
+    ``_tags[nickname][key]``. Los getters siguen siendo sincronos; la primera
+    carga del tenant la garantiza ``ensure_loaded()`` desde el middleware.
+    """
+
     _instance: "EtagTool|None" = None
 
     def __new__(cls):
@@ -16,27 +24,53 @@ class EtagTool:
             cls._instance = super(cls, cls).__new__(cls)
         return cls._instance
 
-    _tags: dict[str, Etag] = {}
+    _tags: dict[str, dict[str, Etag]] = {}
 
-    def set_last_update_branch_etag(self, value: str):
-        self._tags["last_update_branch"] = Etag("last_update_branch", value)
+    @staticmethod
+    def _key(nickname: str | None = None) -> str:
+        target = nickname or kardexCtx.get().businessNickname
+        if not target:
+            raise TenantContextMissingError("No tenant in context")
+        return target
 
-    def set_tag(self, key: str, value: str):
-        self._tags[key] = Etag(key, value)
+    def _tenant_tags(self, nickname: str | None = None) -> dict[str, Etag]:
+        return self._tags.setdefault(self._key(nickname), {})
 
-    def get_etag(self, key: str) -> Etag | None:
-        return self._tags.get(key)
+    async def ensure_loaded(self, nickname: str | None = None) -> None:
+        key = self._key(nickname)
+        if key not in self._tags:
+            await self.update_branches_etags(key)
 
-    async def update_branches_etags(self):
+    def set_last_update_branch_etag(
+        self, value: str, nickname: str | None = None
+    ) -> None:
+        self._tenant_tags(nickname)["last_update_branch"] = Etag(
+            "last_update_branch", value
+        )
+
+    def set_tag(self, key: str, value: str, nickname: str | None = None) -> None:
+        self._tenant_tags(nickname)[key] = Etag(key, value)
+
+    def get_etag(self, key: str, nickname: str | None = None) -> Etag | None:
+        target = nickname or kardexCtx.get().businessNickname
+        if not target:
+            return None
+        return self._tags.get(target, {}).get(key)
+
+    async def update_branches_etags(self, nickname: str | None = None) -> None:
         from kardex.services.mongo_collections.v1 import BranchesCollection
 
-        collection = BranchesCollection.get_instance()
+        key = self._key(nickname)
+        collection = BranchesCollection.get_instance(key)
         count = await collection._collection.estimated_document_count()
-        self.set_tag("branches_count", str(count))
+        self.set_tag("branches_count", str(count), nickname=key)
 
-    def get_branches_etag(self) -> Etag | None:
-        branches_count = self._tags.get("branches_count")
-        last_update_branch = self._tags.get("last_update_branch")
+    def get_branches_etag(self, nickname: str | None = None) -> Etag | None:
+        target = nickname or kardexCtx.get().businessNickname
+        tags = self._tags.get(target, {})
+
+        branches_count = tags.get("branches_count")
+        last_update_branch = tags.get("last_update_branch")
         branches_count_value = (
             branches_count.value if branches_count is not None else "-"
         )
@@ -48,14 +82,20 @@ class EtagTool:
             str(branches_count_value) + "_" + str(last_update_branch_value),
         )
 
-    def set_projection_file_etag(self, value: str):
-        self._tags["projection"] = Etag("projection", value)
+    def set_projection_file_etag(self, value: str, nickname: str | None = None) -> None:
+        self._tenant_tags(nickname)["projection"] = Etag("projection", value)
 
-    def get_projection_file_etag(self) -> Etag | None:
-        return self._tags.get("projection")
+    def get_projection_file_etag(self, nickname: str | None = None) -> Etag | None:
+        target = nickname or kardexCtx.get().businessNickname
+        if not target:
+            return None
+        return self._tags.get(target, {}).get("projection")
 
-    def estimation_etag(self, value: str):
-        self._tags["estimation"] = Etag("estimation", value)
+    def estimation_etag(self, value: str, nickname: str | None = None) -> None:
+        self._tenant_tags(nickname)["estimation"] = Etag("estimation", value)
 
-    def get_estimation_etag(self) -> Etag | None:
-        return self._tags.get("estimation")
+    def get_estimation_etag(self, nickname: str | None = None) -> Etag | None:
+        target = nickname or kardexCtx.get().businessNickname
+        if not target:
+            return None
+        return self._tags.get(target, {}).get("estimation")

@@ -3,6 +3,8 @@ from kardex.repos.v1.integrations import (
     IntegrationsDataSource,
     IntegrationInDb,
 )
+from kardex.kardex_config import kardexCtx
+from kardex.tools.kardex_exceptions import TenantContextMissingError
 
 
 class IntegrationTool:
@@ -13,23 +15,34 @@ class IntegrationTool:
             cls._instance = super(cls, cls).__new__(cls)
         return cls._instance
 
-    __current_integration: IntegrationInDb | None = None
+    __current_integration: dict[str, IntegrationInDb] = {}
 
     def __init__(self) -> None:
         pass
 
-    async def get_current_integration(self) -> IntegrationInDb:
-        if self.__current_integration is None:
-            integration_repo = IntegrationsRepository(
-                integrations_ds=IntegrationsDataSource()
-            )
-            all_integrations = await integration_repo.get_all_integrations()
-            self.__current_integration = all_integrations[0]
-        return self.__current_integration
+    @staticmethod
+    def _key(nickname: str | None = None) -> str:
+        target = nickname or kardexCtx.get().businessNickname
+        if not target:
+            raise TenantContextMissingError("No tenant in context")
+        return target
 
-    async def refresh_current_integration(self) -> None:
+    async def _load(self, nickname: str | None = None) -> IntegrationInDb:
+        key = self._key(nickname)
         integration_repo = IntegrationsRepository(
             integrations_ds=IntegrationsDataSource()
         )
         all_integrations = await integration_repo.get_all_integrations()
-        self.__current_integration = all_integrations[0]
+        self.__current_integration[key] = all_integrations[0]
+        return self.__current_integration[key]
+
+    async def get_current_integration(self) -> IntegrationInDb:
+        key = self._key()
+        if key not in self.__current_integration:
+            return await self._load(key)
+        return self.__current_integration[key]
+
+    async def refresh_current_integration(
+        self, nickname: str | None = None
+    ) -> None:
+        await self._load(nickname)

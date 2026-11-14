@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app_middleware.depends import multi_tenant_middleware
 
 from .adjust_entries.adjust_entries_router import adjust_entries_router
 from .adjust_exits.adjust_exits_router import adjust_exits_router
@@ -49,7 +51,10 @@ from .units.units_router import units_router
 from .user_roles.user_roles_router import user_roles_router
 from .users.users_router import users_router
 
-router_v1 = APIRouter(tags=["apiV1"])
+router_v1 = APIRouter(
+    tags=["apiV1"],
+    dependencies=[Depends(multi_tenant_middleware)],
+)
 
 router_v1.include_router(adjust_entries_router, prefix="/adjust-entries")
 router_v1.include_router(adjust_exits_router, prefix="/adjust-exits")

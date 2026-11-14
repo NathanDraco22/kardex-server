@@ -2,6 +2,7 @@ from fastapi import Request, status
 from fastapi.exceptions import HTTPException
 
 from kardex.core.security import TokenManager
+from kardex.kardex_config import kardexCtx
 from kardex.tools.users_tool import UsersTool
 
 
@@ -24,6 +25,17 @@ def auth_middleware(req: Request):
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized"
+        )
+
+    # El claim del token debe coincidir con el tenant del header. Todos los
+    # negocios numeran su primer usuario como "0001": sin esta comparacion un
+    # token de A serviria contra la base de B.
+    token_tenant = payload.get("tenant") or ""
+    context_tenant = kardexCtx.get().businessNickname
+
+    if not token_tenant or token_tenant != context_tenant:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Tenant mismatch"
         )
 
     user_payload = payload.get("user")

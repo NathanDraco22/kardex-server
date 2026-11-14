@@ -17,8 +17,16 @@ from .kardex_exceptions import (
     InvalidOperation,
     DirectStockAdjustmentBlocked,
     MongoMigrationException,
+    TenantContextMissingError,
 )
 from .branches_tool import BranchesTool
+from .tenant_context import (
+    RESERVED_TENANT_NICKNAMES,
+    TENANT_NICKNAME_PATTERN,
+    is_valid_tenant_nickname,
+    normalize_nickname,
+    run_with_tenant_context,
+)
 
 
 __all__ = [
@@ -41,4 +49,10 @@ __all__ = [
     "InvalidOperation",
     "DirectStockAdjustmentBlocked",
     "MongoMigrationException",
+    "TenantContextMissingError",
+    "TENANT_NICKNAME_PATTERN",
+    "RESERVED_TENANT_NICKNAMES",
+    "normalize_nickname",
+    "is_valid_tenant_nickname",
+    "run_with_tenant_context",
 ]

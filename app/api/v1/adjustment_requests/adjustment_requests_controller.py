@@ -13,7 +13,8 @@ from kardex.repos.v1.adjustment_requests import (
     UpdateAdjustmentRequest,
 )
 from kardex.repos.v1.common.filter_params import AdjustmentRequestFilterParams
-from kardex.tools import BranchesTool
+from kardex.kardex_config import kardexCtx
+from kardex.tools import BranchesTool, run_with_tenant_context
 
 
 class AdjustmentRequestsController:
@@ -109,6 +110,8 @@ class AdjustmentRequestsController:
         if doc_branch is not None:
             if result.adjustEntryDocNumber:
                 bg_tasks.add_task(
+                    run_with_tenant_context,
+                    kardexCtx.get().businessNickname,
                     AppNotifier().notify_adjustments,
                     doc_branch.name,
                     result.adjustEntryDocNumber,
@@ -118,6 +121,8 @@ class AdjustmentRequestsController:
 
             if result.adjustExitDocNumber:
                 bg_tasks.add_task(
+                    run_with_tenant_context,
+                    kardexCtx.get().businessNickname,
                     AppNotifier().notify_adjustments,
                     doc_branch.name,
                     result.adjustExitDocNumber,

@@ -4,6 +4,8 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 
 from kardex.core.security import SysPasswordHasher, TokenManager
+from kardex.kardex_config import kardexCtx
+from kardex.tools import normalize_nickname
 from kardex.repos.v1.users import UsersRepository, UsersDataSource
 from kardex.repos.v1.core_settings import (
     CoreSettingsRepository,
@@ -53,6 +55,7 @@ class AuthsController:
                     "username": user.username,
                     "userRole": user.userRole.model_dump(),
                 },
+                "tenant": kardexCtx.get().businessNickname,
                 "exp": milliseconds,
             }
         )
@@ -69,6 +72,17 @@ class AuthsController:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Invalid token",
+            )
+
+        current_tenant = kardexCtx.get().businessNickname
+        token_tenant = res.get("tenant") or ""
+
+        # Sin esta comparacion el refresh de A emitiria un token valido contra
+        # la base de B (todos los tenants tienen un usuario "0001").
+        if not token_tenant or token_tenant != current_tenant:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Tenant mismatch",
             )
 
         user = res.get("user")
@@ -112,6 +126,7 @@ class AuthsController:
                     "username": user.username,
                     "userRole": user.userRole.model_dump(),
                 },
+                "tenant": current_tenant,
                 "exp": milliseconds,
             }
         )
@@ -171,7 +186,7 @@ class AuthsController:
         settings = DecodedCoreSetting.model_validate(decoded_settings)
 
         return ServinStatusResponese(
-            nickname=settings.nickname,
+            nickname=normalize_nickname(settings.nickname),
             isActive=settings.isActive,
             isMultiBranch=settings.isMultiBranch,
             isUsingExpirationDate=settings.isUsingExpirationDate,

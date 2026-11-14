@@ -13,6 +13,7 @@ from kardex.tools.kardex_exceptions import (
     SameBranchTransferError,
     InvalidOperation,
     DirectStockAdjustmentBlocked,
+    TenantContextMissingError,
 )
 
 
@@ -64,6 +65,13 @@ async def handle_forbidden(request: Request, exc: Exception):
     )
 
 
+async def handle_internal_error(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": str(exc)},
+    )
+
+
 _exception_handlers = {
     NotModified: not_modified_handler,
     InsufficientBalanceError: handle_insufficient_balance,
@@ -76,6 +84,7 @@ _exception_handlers = {
     SameBranchTransferError: handle_bad_request,
     InvalidOperation: handle_bad_request,
     DirectStockAdjustmentBlocked: handle_forbidden,
+    TenantContextMissingError: handle_internal_error,
 }
 
 

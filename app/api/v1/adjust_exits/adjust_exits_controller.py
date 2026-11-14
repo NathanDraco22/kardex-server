@@ -2,7 +2,8 @@ from fastapi import HTTPException, status, BackgroundTasks
 from kardex.repos.v1.common.filter_params import AdjustFilterParams
 from kardex.core.adjust_ledger.adjust_ledger import AdjustLedgerManager
 from core.app_notifier.app_notifier import AppNotifier
-from kardex.tools import BranchesTool
+from kardex.kardex_config import kardexCtx
+from kardex.tools import BranchesTool, run_with_tenant_context
 
 from responses.v1 import ListResponse
 from kardex.repos.v1.adjust_exits import (
@@ -28,6 +29,8 @@ class AdjustExitsController:
 
         if doc_branch is not None:
             bg_tasks.add_task(
+                run_with_tenant_context,
+                kardexCtx.get().businessNickname,
                 AppNotifier().notify_adjustments,
                 doc_branch.name,
                 res.docNumber,

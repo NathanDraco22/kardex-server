@@ -2,6 +2,18 @@ class KardexException(Exception):
     pass
 
 
+class TenantContextMissingError(KardexException):
+    """Se lanza cuando se intenta acceder a Mongo sin tenant resuelto.
+
+    ``MongoService`` y ``BaseMongoCollection`` ya no usan ``DB_NAME`` como
+    fallback: si no hay nickname explicito ni ``kardexCtx`` con negocio, el
+    acceso a la base de datos es un error de programacion.
+    """
+
+    def __init__(self, message: str = "No tenant in context"):
+        super().__init__(message)
+
+
 class InsufficientBalanceError(KardexException):
     def __init__(self, message: str, product_id: str | None = None,
                  product_name: str | None = None):

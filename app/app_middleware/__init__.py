@@ -1,7 +1,13 @@
-from .depends.cache_header_response import cache_header_response_midnight
-from .depends.auth_middleware import auth_middleware
+from .depends import (
+    api_key_middleware,
+    auth_middleware,
+    cache_header_response_midnight,
+    multi_tenant_middleware,
+)
 
 __all__ = [
-    "cache_header_response_midnight",
+    "api_key_middleware",
     "auth_middleware",
+    "cache_header_response_midnight",
+    "multi_tenant_middleware",
 ]
