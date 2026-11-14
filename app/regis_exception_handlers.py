@@ -14,6 +14,7 @@ from kardex.tools.kardex_exceptions import (
     InvalidOperation,
     DirectStockAdjustmentBlocked,
     TenantContextMissingError,
+    InvalidTenantNickname,
 )
 
 
@@ -85,6 +86,7 @@ _exception_handlers = {
     InvalidOperation: handle_bad_request,
     DirectStockAdjustmentBlocked: handle_forbidden,
     TenantContextMissingError: handle_internal_error,
+    InvalidTenantNickname: handle_bad_request,
 }
 
 

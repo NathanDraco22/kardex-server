@@ -39,6 +39,7 @@ from .users_collection import UsersCollection
 from .hold_sales_collection import HoldSalesCollection
 from .app_settings_collection import AppSettingsCollection
 from .unit_scales_collection import UnitScalesCollection
+from .meta_collection import MetaCollection
 
 __all__ = [
     "AccountBalancesCollection",
@@ -82,4 +83,5 @@ __all__ = [
     "HoldSalesCollection",
     "AppSettingsCollection",
     "UnitScalesCollection",
+    "MetaCollection",
 ]

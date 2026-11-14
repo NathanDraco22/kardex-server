@@ -127,7 +127,7 @@ class EntryDocsCollection(BaseMongoCollection):
         await collection.insert_one(entry_doc_data, session=session)
         return entry_doc_data
 
-    async def create_index(self):
+    async def create_indexes(self):
         collection = self._collection
 
         await collection.create_indexes(

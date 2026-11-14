@@ -52,3 +52,8 @@ class BaseMongoCollection:
             cls._instances[nickname] = cls(nickname=nickname)
 
         return cls._instances[nickname]  # type: ignore[no-any-return]
+
+    async def create_indexes(self) -> None:
+        """Define los indices de la coleccion. Las subclases lo sobreescriben."""
+
+        return None

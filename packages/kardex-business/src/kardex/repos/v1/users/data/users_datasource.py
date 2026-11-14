@@ -26,6 +26,12 @@ class UsersDataSource:
         collection = UsersCollection.get_instance()
         return await collection.fetch_user_by_id(user_id)
 
+    async def get_user_by_username(
+        self, username: str
+    ) -> dict[str, Any] | None:
+        collection = UsersCollection.get_instance()
+        return await collection.fetch_user_by_username(username)
+
     async def update_user_by_id(
         self, user_id: str, user: dict[str, Any]
     ) -> dict[str, Any] | None:

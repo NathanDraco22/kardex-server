@@ -65,6 +65,14 @@ class UsersRepository:
 
         return UserInDbWithRole.model_validate(result)
 
+    async def get_user_by_username(self, username: str) -> UserInDb | None:
+        result = await self.users_ds.get_user_by_username(username)
+
+        if result is None:
+            return None
+
+        return UserInDb.model_validate(result)
+
     async def update_user_by_id(
         self,
         user_id: str,

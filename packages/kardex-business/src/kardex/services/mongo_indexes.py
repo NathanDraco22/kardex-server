@@ -1,3 +1,7 @@
+import asyncio
+import os
+
+from kardex.services import BaseMongoCollection
 from kardex.services.mongo_collections.v1 import (
     ProductsCollection,
     CountersCollection,
@@ -26,87 +30,96 @@ from kardex.services.mongo_collections.v1 import (
     ExpenseCategoriesCollection,
     ApiKeysCollection,
     CreditNotesCollection,
+    ReceiptsCollection,
+    UsersCollection,
+    UserRolesCollection,
+    MetaCollection,
+)
+from kardex.services.mongo_collections.v1.meta_collection import (
+    write_tenant_meta_document,
+)
+
+# Se sube en el mismo PR que cambia una definicion de indice.
+CURRENT_INDEX_VERSION = 1
+
+# 30 colecciones que definen ``create_indexes``. El runner y el
+# aprovisionamiento las ejecutan en paralelo por tenant.
+INDEXED_COLLECTIONS: tuple[type[BaseMongoCollection], ...] = (
+    ProductsCollection,
+    CountersCollection,
+    ClientsCollection,
+    ClientTransactionsCollection,
+    SuppliersCollection,
+    ProductCategoriesCollection,
+    ProductPricesCollection,
+    EntryDocsCollection,
+    ExitDocsCollection,
+    ProductAccountsCollection,
+    ProductSaleProfilesCollection,
+    ProductTransactionsCollection,
+    InvoicesCollection,
+    CreditNotesCollection,
+    OrdersCollection,
+    ExpirationLogsCollection,
+    DevolutionsCollection,
+    DailySummariesCollection,
+    ExecutiveSummariesCollection,
+    ProductStatsCollection,
+    TransfersCollection,
+    AdjustEntriesCollection,
+    AdjustExitsCollection,
+    AdjustmentRequestsCollection,
+    ExpensesCollection,
+    ExpenseCategoriesCollection,
+    ApiKeysCollection,
+    ReceiptsCollection,
+    UsersCollection,
+    UserRolesCollection,
 )
 
 
-async def create_indexes():
-    collection = ApiKeysCollection.get_instance()
-    await collection.create_indexes()
+def get_target_indexes_version() -> int:
+    """Version de indices objetivo, con override de emergencia por entorno."""
 
-    collection = CountersCollection.get_instance()
-    await collection.create_indexes()
+    return int(os.getenv("INDEXES_VERSION", str(CURRENT_INDEX_VERSION)))
 
-    collection = ProductsCollection.get_instance()
-    await collection.create_indexes()
 
-    collection = ClientsCollection.get_instance()
-    await collection.create_indexes()
+async def create_tenant_indexes(nickname: str) -> None:
+    """Aplica los indices de todas las colecciones en la base del tenant."""
 
-    collection = ClientTransactionsCollection.get_instance()
-    await collection.create_indexes()
+    async def _apply(collection_class: type[BaseMongoCollection]) -> None:
+        collection = collection_class.get_instance(nickname)
+        await collection.create_indexes()
 
-    collection = SuppliersCollection.get_instance()
-    await collection.create_indexes()
+    await asyncio.gather(*(_apply(collection) for collection in INDEXED_COLLECTIONS))
 
-    collection = ProductCategoriesCollection.get_instance()
-    await collection.create_indexes()
 
-    collection = ProductPricesCollection.get_instance()
-    await collection.create_indexes()
+async def ensure_indexes_for_tenant(nickname: str) -> str:
+    """Compara ``Meta.indexesVersion`` con la version objetivo y aplica.
 
-    collection = EntryDocsCollection.get_instance()
-    await collection.create_index()
+    Devuelve la accion ejecutada: ``skipped``, ``skipped-newer`` o
+    ``updated``. Nunca degrada indices: si la base esta mas adelantada que el
+    codigo, solo advierte.
+    """
 
-    collection = ExitDocsCollection.get_instance()
-    await collection.create_index()
+    meta = await MetaCollection.get_instance(nickname).read_tenant_meta()
+    stored = int(meta.get("indexesVersion", 0)) if meta else 0
+    target = get_target_indexes_version()
 
-    collection = ProductAccountsCollection.get_instance()
-    await collection.create_index()
+    if stored == target:
+        return "skipped"
 
-    collection = ProductSaleProfilesCollection.get_instance()
-    await collection.create_index()
+    if stored > target:
+        print(
+            f"WARN tenant={nickname}: indices stored={stored} > target={target}. "
+            "Servidor mas viejo que los datos; no se toca."
+        )
+        return "skipped-newer"
 
-    collection = ProductTransactionsCollection.get_instance()
-    await collection.create_index()
-
-    collection = InvoicesCollection.get_instance()
-    await collection.create_indexes()
-
-    collection = CreditNotesCollection.get_instance()
-    await collection.create_indexes()
-
-    collection = OrdersCollection.get_instance()
-    await collection.create_indexes()
-
-    collection = ExpirationLogsCollection.get_instance()
-    await collection.create_indexes()
-
-    collection = DevolutionsCollection.get_instance()
-    await collection.create_indexes()
-
-    collection = DailySummariesCollection.get_instance()
-    await collection.create_indexes()
-
-    collection = ExecutiveSummariesCollection.get_instance()
-    await collection.create_indexes()
-
-    collection = ProductStatsCollection.get_instance()
-    await collection.create_indexes()
-
-    collection = TransfersCollection.get_instance()
-    await collection.create_indexes()
-
-    collection = AdjustEntriesCollection.get_instance()
-    await collection.create_indexes()
-
-    collection = AdjustExitsCollection.get_instance()
-    await collection.create_indexes()
-
-    collection = AdjustmentRequestsCollection.get_instance()
-    await collection.create_indexes()
-
-    collection = ExpensesCollection.get_instance()
-    await collection.create_indexes()
-
-    collection = ExpenseCategoriesCollection.get_instance()
-    await collection.create_indexes()
+    await create_tenant_indexes(nickname)
+    await write_tenant_meta_document(
+        nickname,
+        is_provisioned=True,
+        indexes_version=target,
+    )
+    return "updated"

@@ -14,6 +14,14 @@ class TenantContextMissingError(KardexException):
         super().__init__(message)
 
 
+class InvalidTenantNickname(KardexException):
+    """Nickname que no cumple el patron o esta en la lista de reservados."""
+
+    def __init__(self, message: str, nickname: str | None = None):
+        self.nickname = nickname
+        super().__init__(message)
+
+
 class InsufficientBalanceError(KardexException):
     def __init__(self, message: str, product_id: str | None = None,
                  product_name: str | None = None):

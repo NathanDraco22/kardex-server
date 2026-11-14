@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from kardex.repos.v1.core_settings.models.core_setting_model import DecodedCoreSetting
 from kardex.repos.v1.core_settings import CreateCoreSetting, UpdateCoreSetting, CoreSettingInDb
 
@@ -12,8 +12,10 @@ core_settings_router = APIRouter(
 
 
 @core_settings_router.post("")
-async def create_core_setting(body: CreateCoreSetting) -> DecodedCoreSetting:
-    return await core_settings_controller.create_core_setting(body)
+async def create_core_setting(
+    body: CreateCoreSetting, bg_tasks: BackgroundTasks
+) -> DecodedCoreSetting:
+    return await core_settings_controller.create_core_setting(body, bg_tasks)
 
 
 @core_settings_router.get("")
@@ -28,13 +30,20 @@ async def get_core_setting_by_id(core_setting_id: str) -> CoreSettingInDb:
 
 @core_settings_router.patch("/{core_setting_nickname}")
 async def update_core_setting_by_nickname(
-    core_setting_nickname: str, body: UpdateCoreSetting
+    core_setting_nickname: str,
+    body: UpdateCoreSetting,
+    token_payload: dict = Depends(validate_super_token),
 ) -> CoreSettingInDb:
     return await core_settings_controller.update_core_setting_by_nickname(
-        core_setting_nickname, body
+        core_setting_nickname, body, token_payload
     )
 
 
 @core_settings_router.delete("/{core_setting_id}")
-async def delete_core_setting_by_id(core_setting_id: str) -> CoreSettingInDb:
-    return await core_settings_controller.delete_core_setting_by_id(core_setting_id)
+async def delete_core_setting_by_id(
+    core_setting_id: str,
+    token_payload: dict = Depends(validate_super_token),
+) -> CoreSettingInDb:
+    return await core_settings_controller.delete_core_setting_by_id(
+        core_setting_id, token_payload
+    )

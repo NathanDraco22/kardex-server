@@ -137,7 +137,7 @@ class ExitDocsCollection(BaseMongoCollection):
 
         return exit_doc
 
-    async def create_index(self):
+    async def create_indexes(self):
         collection = self._collection
 
         await collection.create_indexes(
