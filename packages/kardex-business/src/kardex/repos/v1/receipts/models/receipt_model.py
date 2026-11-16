@@ -1,6 +1,6 @@
 from typing import Literal
 from pydantic import BaseModel
-from kardex.repos.v1.common.models import ClientInfo, UserInfo
+from kardex.repos.v1.common.models import ClientInfo, UserInfo, PaymentDetail
 
 PaymentMethod = Literal[
     "cash",
@@ -39,6 +39,7 @@ class BaseReceipt(BaseModel):
     appliedCreditNotes: list[AppliedCreditNote] = []
     paymentMethod: PaymentMethod
     bankReference: str = ""
+    paymentDetail: PaymentDetail | None = None
     total: int
     createdBy: UserInfo
     shiftId: str | None = None
