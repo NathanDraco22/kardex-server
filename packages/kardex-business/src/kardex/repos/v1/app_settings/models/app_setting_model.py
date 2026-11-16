@@ -20,6 +20,7 @@ class BaseAppSetting(BaseModel):
     secondaryCurrency: CurrencyCode = "USD"
     exchangeRate: float = Field(default=0.0, ge=0)
     showInvoiceTotalInSecondaryCurrency: bool = False
+    allowSecondaryCurrencyPayment: bool = False
     companyLogoUrl: str | None = None
     useShifts: bool = False
     taxIdLabel: str = Field(default="RUC", min_length=1, max_length=32)
@@ -44,6 +45,7 @@ class UpdateAppSetting(BaseModel):
     secondaryCurrency: CurrencyCode | None = None
     exchangeRate: float | None = Field(default=None, ge=0)
     showInvoiceTotalInSecondaryCurrency: bool | None = None
+    allowSecondaryCurrencyPayment: bool | None = None
     companyLogoUrl: str | None = None
     useShifts: bool | None = None
     taxIdLabel: str | None = Field(default=None, min_length=1, max_length=32)
