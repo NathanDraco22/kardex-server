@@ -1,3 +1,5 @@
+from typing import Any
+
 from kardex.tools import UuidTool, TimeTools
 from kardex.kardex_config import KardexConfig
 from kardex.repos.v1.invoices import CreateInvoice, InvoiceInDb
@@ -6,6 +8,7 @@ from kardex.core.inventory import (
     InventoryBatchTransformer,
     InventoryExitBatchItem,
     InventoryEngine,
+    fetch_product_types_map,
 )
 from kardex.core.counter_manager.counter_manager import CounterManager
 from kardex.core.finance import ClientFinanceEngine, FinanceTransactionRequest
@@ -21,6 +24,97 @@ from kardex.services.mongo_collections.v1 import (
     ClientTransactionsCollection,
     OrdersCollection,
 )
+
+
+async def _prepare_and_execute_invoice_inventory(
+    create_invoice: CreateInvoice,
+    invoice_id: str,
+    session: Any,
+    product_account_col: ProductAccountsCollection,
+    prd_transaction_col: ProductTransactionsCollection,
+    is_order_fulfillment: bool = False,
+) -> dict[str, ProductAccountInDb]:
+    """Procesa la salida de inventario únicamente para ítems inventariables (`productType == 'item'`)."""
+    product_ids = list({item.product.id for item in create_invoice.saleItems})
+    product_types = await fetch_product_types_map(product_ids)
+
+    accounts_data = await product_account_col.get_accounts_by_branch_id(
+        branch_id=create_invoice.branchId,
+        product_ids=product_ids,
+        session=session,
+    )
+    accounts_dict = {
+        acc["productId"]: ProductAccountInDb.model_validate(acc)
+        for acc in accounts_data
+    }
+
+    inventory_indices: list[int] = []
+    batch_items: list[InventoryExitBatchItem] = []
+
+    for idx, item in enumerate(create_invoice.saleItems):
+        resolved_type = product_types.get(item.product.id, item.product.productType)
+        item.product.productType = resolved_type
+
+        if resolved_type == "item":
+            total_qty = abs(item.quantity + item.bonQuantity)
+            inventory_indices.append(idx)
+            batch_items.append(
+                InventoryExitBatchItem(
+                    product_id=item.product.id,
+                    quantity=total_qty,
+                    product_name=item.product.name,
+                )
+            )
+        else:
+            account = accounts_dict.get(item.product.id)
+            item.cost = account.averageCost if account is not None else 0
+
+    if batch_items:
+        batch_result = InventoryBatchTransformer.prepare_exit(
+            branch_id=create_invoice.branchId,
+            items=batch_items,
+            existing_accounts_dict=accounts_dict,
+            document_id=invoice_id,
+            doc_number=create_invoice.docNumber,
+            tx_type="exit",
+            tx_subtype="invoice",
+            is_order_fulfillment=is_order_fulfillment,
+        )
+
+        for batch_pos, item_idx in enumerate(inventory_indices):
+            create_invoice.saleItems[item_idx].cost = batch_result.assigned_costs[
+                batch_pos
+            ]
+
+        if is_order_fulfillment:
+            await product_account_col.bulk_dispatch_promise_stock(
+                branch_id=create_invoice.branchId,
+                bulk_data=batch_result.stock_subtractions,
+                session=session,
+            )
+            created_transactions_data = [
+                t.model_dump() for t in batch_result.transactions
+            ]
+            if created_transactions_data:
+                await prd_transaction_col.create_many_product_transactions_with_session(
+                    created_transactions_data, session=session
+                )
+        else:
+            await InventoryEngine.execute_exit(
+                branch_id=create_invoice.branchId,
+                batch_result=batch_result,
+                session=session,
+                account_col=product_account_col,
+                transaction_col=prd_transaction_col,
+                allow_negative=KardexConfig().letInvoiceWithNegative,
+            )
+
+    create_invoice.totalCost = sum(
+        item.cost * (item.quantity + item.bonQuantity)
+        for item in create_invoice.saleItems
+    )
+
+    return accounts_dict
 
 
 async def process_invoice(
@@ -45,90 +139,18 @@ async def process_invoice(
                     session=session
                 )
 
-            # ==========================================
-            # 1. PREPARACIÓN DE INVENTARIO
-            # ==========================================
-            batch_items: list[InventoryExitBatchItem] = []
-            for item in create_invoice.saleItems:
-                total_qty = abs(item.quantity + item.bonQuantity)
-                batch_items.append(
-                    InventoryExitBatchItem(
-                        product_id=item.product.id,
-                        quantity=total_qty,
-                        product_name=item.product.name,
-                    )
-                )
-
-            # Obtener Cuentas
-            product_ids = [item.product_id for item in batch_items]
-            accounts_data = await product_account_col.get_accounts_by_branch_id(
-                branch_id=create_invoice.branchId,
-                product_ids=product_ids,
-                session=session,
-            )
-            accounts_dict = {
-                acc["productId"]: ProductAccountInDb.model_validate(acc)
-                for acc in accounts_data
-            }
-
-            # Determinar si es despacho de pedido antes de validar
             is_order_fulfillment = bool(
                 create_invoice.orderNumber and create_invoice.status == "open"
             )
 
-            # Ejecutar cálculos (Validación de stock + Costos + Kardex)
-            # Pasamos is_order_fulfillment para que la validación en memoria sea correcta
-            batch_result = InventoryBatchTransformer.prepare_exit(
-                branch_id=create_invoice.branchId,
-                items=batch_items,
-                existing_accounts_dict=accounts_dict,
-                document_id=new_invoice_id,
-                doc_number=create_invoice.docNumber,
-                tx_type="exit",
-                tx_subtype="invoice",
+            await _prepare_and_execute_invoice_inventory(
+                create_invoice=create_invoice,
+                invoice_id=new_invoice_id,
+                session=session,
+                product_account_col=product_account_col,
+                prd_transaction_col=prd_transaction_col,
                 is_order_fulfillment=is_order_fulfillment,
             )
-
-            # Asignar Costos Reales a la Factura
-            for i, item in enumerate(create_invoice.saleItems):
-                item.cost = batch_result.assigned_costs[i]
-
-            # Recalcular totalCost con los costos reales del inventario
-            create_invoice.totalCost = sum(
-                item.cost * (item.quantity + item.bonQuantity)
-                for item in create_invoice.saleItems
-            )
-
-            # ==========================================
-            # 2. PERSISTENCIA DE INVENTARIO (DIFERENCIADA)
-            # ==========================================
-
-            if is_order_fulfillment:
-                # CAMINO A: ES UN PEDIDO -> Usamos bulk_dispatch_promise_stock
-                await product_account_col.bulk_dispatch_promise_stock(
-                    branch_id=create_invoice.branchId,
-                    bulk_data=batch_result.stock_subtractions,
-                    session=session,
-                )
-
-                # Guardar Kardex manualmente (porque no usamos execute_inventory_exit...)
-                created_transactions_data = [
-                    t.model_dump() for t in batch_result.transactions
-                ]
-                await prd_transaction_col.create_many_product_transactions_with_session(
-                    created_transactions_data, session=session
-                )
-
-            else:
-                # CAMINO B: VENTA DIRECTA -> Usamos el método estándar
-                await InventoryEngine.execute_exit(
-                    branch_id=create_invoice.branchId,
-                    batch_result=batch_result,
-                    session=session,
-                    account_col=product_account_col,
-                    transaction_col=prd_transaction_col,
-                    allow_negative=KardexConfig().letInvoiceWithNegative,
-                )
 
             if create_invoice.status == "draft":
                 create_invoice.status = "open"
@@ -232,70 +254,13 @@ async def process_anon_invoice(
                     session=session
                 )
 
-            # 1. PREPARAR DATOS DE SALIDA (Mapeo a InventoryExitBatchItem)
-            # REGLA DE NEGOCIO: En ventas, descontamos Cantidad + Bonificación
-            batch_items = []
-            for item in create_invoice.saleItems:
-                total_to_dispatch = abs(item.quantity + item.bonQuantity)
-
-                batch_items.append(
-                    InventoryExitBatchItem(
-                        product_id=item.product.id,  # Accedemos al ID dentro del objeto product
-                        quantity=total_to_dispatch,
-                        product_name=item.product.name,
-                    )
-                )
-
-            # 2. OBTENER CUENTAS ACTUALES (Snapshot Read)
-            product_ids = [item.product_id for item in batch_items]
-
-            existing_accounts_data = (
-                await product_account_col.get_accounts_by_branch_id(
-                    branch_id=create_invoice.branchId,
-                    product_ids=product_ids,
-                    session=session,
-                )
-            )
-
-            accounts_dict = {
-                acc["productId"]: ProductAccountInDb.model_validate(acc)
-                for acc in existing_accounts_data
-            }
-
-            # 3. EJECUTAR LÓGICA PURA REUTILIZABLE 🧠
-            # Valida stock, calcula costos de salida y prepara transacciones
-            batch_result = InventoryBatchTransformer.prepare_exit(
-                branch_id=create_invoice.branchId,
-                items=batch_items,
-                existing_accounts_dict=accounts_dict,
-                # Metadata de la Factura
-                document_id=new_invoice_doc_id,
-                doc_number=create_invoice.docNumber,
-                # Tipo de Transacción
-                tx_type="exit",
-                tx_subtype="invoice",  # "invoice"
-            )
-
-            # 4. ENRIQUECER ITEMS DE LA FACTURA CON EL COSTO REAL
-            # Asignamos el Costo Promedio calculado al momento de la salida
-            # Nota: Asumimos que el orden de create_invoice.saleItems coincide con batch_items
-            for i, invoice_item in enumerate(create_invoice.saleItems):
-                invoice_item.cost = batch_result.assigned_costs[i]
-
-            # Recalcular totalCost con los costos reales del inventario
-            create_invoice.totalCost = sum(
-                invoice_item.cost * (invoice_item.quantity + invoice_item.bonQuantity)
-                for invoice_item in create_invoice.saleItems
-            )
-
-            # 5. PERSISTENCIA MASIVA EN BD 💾
-            await InventoryEngine.execute_exit(
-                branch_id=create_invoice.branchId,
-                batch_result=batch_result,
+            accounts_dict = await _prepare_and_execute_invoice_inventory(
+                create_invoice=create_invoice,
+                invoice_id=new_invoice_doc_id,
                 session=session,
-                account_col=product_account_col,
-                transaction_col=prd_transaction_col,
-                allow_negative=KardexConfig().letInvoiceWithNegative,
+                product_account_col=product_account_col,
+                prd_transaction_col=prd_transaction_col,
+                is_order_fulfillment=False,
             )
 
             # 6. GUARDAR LA FACTURA
@@ -306,7 +271,7 @@ async def process_anon_invoice(
                     "createdAt": current_time,
                     "paidAt": current_time,  # Al ser anónima/contado, se paga al instante
                     "amountPaid": create_invoice.total,
-                    # Guardamos los items ya con su campo 'cost' actualizado en el paso 4
+                    # Guardamos los items ya con su campo 'cost' actualizado
                     "saleItems": [
                         item.model_dump() for item in create_invoice.saleItems
                     ],
@@ -321,10 +286,6 @@ async def process_anon_invoice(
             new_invoice_in_db = InvoiceInDb.model_validate(insert_result)
 
             # 7. PREPARAR RETORNO (Cuentas actualizadas)
-            # Filtramos del diccionario las cuentas que fueron tocadas
-            updated_accounts = []
-            for item in batch_items:
-                if item.product_id in accounts_dict:
-                    updated_accounts.append(accounts_dict[item.product_id])
+            updated_accounts = list(accounts_dict.values())
 
             return new_invoice_in_db, updated_accounts

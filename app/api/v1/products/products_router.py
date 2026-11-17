@@ -49,16 +49,30 @@ async def get_product_by_id(product_id: str) -> ProductInDb:
 
 
 @products_router.get("/search/{text_query}")
-async def search_product_by_text(text_query: str) -> ListResponse[ProductInDb]:
-    return await products_controller.search_product_by_text(text_query)
+async def search_product_by_text(
+    text_query: str,
+    query_params: ProductFilterParams = Depends(),
+) -> ListResponse[ProductInDb]:
+    return await products_controller.search_product_by_text(
+        text_query,
+        branch_id=query_params.branchId,
+        product_type=query_params.productType,
+        only_inventory=query_params.onlyInventory,
+    )
 
 
 @products_router.get("/branch/{branch_id}/search/{text_query}")
 async def search_product_in_branch(
     branch_id: str,
     text_query: str,
+    query_params: ProductFilterParams = Depends(),
 ) -> ListResponse[ProductInDbInBranch]:
-    return await products_controller.search_product_in_branch(branch_id, text_query)
+    return await products_controller.search_product_in_branch(
+        branch_id,
+        text_query,
+        product_type=query_params.productType,
+        only_inventory=query_params.onlyInventory,
+    )
 
 
 @products_router.post("/branch/{branch_id}/by-ids")

@@ -10,6 +10,7 @@ from .inventory_batch_transformer import (
 
 from .inventory_engine import InventoryEngine
 from .process_reset_inventory import process_reset_inventory
+from .product_type_guard import ensure_inventory_products, fetch_product_types_map
 
 __all__ = [
     "InventoryBatchTransformer",
@@ -20,4 +21,6 @@ __all__ = [
     "InsufficientBalanceError",
     "InventoryEngine",
     "process_reset_inventory",
+    "ensure_inventory_products",
+    "fetch_product_types_map",
 ]

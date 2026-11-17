@@ -15,6 +15,10 @@ from kardex.lite.core.product_register.process_create_product import process_cre
 from kardex.core.product_register.process_create_product_with_data import (
     process_create_product_with_data,
 )
+from kardex.core.product_register.product_type_lifecycle import (
+    create_branch_scoped_product,
+    update_product_with_type_transition,
+)
 
 
 from kardex.repos.v1.common.filter_params import ProductFilterParams
@@ -35,6 +39,10 @@ class ProductsRepository:
         return cls._instance
 
     async def create_product(self, create_product: CreateProduct) -> ProductInDb:
+        if create_product.productType != "item":
+            return await create_branch_scoped_product(create_product)
+
+        create_product.branchId = None
         if KardexConfig().createFullProductProfile:
             return await process_create_product(create_product)
 
@@ -76,9 +84,20 @@ class ProductsRepository:
         return models
 
     async def get_paginated_products(
-        self, offset: int, limit: int
+        self,
+        offset: int,
+        limit: int,
+        branch_id: str | None = None,
+        product_type: str | None = None,
+        only_inventory: bool | None = None,
     ) -> list[ProductInDb]:
-        results = await self.products_ds.get_paginated_products(offset, limit)
+        results = await self.products_ds.get_paginated_products(
+            offset,
+            limit,
+            branch_id=branch_id,
+            product_type=product_type,
+            only_inventory=only_inventory,
+        )
         models = [ProductInDb.model_validate(result) for result in results]
         return models
 
@@ -98,8 +117,19 @@ class ProductsRepository:
 
         return ProductInDb.model_validate(result)
 
-    async def search_product_by_text(self, text_query: str) -> list[ProductInDb]:
-        results = await self.products_ds.search_product_by_text(text_query)
+    async def search_product_by_text(
+        self,
+        text_query: str,
+        branch_id: str | None = None,
+        product_type: str | None = None,
+        only_inventory: bool | None = None,
+    ) -> list[ProductInDb]:
+        results = await self.products_ds.search_product_by_text(
+            text_query,
+            branch_id=branch_id,
+            product_type=product_type,
+            only_inventory=only_inventory,
+        )
         models = [ProductInDb.model_validate(result) for result in results]
         return models
 
@@ -112,8 +142,15 @@ class ProductsRepository:
         self,
         branch_id: str,
         text_query: str,
+        product_type: str | None = None,
+        only_inventory: bool | None = None,
     ) -> list[ProductInDbInBranch]:
-        results = await self.products_ds.search_product_in_branch(branch_id, text_query)
+        results = await self.products_ds.search_product_in_branch(
+            branch_id,
+            text_query,
+            product_type=product_type,
+            only_inventory=only_inventory,
+        )
         models = [ProductInDbInBranch.model_validate(result) for result in results]
         return models
 
@@ -156,19 +193,7 @@ class ProductsRepository:
     async def update_product_by_id(
         self, product_id: str, product: UpdateProduct
     ) -> ProductInDb | None:
-        updated_data = product.model_dump(exclude_unset=True)
-
-        updated_data["updatedAt"] = TimeTools.get_now_in_milliseconds()
-
-        if "name" in updated_data:
-            updated_data["searchPrefixes"] = generate_prefixes(updated_data["name"])
-
-        result = await self.products_ds.update_product_by_id(product_id, updated_data)
-
-        if result is None:
-            return None
-
-        return ProductInDb.model_validate(result)
+        return await update_product_with_type_transition(product_id, product)
 
     async def delete_product_by_id(self, product_id: str) -> ProductInDb | None:
         result = await self.products_ds.delete_product_by_id(product_id)

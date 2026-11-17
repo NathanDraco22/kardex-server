@@ -3,6 +3,7 @@ from kardex.core.inventory import (
     InventoryBatchTransformer,
     InventoryExitBatchItem,
     InventoryEngine,
+    ensure_inventory_products,
 )
 
 from kardex.repos.v1.transfers import TransferInDb, CreateTransfer
@@ -27,6 +28,11 @@ async def process_outgoing_transfer(
     prd_transaction_col = ProductTransactionsCollection.get_instance()
     product_account_col = ProductAccountsCollection.get_instance()
     transfers_col = TransfersCollection.get_instance()
+
+    await ensure_inventory_products(
+        [item.id for item in create_transfer.items],
+        operation_label="traslados entre sucursales",
+    )
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():

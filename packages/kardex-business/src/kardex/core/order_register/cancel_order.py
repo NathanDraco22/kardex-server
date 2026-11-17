@@ -1,3 +1,4 @@
+from kardex.core.inventory import fetch_product_types_map
 from kardex.services.mongo_collections.v1 import (
     OrdersCollection,
     ProductAccountsCollection,
@@ -17,9 +18,17 @@ async def cancel_order(order: OrderInDb) -> OrderInDb:
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():
             if order.status == "open":
+                product_types = await fetch_product_types_map(
+                    [item.product.id for item in order.saleItems]
+                )
                 bulk_release_data: list[tuple[str, int]] = []
 
                 for item in order.saleItems:
+                    resolved_type = product_types.get(
+                        item.product.id, item.product.productType
+                    )
+                    if resolved_type != "item":
+                        continue
                     total_promise_qty = abs(item.quantity + item.bonQuantity)
                     bulk_release_data.append((item.product.id, total_promise_qty))
 

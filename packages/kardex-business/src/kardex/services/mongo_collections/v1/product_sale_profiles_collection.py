@@ -41,6 +41,12 @@ class ProductSaleProfilesCollection(BaseMongoCollection):
                             {
                                 "$match": {
                                     "isDeleted": False,
+                                    "$or": [
+                                        {"productType": "item"},
+                                        {"productType": {"$exists": False}},
+                                        {"branchId": branch_id},
+                                        {"branchId": None},
+                                    ],
                                 },
                             },
                         ],

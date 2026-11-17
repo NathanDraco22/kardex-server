@@ -3,6 +3,7 @@ from kardex.core.inventory import (
     InventoryBatchTransformer,
     InventoryEntryBatchItem,
     InventoryEngine,
+    ensure_inventory_products,
 )
 from kardex.repos.v1.entry_docs.models.entry_doc_model import CreateEntryDoc
 from kardex.repos.v1.entry_docs import EntryDocInDb
@@ -33,6 +34,11 @@ async def process_entry_doc(
 
     # Tools
     branches_tool = BranchesTool()
+
+    await ensure_inventory_products(
+        [item.productId for item in entry_doc.items],
+        operation_label="entradas de inventario",
+    )
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():

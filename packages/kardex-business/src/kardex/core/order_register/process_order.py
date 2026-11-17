@@ -1,4 +1,5 @@
 from typing import Tuple, List
+from kardex.core.inventory import fetch_product_types_map
 from kardex.services.mongo_collections.v1 import (
     OrdersCollection,
     ProductAccountsCollection,
@@ -21,25 +22,31 @@ async def process_order(
             # ==========================================
             # 1. PREPARACIÓN DE DATOS
             # ==========================================
-            # Agrupamos por ID para saber la cantidad total a reservar por producto
+            all_product_ids = list({item.product.id for item in create_order.saleItems})
+            product_types = await fetch_product_types_map(all_product_ids)
+
+            # Agrupamos por ID para saber la cantidad total a reservar solo en inventariables
             consolidated_reservation: dict[str, int] = {}
-            # Mapa para obtener nombres rápido en caso de error
             id_name_map: dict[str, str] = {}
 
             for item in create_order.saleItems:
-                qty_to_reserve = abs(item.quantity + item.bonQuantity)
-                consolidated_reservation[item.product.id] = (
-                    consolidated_reservation.get(item.product.id, 0) + qty_to_reserve
+                resolved_type = product_types.get(
+                    item.product.id, item.product.productType
                 )
+                item.product.productType = resolved_type
+                if resolved_type == "item":
+                    qty_to_reserve = abs(item.quantity + item.bonQuantity)
+                    consolidated_reservation[item.product.id] = (
+                        consolidated_reservation.get(item.product.id, 0) + qty_to_reserve
+                    )
                 id_name_map[item.product.id] = item.product.name
 
             # ==========================================
             # 2. OBTENER CUENTAS (SNAPSHOT READ)
             # ==========================================
-            product_ids = list(consolidated_reservation.keys())
             accounts_data = await prd_account_col.get_accounts_by_branch_id(
                 branch_id=create_order.branchId,
-                product_ids=product_ids,
+                product_ids=all_product_ids,
                 session=session,
             )
 
@@ -90,12 +97,13 @@ async def process_order(
                 updated_product_accounts.append(account)
 
             # ASIGNAR COSTOS A LOS ITEMS DEL PEDIDO
-            # Es importante guardar el costo promedio al momento de crear el pedido
             for item in create_order.saleItems:
                 if item.product.id in accounts_dict:
                     item.cost = accounts_dict[item.product.id].averageCost
+                elif product_types.get(item.product.id, item.product.productType) != "item":
+                    item.cost = 0
 
-            # Recalcular totalCost con los costos reales del inventario
+            # Recalcular totalCost con los costos reales del inventario / referencia
             create_order.totalCost = sum(
                 item.cost * (item.quantity + item.bonQuantity)
                 for item in create_order.saleItems
@@ -104,12 +112,12 @@ async def process_order(
             # ==========================================
             # 4. RESERVA MASIVA (PERSISTENCIA)
             # ==========================================
-            # Usamos la función optimizada que creamos en el paso anterior
-            await prd_account_col.bulk_add_to_promise_stock(
-                branch_id=create_order.branchId,
-                bulk_data=bulk_reserve_data,
-                session=session,
-            )
+            if bulk_reserve_data:
+                await prd_account_col.bulk_add_to_promise_stock(
+                    branch_id=create_order.branchId,
+                    bulk_data=bulk_reserve_data,
+                    session=session,
+                )
 
             # ==========================================
             # 5. GUARDAR PEDIDO

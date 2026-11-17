@@ -3,7 +3,8 @@ from .models.product_account_model import (
     ProductAccountInDb,
 )
 from kardex.kardex_config import KardexConfig
-from kardex.tools import DirectStockAdjustmentBlocked
+from kardex.services.mongo_collections.v1 import ProductsCollection
+from kardex.tools import DirectStockAdjustmentBlocked, InvalidOperation
 
 class ProductAccountsRepository:
     _instance: "ProductAccountsRepository | None" = None
@@ -45,9 +46,20 @@ class ProductAccountsRepository:
         self, product_id: str, branch_id: str, **kwargs
     ) -> ProductAccountInDb | None:
         if KardexConfig().followTransaction:
-            raise DirectStockAdjustmentBlocked(
-                "Direct stock updates are not allowed when followTransaction is active."
+            if "currentStock" in kwargs:
+                raise DirectStockAdjustmentBlocked(
+                    "Direct stock updates are not allowed when followTransaction is active."
+                )
+            product = await ProductsCollection.get_instance().fetch_product_by_id(
+                product_id
             )
+            if product is None or product.get("productType", "item") == "item":
+                raise DirectStockAdjustmentBlocked(
+                    "Direct stock updates are not allowed when followTransaction is active."
+                )
+            if "averageCost" in kwargs:
+                kwargs.setdefault("lastCost", kwargs["averageCost"])
+                kwargs.setdefault("maximumCost", kwargs["averageCost"])
         result = await self.product_accounts_ds.update_product_account_stock_and_cost(
             product_id, branch_id, **kwargs
         )
@@ -62,6 +74,13 @@ class ProductAccountsRepository:
             raise DirectStockAdjustmentBlocked(
                 "Direct stock adjustments are not allowed when followTransaction is active."
             )
+        product = await ProductsCollection.get_instance().fetch_product_by_id(
+            product_id
+        )
+        if product is not None and product.get("productType", "item") != "item":
+            raise InvalidOperation(
+                "Los servicios y productos no inventariables no manejan existencias."
+            )
         result = await self.product_accounts_ds.add_product_account_stock(
             product_id, branch_id, **kwargs
         )
@@ -75,6 +94,13 @@ class ProductAccountsRepository:
         if KardexConfig().followTransaction:
             raise DirectStockAdjustmentBlocked(
                 "Direct stock adjustments are not allowed when followTransaction is active."
+            )
+        product = await ProductsCollection.get_instance().fetch_product_by_id(
+            product_id
+        )
+        if product is not None and product.get("productType", "item") != "item":
+            raise InvalidOperation(
+                "Los servicios y productos no inventariables no manejan existencias."
             )
         result = await self.product_accounts_ds.substract_product_account_stock(
             product_id, branch_id, **kwargs

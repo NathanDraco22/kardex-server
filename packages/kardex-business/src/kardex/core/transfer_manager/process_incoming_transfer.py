@@ -3,6 +3,7 @@ from kardex.core.inventory import (
     InventoryBatchTransformer,
     InventoryEntryBatchItem,
     InventoryEngine,
+    ensure_inventory_products,
 )
 
 from kardex.repos.v1.transfers import TransferInDb, ReceiveTransferIntent
@@ -64,6 +65,12 @@ async def process_incoming_transfer(
                 raise TransferAlreadyProcessedError(
                     "Este traslado ya fue procesado anteriormente"
                 )
+
+            # Solo se reciben artículos inventariables
+            await ensure_inventory_products(
+                [item.id for item in transfer_doc.items],
+                operation_label="traslados entre sucursales",
+            )
 
             # Validar Sucursal Destino
             destination_branch_in_db = branches_tool.get_branch_by_id(

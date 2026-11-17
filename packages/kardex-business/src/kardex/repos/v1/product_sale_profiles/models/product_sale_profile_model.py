@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from kardex.repos.v1.common.models.sale_item import ProductType
 
 
 class InventoryProduct(BaseModel):
@@ -6,11 +7,12 @@ class InventoryProduct(BaseModel):
     name: str
     description: str | None = None
     code: str | None = None
-    brandName: str
+    brandName: str = ""
     unitName: str
     categoryName: str | None = None
     tags: list[str]
     isActive: bool = True
+    productType: ProductType = "item"
 
 
 class ProductAccount(BaseModel):

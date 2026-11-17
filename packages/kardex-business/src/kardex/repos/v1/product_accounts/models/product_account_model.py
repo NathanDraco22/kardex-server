@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class BaseProductAccount(BaseModel):
@@ -12,18 +12,18 @@ class BaseProductAccount(BaseModel):
 
 
 class UpdateProductAccount(BaseModel):
-    currentStock: int | None = None
-    averageCost: int | None = None
+    currentStock: int | None = Field(default=None, ge=0)
+    averageCost: int | None = Field(default=None, ge=0)
 
 
 class AddToProductAccount(BaseModel):
-    currentStock: int
-    averageCost: int
+    currentStock: int = Field(ge=0)
+    averageCost: int = Field(ge=0)
     expirationDate: int | None = None
 
 
 class SubstractToProductAccount(BaseModel):
-    currentStock: int
+    currentStock: int = Field(ge=0)
 
 
 class ProductAccountInDb(BaseProductAccount):

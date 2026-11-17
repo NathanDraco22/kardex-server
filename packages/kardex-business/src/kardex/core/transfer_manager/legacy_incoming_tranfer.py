@@ -11,6 +11,8 @@ from kardex.repos.v1.product_stats import CreateProductStat
 
 from kardex.tools import UuidTool, TimeTools, BranchesTool
 
+from kardex.core.inventory import ensure_inventory_products
+
 
 from kardex.services import MongoService
 
@@ -64,6 +66,12 @@ async def process_incoming_transfer(
 
             if transfer_doc.status != "inTransit":
                 raise Exception("Este traslado ya fue procesado anteriormente")
+
+            # Solo se reciben artículos inventariables
+            await ensure_inventory_products(
+                [item.id for item in transfer_doc.items],
+                operation_label="traslados entre sucursales",
+            )
 
             destination_branch_in_db = BranchesTool().get_branch_by_id(
                 transfer_doc.destination

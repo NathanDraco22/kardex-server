@@ -2,16 +2,18 @@ from typing import Literal
 from pydantic import BaseModel
 
 PaymentType = Literal["cash", "credit", "transfer", "card", "check", "other"]
+ProductType = Literal["item", "nonInventory", "service"]
 
 
 class ProductItem(BaseModel):
     id: str
     name: str
     unitName: str
-    brandName: str
+    brandName: str = ""
     code: str | None = None
     categoryName: str | None = None
     tags: list[str] = []
+    productType: ProductType = "item"
 
 
 class SaleItem(BaseModel):

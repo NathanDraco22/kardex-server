@@ -54,9 +54,21 @@ class ProductsController:
         )
 
     async def get_paginated_products(
-        self, offset: int, limit: int
+        self,
+        offset: int = 0,
+        limit: int = 20,
+        branchId: str | None = None,
+        productType: str | None = None,
+        onlyInventory: bool | None = None,
+        **_,
     ) -> ListResponse[ProductInDb]:
-        products = await self.products_repo.get_paginated_products(offset, limit)
+        products = await self.products_repo.get_paginated_products(
+            offset,
+            limit,
+            branch_id=branchId,
+            product_type=productType,
+            only_inventory=onlyInventory,
+        )
         return ListResponse(
             data=products,
             count=len(products),
@@ -72,9 +84,18 @@ class ProductsController:
         return product
 
     async def search_product_by_text(
-        self, text_query: str
+        self,
+        text_query: str,
+        branch_id: str | None = None,
+        product_type: str | None = None,
+        only_inventory: bool | None = None,
     ) -> ListResponse[ProductInDb]:
-        products = await self.products_repo.search_product_by_text(text_query)
+        products = await self.products_repo.search_product_by_text(
+            text_query,
+            branch_id=branch_id,
+            product_type=product_type,
+            only_inventory=only_inventory,
+        )
         return ListResponse(
             data=products,
             count=len(products),
@@ -84,9 +105,14 @@ class ProductsController:
         self,
         branch_id: str,
         text_query: str,
+        product_type: str | None = None,
+        only_inventory: bool | None = None,
     ) -> ListResponse[ProductInDbInBranch]:
         products = await self.products_repo.search_product_in_branch(
-            branch_id, text_query
+            branch_id,
+            text_query,
+            product_type=product_type,
+            only_inventory=only_inventory,
         )
         return ListResponse(
             data=products,
