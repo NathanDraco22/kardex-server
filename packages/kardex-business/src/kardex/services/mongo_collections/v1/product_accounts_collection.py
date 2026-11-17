@@ -126,15 +126,56 @@ class ProductAccountsCollection(BaseMongoCollection):
     async def get_product_accounts_by_product(
         self,
         product_id: str,
+        session: Any = None,
     ) -> list[dict[str, Any]]:
         collection = self._collection
         cursor = collection.find(
             {
                 "productId": product_id,
-            }
+            },
+            session=session,
         )
 
         return await cursor.to_list(length=None)
+
+    async def create_product_account_if_not_exist_with_session(
+        self,
+        branch_id: str,
+        product_id: str,
+        product_account: dict,
+        session: Any,
+    ) -> None:
+        collection = self._collection
+        await collection.find_one_and_update(
+            {
+                "branchId": branch_id,
+                "productId": product_id,
+            },
+            {"$setOnInsert": product_account},
+            return_document=ReturnDocument.AFTER,
+            session=session,
+            upsert=True,
+        )
+
+    async def reset_product_accounts_stock_and_cost_with_session(
+        self,
+        product_id: str,
+        session: Any,
+    ) -> None:
+        collection = self._collection
+        await collection.update_many(
+            {"productId": product_id},
+            {
+                "$set": {
+                    "currentStock": 0,
+                    "averageCost": 0,
+                    "lastCost": 0,
+                    "maximumCost": 0,
+                    "updatedAt": TimeTools.get_now_in_milliseconds(),
+                }
+            },
+            session=session,
+        )
 
     async def get_product_account_with_product_data(
         self, product_id: str, branch_id: str
@@ -826,6 +867,10 @@ class ProductAccountsCollection(BaseMongoCollection):
                             {
                                 "$match": {
                                     "isDeleted": False,
+                                    "$or": [
+                                        {"productType": "item"},
+                                        {"productType": {"$exists": False}},
+                                    ],
                                 }
                             }
                         ],
@@ -849,6 +894,26 @@ class ProductAccountsCollection(BaseMongoCollection):
                         "branchId": branch_id,
                     }
                 },
+                {
+                    "$lookup": {
+                        "from": "Products",
+                        "localField": "productId",
+                        "foreignField": "id",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "isDeleted": False,
+                                    "$or": [
+                                        {"productType": "item"},
+                                        {"productType": {"$exists": False}},
+                                    ],
+                                }
+                            }
+                        ],
+                        "as": "product",
+                    }
+                },
+                {"$unwind": "$product"},
                 {
                     "$group": {
                         "_id": branch_id,

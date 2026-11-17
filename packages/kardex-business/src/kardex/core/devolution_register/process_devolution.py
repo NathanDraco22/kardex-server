@@ -1,5 +1,6 @@
 from typing import Tuple, List
 
+from kardex.core.inventory import fetch_product_types_map
 from kardex.repos.v1.devolutions import DevolutionInDb, DevolutionStatus
 from kardex.repos.v1.product_accounts import ProductAccountInDb
 from kardex.repos.v1.product_transactions import ProductTransactionInDb
@@ -29,9 +30,17 @@ async def process_devolution(
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():
+            product_types = await fetch_product_types_map(
+                [item.product.id for item in devolution.returnedItems]
+            )
             created_product_transactions: List[ProductTransactionInDb] = []
 
             for item in devolution.returnedItems:
+                resolved_type = product_types.get(
+                    item.product.id, item.product.productType
+                )
+                if resolved_type != "item":
+                    continue
                 quantity_to_add = abs(item.quantity)
 
                 updated_account_data = (
@@ -65,9 +74,10 @@ async def process_devolution(
             product_transactions_data = [
                 t.model_dump() for t in created_product_transactions
             ]
-            await prd_transaction_col.create_many_product_transactions_with_session(
-                product_transactions_data, session=session
-            )
+            if product_transactions_data:
+                await prd_transaction_col.create_many_product_transactions_with_session(
+                    product_transactions_data, session=session
+                )
 
             new_status: DevolutionStatus = "confirmed"
             confirmed_devolution_data = (
@@ -101,10 +111,18 @@ async def process_anon_devolution(
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():
+            product_types = await fetch_product_types_map(
+                [item.product.id for item in devolution.returnedItems]
+            )
             created_product_transactions: List[ProductTransactionInDb] = []
             updated_product_accounts: List[ProductAccountInDb] = []
 
             for item in devolution.returnedItems:
+                resolved_type = product_types.get(
+                    item.product.id, item.product.productType
+                )
+                if resolved_type != "item":
+                    continue
                 quantity_to_add = abs(item.quantity)
 
                 updated_account_data = (
@@ -139,9 +157,10 @@ async def process_anon_devolution(
             product_transactions_data = [
                 t.model_dump() for t in created_product_transactions
             ]
-            await prd_transaction_col.create_many_product_transactions_with_session(
-                product_transactions_data, session=session
-            )
+            if product_transactions_data:
+                await prd_transaction_col.create_many_product_transactions_with_session(
+                    product_transactions_data, session=session
+                )
 
             confirmed_devolution_data = (
                 await devolution_col.update_devolution_status_by_id(

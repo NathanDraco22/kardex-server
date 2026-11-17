@@ -2,6 +2,7 @@ from kardex.core.inventory import (
     InventoryExitBatchItem,
     InventoryBatchTransformer,
     InventoryEngine,
+    ensure_inventory_products,
 )
 from kardex.tools import UuidTool, TimeTools, BranchesTool, BranchNotFound
 from kardex.repos.v1.exit_docs import ExitDocInDb, CreateExitDoc
@@ -23,6 +24,11 @@ async def process_exit_doc(
     product_account_col = ProductAccountsCollection.get_instance()
 
     branches_tool = BranchesTool()
+
+    await ensure_inventory_products(
+        [item.productId for item in create_exit_doc.items],
+        operation_label="salidas de inventario",
+    )
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():

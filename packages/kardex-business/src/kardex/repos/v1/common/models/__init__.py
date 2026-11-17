@@ -8,6 +8,7 @@ from .entry_item import EntryItem
 from .exit_item import ExitItem
 from .coordinate import Coordinates
 from .product_stock_demant import ProductStockDemand
+from .payment_detail import PaymentDetail
 
 __all__ = [
     "ProductItem",
@@ -23,4 +24,5 @@ __all__ = [
     "ExitItem",
     "Coordinates",
     "ProductStockDemand",
+    "PaymentDetail",
 ]

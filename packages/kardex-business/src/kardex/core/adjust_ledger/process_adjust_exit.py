@@ -3,6 +3,7 @@ from kardex.core.inventory import (
     InventoryBatchTransformer,
     InventoryExitBatchItem,
     InventoryEngine,
+    ensure_inventory_products,
 )
 
 from kardex.repos.v1.adjust_exits import AdjustExitInDb, CreateAdjustExit
@@ -30,6 +31,11 @@ async def process_adjust_exit(
 
     # Tools
     branches_tool = BranchesTool()
+
+    await ensure_inventory_products(
+        [item.productId for item in adjust_exit.items],
+        operation_label="ajustes de salida",
+    )
 
     # Determinar el Subtipo de Transacción
     # Mapeamos el string del input al Enum del sistema

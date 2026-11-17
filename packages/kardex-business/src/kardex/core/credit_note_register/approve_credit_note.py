@@ -1,5 +1,6 @@
 from typing import List
 
+from kardex.core.inventory import fetch_product_types_map
 from kardex.repos.v1.common.models import UserInfo
 from kardex.repos.v1.credit_notes import CreditNoteInDb
 from kardex.repos.v1.product_accounts import ProductAccountInDb
@@ -45,11 +46,19 @@ async def approve_credit_note(
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():
-            # 1. Si es devolución, reingresar stock físico y registrar transacciones
+            # 1. Si es devolución, reingresar stock físico y registrar transacciones solo para ítems inventariables
             if credit_note.type == "devolution" and credit_note.returnedItems:
+                product_types = await fetch_product_types_map(
+                    [item.product.id for item in credit_note.returnedItems]
+                )
                 created_transactions: List[ProductTransactionInDb] = []
 
                 for item in credit_note.returnedItems:
+                    resolved_type = product_types.get(
+                        item.product.id, item.product.productType
+                    )
+                    if resolved_type != "item":
+                        continue
                     quantity_to_add = abs(item.quantity)
                     if quantity_to_add == 0:
                         continue

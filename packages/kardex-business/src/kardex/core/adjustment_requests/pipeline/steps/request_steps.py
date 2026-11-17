@@ -79,6 +79,13 @@ class LoadProductsStep(PipelineStep[AdjustmentRequestContext]):
         if len(products) != len(product_ids):
             raise ProductNotFound("PRODUCT_NOT_FOUND")
 
+        non_inventory = [p.name for p in products if not p.tracks_inventory]
+        if non_inventory:
+            raise InvalidOperation(
+                "Los servicios y productos no inventariables no permiten ajustes de inventario: "
+                + ", ".join(non_inventory)
+            )
+
         context.product_ids = product_ids
 
 

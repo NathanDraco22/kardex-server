@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from kardex.repos.v1.common.models.sale_item import ProductType
 from kardex.repos.v1.products.models.product_model import ExtraUnit
 
 
@@ -7,11 +8,12 @@ class InventoryProduct(BaseModel):
     name: str
     description: str | None = None
     code: str | None = None
-    brandName: str
+    brandName: str = ""
     unitName: str
     categoryName: str | None = None
     tags: list[str]
     isActive: bool = True
+    productType: ProductType = "item"
     image: str = ""
     extraUnits: list[ExtraUnit] = []
     defaultUnitIndex: int = 0

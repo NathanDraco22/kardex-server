@@ -1,3 +1,4 @@
+from kardex.core.inventory import fetch_product_types_map
 from kardex.repos.v1.credit_notes import CreditNoteInDb
 from kardex.services.mongo_collections.v1 import (
     CreditNotesCollection,
@@ -41,7 +42,15 @@ async def reverse_credit_note(credit_note_id: str) -> CreditNoteInDb:
                 and credit_note.type == "devolution"
                 and credit_note.returnedItems
             ):
+                product_types = await fetch_product_types_map(
+                    [item.product.id for item in credit_note.returnedItems]
+                )
                 for item in credit_note.returnedItems:
+                    resolved_type = product_types.get(
+                        item.product.id, item.product.productType
+                    )
+                    if resolved_type != "item":
+                        continue
                     quantity_to_remove = abs(item.quantity)
                     if quantity_to_remove == 0:
                         continue

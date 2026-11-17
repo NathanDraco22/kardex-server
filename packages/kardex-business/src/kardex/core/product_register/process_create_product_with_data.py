@@ -1,6 +1,9 @@
 from kardex.tools import UuidTool, TimeTools
 from kardex.tools.search_tools import generate_prefixes
 from kardex.core.counter_manager.counter_manager import CounterManager
+from kardex.core.product_register.product_type_lifecycle import (
+    resolve_required_branch_id,
+)
 
 from kardex.repos.v1.products.models.product_model import (
     CreateProductWithData,
@@ -48,6 +51,14 @@ async def process_create_product_with_data(
     create_product = data.createProduct
     branch_id = data.branchId
     inventory_info = data.inventoryInfo
+    is_inventory_item = create_product.productType == "item"
+
+    if not is_inventory_item:
+        branch_id = resolve_required_branch_id(branch_id)
+        create_product.branchId = branch_id
+        all_branches = [b for b in all_branches if b.id == branch_id]
+    else:
+        create_product.branchId = None
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():
@@ -76,12 +87,14 @@ async def process_create_product_with_data(
             target_profile: ProductSaleProfileInDb | None = None
             target_branch = None
 
+            effective_quantity = inventory_info.quantity if is_inventory_item else 0
+
             for branch in all_branches:
                 is_target = branch.id == branch_id
                 if is_target:
                     target_branch = branch
 
-                current_stock = inventory_info.quantity if is_target else 0
+                current_stock = effective_quantity if is_target else 0
                 cost = inventory_info.cost if is_target else 0
                 sale_price = inventory_info.price if is_target else 0
 
@@ -119,7 +132,7 @@ async def process_create_product_with_data(
                 target_account = ProductAccountInDb(
                     productId=new_product_id,
                     branchId=branch_id,
-                    currentStock=inventory_info.quantity,
+                    currentStock=effective_quantity,
                     promiseStock=0,
                     averageCost=inventory_info.cost,
                     lastCost=inventory_info.cost,
@@ -154,8 +167,8 @@ async def process_create_product_with_data(
                 product_sale_profiles=new_profiles, session=session
             )
 
-            # 4. Registrar transacción inicial de kárdex si quantity > 0
-            if inventory_info.quantity > 0:
+            # 4. Registrar transacción inicial de kárdex si es inventariable y quantity > 0
+            if is_inventory_item and effective_quantity > 0:
                 initial_tx = ProductTransactionInDb(
                     id=UuidTool.generate_uuid(),
                     documentId="0000",
@@ -164,17 +177,21 @@ async def process_create_product_with_data(
                     subtype="adjustment",
                     productId=new_product_id,
                     branchId=branch_id,
-                    quantity=inventory_info.quantity,
+                    quantity=effective_quantity,
                     averageCost=inventory_info.cost,
-                    resultStock=inventory_info.quantity,
+                    resultStock=effective_quantity,
                     createdAt=now_in_milliseconds,
                 )
                 await transactions_col.create_many_product_transactions_with_session(
                     [initial_tx.model_dump()], session=session
                 )
 
-            # 5. Crear stats si la sucursal es comercial
-            if target_branch is not None and target_branch.isCommerce:
+            # 5. Crear stats si la sucursal es comercial y es inventariable
+            if (
+                is_inventory_item
+                and target_branch is not None
+                and target_branch.isCommerce
+            ):
                 product_stat = CreateProductStat(
                     branchId=branch_id,
                     productId=new_product_id,

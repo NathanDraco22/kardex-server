@@ -13,10 +13,21 @@ class ProductsDataSource:
         return await collection.fetch_all_products()
 
     async def get_paginated_products(
-        self, offset: int, limit: int
+        self,
+        offset: int,
+        limit: int,
+        branch_id: str | None = None,
+        product_type: str | None = None,
+        only_inventory: bool | None = None,
     ) -> list[dict[str, Any]]:
         collection = ProductsCollection.get_instance()
-        return await collection.fetch_paginated_products(offset, limit)
+        return await collection.fetch_paginated_products(
+            offset,
+            limit,
+            branch_id=branch_id,
+            product_type=product_type,
+            only_inventory=only_inventory,
+        )
 
     async def get_all_products_with_accounts(
         self,
@@ -35,17 +46,35 @@ class ProductsDataSource:
         collection = ProductsCollection.get_instance()
         return await collection.fetch_product_by_code(product_code)
 
-    async def search_product_by_text(self, text_query: str) -> list[dict[str, Any]]:
+    async def search_product_by_text(
+        self,
+        text_query: str,
+        branch_id: str | None = None,
+        product_type: str | None = None,
+        only_inventory: bool | None = None,
+    ) -> list[dict[str, Any]]:
         collection = ProductsCollection.get_instance()
-        return await collection.search_product_by_text(text_query)
+        return await collection.search_product_by_text(
+            text_query,
+            branch_id=branch_id,
+            product_type=product_type,
+            only_inventory=only_inventory,
+        )
 
     async def search_product_in_branch(
         self,
         branch_id: str,
         text_query: str,
+        product_type: str | None = None,
+        only_inventory: bool | None = None,
     ) -> list[dict[str, Any]]:
         collection = ProductsCollection.get_instance()
-        return await collection.searchProductInBranch(branch_id, text_query)
+        return await collection.searchProductInBranch(
+            branch_id,
+            text_query,
+            product_type=product_type,
+            only_inventory=only_inventory,
+        )
 
     async def get_products_in_branch_by_ids(
         self,

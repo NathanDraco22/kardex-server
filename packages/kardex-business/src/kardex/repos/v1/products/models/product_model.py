@@ -1,3 +1,4 @@
+from kardex.repos.v1.common.models.sale_item import ProductType
 from kardex.repos.v1.product_accounts import ProductAccountInDb
 from kardex.repos.v1.product_sale_profiles import ProductSaleProfileInDb
 
@@ -15,15 +16,25 @@ class BaseProduct(BaseModel):
     code: str = ""
     altCode: str = ""
     image: str = ""
-    brandName: str
+    brandName: str = ""
     unitName: str
     categoryName: str | None = None
     tags: list[str]
     hasIva: bool = False
     isActive: bool = True
+    productType: ProductType = "item"
+    branchId: str | None = None
     extraUnits: list[ExtraUnit] = []
     defaultUnitIndex: int = 0  # 0 = unidad base, 1 = extraUnits[0], 2 = extraUnits[1]
     wholesaleUnitIndex: int = 0  # 0 = no definida, fallback a defaultUnitIndex
+
+    @property
+    def tracks_inventory(self) -> bool:
+        return self.productType == "item"
+
+    @property
+    def is_service(self) -> bool:
+        return self.productType == "service"
 
     @property
     def default_unit_name(self) -> str:
@@ -60,7 +71,12 @@ class UpdateProduct(BaseModel):
     categoryName: str | None = None
     tags: list[str] | None = None
     image: str | None = None
+    hasIva: bool | None = None
     isActive: bool | None = None
+    productType: ProductType | None = None
+    # Solo se honra al convertir un artículo (global) en servicio/no inventariable.
+    # Para cualquier otra actualización se ignora: la sucursal es inmutable.
+    branchId: str | None = None
     extraUnits: list[ExtraUnit] | None = None
     defaultUnitIndex: int | None = None
     wholesaleUnitIndex: int | None = None

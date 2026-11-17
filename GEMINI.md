@@ -825,3 +825,16 @@ Agregar el endpoint composite de arqueo de turno (`GET /api/v1/composite/shift-a
 4. **Colecciones:** `fetch_documents_by_shift` con ``, ` createdAt`, `` y proyeccion minima en invoices, receipts, devolutions y credit_notes. Movimientos reutilizan el repositorio existente.
 5. **HTTP:** endpoint aditivo en `composite_router` con `includeDocuments` y `documentsLimit` (1..1000); controller delega en `build_shift_arqueo`.
 6. **Docs y tests:** ficha en `wiki/modules/composite.md` y 4 pruebas puras nuevas en `test/test_shifts.py` (roundtrip de totales, defaults, reglas counted y live/stored). `ruff`, `ty` y `pytest` (57 pruebas) OK. No hay commit.
+
+## Fecha: 2026-11-17
+### Objetivo
+Cerrar hallazgos de integridad de la feature de productos no inventariables y servicios (`productType`).
+
+### Resumen de Implementacion
+1. **Anulacion de notas de credito:** `reverse_credit_note` resuelve el tipo de cada item y solo resta stock a `item`; servicios y no inventariables ya no quedan con existencias negativas al anular una NC de devolucion.
+2. **Transiciones de tipo:** `item -> nonInventory/service` se bloquea si existe `currentStock` distinto de 0 o `promiseStock > 0` en cualquier sucursal; se elimino el asentamiento de cierre y el borrado silencioso de existencias. `nonInventory/service -> item` reinicia costos con `reset_product_accounts_stock_and_cost_with_session` y regresa el producto al catalogo global sin aprovisionar cuentas en otras sucursales.
+3. **Sucursal inmutable:** `UpdateProduct.branchId` solo se honra en la conversion `item -> nonInventory/service`; en cualquier otra actualizacion se descarta y el producto conserva la sucursal donde fue creado. La sucursal de un servicio o no inventariable no puede moverse (el middleware `multi_tenant_middleware` no esta cableado, por eso la conversion sigue recibiendo la sucursal en el body).
+4. **Guard de inventario:** `ensure_inventory_products` rechaza IDs inexistentes (`PRODUCT_NOT_FOUND`) e ignora productos con `isDeleted`; `fetch_product_types_map` tambien ignora borrados. Se agrego el guard a `process_incoming_transfer` y `legacy_incoming_tranfer`.
+5. **Validaciones:** `UpdateProductAccount`, `AddToProductAccount` y `SubstractToProductAccount` usan `Field(ge=0)`; `process_create_product_with_data` valida la sucursal con `resolve_required_branch_id` antes de crear cuentas o perfiles.
+6. **Tests:** `test/test_product_types.py` cubre transiciones, inmutabilidad de sucursal, anulacion de NC, guard de productos inexistentes/borrados, rangos negativos y traslado entrante con servicios (20 pruebas). Suite completa: 83 passed.
+7. **Verificacion:** `ruff check` OK; `ty check` solo reporta los 9 diagnosticos preexistentes de `test/test_credit_note_policy.py` y `test/test_credit_note_vs_devolution.py`. Sin commit.

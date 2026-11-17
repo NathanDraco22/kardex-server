@@ -1,6 +1,9 @@
 from kardex.tools import UuidTool, TimeTools
 from kardex.tools.search_tools import generate_prefixes
 from kardex.core.counter_manager.counter_manager import CounterManager
+from kardex.core.product_register.product_type_lifecycle import (
+    create_branch_scoped_product,
+)
 
 from kardex.repos.v1.products import CreateProduct, ProductInDb
 from kardex.repos.v1.product_accounts.models.product_account_model import (
@@ -22,6 +25,9 @@ from kardex.services.mongo_collections.v1 import (
 async def process_create_product(
     create_product: CreateProduct,
 ) -> ProductInDb:
+    if create_product.productType != "item":
+        return await create_branch_scoped_product(create_product)
+
     mongo_client = MongoService().client
 
     products_col = ProductsCollection.get_instance()

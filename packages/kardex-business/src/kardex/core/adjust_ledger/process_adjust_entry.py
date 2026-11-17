@@ -3,6 +3,7 @@ from kardex.core.inventory import (
     InventoryBatchTransformer,
     InventoryEntryBatchItem,
     InventoryEngine,
+    ensure_inventory_products,
 )
 from kardex.repos.v1.adjust_entries import AdjustEntryInDb, CreateAdjustEntry
 from kardex.repos.v1.product_accounts import ProductAccountInDb
@@ -32,6 +33,11 @@ async def process_adjust_entry(
 
     # Tools
     branches_tool = BranchesTool()
+
+    await ensure_inventory_products(
+        [item.productId for item in adjust_entry.items],
+        operation_label="ajustes de entrada",
+    )
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():

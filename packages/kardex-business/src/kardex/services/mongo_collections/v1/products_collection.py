@@ -8,6 +8,56 @@ from kardex.services import BaseMongoCollection
 class ProductsCollection(BaseMongoCollection):
     collection_name = "Products"
 
+    @staticmethod
+    def _build_product_filters(
+        branch_id: str | None = None,
+        product_type: str | None = None,
+        only_inventory: bool | None = None,
+        extra_conditions: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        and_clauses: list[dict[str, Any]] = [{"isDeleted": False}]
+
+        if branch_id:
+            and_clauses.append(
+                {
+                    "$or": [
+                        {"productType": "item"},
+                        {"productType": {"$exists": False}},
+                        {"branchId": branch_id},
+                        {"branchId": None},
+                    ]
+                }
+            )
+
+        if only_inventory:
+            and_clauses.append(
+                {
+                    "$or": [
+                        {"productType": "item"},
+                        {"productType": {"$exists": False}},
+                    ]
+                }
+            )
+        elif product_type:
+            if product_type == "item":
+                and_clauses.append(
+                    {
+                        "$or": [
+                            {"productType": "item"},
+                            {"productType": {"$exists": False}},
+                        ]
+                    }
+                )
+            else:
+                and_clauses.append({"productType": product_type})
+
+        if extra_conditions:
+            and_clauses.extend(extra_conditions)
+
+        if len(and_clauses) == 1:
+            return and_clauses[0]
+        return {"$and": and_clauses}
+
     async def create_product(self, product: dict) -> None:
         collection = self._collection
         await collection.insert_one(product)
@@ -30,11 +80,21 @@ class ProductsCollection(BaseMongoCollection):
         return result
 
     async def fetch_paginated_products(
-        self, offset: int, limit: int
+        self,
+        offset: int,
+        limit: int,
+        branch_id: str | None = None,
+        product_type: str | None = None,
+        only_inventory: bool | None = None,
     ) -> list[dict[str, Any]]:
         collection = self._collection
 
-        cursor = collection.find({"isDeleted": False})
+        match_query = self._build_product_filters(
+            branch_id=branch_id,
+            product_type=product_type,
+            only_inventory=only_inventory,
+        )
+        cursor = collection.find(match_query)
         cursor = cursor.sort("name", 1).skip(offset).limit(limit)
 
         result = await cursor.to_list(length=None)
@@ -63,37 +123,49 @@ class ProductsCollection(BaseMongoCollection):
 
         return result
 
-    async def search_product_by_text(self, text_query: str) -> list[dict[str, Any]]:
+    async def search_product_by_text(
+        self,
+        text_query: str,
+        branch_id: str | None = None,
+        product_type: str | None = None,
+        only_inventory: bool | None = None,
+    ) -> list[dict[str, Any]]:
         collection = self._collection
         safe_query = re.escape(text_query)
 
+        text_or_clause = {
+            "$or": [
+                {
+                    "$text": {
+                        "$search": safe_query,
+                        "$caseSensitive": False,
+                        "$diacriticSensitive": False,
+                    }
+                },
+                {
+                    "code": {
+                        "$regex": f"^{safe_query}",
+                        "$options": "i",
+                    }
+                },
+                {
+                    "altCode": {
+                        "$regex": f"^{safe_query}",
+                        "$options": "i",
+                    }
+                },
+            ]
+        }
+
+        match_query = self._build_product_filters(
+            branch_id=branch_id,
+            product_type=product_type,
+            only_inventory=only_inventory,
+            extra_conditions=[text_or_clause],
+        )
+
         pipeline = [
-            {
-                "$match": {
-                    "isDeleted": False,
-                    "$or": [
-                        {
-                            "$text": {
-                                "$search": safe_query,
-                                "$caseSensitive": False,
-                                "$diacriticSensitive": False,
-                            }
-                        },
-                        {
-                            "code": {
-                                "$regex": f"^{safe_query}",
-                                "$options": "i",
-                            }
-                        },
-                        {
-                            "altCode": {
-                                "$regex": f"^{safe_query}",
-                                "$options": "i",
-                            }
-                        },
-                    ]
-                }
-            },
+            {"$match": match_query},
             {
                 "$addFields": {
                     "baseScore": {"$meta": "textScore"},
@@ -266,37 +338,43 @@ class ProductsCollection(BaseMongoCollection):
         self,
         branch_id: str,
         text_query: str,
+        product_type: str | None = None,
+        only_inventory: bool | None = None,
     ) -> list[dict[str, Any]]:
         collection = self._collection
         safe_query = re.escape(text_query)
-        cursor = await collection.aggregate(
-            [
+        text_or_clause = {
+            "$or": [
                 {
-                    "$match": {
-                        "isDeleted": False,
-                        "$or": [
-                            {
-                                "$text": {
-                                    "$search": safe_query,
-                                    "$caseSensitive": False,
-                                    "$diacriticSensitive": False,
-                                }
-                            },
-                            {
-                                "code": {
-                                    "$regex": f"^{safe_query}",
-                                    "$options": "i",
-                                }
-                            },
-                            {
-                                "altCode": {
-                                    "$regex": f"^{safe_query}",
-                                    "$options": "i",
-                                }
-                            },
-                        ]
+                    "$text": {
+                        "$search": safe_query,
+                        "$caseSensitive": False,
+                        "$diacriticSensitive": False,
                     }
                 },
+                {
+                    "code": {
+                        "$regex": f"^{safe_query}",
+                        "$options": "i",
+                    }
+                },
+                {
+                    "altCode": {
+                        "$regex": f"^{safe_query}",
+                        "$options": "i",
+                    }
+                },
+            ]
+        }
+        match_query = self._build_product_filters(
+            branch_id=branch_id,
+            product_type=product_type,
+            only_inventory=only_inventory,
+            extra_conditions=[text_or_clause],
+        )
+        cursor = await collection.aggregate(
+            [
+                {"$match": match_query},
                 {
                     "$addFields": {
                         "baseScore": {"$meta": "textScore"},
@@ -453,14 +531,18 @@ class ProductsCollection(BaseMongoCollection):
         branch_id = kwargs.get("branchId")
         limit = kwargs.get("limit", 50)
         offset = kwargs.get("offset", 0)
+        product_type = kwargs.get("productType")
+        only_inventory = kwargs.get("onlyInventory")
+
+        match_query = self._build_product_filters(
+            branch_id=branch_id,
+            product_type=product_type,
+            only_inventory=only_inventory,
+        )
 
         cursor = await collection.aggregate(
             [
-                {
-                    "$match": {
-                        "isDeleted": False,
-                    }
-                },
+                {"$match": match_query},
                 {
                     "$lookup": {
                         "from": "ProductAccounts",
@@ -519,14 +601,18 @@ class ProductsCollection(BaseMongoCollection):
     ) -> AsyncIterable[dict[str, Any]]:
         collection = self._collection
         branch_id = kwargs.get("branchId")
+        product_type = kwargs.get("productType")
+        only_inventory = kwargs.get("onlyInventory")
+
+        match_query = self._build_product_filters(
+            branch_id=branch_id,
+            product_type=product_type,
+            only_inventory=only_inventory,
+        )
 
         cursor = await collection.aggregate(
             [
-                {
-                    "$match": {
-                        "isDeleted": False,
-                    }
-                },
+                {"$match": match_query},
                 {
                     "$lookup": {
                         "from": "ProductAccounts",
@@ -577,14 +663,14 @@ class ProductsCollection(BaseMongoCollection):
     ) -> dict[str, Any] | None:
         collection = self._collection
 
+        match_query = self._build_product_filters(
+            branch_id=branch_id,
+            extra_conditions=[{"id": product_id}],
+        )
+
         cursor = await collection.aggregate(
             [
-                {
-                    "$match": {
-                        "id": product_id,
-                        "isDeleted": False,
-                    }
-                },
+                {"$match": match_query},
                 {
                     "$lookup": {
                         "from": "ProductAccounts",
@@ -668,12 +754,14 @@ class ProductsCollection(BaseMongoCollection):
         self,
         product_id: str,
         product: dict,
+        session: Any = None,
     ) -> dict[str, Any] | None:
         collection = self._collection
 
         result = await collection.find_one_and_update(
             {"id": product_id},
             {"$set": product},
+            session=session,
             return_document=ReturnDocument.AFTER,
         )
 
