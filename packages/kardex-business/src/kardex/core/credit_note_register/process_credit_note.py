@@ -133,6 +133,10 @@ async def _recalculate_devolution_items(
         raise InvalidOperation("The original invoice belongs to a different branch.")
     if invoice.clientId != create_credit_note.clientId:
         raise InvalidOperation("The original invoice belongs to a different client.")
+    if invoice.invoiceDiscount > 0:
+        raise InvalidOperation(
+            "No se permiten devoluciones por producto en facturas con descuento global."
+        )
 
     previous_credit_notes = await credit_notes_col.fetch_credit_notes_by_invoice_id(
         invoice_id, session=session

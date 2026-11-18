@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from kardex.repos.v1.common.models import PaymentType, UserInfo
+from kardex.repos.v1.common.models import DiscountType, PaymentType, UserInfo
 from kardex.repos.v1.clients.models.client_model import ClientInDb
 from kardex.repos.v1.products.models.product_model import ProductInDbInBranch
 from kardex.repos.v1.product_sale_profiles.models.product_sale_profile_model import Discount
@@ -14,6 +14,8 @@ class HoldSaleItem(BaseModel):
     conversionFactor: int = 1
     selectedUnitName: str = ""
     selectedDiscount: Discount | None = None
+    manualDiscountType: DiscountType | None = None
+    manualDiscountValue: int = 0
 
 
 class BaseHoldSale(BaseModel):
@@ -24,6 +26,8 @@ class BaseHoldSale(BaseModel):
     description: str = ""
     selectedPaymentType: PaymentType = "cash"
     items: list[HoldSaleItem] = Field(default_factory=list)
+    discountType: DiscountType | None = None
+    discountValue: int = 0
     totalQuantity: int = 0
     totalAmount: int = 0
     createdBy: UserInfo | None = None
@@ -40,6 +44,8 @@ class UpdateHoldSale(BaseModel):
     isWholesale: bool | None = None
     selectedPaymentType: PaymentType | None = None
     items: list[HoldSaleItem] | None = None
+    discountType: DiscountType | None = None
+    discountValue: int | None = None
     totalQuantity: int | None = None
     totalAmount: int | None = None
 

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 PaymentType = Literal["cash", "credit", "transfer", "card", "check", "other"]
 ProductType = Literal["item", "nonInventory", "service"]
+DiscountType = Literal["percentage", "amount"]
 
 
 class ProductItem(BaseModel):
@@ -24,6 +25,7 @@ class SaleItem(BaseModel):
     cost: int
     price: int
     subTotal: int
+    discountType: DiscountType | None = None
     discountPercentage: int = 0
     totalDiscount: int = 0
     iva: int = 0

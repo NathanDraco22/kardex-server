@@ -76,7 +76,11 @@ class BIRepository:
                     paymentType=inv.paymentType,
                     subtotal=round(sum(i.subTotal for i in inv.saleItems) / 100.0, 2),
                     tax=round(sum(i.iva for i in inv.saleItems) / 100.0, 2),
-                    discount=round(sum(i.totalDiscount for i in inv.saleItems) / 100.0, 2),
+                    discount=round(
+                        (sum(i.totalDiscount for i in inv.saleItems) + inv.invoiceDiscount)
+                        / 100.0,
+                        2,
+                    ),
                     total=round(inv.total / 100.0, 2),
                     status=inv.status,
                 )
