@@ -9,16 +9,21 @@ from kardex.core.inventory import (
     InventoryEntryBatchItem,
     calculate_line_amount,
 )
+from kardex.core.invoice_register.process_invoice import normalize_invoice_discounts
+from kardex.core.order_register.process_order import normalize_order_totals
 from kardex.core.product_register.product_type_lifecycle import (
     update_product_with_type_transition,
 )
 from kardex.repos.v1.adjustment_requests.models.adjustment_request_model import (
     CreateAdjustmentRequestItem,
 )
+from kardex.repos.v1.common.models import ClientInfo, UserInfo
 from kardex.repos.v1.common.models.entry_item import EntryItem
 from kardex.repos.v1.common.models.exit_item import ExitItem
 from kardex.repos.v1.common.models.sale_item import ProductItem, SaleItem
 from kardex.repos.v1.common.models.transfer_item import TransferItem
+from kardex.repos.v1.invoices.models.invoice_model import CreateInvoice
+from kardex.repos.v1.orders.models.order_model import CreateOrder
 from kardex.repos.v1.product_accounts import ProductAccountInDb
 from kardex.repos.v1.products.models.product_model import BaseProduct, UpdateProduct
 from kardex.repos.v1.unit_scales.models.unit_scale_model import BaseUnitScale
@@ -233,3 +238,84 @@ async def test_update_product_blocks_price_unit_factor_change_with_stock_or_tx(
     )
     assert updated is not None
     assert updated.priceUnitFactor == 100
+
+
+def test_normalize_invoice_discounts_recalculates_inflated_subtotal_with_price_unit_factor() -> (
+    None
+):
+    # Simula un cliente con caché desactualizada que envía 1800 * 5000 = 9_000_000 (90,000.00)
+    # mientras el servidor ya resolvió priceUnitFactor = 100 (50.00 lb a 18.00 = 900.00).
+    item = SaleItem(
+        product=ProductItem(
+            id="azucar-1",
+            name="Azúcar",
+            unitName="Libra",
+            priceUnitFactor=100,
+        ),
+        selectedPrice=1,
+        quantity=5000,
+        cost=1000,
+        price=1800,
+        subTotal=9_000_000,
+        total=9_000_000,
+        conversionFactor=100,
+        priceUnitFactor=100,
+    )
+    invoice = CreateInvoice(
+        branchId="b1",
+        clientId="c1",
+        clientInfo=ClientInfo(name="Cliente"),
+        saleItems=[item],
+        status="paid",
+        paymentType="cash",
+        totalCost=50_000,
+        total=9_000_000,
+        createdBy=UserInfo(id="u1", name="User"),
+    )
+
+    normalize_invoice_discounts(invoice)
+
+    assert invoice.saleItems[0].subTotal == 90_000
+    assert invoice.saleItems[0].total == 90_000
+    assert invoice.total == 90_000
+
+
+def test_normalize_order_totals_recalculates_inflated_subtotal_with_price_unit_factor() -> (
+    None
+):
+    item = SaleItem(
+        product=ProductItem(
+            id="azucar-1",
+            name="Azúcar",
+            unitName="Libra",
+            priceUnitFactor=100,
+        ),
+        selectedPrice=1,
+        quantity=5000,
+        cost=1000,
+        price=1800,
+        subTotal=9_000_000,
+        discountPercentage=10,
+        totalDiscount=900_000,
+        total=8_100_000,
+        conversionFactor=100,
+        priceUnitFactor=100,
+    )
+    order = CreateOrder(
+        branchId="b1",
+        clientId="c1",
+        clientInfo=ClientInfo(name="Cliente"),
+        saleItems=[item],
+        status="open",
+        paymentType="cash",
+        totalCost=50_000,
+        total=8_100_000,
+        createdBy=UserInfo(id="u1", name="User"),
+    )
+
+    normalize_order_totals(order)
+
+    assert order.saleItems[0].subTotal == 90_000
+    assert order.saleItems[0].totalDiscount == 9_000
+    assert order.saleItems[0].total == 81_000
+    assert order.total == 81_000

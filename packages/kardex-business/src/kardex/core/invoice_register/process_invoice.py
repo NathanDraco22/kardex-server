@@ -128,9 +128,16 @@ async def _prepare_and_execute_invoice_inventory(
 
 
 def normalize_invoice_discounts(create_invoice: CreateInvoice) -> None:
-    """Valida y normaliza los descuentos por ítem y el descuento global de la factura."""
+    """Valida y normaliza los subtotales y descuentos por ítem y el descuento global de la factura."""
     for item in create_invoice.saleItems:
-        item.subTotal = max(0, item.subTotal)
+        if item.price > 0 and item.quantity > 0:
+            item.subTotal = calculate_line_amount(
+                item.price,
+                item.quantity,
+                max(item.priceUnitFactor, 1),
+            )
+        else:
+            item.subTotal = max(0, item.subTotal)
         if item.discountType == "percentage":
             pct = max(0, min(100, item.discountPercentage))
             item.discountPercentage = pct
@@ -200,8 +207,6 @@ async def process_invoice(
                 create_invoice.orderNumber and create_invoice.status == "open"
             )
 
-            normalize_invoice_discounts(create_invoice)
-
             await _prepare_and_execute_invoice_inventory(
                 create_invoice=create_invoice,
                 invoice_id=new_invoice_id,
@@ -210,6 +215,8 @@ async def process_invoice(
                 prd_transaction_col=prd_transaction_col,
                 is_order_fulfillment=is_order_fulfillment,
             )
+
+            normalize_invoice_discounts(create_invoice)
 
             if create_invoice.status == "draft":
                 create_invoice.status = "open"
