@@ -2,7 +2,7 @@ from kardex.repos.v1.common.models.sale_item import ProductType
 from kardex.repos.v1.product_accounts import ProductAccountInDb
 from kardex.repos.v1.product_sale_profiles import ProductSaleProfileInDb
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ExtraUnit(BaseModel):
@@ -27,6 +27,7 @@ class BaseProduct(BaseModel):
     extraUnits: list[ExtraUnit] = []
     defaultUnitIndex: int = 0  # 0 = unidad base, 1 = extraUnits[0], 2 = extraUnits[1]
     wholesaleUnitIndex: int = 0  # 0 = no definida, fallback a defaultUnitIndex
+    priceUnitFactor: int = Field(default=1, ge=1)
 
     @property
     def tracks_inventory(self) -> bool:
@@ -80,6 +81,7 @@ class UpdateProduct(BaseModel):
     extraUnits: list[ExtraUnit] | None = None
     defaultUnitIndex: int | None = None
     wholesaleUnitIndex: int | None = None
+    priceUnitFactor: int | None = Field(default=None, ge=1)
 
 
 

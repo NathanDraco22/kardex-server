@@ -18,10 +18,14 @@ async def process_exit_doc_direct(
 
     branches_tool = BranchesTool()
 
-    await ensure_inventory_products(
+    price_unit_factors = await ensure_inventory_products(
         [item.productId for item in create_exit_doc.items],
         operation_label="salidas de inventario",
     )
+    for item in create_exit_doc.items:
+        item.priceUnitFactor = price_unit_factors.get(
+            item.productId, max(item.priceUnitFactor, 1)
+        )
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():

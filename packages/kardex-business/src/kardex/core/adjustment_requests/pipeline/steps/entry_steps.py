@@ -45,6 +45,7 @@ class PrepareEntryStep(PipelineStep[AdjustmentRequestContext]):
                 cost=item.cost,
                 quantity=item.difference,
                 conversionFactor=item.conversionFactor,
+                priceUnitFactor=item.priceUnitFactor,
                 standardUnitName=item.standardUnitName,
                 standardUnitFactor=item.standardUnitFactor,
             )

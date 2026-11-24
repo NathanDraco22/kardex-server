@@ -8,7 +8,8 @@ from kardex.core.inventory import (
     InventoryBatchTransformer,
     InventoryExitBatchItem,
     InventoryEngine,
-    fetch_product_types_map,
+    calculate_line_amount,
+    fetch_product_types_and_price_factors_map,
 )
 from kardex.core.counter_manager.counter_manager import CounterManager
 from kardex.core.finance import ClientFinanceEngine, FinanceTransactionRequest
@@ -36,7 +37,9 @@ async def _prepare_and_execute_invoice_inventory(
 ) -> dict[str, ProductAccountInDb]:
     """Procesa la salida de inventario únicamente para ítems inventariables (`productType == 'item'`)."""
     product_ids = list({item.product.id for item in create_invoice.saleItems})
-    product_types = await fetch_product_types_map(product_ids)
+    product_types, price_unit_factors = (
+        await fetch_product_types_and_price_factors_map(product_ids)
+    )
 
     accounts_data = await product_account_col.get_accounts_by_branch_id(
         branch_id=create_invoice.branchId,
@@ -54,6 +57,9 @@ async def _prepare_and_execute_invoice_inventory(
     for idx, item in enumerate(create_invoice.saleItems):
         resolved_type = product_types.get(item.product.id, item.product.productType)
         item.product.productType = resolved_type
+        item.priceUnitFactor = price_unit_factors.get(
+            item.product.id, max(item.priceUnitFactor, 1)
+        )
 
         if resolved_type == "item":
             total_qty = abs(item.quantity + item.bonQuantity)
@@ -110,7 +116,11 @@ async def _prepare_and_execute_invoice_inventory(
             )
 
     create_invoice.totalCost = sum(
-        item.cost * (item.quantity + item.bonQuantity)
+        calculate_line_amount(
+            item.cost,
+            item.quantity + item.bonQuantity,
+            item.priceUnitFactor,
+        )
         for item in create_invoice.saleItems
     )
 

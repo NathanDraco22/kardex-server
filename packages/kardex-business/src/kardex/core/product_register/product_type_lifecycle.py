@@ -15,6 +15,7 @@ from kardex.services import MongoService
 from kardex.services.mongo_collections.v1 import (
     ProductAccountsCollection,
     ProductSaleProfilesCollection,
+    ProductTransactionsCollection,
     ProductsCollection,
 )
 from kardex.tools import (
@@ -125,6 +126,28 @@ async def update_product_with_type_transition(
 
     prev_type = existing.get("productType", "item")
     next_type = updated_data.get("productType", prev_type)
+    is_leaving_inventory = prev_type == "item" and next_type != "item"
+
+    prev_price_unit_factor = max(int(existing.get("priceUnitFactor") or 1), 1)
+    next_price_unit_factor = max(
+        int(updated_data.get("priceUnitFactor", prev_price_unit_factor) or 1), 1
+    )
+    if next_price_unit_factor != prev_price_unit_factor and not is_leaving_inventory:
+        accounts_col = ProductAccountsCollection.get_instance()
+        accounts = await accounts_col.get_product_accounts_by_product(product_id)
+        if any(
+            int(acc.get("currentStock") or 0) != 0
+            or int(acc.get("promiseStock") or 0) > 0
+            for acc in accounts
+        ):
+            raise InvalidOperation(
+                "No se puede cambiar el factor de precio (priceUnitFactor) de un producto con stock o stock comprometido."
+            )
+        tx_col = ProductTransactionsCollection.get_instance()
+        if await tx_col.has_transactions_for_product(product_id):
+            raise InvalidOperation(
+                "No se puede cambiar el factor de precio (priceUnitFactor) de un producto que ya tiene movimientos registrados."
+            )
 
     if prev_type == next_type:
         # La sucursal no se actualiza: el producto permanece donde fue creado.

@@ -34,10 +34,14 @@ async def process_adjust_entry(
     # Tools
     branches_tool = BranchesTool()
 
-    await ensure_inventory_products(
+    price_unit_factors = await ensure_inventory_products(
         [item.productId for item in adjust_entry.items],
         operation_label="ajustes de entrada",
     )
+    for item in adjust_entry.items:
+        item.priceUnitFactor = price_unit_factors.get(
+            item.productId, max(item.priceUnitFactor, 1)
+        )
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():

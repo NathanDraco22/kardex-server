@@ -39,6 +39,7 @@ class PrepareExitStep(PipelineStep[AdjustmentRequestContext]):
                 cost=item.cost,
                 quantity=-abs(item.difference),
                 conversionFactor=item.conversionFactor,
+                priceUnitFactor=item.priceUnitFactor,
                 standardUnitName=item.standardUnitName,
                 standardUnitFactor=item.standardUnitFactor,
             )

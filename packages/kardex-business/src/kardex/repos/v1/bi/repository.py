@@ -9,6 +9,7 @@ from kardex.repos.v1.expenses import ExpensesRepository
 from kardex.repos.v1.inventories import InventoriesRepository
 from kardex.repos.v1.invoices import InvoicesRepository
 from kardex.repos.v1.receipts import ReceiptsRepository
+from kardex.core.inventory import calculate_line_amount
 from kardex.repos.v1.branches import BranchesRepository
 
 from .models.bi_models import (
@@ -106,7 +107,11 @@ class BIRepository:
                 total_sales_cent = item.subTotal - item.totalDiscount
                 if not total_sales_cent:
                     total_sales_cent = item.total
-                total_cost_cent = item.cost * qty
+                total_cost_cent = calculate_line_amount(
+                    item.cost,
+                    int(item.quantity or 0),
+                    item.priceUnitFactor,
+                )
 
                 items.append(
                     BIDetalleVentaItem(
@@ -213,7 +218,13 @@ class BIRepository:
                         currentStock=float(inv.currentStock),
                         averageCost=round(inv.averageCost / 100.0, 2),
                         totalInventoryValue=round(
-                            (inv.currentStock * inv.averageCost) / 100.0, 2
+                            calculate_line_amount(
+                                inv.averageCost,
+                                inv.currentStock,
+                                inv.product.priceUnitFactor,
+                            )
+                            / 100.0,
+                            2,
                         ),
                     )
                 )

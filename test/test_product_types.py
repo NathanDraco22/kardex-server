@@ -561,13 +561,16 @@ async def test_invoice_mixed_cart_only_deducts_inventory_for_items():
     prd_tx_col.create_many_product_transactions_with_session = AsyncMock()
 
     with patch(
-        "kardex.core.invoice_register.process_invoice.fetch_product_types_map",
+        "kardex.core.invoice_register.process_invoice.fetch_product_types_and_price_factors_map",
         new=AsyncMock(
-            return_value={
-                "p-item": "item",
-                "p-srv": "service",
-                "p-noninv": "nonInventory",
-            }
+            return_value=(
+                {
+                    "p-item": "item",
+                    "p-srv": "service",
+                    "p-noninv": "nonInventory",
+                },
+                {},
+            )
         ),
     ):
         await _prepare_and_execute_invoice_inventory(

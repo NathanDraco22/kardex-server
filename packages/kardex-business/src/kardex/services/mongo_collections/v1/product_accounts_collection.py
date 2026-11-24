@@ -919,10 +919,32 @@ class ProductAccountsCollection(BaseMongoCollection):
                         "_id": branch_id,
                         "total": {
                             "$sum": {
-                                "$multiply": [
-                                    "$currentStock",
-                                    "$averageCost",
-                                ],
+                                "$floor": {
+                                    "$add": [
+                                        {
+                                            "$divide": [
+                                                {
+                                                    "$multiply": [
+                                                        "$currentStock",
+                                                        "$averageCost",
+                                                    ],
+                                                },
+                                                {
+                                                    "$max": [
+                                                        {
+                                                            "$ifNull": [
+                                                                "$product.priceUnitFactor",
+                                                                1,
+                                                            ]
+                                                        },
+                                                        1,
+                                                    ]
+                                                },
+                                            ]
+                                        },
+                                        0.5,
+                                    ]
+                                }
                             },
                         },
                         "count": {"$sum": 1},
@@ -935,7 +957,7 @@ class ProductAccountsCollection(BaseMongoCollection):
         await cursor.close()
 
         if result:
-            return result[0]["total"]
+            return int(round(result[0]["total"]))
 
         return 0
 

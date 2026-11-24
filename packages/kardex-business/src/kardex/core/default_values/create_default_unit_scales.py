@@ -3,14 +3,18 @@ from kardex.repos.v1.products.models.product_model import ExtraUnit
 from kardex.services.mongo_collections.v1 import UnitScalesCollection
 from kardex.tools import TimeTools, UuidTool
 
-# Escalas viejas (base gramo/mililitro/centímetro/segundo). Se eliminan de las
-# semillas porque la unidad base ahora es la fracción comercial mínima. Solo se
-# borran si coinciden nombre y base, para no eliminar escalas personalizadas.
+# Escalas viejas (gramos/mililitros/centímetros/segundos y cuartos 1/4).
+# Se eliminan de las semillas antes de sembrar las centesimales (0.01 con
+# priceUnitFactor=100). Solo se borran si coinciden nombre y base, para no
+# eliminar escalas personalizadas.
 OLD_DEFAULT_SCALES: list[tuple[str, str]] = [
     ("Peso", "Gramo"),
     ("Volumen", "Mililitro"),
     ("Longitud", "Centímetro"),
     ("Tiempo", "Segundo"),
+    ("Libra", "1/4 Libra"),
+    ("Litro", "1/4 Litro"),
+    ("Metro", "1/4 Metro"),
 ]
 
 
@@ -77,44 +81,48 @@ def build_fraction_pack_scale(
     return None
 
 
-# Escalas continuas: la base es un cuarto de la unidad principal y el default
-# es la unidad comercial (Libra/Litro/Metro).
+# Escalas continuas: la base es la centésima (0.01) para permitir decimales
+# arbitrarios de hasta 2 cifras (0.1, 0.25, 1.35...), mientras priceUnitFactor=100
+# expresa precios y costos por unidad comercial principal (Libra/Litro/Metro).
 default_unit_scales: list[CreateUnitScale] = [
     CreateUnitScale(
         name="Libra",
         scaleType="weight",
-        baseUnit="1/4 Libra",
+        baseUnit="0.01 Libra",
         units=[
-            ExtraUnit(name="Libra", conversionFactor=4),
-            ExtraUnit(name="Arroba (25 lb)", conversionFactor=100),
-            ExtraUnit(name="Quintal (100 lb)", conversionFactor=400),
+            ExtraUnit(name="Libra", conversionFactor=100),
+            ExtraUnit(name="Arroba (25 lb)", conversionFactor=2500),
+            ExtraUnit(name="Quintal (100 lb)", conversionFactor=10000),
         ],
         defaultUnitIndex=1,
         wholesaleUnitIndex=3,
+        priceUnitFactor=100,
     ),
     CreateUnitScale(
         name="Litro",
         scaleType="volume",
-        baseUnit="1/4 Litro",
+        baseUnit="0.01 Litro",
         units=[
-            ExtraUnit(name="Litro", conversionFactor=4),
-            ExtraUnit(name="Bidón 5 L", conversionFactor=20),
-            ExtraUnit(name="Bidón 20 L", conversionFactor=80),
+            ExtraUnit(name="Litro", conversionFactor=100),
+            ExtraUnit(name="Bidón 5 L", conversionFactor=500),
+            ExtraUnit(name="Bidón 20 L", conversionFactor=2000),
         ],
         defaultUnitIndex=1,
         wholesaleUnitIndex=3,
+        priceUnitFactor=100,
     ),
     CreateUnitScale(
         name="Metro",
         scaleType="length",
-        baseUnit="1/4 Metro",
+        baseUnit="0.01 Metro",
         units=[
-            ExtraUnit(name="Metro", conversionFactor=4),
-            ExtraUnit(name="Rollo 50 m", conversionFactor=200),
-            ExtraUnit(name="Rollo 100 m", conversionFactor=400),
+            ExtraUnit(name="Metro", conversionFactor=100),
+            ExtraUnit(name="Rollo 50 m", conversionFactor=5000),
+            ExtraUnit(name="Rollo 100 m", conversionFactor=10000),
         ],
         defaultUnitIndex=1,
         wholesaleUnitIndex=3,
+        priceUnitFactor=100,
     ),
 ]
 

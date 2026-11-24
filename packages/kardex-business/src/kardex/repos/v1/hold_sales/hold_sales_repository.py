@@ -1,3 +1,4 @@
+from kardex.core.inventory import calculate_line_amount
 from kardex.tools import TimeTools, UuidTool
 from kardex.repos.v1.common.filter_params import HoldSaleFilterParams
 
@@ -26,7 +27,11 @@ class HoldSalesRepository:
         total_quantity = sum(item.quantity for item in create_hold_sale.items)
         total_amount = 0
         for item in create_hold_sale.items:
-            sub_total = item.quantity * item.newPrice * item.conversionFactor
+            sub_total = calculate_line_amount(
+                item.newPrice,
+                item.quantity,
+                item.product.priceUnitFactor,
+            )
             discount_percent = (
                 item.selectedDiscount.percentValue if item.selectedDiscount else 0
             )
@@ -71,7 +76,11 @@ class HoldSalesRepository:
             if "totalAmount" not in update_data or update_data["totalAmount"] is None:
                 total_amount = 0
                 for item in items:
-                    sub_total = item.quantity * item.newPrice * item.conversionFactor
+                    sub_total = calculate_line_amount(
+                        item.newPrice,
+                        item.quantity,
+                        item.product.priceUnitFactor,
+                    )
                     discount_percent = (
                         item.selectedDiscount.percentValue if item.selectedDiscount else 0
                     )

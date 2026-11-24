@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class EntryItem(BaseModel):
@@ -10,6 +10,7 @@ class EntryItem(BaseModel):
     cost: int
     quantity: int
     conversionFactor: int = 1
+    priceUnitFactor: int = Field(default=1, ge=1)
     standardUnitName: str | None = None
     standardUnitFactor: int | None = None
     expirationDate: int | None = None

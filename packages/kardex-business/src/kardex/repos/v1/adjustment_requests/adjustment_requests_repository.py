@@ -5,6 +5,7 @@ from kardex.repos.v1.common.filter_params import AdjustmentRequestFilterParams
 from kardex.repos.v1.common.models import UserInfo
 from kardex.repos.v1.products import ProductsDataSource, ProductsRepository
 from kardex.services.mongo_collections.v1 import ProductAccountsCollection
+from kardex.core.inventory import calculate_line_amount
 from kardex.tools import (
     BranchNotFound,
     BranchesTool,
@@ -240,11 +241,17 @@ class AdjustmentRequestsRepository:
             if difference > 0 and cost <= 0:
                 raise InvalidOperation("SURPLUS_COST_REQUIRED")
 
-            subtotal = abs(difference) * cost
+            price_unit_factor = max(product.priceUnitFactor, 1)
+            subtotal = calculate_line_amount(
+                cost, abs(difference), price_unit_factor
+            )
+
+            item_payload = create_item.model_dump()
+            item_payload["priceUnitFactor"] = price_unit_factor
 
             items.append(
                 AdjustmentRequestItem(
-                    **create_item.model_dump(),
+                    **item_payload,
                     image=product.image,
                     systemStock=system_stock,
                     difference=difference,

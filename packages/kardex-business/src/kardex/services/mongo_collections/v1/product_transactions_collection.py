@@ -156,3 +156,8 @@ class ProductTransactionsCollection(BaseMongoCollection):
     ) -> None:
         collection = self._collection
         await collection.delete_many({"documentId": document_id}, session=session)
+
+    async def has_transactions_for_product(self, product_id: str) -> bool:
+        collection = self._collection
+        doc = await collection.find_one({"productId": product_id}, {"_id": 1})
+        return doc is not None

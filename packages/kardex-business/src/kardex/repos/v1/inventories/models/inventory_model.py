@@ -18,6 +18,7 @@ class InventoryProduct(BaseModel):
     extraUnits: list[ExtraUnit] = []
     defaultUnitIndex: int = 0
     wholesaleUnitIndex: int = 0
+    priceUnitFactor: int = 1
 
     @property
     def default_unit_name(self) -> str:

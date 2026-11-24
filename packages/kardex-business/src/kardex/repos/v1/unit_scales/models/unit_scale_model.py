@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from kardex.repos.v1.products.models.product_model import ExtraUnit
 
 
@@ -21,6 +21,7 @@ class BaseUnitScale(BaseModel):
     units: list[ExtraUnit] = []
     defaultUnitIndex: int = 0
     wholesaleUnitIndex: int = 0
+    priceUnitFactor: int = Field(default=1, ge=1)
 
 
 class CreateUnitScale(BaseUnitScale):
@@ -34,6 +35,7 @@ class UpdateUnitScale(BaseModel):
     units: list[ExtraUnit] | None = None
     defaultUnitIndex: int | None = None
     wholesaleUnitIndex: int | None = None
+    priceUnitFactor: int | None = Field(default=None, ge=1)
 
 
 class UnitScaleInDb(BaseUnitScale):

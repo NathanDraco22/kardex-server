@@ -32,10 +32,14 @@ async def process_adjust_exit(
     # Tools
     branches_tool = BranchesTool()
 
-    await ensure_inventory_products(
+    price_unit_factors = await ensure_inventory_products(
         [item.productId for item in adjust_exit.items],
         operation_label="ajustes de salida",
     )
+    for item in adjust_exit.items:
+        item.priceUnitFactor = price_unit_factors.get(
+            item.productId, max(item.priceUnitFactor, 1)
+        )
 
     # Determinar el Subtipo de Transacción
     # Mapeamos el string del input al Enum del sistema

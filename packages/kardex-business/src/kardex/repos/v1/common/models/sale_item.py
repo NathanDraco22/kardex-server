@@ -1,5 +1,5 @@
 from typing import Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 PaymentType = Literal["cash", "credit", "transfer", "card", "check", "other"]
 ProductType = Literal["item", "nonInventory", "service"]
@@ -15,6 +15,7 @@ class ProductItem(BaseModel):
     categoryName: str | None = None
     tags: list[str] = []
     productType: ProductType = "item"
+    priceUnitFactor: int = Field(default=1, ge=1)
 
 
 class SaleItem(BaseModel):
@@ -31,6 +32,7 @@ class SaleItem(BaseModel):
     iva: int = 0
     total: int
     conversionFactor: int = 1
+    priceUnitFactor: int = Field(default=1, ge=1)
     invoiceItemIndex: int | None = None
     selectedUnitName: str | None = None
     standardUnitName: str | None = None

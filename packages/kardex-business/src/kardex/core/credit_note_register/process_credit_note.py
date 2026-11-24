@@ -201,6 +201,7 @@ async def _recalculate_devolution_items(
         item.discountPercentage = invoice_item.discountPercentage
         item.iva = invoice_item.iva
         item.conversionFactor = invoice_factor
+        item.priceUnitFactor = max(invoice_item.priceUnitFactor, 1)
 
         total_amount += amounts.total
 
