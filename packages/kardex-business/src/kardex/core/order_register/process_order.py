@@ -13,6 +13,28 @@ from kardex.tools import UuidTool, TimeTools, InsufficientBalanceError
 from kardex.services import MongoService
 
 
+def normalize_order_totals(create_order: CreateOrder) -> None:
+    """Recalcula subtotales, descuentos y totales de un pedido usando `priceUnitFactor`."""
+    for item in create_order.saleItems:
+        if item.price > 0 and item.quantity > 0:
+            item.subTotal = calculate_line_amount(
+                item.price,
+                item.quantity,
+                max(item.priceUnitFactor, 1),
+            )
+        else:
+            item.subTotal = max(0, item.subTotal)
+        if item.discountPercentage > 0:
+            pct = max(0, min(100, item.discountPercentage))
+            item.discountPercentage = pct
+            item.totalDiscount = round(item.subTotal * pct / 100)
+        else:
+            item.totalDiscount = max(0, min(item.subTotal, item.totalDiscount))
+        item.total = max(0, item.subTotal - item.totalDiscount)
+
+    create_order.total = sum(item.total for item in create_order.saleItems)
+
+
 async def process_order(
     create_order: CreateOrder,
 ) -> Tuple[OrderInDb, List[ProductAccountInDb]]:
@@ -111,7 +133,7 @@ async def process_order(
                 elif product_types.get(item.product.id, item.product.productType) != "item":
                     item.cost = 0
 
-            # Recalcular totalCost con los costos reales del inventario / referencia
+            # Recalcular totalCost y totales de venta con los costos y factores reales
             create_order.totalCost = sum(
                 calculate_line_amount(
                     item.cost,
@@ -120,6 +142,7 @@ async def process_order(
                 )
                 for item in create_order.saleItems
             )
+            normalize_order_totals(create_order)
 
             # ==========================================
             # 4. RESERVA MASIVA (PERSISTENCIA)
