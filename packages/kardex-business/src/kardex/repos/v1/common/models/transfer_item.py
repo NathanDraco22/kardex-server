@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TransferItem(BaseModel):
@@ -11,6 +11,7 @@ class TransferItem(BaseModel):
     quantity: int
     cost: int
     conversionFactor: int = 1
+    priceUnitFactor: int = Field(default=1, ge=1)
     selectedUnitName: str | None = None
     standardUnitName: str | None = None
     standardUnitFactor: int | None = None

@@ -8,7 +8,8 @@ from kardex.core.inventory import (
     InventoryBatchTransformer,
     InventoryExitBatchItem,
     InventoryEngine,
-    fetch_product_types_map,
+    calculate_line_amount,
+    fetch_product_types_and_price_factors_map,
 )
 from kardex.core.counter_manager.counter_manager import CounterManager
 from kardex.core.finance import ClientFinanceEngine, FinanceTransactionRequest
@@ -36,7 +37,9 @@ async def _prepare_and_execute_invoice_inventory(
 ) -> dict[str, ProductAccountInDb]:
     """Procesa la salida de inventario únicamente para ítems inventariables (`productType == 'item'`)."""
     product_ids = list({item.product.id for item in create_invoice.saleItems})
-    product_types = await fetch_product_types_map(product_ids)
+    product_types, price_unit_factors = (
+        await fetch_product_types_and_price_factors_map(product_ids)
+    )
 
     accounts_data = await product_account_col.get_accounts_by_branch_id(
         branch_id=create_invoice.branchId,
@@ -54,6 +57,9 @@ async def _prepare_and_execute_invoice_inventory(
     for idx, item in enumerate(create_invoice.saleItems):
         resolved_type = product_types.get(item.product.id, item.product.productType)
         item.product.productType = resolved_type
+        item.priceUnitFactor = price_unit_factors.get(
+            item.product.id, max(item.priceUnitFactor, 1)
+        )
 
         if resolved_type == "item":
             total_qty = abs(item.quantity + item.bonQuantity)
@@ -110,11 +116,62 @@ async def _prepare_and_execute_invoice_inventory(
             )
 
     create_invoice.totalCost = sum(
-        item.cost * (item.quantity + item.bonQuantity)
+        calculate_line_amount(
+            item.cost,
+            item.quantity + item.bonQuantity,
+            item.priceUnitFactor,
+        )
         for item in create_invoice.saleItems
     )
 
     return accounts_dict
+
+
+def normalize_invoice_discounts(create_invoice: CreateInvoice) -> None:
+    """Valida y normaliza los descuentos por ítem y el descuento global de la factura."""
+    for item in create_invoice.saleItems:
+        item.subTotal = max(0, item.subTotal)
+        if item.discountType == "percentage":
+            pct = max(0, min(100, item.discountPercentage))
+            item.discountPercentage = pct
+            item.totalDiscount = round(item.subTotal * pct / 100)
+        elif item.discountType == "amount":
+            item.discountPercentage = 0
+            item.totalDiscount = max(0, min(item.subTotal, item.totalDiscount))
+        else:
+            if item.discountPercentage > 0:
+                pct = min(100, item.discountPercentage)
+                item.discountType = "percentage"
+                item.discountPercentage = pct
+                item.totalDiscount = round(item.subTotal * pct / 100)
+            elif item.totalDiscount > 0:
+                item.discountType = "amount"
+                item.discountPercentage = 0
+                item.totalDiscount = min(item.subTotal, item.totalDiscount)
+            else:
+                item.discountPercentage = 0
+                item.totalDiscount = 0
+        item.total = max(0, item.subTotal - item.totalDiscount)
+
+    items_net_total = sum(item.total for item in create_invoice.saleItems)
+    create_invoice.itemDiscounts = sum(
+        item.totalDiscount for item in create_invoice.saleItems
+    )
+
+    if create_invoice.discountType == "percentage":
+        pct = max(0, min(100, create_invoice.discountValue))
+        create_invoice.discountValue = pct
+        create_invoice.invoiceDiscount = round(items_net_total * pct / 100)
+    elif create_invoice.discountType == "amount":
+        amt = max(0, min(items_net_total, create_invoice.discountValue))
+        create_invoice.discountValue = amt
+        create_invoice.invoiceDiscount = amt
+    else:
+        create_invoice.discountType = None
+        create_invoice.discountValue = 0
+        create_invoice.invoiceDiscount = 0
+
+    create_invoice.total = max(0, items_net_total - create_invoice.invoiceDiscount)
 
 
 async def process_invoice(
@@ -142,6 +199,8 @@ async def process_invoice(
             is_order_fulfillment = bool(
                 create_invoice.orderNumber and create_invoice.status == "open"
             )
+
+            normalize_invoice_discounts(create_invoice)
 
             await _prepare_and_execute_invoice_inventory(
                 create_invoice=create_invoice,
@@ -253,6 +312,8 @@ async def process_anon_invoice(
                 create_invoice.docNumber = await CounterManager().next_invoice_number(
                     session=session
                 )
+
+            normalize_invoice_discounts(create_invoice)
 
             accounts_dict = await _prepare_and_execute_invoice_inventory(
                 create_invoice=create_invoice,

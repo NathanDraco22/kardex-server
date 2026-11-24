@@ -116,6 +116,10 @@ class DevolutionRegister:
                     "Devolutions only apply to cash invoices. "
                     "Use credit notes for credit invoices."
                 )
+            if invoice.invoiceDiscount > 0:
+                raise InvalidOperation(
+                    "No se permiten devoluciones por producto en facturas con descuento global."
+                )
 
         product_ids = list(set(item.product.id for item in doc.returnedItems))
         products = await self.products_repo.get_product_by_ids(product_ids)

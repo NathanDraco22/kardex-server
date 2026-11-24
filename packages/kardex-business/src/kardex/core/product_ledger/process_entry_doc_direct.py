@@ -21,10 +21,14 @@ async def process_entry_doc_direct(
     # Tools
     branches_tool = BranchesTool()
 
-    await ensure_inventory_products(
+    price_unit_factors = await ensure_inventory_products(
         [item.productId for item in entry_doc.items],
         operation_label="entradas de inventario",
     )
+    for item in entry_doc.items:
+        item.priceUnitFactor = price_unit_factors.get(
+            item.productId, max(item.priceUnitFactor, 1)
+        )
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():

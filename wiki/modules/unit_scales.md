@@ -293,3 +293,48 @@ El borrador es **frontend-only** (Hive), pero su contrato viaja al backend al cr
 - **Documentos viejos:** sin metadata no se puede reconstruir la unidad estándar; el display queda en la unidad seleccionada.
 - **Sin migración:** los campos nuevos son opcionales y retrocompatibles; no se requiere migración de MongoDB.
 - **Commit:** no se realizó.
+
+---
+
+## 11. `priceUnitFactor` y Escalas Continuas `(Decimal)` (noviembre 2026)
+
+Para permitir fracciones arbitrarias de hasta 2 decimales (`0.1`, `0.25`, `0.5`, `1.35`, `0.01`, etc.) **sin** cambiar el stock/kárdex `int` ni sufrir el error de redondeo de precios/costos (`C1`) de los factores grandes, se separa la **unidad base de inventario** de la **unidad de precio/costo** mediante el campo `priceUnitFactor: int = 1`.
+
+### 11.1. Contrato y retrocompatibilidad
+
+- **`priceUnitFactor: int = Field(default=1, ge=1)`** vive en `BaseUnitScale` (plantilla), `BaseProduct` (fuente de verdad global entre sucursales), `InventoryProduct` y como snapshot en las líneas de documentos (`ProductItem`, `SaleItem`, `EntryItem`, `ExitItem`, `TransferItem`, `CreateAdjustmentRequestItem`).
+- **Retrocompatibilidad 100%:** cualquier producto o documento histórico sin `priceUnitFactor` se lee como `1`, manteniendo idénticos todos los cálculos previos sin migración de MongoDB.
+- **Significado:** `salePrice` y `averageCost` guardados en BD expresan el valor en centavos de **`priceUnitFactor` unidades base** (ej. con `baseUnit = "0.01 Libra"` y `priceUnitFactor = 100`, `averageCost = 1450` y `salePrice = 1850` representan `14.50` y `18.50` por **1 Libra**, no por `0.01 Libra`).
+
+### 11.2. Fórmulas y redondeo half-up
+
+Todas las multiplicaciones monetarias de `valorUnitario × cantidadBase` pasan por `calculate_line_amount(unit_cents, base_quantity, price_unit_factor)` (`kardex/core/inventory/product_type_guard.py`):
+
+```python
+# Aritmética entera half-away-from-zero (idéntica a Dart `.round()`):
+(unit_cents * base_quantity + safe_factor // 2) // safe_factor  # (simétrico para negativos)
+```
+
+- **Nunca usar `round()` de Python** para estas líneas porque `round()` usa half-to-even (bancario) y descuadra por `1¢` frente a Dart en casos `.5` pares (ej. `18.50 × 0.25 = 462.5¢ → 463¢` en Dart vs `462¢` en Python).
+- **Costo promedio ponderado (`InventoryBatchTransformer.prepare_entry` y `update_product_account_balance_data`):** es matemáticamente **invariante** a `priceUnitFactor` porque el factor se cancela en numerador y denominador; no requiere cambios.
+- **Valorización de inventario (`ProductAccountsCollection.get_total_current_stock`):** divide `$multiply: ["$currentStock", "$averageCost"]` por `$max: [{"$ifNull": ["$product.priceUnitFactor", 1]}, 1]` usando `$floor` con `+ 0.5` para mantener consistencia half-up.
+
+### 11.3. Escalas continuas por defecto vigentes
+
+Conviven las escalas de cuartos (`priceUnitFactor = 1`) y las nuevas escalas `(Decimal)` (`priceUnitFactor = 100`):
+
+| Escala | `scaleType` | Base | Unidad principal | Extras | `priceUnitFactor` |
+| :--- | :--- | :--- | :--- | :--- | :---: |
+| **Libra** / **Libra (Decimal)** | `weight` | `1/4 Libra` / `0.01 Libra` | `Libra` (×4 / ×100) | `Arroba (25 lb)`, `Quintal (100 lb)` | `1` / **`100`** |
+| **Kilo** / **Kilo (Decimal)** | `weight` | `1/4 Kilo` / `0.01 Kilo` | `Kilo` (×4 / ×100) | `Saco 25 kg`, `Saco 50 kg` | `1` / **`100`** |
+| **Litro** / **Litro (Decimal)** | `volume` | `1/4 Litro` / `0.01 Litro` | `Litro` (×4 / ×100) | `Bidón 5 L`, `Bidón 20 L` | `1` / **`100`** |
+| **Metro** / **Metro (Decimal)** | `length` | `1/4 Metro` / `0.01 Metro` | `Metro` (×4 / ×100) | `Rollo 50 m`, `Rollo 100 m` | `1` / **`100`** |
+
+### 11.4. Reglas de integridad en backend
+
+1. **Fuente de verdad server-side:**
+   - Facturas (`process_invoice.py`) y pedidos (`process_order.py`) consultan `Products` **una sola vez** con `fetch_product_types_and_price_factors_map` para fijar `item.priceUnitFactor` y calcular `totalCost`.
+   - Entradas, salidas, ajustes y traslados (`process_entry_doc*`, `process_exit_doc*`, `process_adjust_*`, `process_out_transfer.py`) reciben `{productId: priceUnitFactor}` directamente desde `ensure_inventory_products` sin queries adicionales.
+   - Notas de crédito (`process_credit_note.py`) copian `invoice_item.priceUnitFactor`.
+   - `hold_sales_repository.py`, `orders_controller.py`, `adjustment_requests_repository.py` y `bi/repository.py` usan `calculate_line_amount`.
+2. **Inmutabilidad (`product_type_lifecycle.py`):** no se permite cambiar `priceUnitFactor` si el producto tiene `currentStock != 0`, `promiseStock > 0` o transacciones históricas (`ProductTransactionsCollection.has_transactions_for_product`), con la única excepción de la transición `item → service/nonInventory` (que ya exige stock `0` y resetea el producto a `priceUnitFactor = 1`).

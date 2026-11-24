@@ -13,6 +13,7 @@ class InventoryProduct(BaseModel):
     tags: list[str]
     isActive: bool = True
     productType: ProductType = "item"
+    priceUnitFactor: int = 1
 
 
 class ProductAccount(BaseModel):

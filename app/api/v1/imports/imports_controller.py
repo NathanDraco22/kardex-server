@@ -16,7 +16,12 @@ from kardex.core.imports.suppliers.model.supplier_import import SupplierImport
 from kardex.core.imports.suppliers.process_suppliers_import import (
     process_suppliers_import,
 )
-from kardex.services.mongo_collections.v1 import AdjustEntriesCollection
+from kardex.core.inventory import calculate_line_amount
+from kardex.repos.v1.unit_scales import UnitScaleInDb
+from kardex.services.mongo_collections.v1 import (
+    AdjustEntriesCollection,
+    UnitScalesCollection,
+)
 from kardex.tools import BranchesTool
 
 from .responses import ImportPreviewError, ImportPreviewResponse, ImportResponse
@@ -27,7 +32,6 @@ MAX_ROWS = 10_000
 PRODUCT_REQUIRED_COLUMNS = {
     "name",
     "brandName",
-    "unitName",
     "quantity",
     "cost",
     "price",
@@ -45,9 +49,10 @@ class ImportsController:
         await self._ensure_initial_inventory_is_new(branch_id)
 
         rows, headers = await self._read_csv(file)
-        self._ensure_columns(headers, PRODUCT_REQUIRED_COLUMNS)
+        self._ensure_product_columns(headers)
+        scales_lookup = await self._load_unit_scales_lookup(headers)
 
-        product_imports = self._build_product_imports(rows)
+        product_imports = self._build_product_imports(rows, scales_lookup)
         await process_init_import(branch_id, product_imports)
 
         return ImportResponse(
@@ -62,9 +67,10 @@ class ImportsController:
         self._validate_branch(branch_id)
 
         rows, headers = await self._read_csv(file)
-        self._ensure_columns(headers, PRODUCT_REQUIRED_COLUMNS)
+        self._ensure_product_columns(headers)
+        scales_lookup = await self._load_unit_scales_lookup(headers)
 
-        product_imports = self._build_product_imports(rows)
+        product_imports = self._build_product_imports(rows, scales_lookup)
         await process_inventory_import(branch_id, product_imports)
 
         return ImportResponse(
@@ -177,6 +183,13 @@ class ImportsController:
             required_cols = SUPPLIER_REQUIRED_COLUMNS
 
         missing_cols = sorted(required_cols.difference(headers))
+        if (
+            canonical_type in {"initialInventory", "inventory"}
+            and "unitName" not in headers
+            and "unitScale" not in headers
+        ):
+            missing_cols = sorted([*missing_cols, "unitName (o unitScale)"])
+
         if missing_cols:
             errors.append(
                 ImportPreviewError(
@@ -192,6 +205,12 @@ class ImportsController:
                 errors=errors,
             )
 
+        scales_lookup = (
+            await self._load_unit_scales_lookup(headers)
+            if canonical_type in {"initialInventory", "inventory"}
+            else {}
+        )
+
         total_quantity = 0
         total_cost = 0
         total_price = 0
@@ -205,10 +224,14 @@ class ImportsController:
 
             try:
                 if canonical_type in {"initialInventory", "inventory"}:
-                    product = self._build_single_product_import(row)
+                    product = self._build_single_product_import(row, scales_lookup)
                     total_quantity += product.quantity
-                    total_cost += product.quantity * product.cost
-                    total_price += product.quantity * product.price
+                    total_cost += calculate_line_amount(
+                        product.cost, product.quantity, product.priceUnitFactor
+                    )
+                    total_price += calculate_line_amount(
+                        product.price, product.quantity, product.priceUnitFactor
+                    )
                 elif canonical_type == "clients":
                     client = self._build_single_client_import(row)
                     total_credit_limit += client.creditLimit
@@ -348,14 +371,145 @@ class ImportsController:
                 detail=f"Faltan columnas obligatorias: {', '.join(missing)}",
             )
 
-    def _build_single_product_import(self, row: dict[str, str]) -> ProductImport:
+    def _ensure_product_columns(self, headers: list[str]) -> None:
+        missing = sorted(PRODUCT_REQUIRED_COLUMNS.difference(headers))
+        if "unitName" not in headers and "unitScale" not in headers:
+            missing = sorted([*missing, "unitName (o unitScale)"])
+        if missing:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Faltan columnas obligatorias: {', '.join(missing)}",
+            )
+
+    async def _load_unit_scales_lookup(
+        self, headers: list[str]
+    ) -> dict[str, UnitScaleInDb]:
+        if "unitScale" not in headers:
+            return {}
+        raw_scales = await UnitScalesCollection.get_instance().fetch_all_unit_scales()
+        lookup: dict[str, UnitScaleInDb] = {}
+        for doc in raw_scales:
+            scale = UnitScaleInDb.model_validate(doc)
+            lookup[scale.id] = scale
+            normalized_name = scale.name.strip().lower()
+            if normalized_name:
+                lookup[normalized_name] = scale
+        return lookup
+
+    def _resolve_scale_default_factor(self, scale: UnitScaleInDb) -> int:
+        if scale.defaultUnitIndex == 0 or not scale.units:
+            return 1
+        idx = scale.defaultUnitIndex - 1
+        if 0 <= idx < len(scale.units):
+            return max(scale.units[idx].conversionFactor, 1)
+        return 1
+
+    def _convert_commercial_cents_to_stored(
+        self,
+        commercial_cents: int,
+        commercial_factor: int,
+        price_unit_factor: int,
+    ) -> int:
+        safe_comm = max(commercial_factor, 1)
+        safe_price = max(price_unit_factor, 1)
+        if safe_comm == safe_price:
+            return commercial_cents
+        numerator = commercial_cents * safe_price
+        if numerator >= 0:
+            return (numerator + safe_comm // 2) // safe_comm
+        return -((abs(numerator) + safe_comm // 2) // safe_comm)
+
+    def _parse_scaled_quantity(
+        self,
+        value: str | None,
+        field: str,
+        row_number: str,
+        scale: UnitScaleInDb | None,
+    ) -> int:
+        if scale is None:
+            return self._parse_int(value, field, row_number)
+
+        text = (value or "").strip()
+        if not text:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Fila {row_number}: '{field}' es obligatorio",
+            )
+
+        try:
+            number = Decimal(text.replace(",", "."))
+        except InvalidOperation as error:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Fila {row_number}: '{field}' no es un número válido ('{value}')",
+            ) from error
+
+        if number < 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Fila {row_number}: '{field}' no puede ser negativo",
+            )
+
+        factor = self._resolve_scale_default_factor(scale)
+        base_qty = number * Decimal(factor)
+        if base_qty != base_qty.to_integral_value():
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Fila {row_number}: '{field}' ('{value}') no es un múltiplo "
+                    f"válido para la escala '{scale.name}'"
+                ),
+            )
+
+        return int(base_qty)
+
+    def _build_single_product_import(
+        self,
+        row: dict[str, str],
+        scales_lookup: dict[str, UnitScaleInDb] | None = None,
+    ) -> ProductImport:
         row_number = row.get("__row_number__", "?")
+        scale_ref = self._optional_text(row, "unitScale")
+        resolved_scale: UnitScaleInDb | None = None
+        if scale_ref is not None:
+            lookup = scales_lookup or {}
+            resolved_scale = lookup.get(scale_ref) or lookup.get(scale_ref.lower())
+            if resolved_scale is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f"Fila {row_number}: 'unitScale' no corresponde a ninguna "
+                        f"escala registrada ('{scale_ref}')"
+                    ),
+                )
+
+        if resolved_scale is not None:
+            unit_name = resolved_scale.baseUnit
+            extra_units = list(resolved_scale.units)
+            default_unit_index = resolved_scale.defaultUnitIndex
+            wholesale_unit_index = resolved_scale.wholesaleUnitIndex
+            price_unit_factor = max(resolved_scale.priceUnitFactor, 1)
+            commercial_factor = self._resolve_scale_default_factor(resolved_scale)
+        else:
+            unit_name = self._required_text(row, "unitName", row_number)
+            extra_units = []
+            default_unit_index = 0
+            wholesale_unit_index = 0
+            price_unit_factor = 1
+            commercial_factor = 1
+
+        raw_cost = self._parse_money(row.get("cost"), "cost", row_number)
+        raw_price = self._parse_money(row.get("price"), "price", row_number)
+        raw_price2 = self._parse_money(row.get("price2"), "price2", row_number)
+        raw_price3 = self._parse_money(row.get("price3"), "price3", row_number)
+        raw_price4 = self._parse_money(row.get("price4"), "price4", row_number)
+
         return ProductImport(
             name=self._required_text(row, "name", row_number),
             description=self._optional_text(row, "description"),
             code=self._optional_text(row, "code") or "",
             brandName=self._required_text(row, "brandName", row_number),
-            unitName=self._required_text(row, "unitName", row_number),
+            unitName=unit_name,
             categoryName=self._optional_text(row, "categoryName"),
             tags=self._parse_tags(row.get("tags"), row_number),
             hasIva=self._parse_bool(
@@ -370,18 +524,38 @@ class ImportsController:
                 field="isActive",
                 row_number=row_number,
             ),
-            quantity=self._parse_int(
-                row.get("quantity"), "quantity", row_number
+            extraUnits=extra_units,
+            defaultUnitIndex=default_unit_index,
+            wholesaleUnitIndex=wholesale_unit_index,
+            priceUnitFactor=price_unit_factor,
+            quantity=self._parse_scaled_quantity(
+                row.get("quantity"), "quantity", row_number, resolved_scale
             ),
-            cost=self._parse_money(row.get("cost"), "cost", row_number),
-            price=self._parse_money(row.get("price"), "price", row_number),
-            price2=self._parse_money(row.get("price2"), "price2", row_number),
-            price3=self._parse_money(row.get("price3"), "price3", row_number),
-            price4=self._parse_money(row.get("price4"), "price4", row_number),
+            cost=self._convert_commercial_cents_to_stored(
+                raw_cost, commercial_factor, price_unit_factor
+            ),
+            price=self._convert_commercial_cents_to_stored(
+                raw_price, commercial_factor, price_unit_factor
+            ),
+            price2=self._convert_commercial_cents_to_stored(
+                raw_price2, commercial_factor, price_unit_factor
+            ),
+            price3=self._convert_commercial_cents_to_stored(
+                raw_price3, commercial_factor, price_unit_factor
+            ),
+            price4=self._convert_commercial_cents_to_stored(
+                raw_price4, commercial_factor, price_unit_factor
+            ),
         )
 
-    def _build_product_imports(self, rows: list[dict[str, str]]) -> list[ProductImport]:
-        return [self._build_single_product_import(row) for row in rows]
+    def _build_product_imports(
+        self,
+        rows: list[dict[str, str]],
+        scales_lookup: dict[str, UnitScaleInDb] | None = None,
+    ) -> list[ProductImport]:
+        return [
+            self._build_single_product_import(row, scales_lookup) for row in rows
+        ]
 
     def _build_single_client_import(self, row: dict[str, str]) -> ClientImport:
         row_number = row.get("__row_number__", "?")

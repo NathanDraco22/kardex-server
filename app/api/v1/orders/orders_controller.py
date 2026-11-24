@@ -6,6 +6,7 @@ from kardex.repos.v1.invoices.models.invoice_model import (
     OrderInfo,
 )
 from kardex.repos.v1.common.models.invoice_product_sale import ProductSalesTotal
+from kardex.core.inventory import calculate_line_amount
 from kardex.core.order_register.order_register import OrderRegister
 from kardex.core.invoice_register.invoice_register import InvoiceRegister
 from kardex.core.order_register.cancel_order import cancel_order
@@ -75,7 +76,11 @@ class OrdersController:
         # Recalcular totalCost desde los items con costos actualizados
         # (process_invoice reasignará los costs con el costo real del inventario)
         order_total_cost = sum(
-            item.cost * (item.quantity + item.bonQuantity)
+            calculate_line_amount(
+                item.cost,
+                item.quantity + item.bonQuantity,
+                item.priceUnitFactor,
+            )
             for item in order.saleItems
         )
 

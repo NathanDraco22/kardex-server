@@ -29,10 +29,14 @@ async def process_outgoing_transfer(
     product_account_col = ProductAccountsCollection.get_instance()
     transfers_col = TransfersCollection.get_instance()
 
-    await ensure_inventory_products(
+    price_unit_factors = await ensure_inventory_products(
         [item.id for item in create_transfer.items],
         operation_label="traslados entre sucursales",
     )
+    for item in create_transfer.items:
+        item.priceUnitFactor = price_unit_factors.get(
+            item.id, max(item.priceUnitFactor, 1)
+        )
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():

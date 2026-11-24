@@ -15,6 +15,7 @@ class CreateAdjustmentRequestItem(BaseModel):
     brandName: str | None = None
     unitName: str | None = None
     conversionFactor: int = 1
+    priceUnitFactor: int = Field(default=1, ge=1)
     standardUnitName: str | None = None
     standardUnitFactor: int | None = None
     countedQuantity: int = Field(..., ge=0)

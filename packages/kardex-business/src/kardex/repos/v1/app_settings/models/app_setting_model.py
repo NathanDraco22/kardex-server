@@ -23,6 +23,7 @@ class BaseAppSetting(BaseModel):
     allowSecondaryCurrencyPayment: bool = False
     companyLogoUrl: str | None = None
     useShifts: bool = False
+    useDiscounts: bool = False
     taxIdLabel: str = Field(default="RUC", min_length=1, max_length=32)
 
 
@@ -48,6 +49,7 @@ class UpdateAppSetting(BaseModel):
     allowSecondaryCurrencyPayment: bool | None = None
     companyLogoUrl: str | None = None
     useShifts: bool | None = None
+    useDiscounts: bool | None = None
     taxIdLabel: str | None = Field(default=None, min_length=1, max_length=32)
 
 

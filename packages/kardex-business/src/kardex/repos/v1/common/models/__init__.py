@@ -1,4 +1,4 @@
-from .sale_item import ProductItem, SaleItem, PaymentType
+from .sale_item import ProductItem, SaleItem, PaymentType, DiscountType
 from .client_info import ClientInfo
 from .user_info import UserInfo
 from .order_info import OrderInfo
@@ -14,6 +14,7 @@ __all__ = [
     "ProductItem",
     "SaleItem",
     "PaymentType",
+    "DiscountType",
     "ClientInfo",
     "UserInfo",
     "OrderInfo",

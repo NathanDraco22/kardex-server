@@ -838,3 +838,20 @@ Cerrar hallazgos de integridad de la feature de productos no inventariables y se
 5. **Validaciones:** `UpdateProductAccount`, `AddToProductAccount` y `SubstractToProductAccount` usan `Field(ge=0)`; `process_create_product_with_data` valida la sucursal con `resolve_required_branch_id` antes de crear cuentas o perfiles.
 6. **Tests:** `test/test_product_types.py` cubre transiciones, inmutabilidad de sucursal, anulacion de NC, guard de productos inexistentes/borrados, rangos negativos y traslado entrante con servicios (20 pruebas). Suite completa: 83 passed.
 7. **Verificacion:** `ruff check` OK; `ty check` solo reporta los 9 diagnosticos preexistentes de `test/test_credit_note_policy.py` y `test/test_credit_note_vs_devolution.py`. Sin commit.
+
+---
+
+## Fecha: 2026-11-24
+### Objetivo
+Soporte de `priceUnitFactor` y migración de escalas continuas (`Libra`, `Litro`, `Metro`) de cuartos (`1/4`) a centésimas (`0.01`, `priceUnitFactor = 100`) con 100% retrocompatibilidad, más correcciones derivadas de la revisión de código.
+
+### Cambios Implementados
+1. **Modelos Pydantic:** Agregado `priceUnitFactor: int = Field(default=1, ge=1)` en `BaseUnitScale`/`UpdateUnitScale`, `BaseProduct`/`UpdateProduct`, `InventoryProduct`, `SaleItem`, `EntryItem`, `ExitItem`, `TransferItem` y `CreateAdjustmentRequestItem`.
+2. **Semillas (`create_default_unit_scales.py`):** Reemplazadas las escalas continuas de `1/4` por `0.01 Libra`, `0.01 Litro` y `0.01 Metro` (`conversionFactor = 100`, `priceUnitFactor = 100`) con limpieza automática de los pares `1/4` en `OLD_DEFAULT_SCALES`.
+3. **Cálculos y consultas:**
+   - `calculate_line_amount` con aritmética entera half-up (alineada con Dart `.round()`).
+   - `fetch_product_types_and_price_factors_map` en una sola consulta a `Products` para facturas y pedidos.
+   - `ensure_inventory_products` retorna `{productId: priceUnitFactor}` para fijar el factor server-side en entradas, salidas, ajustes y traslados sin queries extra.
+   - Corregido fallback de `hold_sales_repository.py`, `orders_controller.py`, `adjustment_requests_repository.py`, `bi/repository.py` y `product_accounts_collection.py` (`get_total_current_stock` con `$floor(... + 0.5)`).
+4. **Guard de inmutabilidad (`product_type_lifecycle.py`):** Bloquea el cambio de `priceUnitFactor` si hay stock, promesa o transacciones, excepto durante la transición `item -> service/nonInventory` (que ya valida stock 0).
+5. **Tests:** `test/test_price_unit_factor.py` + verificación con `ruff check`, `ty check` y `pytest`.

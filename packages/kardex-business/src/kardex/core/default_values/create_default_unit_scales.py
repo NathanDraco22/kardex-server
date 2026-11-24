@@ -77,8 +77,10 @@ def build_fraction_pack_scale(
     return None
 
 
-# Escalas continuas: la base es un cuarto de la unidad principal y el default
-# es la unidad comercial (Libra/Litro/Metro).
+# Escalas continuas:
+# - Versión en cuartos (1/4, priceUnitFactor=1): múltiplos de 0.25.
+# - Versión "(Decimal)" (0.01, priceUnitFactor=100): fracciones arbitrarias de
+#   hasta 2 decimales (0.1, 0.25, 1.35...) con precio/costo por unidad principal.
 default_unit_scales: list[CreateUnitScale] = [
     CreateUnitScale(
         name="Libra",
@@ -93,6 +95,44 @@ default_unit_scales: list[CreateUnitScale] = [
         wholesaleUnitIndex=3,
     ),
     CreateUnitScale(
+        name="Libra (Decimal)",
+        scaleType="weight",
+        baseUnit="0.01 Libra",
+        units=[
+            ExtraUnit(name="Libra", conversionFactor=100),
+            ExtraUnit(name="Arroba (25 lb)", conversionFactor=2500),
+            ExtraUnit(name="Quintal (100 lb)", conversionFactor=10000),
+        ],
+        defaultUnitIndex=1,
+        wholesaleUnitIndex=3,
+        priceUnitFactor=100,
+    ),
+    CreateUnitScale(
+        name="Kilo",
+        scaleType="weight",
+        baseUnit="1/4 Kilo",
+        units=[
+            ExtraUnit(name="Kilo", conversionFactor=4),
+            ExtraUnit(name="Saco 25 kg", conversionFactor=100),
+            ExtraUnit(name="Saco 50 kg", conversionFactor=200),
+        ],
+        defaultUnitIndex=1,
+        wholesaleUnitIndex=3,
+    ),
+    CreateUnitScale(
+        name="Kilo (Decimal)",
+        scaleType="weight",
+        baseUnit="0.01 Kilo",
+        units=[
+            ExtraUnit(name="Kilo", conversionFactor=100),
+            ExtraUnit(name="Saco 25 kg", conversionFactor=2500),
+            ExtraUnit(name="Saco 50 kg", conversionFactor=5000),
+        ],
+        defaultUnitIndex=1,
+        wholesaleUnitIndex=3,
+        priceUnitFactor=100,
+    ),
+    CreateUnitScale(
         name="Litro",
         scaleType="volume",
         baseUnit="1/4 Litro",
@@ -105,6 +145,19 @@ default_unit_scales: list[CreateUnitScale] = [
         wholesaleUnitIndex=3,
     ),
     CreateUnitScale(
+        name="Litro (Decimal)",
+        scaleType="volume",
+        baseUnit="0.01 Litro",
+        units=[
+            ExtraUnit(name="Litro", conversionFactor=100),
+            ExtraUnit(name="Bidón 5 L", conversionFactor=500),
+            ExtraUnit(name="Bidón 20 L", conversionFactor=2000),
+        ],
+        defaultUnitIndex=1,
+        wholesaleUnitIndex=3,
+        priceUnitFactor=100,
+    ),
+    CreateUnitScale(
         name="Metro",
         scaleType="length",
         baseUnit="1/4 Metro",
@@ -115,6 +168,19 @@ default_unit_scales: list[CreateUnitScale] = [
         ],
         defaultUnitIndex=1,
         wholesaleUnitIndex=3,
+    ),
+    CreateUnitScale(
+        name="Metro (Decimal)",
+        scaleType="length",
+        baseUnit="0.01 Metro",
+        units=[
+            ExtraUnit(name="Metro", conversionFactor=100),
+            ExtraUnit(name="Rollo 50 m", conversionFactor=5000),
+            ExtraUnit(name="Rollo 100 m", conversionFactor=10000),
+        ],
+        defaultUnitIndex=1,
+        wholesaleUnitIndex=3,
+        priceUnitFactor=100,
     ),
 ]
 

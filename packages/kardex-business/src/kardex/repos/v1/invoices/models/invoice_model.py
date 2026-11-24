@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from kardex.repos.v1.common.models import (
     SaleItem,
     PaymentType,
+    DiscountType,
     ClientInfo,
     UserInfo,
     OrderInfo,
@@ -28,11 +29,31 @@ class BaseInvoice(BaseModel):
     paymentType: PaymentType
     bankReference: str = ""
     paymentDetail: PaymentDetail | None = None
+    discountType: DiscountType | None = None
+    discountValue: int = 0
+    itemDiscounts: int = 0
+    invoiceDiscount: int = 0
     totalCost: int
     total: int
     paidAt: int | None = None
     createdBy: UserInfo
     shiftId: str | None = None
+
+    @property
+    def itemsSubTotal(self) -> int:
+        return sum(item.subTotal for item in self.saleItems)
+
+    @property
+    def effectiveItemDiscounts(self) -> int:
+        return (
+            self.itemDiscounts
+            if self.itemDiscounts > 0
+            else sum(item.totalDiscount for item in self.saleItems)
+        )
+
+    @property
+    def totalDiscount(self) -> int:
+        return self.effectiveItemDiscounts + self.invoiceDiscount
 
     @property
     def totalRemaining(self) -> int:

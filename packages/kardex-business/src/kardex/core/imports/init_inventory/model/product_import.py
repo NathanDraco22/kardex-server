@@ -1,6 +1,7 @@
 import json
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
+from kardex.repos.v1.products.models.product_model import ExtraUnit
 
 
 class ProductImport(BaseModel):
@@ -14,6 +15,10 @@ class ProductImport(BaseModel):
     tags: list[str] = []
     hasIva: bool = False
     isActive: bool = True
+    extraUnits: list[ExtraUnit] = []
+    defaultUnitIndex: int = 0
+    wholesaleUnitIndex: int = 0
+    priceUnitFactor: int = Field(default=1, ge=1)
     quantity: int
     cost: int
     price: int

@@ -1,5 +1,8 @@
 from typing import Tuple, List
-from kardex.core.inventory import fetch_product_types_map
+from kardex.core.inventory import (
+    calculate_line_amount,
+    fetch_product_types_and_price_factors_map,
+)
 from kardex.services.mongo_collections.v1 import (
     OrdersCollection,
     ProductAccountsCollection,
@@ -23,7 +26,9 @@ async def process_order(
             # 1. PREPARACIÓN DE DATOS
             # ==========================================
             all_product_ids = list({item.product.id for item in create_order.saleItems})
-            product_types = await fetch_product_types_map(all_product_ids)
+            product_types, price_unit_factors = (
+                await fetch_product_types_and_price_factors_map(all_product_ids)
+            )
 
             # Agrupamos por ID para saber la cantidad total a reservar solo en inventariables
             consolidated_reservation: dict[str, int] = {}
@@ -34,6 +39,9 @@ async def process_order(
                     item.product.id, item.product.productType
                 )
                 item.product.productType = resolved_type
+                item.priceUnitFactor = price_unit_factors.get(
+                    item.product.id, max(item.priceUnitFactor, 1)
+                )
                 if resolved_type == "item":
                     qty_to_reserve = abs(item.quantity + item.bonQuantity)
                     consolidated_reservation[item.product.id] = (
@@ -105,7 +113,11 @@ async def process_order(
 
             # Recalcular totalCost con los costos reales del inventario / referencia
             create_order.totalCost = sum(
-                item.cost * (item.quantity + item.bonQuantity)
+                calculate_line_amount(
+                    item.cost,
+                    item.quantity + item.bonQuantity,
+                    item.priceUnitFactor,
+                )
                 for item in create_order.saleItems
             )
 
