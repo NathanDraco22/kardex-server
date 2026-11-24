@@ -72,24 +72,27 @@ def test_models_default_price_unit_factor_is_one() -> None:
     assert adj_item.priceUnitFactor == 1
 
 
-def test_default_continuous_scales_use_centesimals_and_price_unit_factor_100() -> None:
+def test_default_continuous_scales_keep_quarters_and_add_decimal_variants() -> None:
     by_name = {scale.name: scale for scale in default_unit_scales}
 
-    for name, base_name in [
-        ("Libra", "0.01 Libra"),
-        ("Litro", "0.01 Litro"),
-        ("Metro", "0.01 Metro"),
-    ]:
-        scale = by_name[name]
-        assert scale.baseUnit == base_name
-        assert scale.priceUnitFactor == 100
-        assert scale.defaultUnitIndex == 1
-        assert scale.units[0].name == name
-        assert scale.units[0].conversionFactor == 100
+    for unit_name in ("Libra", "Kilo", "Litro", "Metro"):
+        quarter_scale = by_name[unit_name]
+        assert quarter_scale.baseUnit == f"1/4 {unit_name}"
+        assert quarter_scale.priceUnitFactor == 1
+        assert quarter_scale.defaultUnitIndex == 1
+        assert quarter_scale.units[0].name == unit_name
+        assert quarter_scale.units[0].conversionFactor == 4
 
-    assert ("Libra", "1/4 Libra") in OLD_DEFAULT_SCALES
-    assert ("Litro", "1/4 Litro") in OLD_DEFAULT_SCALES
-    assert ("Metro", "1/4 Metro") in OLD_DEFAULT_SCALES
+        decimal_scale = by_name[f"{unit_name} (Decimal)"]
+        assert decimal_scale.baseUnit == f"0.01 {unit_name}"
+        assert decimal_scale.priceUnitFactor == 100
+        assert decimal_scale.defaultUnitIndex == 1
+        assert decimal_scale.units[0].name == unit_name
+        assert decimal_scale.units[0].conversionFactor == 100
+
+    assert ("Libra", "1/4 Libra") not in OLD_DEFAULT_SCALES
+    assert ("Litro", "1/4 Litro") not in OLD_DEFAULT_SCALES
+    assert ("Metro", "1/4 Metro") not in OLD_DEFAULT_SCALES
 
 
 def test_calculate_line_amount_with_price_unit_factor() -> None:

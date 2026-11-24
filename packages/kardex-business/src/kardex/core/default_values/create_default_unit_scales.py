@@ -3,18 +3,14 @@ from kardex.repos.v1.products.models.product_model import ExtraUnit
 from kardex.services.mongo_collections.v1 import UnitScalesCollection
 from kardex.tools import TimeTools, UuidTool
 
-# Escalas viejas (gramos/mililitros/centímetros/segundos y cuartos 1/4).
-# Se eliminan de las semillas antes de sembrar las centesimales (0.01 con
-# priceUnitFactor=100). Solo se borran si coinciden nombre y base, para no
-# eliminar escalas personalizadas.
+# Escalas viejas (base gramo/mililitro/centímetro/segundo). Se eliminan de las
+# semillas porque la unidad base ahora es la fracción comercial mínima. Solo se
+# borran si coinciden nombre y base, para no eliminar escalas personalizadas.
 OLD_DEFAULT_SCALES: list[tuple[str, str]] = [
     ("Peso", "Gramo"),
     ("Volumen", "Mililitro"),
     ("Longitud", "Centímetro"),
     ("Tiempo", "Segundo"),
-    ("Libra", "1/4 Libra"),
-    ("Litro", "1/4 Litro"),
-    ("Metro", "1/4 Metro"),
 ]
 
 
@@ -81,12 +77,25 @@ def build_fraction_pack_scale(
     return None
 
 
-# Escalas continuas: la base es la centésima (0.01) para permitir decimales
-# arbitrarios de hasta 2 cifras (0.1, 0.25, 1.35...), mientras priceUnitFactor=100
-# expresa precios y costos por unidad comercial principal (Libra/Litro/Metro).
+# Escalas continuas:
+# - Versión en cuartos (1/4, priceUnitFactor=1): múltiplos de 0.25.
+# - Versión "(Decimal)" (0.01, priceUnitFactor=100): fracciones arbitrarias de
+#   hasta 2 decimales (0.1, 0.25, 1.35...) con precio/costo por unidad principal.
 default_unit_scales: list[CreateUnitScale] = [
     CreateUnitScale(
         name="Libra",
+        scaleType="weight",
+        baseUnit="1/4 Libra",
+        units=[
+            ExtraUnit(name="Libra", conversionFactor=4),
+            ExtraUnit(name="Arroba (25 lb)", conversionFactor=100),
+            ExtraUnit(name="Quintal (100 lb)", conversionFactor=400),
+        ],
+        defaultUnitIndex=1,
+        wholesaleUnitIndex=3,
+    ),
+    CreateUnitScale(
+        name="Libra (Decimal)",
         scaleType="weight",
         baseUnit="0.01 Libra",
         units=[
@@ -99,7 +108,44 @@ default_unit_scales: list[CreateUnitScale] = [
         priceUnitFactor=100,
     ),
     CreateUnitScale(
+        name="Kilo",
+        scaleType="weight",
+        baseUnit="1/4 Kilo",
+        units=[
+            ExtraUnit(name="Kilo", conversionFactor=4),
+            ExtraUnit(name="Saco 25 kg", conversionFactor=100),
+            ExtraUnit(name="Saco 50 kg", conversionFactor=200),
+        ],
+        defaultUnitIndex=1,
+        wholesaleUnitIndex=3,
+    ),
+    CreateUnitScale(
+        name="Kilo (Decimal)",
+        scaleType="weight",
+        baseUnit="0.01 Kilo",
+        units=[
+            ExtraUnit(name="Kilo", conversionFactor=100),
+            ExtraUnit(name="Saco 25 kg", conversionFactor=2500),
+            ExtraUnit(name="Saco 50 kg", conversionFactor=5000),
+        ],
+        defaultUnitIndex=1,
+        wholesaleUnitIndex=3,
+        priceUnitFactor=100,
+    ),
+    CreateUnitScale(
         name="Litro",
+        scaleType="volume",
+        baseUnit="1/4 Litro",
+        units=[
+            ExtraUnit(name="Litro", conversionFactor=4),
+            ExtraUnit(name="Bidón 5 L", conversionFactor=20),
+            ExtraUnit(name="Bidón 20 L", conversionFactor=80),
+        ],
+        defaultUnitIndex=1,
+        wholesaleUnitIndex=3,
+    ),
+    CreateUnitScale(
+        name="Litro (Decimal)",
         scaleType="volume",
         baseUnit="0.01 Litro",
         units=[
@@ -113,6 +159,18 @@ default_unit_scales: list[CreateUnitScale] = [
     ),
     CreateUnitScale(
         name="Metro",
+        scaleType="length",
+        baseUnit="1/4 Metro",
+        units=[
+            ExtraUnit(name="Metro", conversionFactor=4),
+            ExtraUnit(name="Rollo 50 m", conversionFactor=200),
+            ExtraUnit(name="Rollo 100 m", conversionFactor=400),
+        ],
+        defaultUnitIndex=1,
+        wholesaleUnitIndex=3,
+    ),
+    CreateUnitScale(
+        name="Metro (Decimal)",
         scaleType="length",
         baseUnit="0.01 Metro",
         units=[
