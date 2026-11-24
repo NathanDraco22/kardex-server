@@ -117,9 +117,13 @@ async def process_init_import(branch_id: str, products: list[ProductImport]) -> 
             productName=product.name,
             code=product.code,
             brandName=product.brandName,
-            unitName=product.unitName,
+            unitName=product.default_unit_name,
             cost=import_product.cost,
             quantity=import_product.quantity,
+            conversionFactor=product.default_unit_factor,
+            priceUnitFactor=product.priceUnitFactor,
+            standardUnitName=product.default_unit_name,
+            standardUnitFactor=product.default_unit_factor,
             expirationDate=None,
         )
 
@@ -292,9 +296,13 @@ async def process_inventory_import(
             productName=product.name,
             code=product.code,
             brandName=product.brandName,
-            unitName=product.unitName,
+            unitName=product.default_unit_name,
             cost=import_product.cost,
             quantity=import_product.quantity,
+            conversionFactor=product.default_unit_factor,
+            priceUnitFactor=product.priceUnitFactor,
+            standardUnitName=product.default_unit_name,
+            standardUnitFactor=product.default_unit_factor,
             expirationDate=None,
         )
 
