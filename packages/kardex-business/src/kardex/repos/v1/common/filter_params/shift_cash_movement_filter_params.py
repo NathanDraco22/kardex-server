@@ -9,5 +9,6 @@ class ShiftCashMovementFilterParams(BaseFilterParams):
     shiftId: str | None = None
     branchId: str | None = None
     type: CashMovementType | None = None
+    createdBy: str | None = None
     startDate: int | None = None
     endDate: int | None = None
