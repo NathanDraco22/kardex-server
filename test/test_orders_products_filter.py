@@ -36,3 +36,24 @@ async def test_fetch_products_in_orders_applies_date_range_client_and_user() -> 
         "createdAt": {"$gte": 1_700_000_000_000, "$lte": 1_700_086_400_000},
         "createdBy.id": "seller-7",
     }
+
+    await orders_collection.fetch_products_in_orders(
+        branchId="branch-1",
+        status="completed",
+        neStatus="cancelled",
+    )
+    pipeline_completed = mock_collection.aggregate.call_args.args[0]
+    assert pipeline_completed[0]["$match"] == {
+        "branchId": "branch-1",
+        "status": "completed",
+    }
+
+    await orders_collection.fetch_products_in_orders(
+        branchId="branch-1",
+        status="open",
+    )
+    pipeline_open = mock_collection.aggregate.call_args.args[0]
+    assert pipeline_open[0]["$match"] == {
+        "branchId": "branch-1",
+        "status": "open",
+    }
