@@ -66,12 +66,16 @@ class OrdersCollection(BaseMongoCollection):
         start_date = kwargs.pop("startDate", None)
         end_date = kwargs.pop("endDate", None)
         neStatus = kwargs.pop("neStatus", None)
+        client_id = kwargs.pop("clientId", None)
         created_by_param = kwargs.pop("createdBy", None)
 
         query = {}
 
         if branch_id:
             query["branchId"] = branch_id
+
+        if client_id:
+            query["clientId"] = client_id
 
         if neStatus:
             query["status"] = {"$ne": neStatus}
