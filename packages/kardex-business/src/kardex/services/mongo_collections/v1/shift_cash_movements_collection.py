@@ -31,6 +31,10 @@ class ShiftCashMovementsCollection(BaseMongoCollection):
         if movement_type:
             query["type"] = movement_type
 
+        created_by = kwargs.get("createdBy")
+        if created_by:
+            query["createdBy.id"] = created_by
+
         start_date = kwargs.get("startDate")
         end_date = kwargs.get("endDate")
         if start_date is not None or end_date is not None:
@@ -124,5 +128,6 @@ class ShiftCashMovementsCollection(BaseMongoCollection):
                 IndexModel([("docNumber", 1)], unique=True),
                 IndexModel([("shiftId", 1)]),
                 IndexModel([("branchId", 1), ("createdAt", -1)]),
+                IndexModel([("branchId", 1), ("createdBy.id", 1), ("createdAt", -1)]),
             ]
         )

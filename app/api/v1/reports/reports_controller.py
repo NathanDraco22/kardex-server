@@ -13,6 +13,7 @@ from kardex.repos.v1.executive_summaries import (
 from kardex.repos.v1.receipts import ReceiptsRepository
 from kardex.repos.v1.invoices import InvoicesRepository
 from kardex.repos.v1.expenses import ExpensesRepository
+from kardex.repos.v1.shift_cash_movements import ShiftCashMovementsRepository
 from kardex.repos.v1.common.models import (
     InventoryBranchDetail,
     CommercialBranchDetail,
@@ -24,6 +25,7 @@ from kardex.repos.v1.common.filter_params import (
     TotalsFilterParams,
     InvoiceFilterParams,
     ReceiptFilterParams,
+    ShiftCashMovementFilterParams,
 )
 from .responses import TotalsResult
 
@@ -43,6 +45,7 @@ class ReportsController:
         self.receipts_repo = ReceiptsRepository.get_instance()
         self.invoices_repo = InvoicesRepository.get_instance()
         self.expenses_repo = ExpensesRepository.get_instance()
+        self.shift_cash_movements_repo = ShiftCashMovementsRepository.get_instance()
 
     async def get_general_report(
         self, params: ReportFilterParams
@@ -185,6 +188,23 @@ class ReportsController:
             logger.exception("No se pudieron calcular los totales de gastos")
             expenses = None
 
+        try:
+            movement_filter = ShiftCashMovementFilterParams(
+                branchId=params.branchId,
+                startDate=params.startDate,
+                endDate=params.endDate,
+                createdBy=params.userId,
+                limit=500,
+            )
+            shift_cash_movements = (
+                await self.shift_cash_movements_repo.get_all_shift_cash_movements(
+                    movement_filter
+                )
+            )
+        except Exception:
+            logger.exception("No se pudieron consultar los movimientos de caja")
+            shift_cash_movements = []
+
         return TotalsResult(
             branchId=params.branchId,
             invoices=invoices_totals,
@@ -192,6 +212,7 @@ class ReportsController:
             detailInvoices=detail_invoices,
             detailReceipts=detail_receipts,
             expenses=expenses,
+            shiftCashMovements=shift_cash_movements,
         )
 
 
