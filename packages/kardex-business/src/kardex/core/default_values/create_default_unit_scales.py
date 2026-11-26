@@ -93,6 +93,7 @@ default_unit_scales: list[CreateUnitScale] = [
         ],
         defaultUnitIndex=1,
         wholesaleUnitIndex=3,
+        showBasicUnit=False,
     ),
     CreateUnitScale(
         name="Libra (Decimal)",
@@ -106,6 +107,7 @@ default_unit_scales: list[CreateUnitScale] = [
         defaultUnitIndex=1,
         wholesaleUnitIndex=3,
         priceUnitFactor=100,
+        showBasicUnit=False,
     ),
     CreateUnitScale(
         name="Kilo",
@@ -118,6 +120,7 @@ default_unit_scales: list[CreateUnitScale] = [
         ],
         defaultUnitIndex=1,
         wholesaleUnitIndex=3,
+        showBasicUnit=False,
     ),
     CreateUnitScale(
         name="Kilo (Decimal)",
@@ -131,6 +134,7 @@ default_unit_scales: list[CreateUnitScale] = [
         defaultUnitIndex=1,
         wholesaleUnitIndex=3,
         priceUnitFactor=100,
+        showBasicUnit=False,
     ),
     CreateUnitScale(
         name="Litro",
@@ -143,6 +147,7 @@ default_unit_scales: list[CreateUnitScale] = [
         ],
         defaultUnitIndex=1,
         wholesaleUnitIndex=3,
+        showBasicUnit=False,
     ),
     CreateUnitScale(
         name="Litro (Decimal)",
@@ -156,6 +161,7 @@ default_unit_scales: list[CreateUnitScale] = [
         defaultUnitIndex=1,
         wholesaleUnitIndex=3,
         priceUnitFactor=100,
+        showBasicUnit=False,
     ),
     CreateUnitScale(
         name="Metro",
@@ -168,6 +174,7 @@ default_unit_scales: list[CreateUnitScale] = [
         ],
         defaultUnitIndex=1,
         wholesaleUnitIndex=3,
+        showBasicUnit=False,
     ),
     CreateUnitScale(
         name="Metro (Decimal)",
@@ -181,6 +188,7 @@ default_unit_scales: list[CreateUnitScale] = [
         defaultUnitIndex=1,
         wholesaleUnitIndex=3,
         priceUnitFactor=100,
+        showBasicUnit=False,
     ),
 ]
 

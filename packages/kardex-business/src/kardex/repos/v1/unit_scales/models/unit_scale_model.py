@@ -22,6 +22,7 @@ class BaseUnitScale(BaseModel):
     defaultUnitIndex: int = 0
     wholesaleUnitIndex: int = 0
     priceUnitFactor: int = Field(default=1, ge=1)
+    showBasicUnit: bool = True
 
 
 class CreateUnitScale(BaseUnitScale):
@@ -36,6 +37,7 @@ class UpdateUnitScale(BaseModel):
     defaultUnitIndex: int | None = None
     wholesaleUnitIndex: int | None = None
     priceUnitFactor: int | None = Field(default=None, ge=1)
+    showBasicUnit: bool | None = None
 
 
 class UnitScaleInDb(BaseUnitScale):

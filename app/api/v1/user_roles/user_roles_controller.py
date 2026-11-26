@@ -3,6 +3,7 @@ from kardex.core.role_manager.role_manager import Modules, RoleManager
 from kardex.repos.v1.user_roles import (
     CreateUserRole,
     ModulesCatalogResponse,
+    RoleCapabilities,
     UpdateUserRole,
     UserRoleInDb,
     UserRolesRepository,
@@ -34,7 +35,11 @@ class UserRolesController:
                 detail=f"Ya existe un rol con el nombre '{clean_name}'",
             )
 
-        payload = CreateUserRole(name=clean_name, access=list(dict.fromkeys(body.access)))
+        payload = CreateUserRole(
+            name=clean_name,
+            access=list(dict.fromkeys(body.access)),
+            capabilities=body.capabilities,
+        )
         return await self.user_roles_repo.create_user_role(payload)
 
     async def get_all_user_roles(self) -> ListResponse[UserRoleInDb]:
@@ -64,6 +69,11 @@ class UserRolesController:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="El rol 'Admin' debe mantener el permiso de acceso total",
                 )
+            if body.capabilities is not None and body.capabilities != RoleCapabilities():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El rol 'Admin' debe mantener todas las capacidades activas",
+                )
 
         if body.name is not None:
             clean_name = body.name.strip()
@@ -83,9 +93,13 @@ class UserRolesController:
             body = UpdateUserRole(
                 name=clean_name,
                 access=list(dict.fromkeys(body.access)) if body.access is not None else None,
+                capabilities=body.capabilities,
             )
         elif body.access is not None:
-            body = UpdateUserRole(access=list(dict.fromkeys(body.access)))
+            body = UpdateUserRole(
+                access=list(dict.fromkeys(body.access)),
+                capabilities=body.capabilities,
+            )
 
         updated_user_role = await self.user_roles_repo.update_user_role_by_id(
             user_role_id, body

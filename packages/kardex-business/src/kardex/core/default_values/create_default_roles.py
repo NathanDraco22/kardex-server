@@ -13,6 +13,7 @@ async def create_default_roles() -> None:
             id=role.name,
             name=role.name,
             access=role.access,
+            capabilities=role.capabilities,
             createdAt=TimeTools.get_now_in_milliseconds(),
         )
 
