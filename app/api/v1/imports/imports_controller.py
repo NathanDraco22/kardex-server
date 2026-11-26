@@ -1,10 +1,17 @@
 import csv
 import io
 import json
+from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 from fastapi import HTTPException, UploadFile
 
+from kardex.core.imports.accounts_payable.model.account_payable_import import (
+    AccountPayableImport,
+)
+from kardex.core.imports.accounts_payable.process_accounts_payable_import import (
+    process_accounts_payable_import,
+)
 from kardex.core.imports.clients.model.client_import import ClientImport
 from kardex.core.imports.clients.process_clients_import import process_clients_import
 from kardex.core.imports.init_inventory.model.product_import import ProductImport
@@ -20,9 +27,11 @@ from kardex.core.inventory import calculate_line_amount
 from kardex.repos.v1.unit_scales import UnitScaleInDb
 from kardex.services.mongo_collections.v1 import (
     AdjustEntriesCollection,
+    ExpensesCollection,
+    SuppliersCollection,
     UnitScalesCollection,
 )
-from kardex.tools import BranchesTool
+from kardex.tools import BranchesTool, TimeTools
 
 from .responses import ImportPreviewError, ImportPreviewResponse, ImportResponse
 
@@ -38,6 +47,7 @@ PRODUCT_REQUIRED_COLUMNS = {
 }
 CLIENT_REQUIRED_COLUMNS = {"name"}
 SUPPLIER_REQUIRED_COLUMNS = {"name"}
+ACCOUNTS_PAYABLE_REQUIRED_COLUMNS = {"supplierName", "amount"}
 
 TRUE_VALUES = {"1", "true", "yes", "y", "si", "sí", "on"}
 FALSE_VALUES = {"0", "false", "no", "n", "off"}
@@ -109,6 +119,62 @@ class ImportsController:
             importedCount=len(supplier_imports),
         )
 
+    async def create_accounts_payable_import(
+        self, branch_id: str, file: UploadFile
+    ) -> ImportResponse:
+        self._validate_branch(branch_id)
+
+        rows, headers = await self._read_csv(file)
+        self._ensure_columns(headers, ACCOUNTS_PAYABLE_REQUIRED_COLUMNS)
+
+        payable_imports = self._build_accounts_payable_imports(rows)
+        seen_docs: dict[str, int] = {}
+        for row, item in zip(rows, payable_imports, strict=True):
+            doc_num = (item.docNumber or "").strip()
+            if not doc_num:
+                continue
+            row_num = row.get("__row_number__", "?")
+            if doc_num in seen_docs:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f"Fila {row_num}: 'docNumber' duplicado en el archivo ('{doc_num}')"
+                    ),
+                )
+            seen_docs[doc_num] = int(row_num) if row_num.isdigit() else 0
+
+        if seen_docs:
+            existing_docs = await ExpensesCollection.get_instance().fetch_existing_doc_numbers(
+                list(seen_docs.keys())
+            )
+            if existing_docs:
+                first_dup = sorted(existing_docs)[0]
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f"El número de documento '{first_dup}' ya existe registrado en el sistema"
+                    ),
+                )
+
+        try:
+            imported_count = await process_accounts_payable_import(
+                branch_id, payable_imports
+            )
+        except Exception as ex:
+            err_msg = str(ex)
+            if "E11000" in err_msg or "duplicate key" in err_msg.lower():
+                raise HTTPException(
+                    status_code=400,
+                    detail="Uno o más números de documento ya existen registrados en el sistema",
+                ) from ex
+            raise
+
+        return ImportResponse(
+            status="success",
+            message="Importación de cuentas por pagar exitosa",
+            importedCount=imported_count,
+        )
+
     async def preview_import(
         self, import_type: str, branch_id: str | None, file: UploadFile
     ) -> ImportPreviewResponse:
@@ -122,6 +188,9 @@ class ImportsController:
             "client": "clients",
             "suppliers": "suppliers",
             "supplier": "suppliers",
+            "accountspayable": "accountsPayable",
+            "accounts-payable": "accountsPayable",
+            "accounts_payable": "accountsPayable",
         }
         canonical_type = type_mapping.get(normalized_type.lower())
         if not canonical_type:
@@ -135,7 +204,7 @@ class ImportsController:
                         row=0,
                         message=(
                             f"Tipo de importación no válido: '{import_type}'. "
-                            "Opciones: initialInventory, inventory, clients, suppliers."
+                            "Opciones: initialInventory, inventory, clients, suppliers, accountsPayable."
                         ),
                     )
                 ],
@@ -143,7 +212,7 @@ class ImportsController:
 
         errors: list[ImportPreviewError] = []
 
-        if canonical_type in {"initialInventory", "inventory", "clients"}:
+        if canonical_type in {"initialInventory", "inventory", "clients", "accountsPayable"}:
             if not branch_id:
                 errors.append(
                     ImportPreviewError(
@@ -179,6 +248,8 @@ class ImportsController:
             required_cols = PRODUCT_REQUIRED_COLUMNS
         elif canonical_type == "clients":
             required_cols = CLIENT_REQUIRED_COLUMNS
+        elif canonical_type == "accountsPayable":
+            required_cols = ACCOUNTS_PAYABLE_REQUIRED_COLUMNS
         else:
             required_cols = SUPPLIER_REQUIRED_COLUMNS
 
@@ -216,6 +287,12 @@ class ImportsController:
         total_price = 0
         total_credit_limit = 0
         total_initial_balance = 0
+        total_payable_amount = 0
+        total_payable_paid = 0
+        total_payable_pending = 0
+        new_suppliers_count = 0
+        seen_payable_docs: dict[str, int] = {}
+        payable_supplier_refs: list[tuple[str | None, str]] = []
         max_errors_to_collect = 50
 
         for row in rows:
@@ -238,6 +315,29 @@ class ImportsController:
                     total_initial_balance += client.initialBalance
                 elif canonical_type == "suppliers":
                     self._build_single_supplier_import(row)
+                elif canonical_type == "accountsPayable":
+                    payable = self._build_single_account_payable_import(row)
+                    total_payable_amount += payable.amount
+                    total_payable_paid += payable.amountPaid
+                    total_payable_pending += payable.amount - payable.amountPaid
+                    payable_supplier_refs.append(
+                        (payable.supplierId, payable.supplierName)
+                    )
+                    doc_num = (payable.docNumber or "").strip()
+                    if doc_num:
+                        if doc_num in seen_payable_docs:
+                            if len(errors) < max_errors_to_collect:
+                                errors.append(
+                                    ImportPreviewError(
+                                        row=row_num,
+                                        field="docNumber",
+                                        message=(
+                                            f"Número de documento duplicado en el CSV ('{doc_num}')"
+                                        ),
+                                    )
+                                )
+                        else:
+                            seen_payable_docs[doc_num] = row_num
             except HTTPException as ex:
                 if len(errors) < max_errors_to_collect:
                     errors.append(
@@ -246,6 +346,47 @@ class ImportsController:
                             message=str(ex.detail),
                         )
                     )
+
+        if canonical_type == "accountsPayable":
+            if seen_payable_docs:
+                existing_docs = (
+                    await ExpensesCollection.get_instance().fetch_existing_doc_numbers(
+                        list(seen_payable_docs.keys())
+                    )
+                )
+                for dup_doc in sorted(existing_docs):
+                    if len(errors) >= max_errors_to_collect:
+                        break
+                    errors.append(
+                        ImportPreviewError(
+                            row=seen_payable_docs[dup_doc],
+                            field="docNumber",
+                            message=(
+                                f"El número de documento '{dup_doc}' ya existe en el sistema"
+                            ),
+                        )
+                    )
+
+            if payable_supplier_refs:
+                raw_suppliers = (
+                    await SuppliersCollection.get_instance().fetch_all_suppliers()
+                )
+                existing_ids = {
+                    s.get("id", "") for s in raw_suppliers if s.get("id")
+                }
+                existing_names = {
+                    str(s.get("name", "")).strip().lower()
+                    for s in raw_suppliers
+                    if s.get("name")
+                }
+                missing_names: set[str] = set()
+                for sup_id, sup_name in payable_supplier_refs:
+                    if sup_id and sup_id in existing_ids:
+                        continue
+                    norm_name = sup_name.strip().lower()
+                    if norm_name and norm_name not in existing_names:
+                        missing_names.add(norm_name)
+                new_suppliers_count = len(missing_names)
 
         is_valid = len(errors) == 0
 
@@ -259,6 +400,10 @@ class ImportsController:
             totalPrice=total_price,
             totalCreditLimit=total_credit_limit,
             totalInitialBalance=total_initial_balance,
+            totalPayableAmount=total_payable_amount,
+            totalPayablePaid=total_payable_paid,
+            totalPayablePending=total_payable_pending,
+            newSuppliersCount=new_suppliers_count,
             errors=errors,
         )
 
@@ -595,6 +740,81 @@ class ImportsController:
         self, rows: list[dict[str, str]]
     ) -> list[SupplierImport]:
         return [self._build_single_supplier_import(row) for row in rows]
+
+    def _build_single_account_payable_import(
+        self, row: dict[str, str]
+    ) -> AccountPayableImport:
+        row_number = row.get("__row_number__", "?")
+        supplier_name = self._required_text(row, "supplierName", row_number)
+        amount = self._parse_money(row.get("amount"), "amount", row_number)
+        if amount <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Fila {row_number}: 'amount' debe ser mayor a cero",
+            )
+
+        amount_paid = self._parse_money(
+            row.get("amountPaid"), "amountPaid", row_number, default=0
+        )
+        if amount_paid < 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Fila {row_number}: 'amountPaid' no puede ser negativo",
+            )
+        if amount_paid > amount:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Fila {row_number}: 'amountPaid' no puede ser mayor que 'amount'"
+                ),
+            )
+
+        return AccountPayableImport(
+            supplierId=self._optional_text(row, "supplierId"),
+            supplierName=supplier_name,
+            docNumber=self._optional_text(row, "docNumber"),
+            date=self._parse_optional_date(row.get("date"), "date", row_number),
+            expirationDate=self._parse_optional_date(
+                row.get("expirationDate"), "expirationDate", row_number
+            ),
+            amount=amount,
+            amountPaid=amount_paid,
+            description=self._optional_text(row, "description"),
+        )
+
+    def _build_accounts_payable_imports(
+        self, rows: list[dict[str, str]]
+    ) -> list[AccountPayableImport]:
+        return [self._build_single_account_payable_import(row) for row in rows]
+
+    def _parse_optional_date(
+        self, value: str | None, field: str, row_number: str
+    ) -> int | None:
+        text = (value or "").strip()
+        if not text:
+            return None
+
+        if text.lstrip("-").isdigit() and text != "-":
+            ts = int(text)
+            if abs(ts) < 10_000_000_000:
+                ts *= 1000
+            return ts
+
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d"):
+            try:
+                parsed = datetime.strptime(text, fmt)
+                localized = TimeTools.default_timezone.localize(parsed)
+                return int(localized.timestamp() * 1000)
+            except ValueError:
+                continue
+
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Fila {row_number}: '{field}' no es una fecha válida ('{value}'). "
+                "Usa Unix timestamp, YYYY-MM-DD o DD/MM/YYYY"
+            ),
+        )
 
     def _required_text(self, row: dict[str, str], field: str, row_number: str) -> str:
         value = (row.get(field) or "").strip()

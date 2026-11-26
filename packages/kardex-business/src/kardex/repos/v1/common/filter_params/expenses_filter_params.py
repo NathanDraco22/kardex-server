@@ -17,9 +17,14 @@ class ExpensesFilterParams(BaseModel):
     maxAmount: int | None = None
     supplierId: str | None = None
     shiftId: str | None = None
+    onlyPending: bool | None = None
 
     def to_query_params(self) -> dict[str, Any]:
         raw_dict = self.model_dump(exclude_none=True)
+
+        only_pending = raw_dict.pop("onlyPending", None)
+        if only_pending is True and "status" not in raw_dict:
+            raw_dict["status"] = {"$in": ["draft", "open", "partiallyPaid"]}
 
         start_date = "startDate"
         end_date = "endDate"

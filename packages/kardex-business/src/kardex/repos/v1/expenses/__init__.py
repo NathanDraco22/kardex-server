@@ -1,11 +1,17 @@
 from .data.expenses_datasource import ExpensesDataSource
+from .models.accounts_payable_model import (
+    AccountsPayableSummary,
+    SupplierPayableSummary,
+)
 from .models.expense_model import (
+    AddToAmountRequest,
     CreateExpense,
-    UpdateExpense,
     ExpenseInDb,
+    ExpensePayment,
+    ExpensePaymentMethod,
     ExpensesStatus,
     ExpenseType,
-    AddToAmountRequest,
+    UpdateExpense,
 )
 from .models.expense_totals_model import ExpenseTypeTotal, ExpenseTotals
 from .expenses_repository import ExpensesRepository
@@ -16,6 +22,10 @@ __all__ = [
     "CreateExpense",
     "UpdateExpense",
     "ExpenseInDb",
+    "ExpensePayment",
+    "ExpensePaymentMethod",
+    "SupplierPayableSummary",
+    "AccountsPayableSummary",
     "ExpensesRepository",
     "ExpensesStatus",
     "ExpenseType",

@@ -90,6 +90,13 @@ class CounterManager:
         formatted = str(res.value).zfill(4)
         return formatted
 
+    async def set_expense_number(self, number: int, session: Any = None) -> str:
+        res = await self.counters_repository.set_counter(
+            "expenseNumber", number, session
+        )
+        formatted = str(res.value).zfill(4)
+        return formatted
+
     async def next_adjustment_request_number(self, session: Any = None) -> str:
         res = await self.counters_repository.increment_counter(
             "adjustmentRequestNumber", session
