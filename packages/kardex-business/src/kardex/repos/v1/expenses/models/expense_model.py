@@ -1,10 +1,23 @@
 from typing import Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from kardex.repos.v1.common.models import UserInfo
 
 ExpensesStatus = Literal["draft", "open", "paid", "partiallyPaid", "cancelled"]
 
 ExpenseType = Literal["operative", "supplier", "tax"]
+
+ExpensePaymentMethod = Literal["cash", "transfer", "card", "check", "other"]
+
+
+class ExpensePayment(BaseModel):
+    id: str
+    amount: int
+    paymentMethod: ExpensePaymentMethod = "cash"
+    reference: str | None = None
+    note: str | None = None
+    paidAt: int
+    createdBy: UserInfo | None = None
+    createdAt: int
 
 
 class BaseExpense(BaseModel):
@@ -17,6 +30,7 @@ class BaseExpense(BaseModel):
     date: int
     dateId: str
     amountPaid: int = 0
+    payments: list[ExpensePayment] = Field(default_factory=list)
     supplierId: str = ""
     supplierName: str | None = None
     status: ExpensesStatus
@@ -34,12 +48,14 @@ class CreateExpense(BaseExpense):
 class UpdateExpense(BaseModel):
     type: ExpenseType | None = None
     supplierId: str | None = None
+    supplierName: str | None = None
     amount: int | None = None
     amountPaid: int | None = None
     category: str | None = None
     description: str | None = None
     date: int | None = None
     dateId: str | None = None
+    expirationDate: int | None = None
     status: ExpensesStatus | None = None
     isActive: bool | None = None
 
@@ -54,3 +70,8 @@ class ExpenseInDb(BaseExpense):
 class AddToAmountRequest(BaseModel):
     expenseId: str
     amountPaid: int
+    paymentMethod: ExpensePaymentMethod = "cash"
+    reference: str | None = None
+    note: str | None = None
+    paidAt: int | None = None
+    createdBy: UserInfo | None = None

@@ -35,9 +35,25 @@ class ExpensesDataSource:
         collection = ExpensesCollection.get_instance()
         return await collection.delete_expense_by_id(expense_id, session=session)
 
-    async def add_to_amount_paid(self, expense_id: str, amount_paid: int) -> dict[str, Any] | None:
+    async def add_to_amount_paid(
+        self,
+        expense_id: str,
+        amount_paid: int,
+        payment_record: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | None:
         collection = ExpensesCollection.get_instance()
-        return await collection.add_to_amount_paid(expense_id, amount_paid)
+        return await collection.add_to_amount_paid(
+            expense_id, amount_paid, payment_record=payment_record
+        )
+
+    async def get_accounts_payable_summary(
+        self, branch_id: str | None = None, overdue_cutoff_ms: int | None = None
+    ) -> dict[str, Any]:
+        collection = ExpensesCollection.get_instance()
+        return await collection.get_accounts_payable_summary(
+            branch_id=branch_id,
+            overdue_cutoff_ms=overdue_cutoff_ms,
+        )
 
     async def get_expenses_summary_in_range(self, start_date: int, end_date: int) -> dict[str, Any]:
         collection = ExpensesCollection.get_instance()

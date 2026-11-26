@@ -15,7 +15,7 @@ async def preview_import(
     type: str = Query(
         ...,
         description=(
-            "Tipo de importación: initialInventory, inventory, clients, suppliers"
+            "Tipo de importación: initialInventory, inventory, clients, suppliers, accountsPayable"
         ),
     ),
     x_branch: str | None = Header(default=None, alias="X-Branch"),
@@ -55,3 +55,11 @@ async def create_suppliers_import(
     file: UploadFile = File(...),
 ) -> ImportResponse:
     return await imports_controller.create_suppliers_import(file)
+
+
+@imports_router.post("/accounts-payable", response_model=ImportResponse)
+async def create_accounts_payable_import(
+    branch_id: str = Depends(get_branch_id),
+    file: UploadFile = File(...),
+) -> ImportResponse:
+    return await imports_controller.create_accounts_payable_import(branch_id, file)

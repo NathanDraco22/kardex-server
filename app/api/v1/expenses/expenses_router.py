@@ -1,7 +1,13 @@
 from fastapi import APIRouter, Depends
 
 from kardex.repos.v1.common.filter_params import ExpensesFilterParams
-from kardex.repos.v1.expenses import CreateExpense, UpdateExpense, ExpenseInDb, AddToAmountRequest
+from kardex.repos.v1.expenses import (
+    AccountsPayableSummary,
+    AddToAmountRequest,
+    CreateExpense,
+    ExpenseInDb,
+    UpdateExpense,
+)
 from responses.v1 import ListResponse
 
 from .expenses_controller import expenses_controller
@@ -20,6 +26,16 @@ async def get_all_expenses(
     params: ExpensesFilterParams = Depends(),
 ) -> ListResponse[ExpenseInDb]:
     return await expenses_controller.get_all_expenses(params)
+
+
+@expenses_router.get("/accounts-payable/summary")
+async def get_accounts_payable_summary(
+    branchId: str | None = None,
+    overdueCutoffMs: int | None = None,
+) -> AccountsPayableSummary:
+    return await expenses_controller.get_accounts_payable_summary(
+        branchId, overdueCutoffMs
+    )
 
 
 @expenses_router.get("/{expense_id}")

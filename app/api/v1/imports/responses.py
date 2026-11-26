@@ -23,4 +23,8 @@ class ImportPreviewResponse(BaseModel):
     totalPrice: int = 0
     totalCreditLimit: int = 0
     totalInitialBalance: int = 0
+    totalPayableAmount: int = 0
+    totalPayablePaid: int = 0
+    totalPayablePending: int = 0
+    newSuppliersCount: int = 0
     errors: list[ImportPreviewError] = []
