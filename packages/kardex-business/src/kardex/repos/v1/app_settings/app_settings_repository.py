@@ -58,7 +58,7 @@ class AppSettingsRepository:
             return None
         return AppSettingInDb.model_validate(result)
 
-    async def get_current_app_settings(self) -> AppSettingInDb:
+    async def get_current_app_settings(self) -> AppSettingInDb | None:
         setting = await self.get_app_setting_by_id("Default")
         if setting is not None:
             return setting
@@ -67,7 +67,7 @@ class AppSettingsRepository:
         if len(all_settings) > 0:
             return all_settings[0]
 
-        return await self.create_app_setting_if_absent(CreateAppSetting())
+        return None
 
     async def update_app_setting_by_id(
         self, app_setting_id: str, app_setting: UpdateAppSetting

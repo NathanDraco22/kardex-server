@@ -25,7 +25,13 @@ class AppSettingsController:
         )
 
     async def get_current_app_settings(self) -> AppSettingInDb:
-        return await AppSettingsTool().get_current_app_settings()
+        settings = await AppSettingsTool().get_current_app_settings()
+        if settings is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="AppSetting not found",
+            )
+        return settings
 
     async def get_app_setting_by_id(self, app_setting_id: str) -> AppSettingInDb:
         app_setting = await self.app_settings_repo.get_app_setting_by_id(app_setting_id)

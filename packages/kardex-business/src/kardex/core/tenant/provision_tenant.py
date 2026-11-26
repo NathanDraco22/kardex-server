@@ -24,6 +24,7 @@ from kardex.services.mongo_indexes import (
     CURRENT_INDEX_VERSION,
     create_tenant_indexes,
 )
+from kardex.services.mongo_collections.v1 import UsersCollection
 from kardex.services.mongo_collections.v1.meta_collection import (
     write_tenant_meta_document,
 )
@@ -62,6 +63,10 @@ async def provision_tenant(
         await create_default_client()
         await create_default_branch(branch_name=establishment_name)
         await create_default_roles()
+        # Indice unico de Users (id/username) antes de crear root/owner:
+        # protege _create_owner_if_absent ante dos POST concurrentes aun cuando
+        # run_indexes=False difiere el resto de indices a BackgroundTasks.
+        await UsersCollection.get_instance().create_indexes()
         await create_root_user()
 
         if owner_name:

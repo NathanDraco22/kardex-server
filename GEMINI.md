@@ -839,3 +839,27 @@ Cerrar las condiciones de migracion legacy previas a produccion: nickname canoni
 5. **Correccion de contrato:** el `DELETE /api/v1/core-settings/{id}` usa el header `X-Content-Token` (no query string). Ya estaba implementado en la ronda anterior; se deja explicito aqui junto con el conteo de **31 colecciones**.
 6. **Higiene:** `mt_test_without_meta` se limpia en `_drop_databases()`; tests nuevos de R4-a, R8-a, R8-b y R8-c.
 7. **Verificacion:** `ruff` y `ty` en 0; `pytest` 128 passed / 18 skipped (integracion sin Mongo). Commit nuevo en `lite-multi-tenant`, sin push.
+
+## Fecha: 2026-11-25
+### Objetivo
+Auditoría y corrección de los 5 hallazgos críticos y altos de multi-tenant en la rama `lite-multi-tenant`.
+
+### Implementación
+1. **Evitar DBs fantasma en `GET /api/v1/app-settings/current`:**
+   - `packages/kardex-business/src/kardex/repos/v1/app_settings/app_settings_repository.py`: `get_current_app_settings()` ya no ejecuta `create_app_setting_if_absent()` en lectura y devuelve `None` si no hay configuración.
+   - `packages/kardex-business/src/kardex/tools/app_settings_tool.py`: no cachea valores `None` y limpia el caché si el registro fue eliminado.
+   - `app/api/v1/app_settings/app_settings_controller.py`: responde `404 Not Found` cuando el tenant no tiene `AppSettings`.
+2. **Aislamiento de caché HTTP (`Cache-Control: private` + `Vary`):**
+   - `app/app_middleware/depends/cache_header_response.py`: cambiado `public` a `private` y agregada cabecera `Vary: X-Servin, x-tenant-nickname, Authorization` para evitar fugas cross-tenant en proxies/CDNs.
+3. **Cachés por tenant acotadas (LRU) y aislamiento de `nickname`:**
+   - `packages/kardex-business/src/kardex/tools/tenant_cache.py`: nueva clase `BoundedTenantCache(OrderedDict)` con límite configurable (`MAX_TENANT_CACHE_SIZE`, default `256`).
+   - `etag_tool.py`, `branches_tool.py`, `users_tool.py`, `app_settings_tool.py` e `integration_tool.py`: migrados a `BoundedTenantCache`, normalización de `nickname`, ejecución de lecturas con `nickname` explícito vía `run_with_tenant_context`, y en `EtagTool.update_branches_etags` uso de `BranchesCollection.get_instance()` (sin inflar `BaseMongoCollection._instances`).
+4. **Condición de carrera en aprovisionamiento (`provision_tenant`):**
+   - `packages/kardex-business/src/kardex/core/tenant/provision_tenant.py`: se asegura `UsersCollection.get_instance().create_indexes()` antes de `create_root_user()` y `_create_owner_if_absent()` para que el índice único de `username` exista aun cuando `run_indexes=False`.
+5. **Pruebas:**
+   - `test/test_multi_tenant_audit_fixes.py`: 7 pruebas unitarias cubriendo los 5 hallazgos.
+
+### Verificación
+- `ruff check packages/kardex-business/src/kardex/ app/ test/test_multi_tenant_audit_fixes.py`: `All checks passed!`
+- `ty check`: `All checks passed!`
+- `pytest` sobre la suite multi-tenant (9 archivos): `75 passed`.
