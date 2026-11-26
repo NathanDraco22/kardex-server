@@ -28,6 +28,7 @@ class BaseProduct(BaseModel):
     defaultUnitIndex: int = 0  # 0 = unidad base, 1 = extraUnits[0], 2 = extraUnits[1]
     wholesaleUnitIndex: int = 0  # 0 = no definida, fallback a defaultUnitIndex
     priceUnitFactor: int = Field(default=1, ge=1)
+    showBasicUnit: bool = True
 
     @property
     def tracks_inventory(self) -> bool:
@@ -82,6 +83,7 @@ class UpdateProduct(BaseModel):
     defaultUnitIndex: int | None = None
     wholesaleUnitIndex: int | None = None
     priceUnitFactor: int | None = Field(default=None, ge=1)
+    showBasicUnit: bool | None = None
 
 
 
