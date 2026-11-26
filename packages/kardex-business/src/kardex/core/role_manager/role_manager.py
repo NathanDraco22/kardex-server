@@ -2,6 +2,7 @@ from kardex.repos.v1.user_roles.models.user_role_model import (
     BaseUserRole,
     ModuleItem,
     ModulesCatalogResponse,
+    RoleCapabilities,
     SubModuleItem,
 )
 
@@ -66,6 +67,22 @@ default_roles = [
             CommercialSubModules.CREATE_CREDIT_NOTE,
             CommercialSubModules.CREDIT_NOTE_HISTORY,
         ],
+    ),
+    BaseUserRole(
+        name="Cajero",
+        access=[
+            Modules.COMMERCIAL,
+            CommercialSubModules.CREATE_INVOICE,
+            CommercialSubModules.ORDERS,
+            CommercialSubModules.CREATE_ORDER,
+            CommercialSubModules.PENDING_INVOICES,
+            CommercialSubModules.INVOICE_HISTORY,
+            CommercialSubModules.CREATE_DEVOLUTION,
+            CommercialSubModules.DEVOLUTION_HISTORY,
+            CommercialSubModules.CREATE_CREDIT_NOTE,
+            CommercialSubModules.CREDIT_NOTE_HISTORY,
+        ],
+        capabilities=RoleCapabilities(allowCreditInvoicing=False),
     ),
     BaseUserRole(
         name="Operador",

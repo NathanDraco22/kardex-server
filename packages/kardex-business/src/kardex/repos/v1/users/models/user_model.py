@@ -1,9 +1,12 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from kardex.repos.v1.user_roles.models.user_role_model import RoleCapabilities
 
 
 class UserRole(BaseModel):
     name: str
     access: list[str]
+    capabilities: RoleCapabilities = Field(default_factory=RoleCapabilities)
 
 
 class BaseUser(BaseModel):
