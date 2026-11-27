@@ -162,6 +162,7 @@ real de `services/mongo_collections/v1/`.
 - **Turnos y Caja** (`shifts` + `shift-cash-movements`) es una funcionalidad **opcional** (`AppSettings.useShifts`, default `false`). Con la bandera apagada nada cambia: los documentos comerciales guardan `shiftId: null`.
 - Un usuario solo puede tener **un turno `open`** a la vez; lo garantiza el índice único parcial `ux_open_shift_per_user`, no un check-then-insert.
 - `Invoices`, `Receipts`, `Devolutions`, `CreditNotes` y `Expenses` aceptan `shiftId` opcional; el backend lo valida (turno existente, `open` y misma sucursal) cuando no es `None`.
+- La conversión de órdenes/cotizaciones a factura respeta la cascada de `AppSettings`: `useShifts` solo no carga al turno; `chargeConvertedOrdersToShift` habilita la carga; `requireShiftForConvertedOrders` exige turno abierto. Ver [`app_settings.md`](./app_settings.md).
 - `close_shift` calcula el consolidado con agregaciones de Mongo (`Invoices` pagadas/crédito, `Receipts` no borrados, `Devolutions` solo `confirmed`, `CreditNotes` aprobadas/aplicadas y movimientos manuales) y lo persiste de forma inmutable. `GET /shifts/{id}/preview` devuelve `ShiftPreview`, que no incluye datos de cierre.
 - Una salida de caja (`type="out"`) con `registerAsExpense=true` crea un `Expense` operativo pagado en la misma transacción y lo vincula con `expenseId`. El borrado es lógico (`isDeleted`/`deletedAt`) y solo se permite mientras el turno siga `open`.
 

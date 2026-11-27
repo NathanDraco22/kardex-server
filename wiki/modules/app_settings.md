@@ -58,8 +58,8 @@ flowchart TD
 | `showInvoiceTotalInSecondaryCurrency` | `bool` | `False` | Muestra el total equivalente en la moneda secundaria debajo del total final en el visor, ticket térmico y PDF A4 de facturas. |
 | `showInvoiceItemsSummary` | `bool` | `False` | Muestra el resumen de total de ítems y total de cantidad en el visor, ticket térmico y PDF A4 de facturas. |
 | `showInvoiceOrderCreator` | `bool` | `False` | Muestra el nombre de quien creó la orden o cotización de origen en el visor, ticket térmico y PDF A4 de facturas. |
-| `chargeConvertedOrdersToShift` | `bool` | `False` | Cuando `useShifts` está activo, si el usuario tiene un turno abierto en la sucursal carga la factura a su caja; si no tiene turno activo, factura sin asignar turno. |
-| `requireShiftForConvertedOrders` | `bool` | `False` | Cuando `useShifts` y `chargeConvertedOrdersToShift` están activos, exige turno abierto para poder convertir una orden o cotización a factura. |
+| `chargeConvertedOrdersToShift` | `bool` | `False` | Cuando `useShifts` está activo, si el usuario tiene un turno abierto en la sucursal de la orden o cotización, la factura se carga a su caja. Si no tiene turno activo y `requireShiftForConvertedOrders` está desactivado, factura sin asignar turno. |
+| `requireShiftForConvertedOrders` | `bool` | `False` | Cuando `useShifts` y `chargeConvertedOrdersToShift` están activos, exige un turno abierto en la sucursal para convertir una orden o cotización a factura; si no hay turno, la conversión se bloquea. |
 | `companyLogoUrl` | `str \| None` | `None` | URL pública de la imagen corporativa global de la empresa. Es un parámetro solo estético usado en el home y el selector de sucursales; no se usa en documentos, reportes ni cálculos. |
 | `createdAt` | `int` | Unix ms | Fecha y hora de creación en milisegundos. |
 | `updatedAt` | `int \| None` | `None` | Fecha y hora de última actualización en milisegundos. |
@@ -111,3 +111,22 @@ Router: `app/api/v1/app_settings/app_settings_router.py`
 | `POST` | `/api/v1/app-settings` | `AppSettingInDb` | Crea un nuevo registro de configuración a partir de `CreateAppSetting`. |
 | `PATCH` | `/api/v1/app-settings/{id}` | `AppSettingInDb` | Actualiza parcialmente campos mediante `UpdateAppSetting`, sella `updatedAt` y refresca el caché de `AppSettingsTool`. |
 | `DELETE` | `/api/v1/app-settings/{id}` | `AppSettingInDb` | Elimina la configuración por `id` y refresca el caché. |
+
+---
+
+## 4. Reglas de negocio: conversión de órdenes/cotizaciones a factura con turnos
+
+Aplica al endpoint `POST /api/v1/orders/make-invoice/{order_id}`, usado tanto para **órdenes** como para **cotizaciones**. Las banderas se evalúan en cascada:
+
+| `useShifts` | `chargeConvertedOrdersToShift` | `requireShiftForConvertedOrders` | Resultado |
+| :---: | :---: | :---: | :--- |
+| `false` | cualquiera | cualquiera | La conversión no interactúa con turnos; la factura se guarda con `shiftId = null`. |
+| `true` | `false` | cualquiera | La conversión **no se carga al turno**, aunque el cajero tenga uno abierto. El frontend no envía `shiftId` y el backend lo descarta. |
+| `true` | `true` | `false` | Si el cajero tiene un turno abierto en la sucursal de la orden/cotización, la factura se carga a ese turno. Si no tiene turno, se factura con `shiftId = null`. |
+| `true` | `true` | `true` | Se exige un turno abierto en la sucursal. Si no existe, el frontend ofrece abrirlo y cancela la conversión si el usuario no lo abre; el backend rechaza la petición con HTTP 400 si llega sin `shiftId`. |
+
+- **Valores por defecto:** las tres banderas son `false`.
+- **Precedencia:** `requireShiftForConvertedOrders` solo tiene efecto cuando `useShifts` y `chargeConvertedOrdersToShift` están activos.
+- **Implementación frontend:** `ShiftGuard.ensureShiftReady` y `ShiftCubit` en las pantallas de facturación de órdenes (`current_orders`) y cotizaciones (`current_proforma`).
+- **Implementación backend:** `OrdersController.convert_order_to_invoice` aplica la regla; `InvoiceRegister`/`validate_shift_link` validan que el turno exista, esté `open` y sea de la misma sucursal.
+- **Alcance:** esta excepción aplica solo a la conversión de órdenes y cotizaciones. La facturación directa desde terminal de venta mantiene su propia validación de turno.

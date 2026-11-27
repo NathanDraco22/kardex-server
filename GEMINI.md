@@ -1,5 +1,14 @@
 # Contexto de Conversación - Code Review Transfer Optimization
 
+## Fecha: 2026-11-27
+### Objetivo
+Documentar las reglas de negocio de conversión de órdenes/cotizaciones a factura con turnos (`useShifts`, `chargeConvertedOrdersToShift`, `requireShiftForConvertedOrders`).
+
+### Resumen Técnico
+- **Wiki:** nueva sección **"Reglas de negocio: conversión de órdenes/cotizaciones a factura con turnos"** en `wiki/modules/app_settings.md` y resumen en `wiki/modules/INDEX.md`.
+- **Reglas documentadas:** `useShifts` solo no carga al turno; `chargeConvertedOrdersToShift` habilita la carga; `requireShiftForConvertedOrders` exige turno abierto y bloquea la conversión con HTTP 400 si falta.
+- **Sin cambios de código:** solo documentación.
+
 ## Fecha: 2026-11-26
 ### Objetivo
 Implementar **Solicitudes de Anulación de Factura** (`invoice_cancellation_requests`), integración con **Turnos** (sección *"Facturas Anuladas"*) y permiso granular `approveInvoiceCancellation`.
