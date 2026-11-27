@@ -59,6 +59,7 @@ flowchart TD
 | `showInvoiceItemsSummary` | `bool` | `False` | Muestra el resumen de total de ítems y total de cantidad en el visor, ticket térmico y PDF A4 de facturas. |
 | `showInvoiceOrderCreator` | `bool` | `False` | Muestra el nombre de quien creó la orden o cotización de origen en el visor, ticket térmico y PDF A4 de facturas. |
 | `chargeConvertedOrdersToShift` | `bool` | `False` | Cuando `useShifts` está activo, si el usuario tiene un turno abierto en la sucursal carga la factura a su caja; si no tiene turno activo, factura sin asignar turno. |
+| `requireShiftForConvertedOrders` | `bool` | `False` | Cuando `useShifts` y `chargeConvertedOrdersToShift` están activos, exige turno abierto para poder convertir una orden o cotización a factura. |
 | `companyLogoUrl` | `str \| None` | `None` | URL pública de la imagen corporativa global de la empresa. Es un parámetro solo estético usado en el home y el selector de sucursales; no se usa en documentos, reportes ni cálculos. |
 | `createdAt` | `int` | Unix ms | Fecha y hora de creación en milisegundos. |
 | `updatedAt` | `int \| None` | `None` | Fecha y hora de última actualización en milisegundos. |

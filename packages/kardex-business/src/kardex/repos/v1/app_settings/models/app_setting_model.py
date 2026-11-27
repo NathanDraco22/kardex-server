@@ -26,6 +26,7 @@ class BaseAppSetting(BaseModel):
     companyLogoUrl: str | None = None
     useShifts: bool = False
     chargeConvertedOrdersToShift: bool = False
+    requireShiftForConvertedOrders: bool = False
     useInvoiceCancellations: bool = False
     useReceiptCancellations: bool = False
     useDiscounts: bool = False
@@ -57,6 +58,7 @@ class UpdateAppSetting(BaseModel):
     companyLogoUrl: str | None = None
     useShifts: bool | None = None
     chargeConvertedOrdersToShift: bool | None = None
+    requireShiftForConvertedOrders: bool | None = None
     useInvoiceCancellations: bool | None = None
     useReceiptCancellations: bool | None = None
     useDiscounts: bool | None = None

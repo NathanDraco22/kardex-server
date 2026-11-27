@@ -125,6 +125,16 @@ class OrdersController:
         target_shift_id: str | None = (
             ((shift_id or "").strip() or None) if should_charge_to_shift else None
         )
+        if (
+            should_charge_to_shift
+            and settings is not None
+            and settings.requireShiftForConvertedOrders
+            and target_shift_id is None
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="An open shift is required to invoice this order.",
+            )
 
         effective_payment_type: PaymentType = payment_type or order.paymentType
         effective_bank_reference = (

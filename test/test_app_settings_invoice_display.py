@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+from fastapi import HTTPException
 
 from app.api.v1.orders.orders_controller import OrdersController
 from kardex.repos.v1.app_settings.models.app_setting_model import (
@@ -19,6 +20,7 @@ def test_create_app_setting_invoice_display_defaults_false():
     assert settings.showInvoiceItemsSummary is False
     assert settings.showInvoiceOrderCreator is False
     assert settings.chargeConvertedOrdersToShift is False
+    assert settings.requireShiftForConvertedOrders is False
 
 
 def test_legacy_app_setting_without_invoice_display_fields_defaults_false():
@@ -31,6 +33,7 @@ def test_legacy_app_setting_without_invoice_display_fields_defaults_false():
     assert settings.showInvoiceItemsSummary is False
     assert settings.showInvoiceOrderCreator is False
     assert settings.chargeConvertedOrdersToShift is False
+    assert settings.requireShiftForConvertedOrders is False
 
 
 def test_update_app_setting_partial_serialization():
@@ -262,6 +265,42 @@ async def test_convert_order_to_invoice_allows_no_shift_when_user_has_no_active_
     assert res_invoice.shiftId is None
     sent_payload = regis_mock.call_args.args[0]
     assert sent_payload.shiftId is None
+
+
+@pytest.mark.asyncio
+async def test_convert_order_to_invoice_requires_shift_when_forced():
+    order = OrderInDb(
+        id="ord-3b",
+        branchId="branch-1",
+        clientId="client-1",
+        clientInfo=ClientInfo(name="Cliente", group="General"),
+        docNumber="ORD-31",
+        saleItems=[],
+        status="open",
+        paymentType="cash",
+        totalCost=0,
+        total=2000,
+        createdBy=UserInfo(id="seller-1", name="Carlos Vendedor"),
+        createdAt=1700000000000,
+    )
+    controller = OrdersController(
+        orders_repo=SimpleNamespace(get_order_by_id=AsyncMock(return_value=order)),
+        users_repo=SimpleNamespace(get_user_by_id=AsyncMock(return_value=None)),
+        app_settings_tool=SimpleNamespace(
+            get_current_app_settings=AsyncMock(
+                return_value=CreateAppSetting(
+                    useShifts=True,
+                    chargeConvertedOrdersToShift=True,
+                    requireShiftForConvertedOrders=True,
+                )
+            )
+        ),
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        await controller.convert_order_to_invoice("ord-3b", shift_id=None)
+
+    assert exc_info.value.status_code == 400
 
 
 @pytest.mark.asyncio
