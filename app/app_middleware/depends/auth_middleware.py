@@ -44,3 +44,6 @@ def auth_middleware(req: Request):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized"
         )
+
+    req.state.auth_user_id = user_id
+    req.state.auth_username = user_payload.get("username", "")

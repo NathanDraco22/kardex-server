@@ -32,17 +32,20 @@ async def aggregate_shift_totals(shift_id: str, initial_cash: int) -> ShiftTotal
 
     (
         invoice_rows,
+        cancelled_invoice_rows,
         receipt_rows,
         devolution_rows,
         credit_note_rows,
         movement_rows,
     ) = await asyncio.gather(
         invoices_col.get_payment_type_totals_by_shift(shift_id),
+        invoices_col.get_cancelled_payment_type_totals_by_shift(shift_id),
         receipts_col.get_payment_method_totals_by_shift(shift_id),
         devolutions_col.get_totals_by_status_by_shift(shift_id),
         credit_notes_col.get_totals_by_status_by_shift(shift_id),
         movements_col.get_type_totals_by_shift(shift_id),
     )
+    cancelled_receipt_totals = await receipts_col.get_cancelled_totals_by_shift(shift_id)
 
     devolution_total, devolution_count = devolution_totals_from_aggregation(
         devolution_rows
@@ -57,7 +60,10 @@ async def aggregate_shift_totals(shift_id: str, initial_cash: int) -> ShiftTotal
     return compute_shift_totals(
         initial_cash=initial_cash,
         invoices=payment_breakdown_from_aggregation(invoice_rows),
+        cancelled_invoices=payment_breakdown_from_aggregation(cancelled_invoice_rows),
         receipts=payment_breakdown_from_aggregation(receipt_rows),
+        cancelled_receipt_total=cancelled_receipt_totals.get("total", 0),
+        cancelled_receipt_count=cancelled_receipt_totals.get("count", 0),
         devolution_total=devolution_total,
         devolution_count=devolution_count,
         credit_note_total=credit_note_total,

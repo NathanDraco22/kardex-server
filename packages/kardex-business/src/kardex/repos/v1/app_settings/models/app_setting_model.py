@@ -21,8 +21,13 @@ class BaseAppSetting(BaseModel):
     exchangeRate: float = Field(default=0.0, ge=0)
     showInvoiceTotalInSecondaryCurrency: bool = False
     allowSecondaryCurrencyPayment: bool = False
+    showInvoiceItemsSummary: bool = False
+    showInvoiceOrderCreator: bool = False
     companyLogoUrl: str | None = None
     useShifts: bool = False
+    chargeConvertedOrdersToShift: bool = False
+    useInvoiceCancellations: bool = False
+    useReceiptCancellations: bool = False
     useDiscounts: bool = False
     taxIdLabel: str = Field(default="RUC", min_length=1, max_length=32)
 
@@ -47,8 +52,13 @@ class UpdateAppSetting(BaseModel):
     exchangeRate: float | None = Field(default=None, ge=0)
     showInvoiceTotalInSecondaryCurrency: bool | None = None
     allowSecondaryCurrencyPayment: bool | None = None
+    showInvoiceItemsSummary: bool | None = None
+    showInvoiceOrderCreator: bool | None = None
     companyLogoUrl: str | None = None
     useShifts: bool | None = None
+    chargeConvertedOrdersToShift: bool | None = None
+    useInvoiceCancellations: bool | None = None
+    useReceiptCancellations: bool | None = None
     useDiscounts: bool | None = None
     taxIdLabel: str | None = Field(default=None, min_length=1, max_length=32)
 

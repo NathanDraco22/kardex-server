@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
+from pydantic import BaseModel
 from kardex.repos.v1.orders import CreateOrder, UpdateOrder, OrderInDb
+from kardex.repos.v1.common.models import ProductStockDemand, PaymentDetail, PaymentType
 from kardex.repos.v1.common.models.invoice_product_sale import ProductSalesTotal
-from kardex.repos.v1.common.models import ProductStockDemand
 from responses.v1 import ListResponse
 
 from app_middleware import auth_middleware
@@ -22,9 +23,28 @@ async def create_order(body: CreateOrder) -> OrderInDb:
     return await orders_controller.create_order(body)
 
 
+class ConvertOrderToInvoiceRequest(BaseModel):
+    shiftId: str | None = None
+    paymentType: PaymentType | None = None
+    bankReference: str | None = None
+    paymentDetail: PaymentDetail | None = None
+
+
 @orders_router.post("/make-invoice/{order_id}")
-async def convert_order_to_invoice(order_id: str) -> ConvertOrderToInvoiceResponse:
-    invoice, order = await orders_controller.convert_order_to_invoice(order_id)
+async def convert_order_to_invoice(
+    order_id: str,
+    req: Request,
+    body: ConvertOrderToInvoiceRequest | None = None,
+) -> ConvertOrderToInvoiceResponse:
+    invoice, order = await orders_controller.convert_order_to_invoice(
+        order_id,
+        invoiced_by_user_id=getattr(req.state, "auth_user_id", None),
+        invoiced_by_username=getattr(req.state, "auth_username", None),
+        shift_id=body.shiftId if body is not None else None,
+        payment_type=body.paymentType if body is not None else None,
+        bank_reference=body.bankReference if body is not None else None,
+        payment_detail=body.paymentDetail if body is not None else None,
+    )
     return ConvertOrderToInvoiceResponse(invoice=invoice, order=order)
 
 

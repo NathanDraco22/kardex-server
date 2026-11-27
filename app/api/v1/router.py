@@ -30,6 +30,9 @@ from .hold_sales.hold_sales_router import hold_sales_router
 from .imports.imports_router import imports_router
 from .integrations.integrations_router import integrations_router
 from .inventories.inventories_router import inventories_router
+from .invoice_cancellation_requests.invoice_cancellation_requests_router import (
+    invoice_cancellation_requests_router,
+)
 from .invoice_devolutions.invoice_devolutions_router import invoice_devolutions_router
 from .invoices.invoices_router import invoices_router
 from .orders.orders_router import orders_router
@@ -40,6 +43,9 @@ from .product_sale_profiles.product_sale_profiles_router import sale_prof_router
 from .product_stats.product_stats_router import product_stats_router
 from .product_transactions.product_transactions_router import prod_tx_router
 from .products.products_router import products_router
+from .receipt_cancellation_requests.receipt_cancellation_requests_router import (
+    receipt_cancellation_requests_router,
+)
 from .receipts.receipts_router import receipts_router
 from .reports.reports_router import reports_router
 from .shift_cash_movements.shift_cash_movements_router import shift_cash_movements_router
@@ -83,6 +89,9 @@ router_v1.include_router(hold_sales_router, prefix='/hold-sales')
 router_v1.include_router(imports_router, prefix='/imports')
 router_v1.include_router(integrations_router, prefix="/integrations")
 router_v1.include_router(inventories_router, prefix="/inventories")
+router_v1.include_router(
+    invoice_cancellation_requests_router, prefix="/invoice-cancellation-requests"
+)
 router_v1.include_router(invoice_devolutions_router, prefix="/invoice-devolutions")
 router_v1.include_router(invoices_router, prefix="/invoices")
 router_v1.include_router(orders_router, prefix="/orders")
@@ -92,6 +101,9 @@ router_v1.include_router(product_categories_router, prefix="/product-categories"
 router_v1.include_router(product_prices_router, prefix="/product-prices")
 router_v1.include_router(product_stats_router, prefix="/product-stats")
 router_v1.include_router(products_router, prefix="/products")
+router_v1.include_router(
+    receipt_cancellation_requests_router, prefix="/receipt-cancellation-requests"
+)
 router_v1.include_router(receipts_router, prefix="/receipts")
 router_v1.include_router(reports_router, prefix="/reports")
 router_v1.include_router(sale_prof_router, prefix="/product-sale-profiles")

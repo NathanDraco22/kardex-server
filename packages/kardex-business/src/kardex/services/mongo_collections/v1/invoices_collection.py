@@ -78,6 +78,8 @@ class InvoicesCollection(BaseMongoCollection):
         date_field = "paidAt" if kargs.get("byPaidAt") else "createdAt"
 
         result = build_query(date_field, **kargs)
+        if "status" not in result.query:
+            result.query["status"] = {"$ne": "cancelled"}
 
         pipeline = [
             {"$match": result.query},
@@ -125,7 +127,7 @@ class InvoicesCollection(BaseMongoCollection):
         cursor = collection.find(
             {
                 "clientId": client_id,
-                "status": {"$ne": "paid"},
+                "status": {"$in": ["open", "partiallyPaid"]},
             }
         )
 
@@ -231,7 +233,7 @@ class InvoicesCollection(BaseMongoCollection):
             {
                 "$set": {
                     "amountPaid": {
-                        "$subtract": ["$amountPaid", amount_paid],
+                        "$max": [0, {"$subtract": ["$amountPaid", amount_paid]}],
                     },
                 },
             },
@@ -241,14 +243,20 @@ class InvoicesCollection(BaseMongoCollection):
                         "$cond": {
                             "if": {"$lte": ["$amountPaid", 0]},
                             "then": "open",
-                            "else": "partiallyPaid",
+                            "else": {
+                                "$cond": {
+                                    "if": {"$gte": ["$amountPaid", "$total"]},
+                                    "then": "paid",
+                                    "else": "partiallyPaid",
+                                }
+                            },
                         }
                     },
                     "paidAt": {
                         "$cond": {
-                            "if": {"$lte": ["$amountPaid", 0]},
-                            "then": None,
-                            "else": "$paidAt",
+                            "if": {"$gte": ["$amountPaid", "$total"]},
+                            "then": "$paidAt",
+                            "else": None,
                         }
                     },
                 }
@@ -287,6 +295,8 @@ class InvoicesCollection(BaseMongoCollection):
         date_field = "paidAt" if kargs.get("byPaidAt") else "createdAt"
 
         result = build_query(date_field, **kargs)
+        if "status" not in result.query:
+            result.query["status"] = {"$ne": "cancelled"}
 
         cursor = await collection.aggregate(
             [
@@ -346,6 +356,8 @@ class InvoicesCollection(BaseMongoCollection):
             query["createdBy.id"] = user_id
 
         query = {key: value for key, value in query.items() if value is not None}
+        if "status" not in query:
+            query["status"] = {"$ne": "cancelled"}
 
         cursor = await collection.aggregate(
             [
@@ -526,6 +538,28 @@ class InvoicesCollection(BaseMongoCollection):
 
         return results
 
+    async def get_cancelled_payment_type_totals_by_shift(
+        self, shift_id: str
+    ) -> list[dict[str, Any]]:
+        collection = self._collection
+
+        pipeline = [
+            {"$match": {"shiftId": shift_id, "status": "cancelled"}},
+            {
+                "$group": {
+                    "_id": "$paymentType",
+                    "total": {"$sum": "$total"},
+                    "count": {"$sum": 1},
+                }
+            },
+        ]
+
+        cursor = await collection.aggregate(pipeline)
+        results = await cursor.to_list(length=None)
+        await cursor.close()
+
+        return results
+
     async def fetch_documents_by_shift(
         self, shift_id: str, limit: int
     ) -> list[dict[str, Any]]:
@@ -546,6 +580,7 @@ class InvoicesCollection(BaseMongoCollection):
                     "status": 1,
                     "clientInfo.name": 1,
                     "createdAt": 1,
+                    "cancellationReason": 1,
                 }
             },
         ]

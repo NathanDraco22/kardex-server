@@ -41,7 +41,7 @@ class DevolutionsCollection(BaseMongoCollection):
         return result
 
     async def fetch_devolutions_by_invoice_id(
-        self, invoice_id: str, client_id: str | None
+        self, invoice_id: str, client_id: str | None, session: Any = None
     ) -> list[dict[str, Any]]:
         collection = self._collection
         query = {"originalInvoiceId": invoice_id}
@@ -49,7 +49,7 @@ class DevolutionsCollection(BaseMongoCollection):
         if client_id is not None:
             query["clientId"] = client_id
 
-        cursor = collection.find(query)
+        cursor = collection.find(query, session=session)
         result = await cursor.to_list(length=None)
         return result
 

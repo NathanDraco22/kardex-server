@@ -37,7 +37,12 @@ class BaseInvoice(BaseModel):
     total: int
     paidAt: int | None = None
     createdBy: UserInfo
+    invoicedBy: UserInfo | None = None
     shiftId: str | None = None
+    cancelledAt: int | None = None
+    cancelledBy: UserInfo | None = None
+    cancellationReason: str | None = None
+    cancellationRequestId: str | None = None
 
     @property
     def itemsSubTotal(self) -> int:

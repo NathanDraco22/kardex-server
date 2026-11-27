@@ -18,6 +18,7 @@ class ShiftArqueoDocument(BaseModel):
     clientName: str | None = None
     createdAt: int
     referenceDocNumber: str | None = None
+    cancellationReason: str | None = None
     counted: bool
 
 
@@ -30,12 +31,22 @@ class ShiftArqueoTotals(BaseModel):
     invoiceCreditTotal: int = 0
     invoiceTotal: int = 0
     invoiceCount: int = 0
+    cancelledInvoiceCashTotal: int = 0
+    cancelledInvoiceTransferTotal: int = 0
+    cancelledInvoiceCardTotal: int = 0
+    cancelledInvoiceOtherTotal: int = 0
+    cancelledInvoiceCashSalesTotal: int = 0
+    cancelledInvoiceCreditTotal: int = 0
+    cancelledInvoiceTotal: int = 0
+    cancelledInvoiceCount: int = 0
     receiptCashTotal: int = 0
     receiptTransferTotal: int = 0
     receiptCardTotal: int = 0
     receiptOtherTotal: int = 0
     receiptTotal: int = 0
     receiptCount: int = 0
+    cancelledReceiptTotal: int = 0
+    cancelledReceiptCount: int = 0
     devolutionTotal: int = 0
     devolutionCount: int = 0
     creditNoteTotal: int = 0

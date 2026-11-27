@@ -21,6 +21,8 @@ from .kardex_exceptions import (
     ShiftNotFound,
     CashMovementNotFound,
     ShiftNotOpen,
+    InvoiceCancellationRequestNotFound,
+    ReceiptCancellationRequestNotFound,
 )
 from .branches_tool import BranchesTool
 
@@ -49,4 +51,6 @@ __all__ = [
     "ShiftNotFound",
     "CashMovementNotFound",
     "ShiftNotOpen",
+    "InvoiceCancellationRequestNotFound",
+    "ReceiptCancellationRequestNotFound",
 ]

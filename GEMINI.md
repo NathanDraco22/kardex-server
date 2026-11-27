@@ -1,5 +1,27 @@
 # Contexto de Conversación - Code Review Transfer Optimization
 
+## Fecha: 2026-11-26
+### Objetivo
+Implementar **Solicitudes de Anulación de Factura** (`invoice_cancellation_requests`), integración con **Turnos** (sección *"Facturas Anuladas"*) y permiso granular `approveInvoiceCancellation`.
+
+### Resumen Técnico
+- **Nuevo módulo `invoice_cancellation_requests`:** colección `InvoiceCancellationRequests` (índice único parcial `ux_pending_cancellation_per_invoice`), modelos, `FilterParams`, datasource, repositorio, core atómico (`validate_invoice_cancellable`, `create_cancellation_request`, `approve_cancellation_request`, `reject_cancellation_request`, `cancel_cancellation_request`) y router `/api/v1/invoice-cancellation-requests`.
+- **Reglas de negocio:** facturas de contado reingresan stock (`quantity + bonQuantity`) + Kárdex (`invoice_cancellation`); facturas a crédito sin abonos (`status == "open"`, `amountPaid == 0`) reingresan stock y revierten saldo en `ClientFinanceEngine`; bloquea facturas con abonos, devoluciones/NC activas o turno cerrado.
+- **Roles:** agregado `CommercialSubModules.APPROVE_INVOICE_CANCELLATION = "approveInvoiceCancellation"` en `role_manager.py` (por defecto en `Supervisor` y `Admin` vía `all`; control aplicado en frontend).
+- **Turnos y consultas:** agregados 8 campos `cancelledInvoice*` en `ShiftTotals`/`BaseShift`/`ShiftArqueoTotals` sin doble resta en `expectedCash`; corregido `fetch_pending_to_paid_invoices` y excluidas facturas `cancelled` por defecto en totales y ventas por producto.
+- **Verificación:** `ruff check`, `ty check` y `pytest test/test_invoice_cancellation_requests.py test/test_shifts.py` (`22 passed`).
+
+## Fecha: 2026-11-26 (Parte 2)
+### Objetivo
+Agregar banderas `useInvoiceCancellations` y `useReceiptCancellations` (`false` por defecto) en `AppSettings` e implementar **Solicitudes de Anulación de Recibos** (`receipt_cancellation_requests`).
+
+### Resumen Técnico
+- **`AppSettings` y Roles:** agregados `useInvoiceCancellations: bool = False`, `useReceiptCancellations: bool = False` en `app_setting_model.py`; y `CommercialSubModules.APPROVE_RECEIPT_CANCELLATION = "approveReceiptCancellation"` en `role_manager.py` (asignado por defecto a `Supervisor` y `Admin` vía `all`).
+- **Nuevo módulo `receipt_cancellation_requests`:** colección `ReceiptCancellationRequests` (índice único parcial `ux_pending_cancellation_per_receipt`), modelos, `FilterParams`, datasource, repository, core atómico (`validate_receipt_cancellable`, `create_receipt_cancellation_request`, `approve_receipt_cancellation_request`, `reject_receipt_cancellation_request`, `cancel_receipt_cancellation_request`) y router `/api/v1/receipt-cancellation-requests`.
+- **Reglas de negocio de recibos:** permite anular recibos aunque hayan dejado la factura en estado `paid` (restando `amountApplied` en la factura), revierte devoluciones/NC aplicadas y restaura la deuda del cliente siempre que el turno siga `open`.
+- **Turnos:** agregados `cancelledReceiptTotal` y `cancelledReceiptCount` en `ShiftTotals`/`BaseShift`/`ShiftArqueoTotals`.
+- **Verificación:** `ruff check`, `ty check` y `pytest test/test_receipt_cancellation_requests.py test/test_invoice_cancellation_requests.py test/test_shifts.py` (`29 passed`).
+
 ## Fecha: 2026-02-02
 ### Objetivo
 Optimización de `app\core\transfer_manager\transfer_manager.py` y `app\core\transfer_manager\process_out_transfer.py`.

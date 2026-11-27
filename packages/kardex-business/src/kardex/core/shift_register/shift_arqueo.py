@@ -63,18 +63,27 @@ def _to_arqueo_document(
         else None
     )
 
+    doc_status = (
+        "cancelled"
+        if collection == COLLECTION_RECEIPTS and row.get("isDeleted") is True
+        else row.get("status")
+    )
+
     return ShiftArqueoDocument(
         id=str(row.get("id") or ""),
         docNumber=str(row.get("docNumber") or ""),
         amount=_as_int(row.get(amount_key)),
         paymentMethod=_payment_method(collection, row),
         bankReference=bank_reference,
-        status=row.get("status"),
+        status=doc_status,
         type=row.get("type") if collection == COLLECTION_CREDIT_NOTES else None,
         clientName=client_info.get("name"),
         createdAt=_as_int(row.get("createdAt")),
         referenceDocNumber=reference_doc_number,
-        counted=is_document_counted(collection, row.get("status")),
+        cancellationReason=row.get("cancellationReason")
+        if collection in (COLLECTION_INVOICES, COLLECTION_RECEIPTS)
+        else None,
+        counted=is_document_counted(collection, doc_status),
     )
 
 

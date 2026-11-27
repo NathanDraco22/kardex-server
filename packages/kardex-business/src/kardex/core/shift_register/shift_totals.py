@@ -37,12 +37,22 @@ class ShiftTotals:
     invoiceCreditTotal: int = 0
     invoiceTotal: int = 0
     invoiceCount: int = 0
+    cancelledInvoiceCashTotal: int = 0
+    cancelledInvoiceTransferTotal: int = 0
+    cancelledInvoiceCardTotal: int = 0
+    cancelledInvoiceOtherTotal: int = 0
+    cancelledInvoiceCashSalesTotal: int = 0
+    cancelledInvoiceCreditTotal: int = 0
+    cancelledInvoiceTotal: int = 0
+    cancelledInvoiceCount: int = 0
     receiptCashTotal: int = 0
     receiptTransferTotal: int = 0
     receiptCardTotal: int = 0
     receiptOtherTotal: int = 0
     receiptTotal: int = 0
     receiptCount: int = 0
+    cancelledReceiptTotal: int = 0
+    cancelledReceiptCount: int = 0
     devolutionTotal: int = 0
     devolutionCount: int = 0
     creditNoteTotal: int = 0
@@ -90,7 +100,10 @@ def is_document_counted(collection: str, status: str | None) -> bool:
     Usa las mismas reglas que `aggregate_shift_totals` y las constantes de
     estados definidas arriba.
     """
-    if collection in (COLLECTION_RECEIPTS, COLLECTION_CASH_MOVEMENTS):
+    if collection == COLLECTION_RECEIPTS:
+        return status != "cancelled"
+
+    if collection == COLLECTION_CASH_MOVEMENTS:
         return True
 
     if collection == COLLECTION_INVOICES:
@@ -182,7 +195,10 @@ def compute_shift_totals(
     *,
     initial_cash: int = 0,
     invoices: PaymentBreakdown | None = None,
+    cancelled_invoices: PaymentBreakdown | None = None,
     receipts: PaymentBreakdown | None = None,
+    cancelled_receipt_total: int = 0,
+    cancelled_receipt_count: int = 0,
     devolution_total: int = 0,
     devolution_count: int = 0,
     credit_note_total: int = 0,
@@ -197,8 +213,11 @@ def compute_shift_totals(
       + entradas manuales - devoluciones confirmadas - salidas manuales.
     - `grandTotal` = ventas de contado (facturas no-crédito) + recibos - devoluciones.
     - Una factura a crédito no entra en efectivo; su cobro posterior entra como recibo.
+    - Las facturas anuladas se reportan en `cancelledInvoice*` solo de forma informativa
+      (ya están excluidas de `invoices`, por lo que no se restan doble).
     """
     invoice_breakdown = invoices or PaymentBreakdown()
+    cancelled_breakdown = cancelled_invoices or PaymentBreakdown()
     receipt_breakdown = receipts or PaymentBreakdown()
 
     invoice_cash_sales_total = (
@@ -208,6 +227,16 @@ def compute_shift_totals(
         + invoice_breakdown.other
     )
     invoice_total = invoice_cash_sales_total + invoice_breakdown.credit
+
+    cancelled_invoice_cash_sales_total = (
+        cancelled_breakdown.cash
+        + cancelled_breakdown.transfer
+        + cancelled_breakdown.card
+        + cancelled_breakdown.other
+    )
+    cancelled_invoice_total = (
+        cancelled_invoice_cash_sales_total + cancelled_breakdown.credit
+    )
 
     receipt_total = (
         receipt_breakdown.cash
@@ -243,12 +272,22 @@ def compute_shift_totals(
         invoiceCreditTotal=invoice_breakdown.credit,
         invoiceTotal=invoice_total,
         invoiceCount=invoice_breakdown.count,
+        cancelledInvoiceCashTotal=cancelled_breakdown.cash,
+        cancelledInvoiceTransferTotal=cancelled_breakdown.transfer,
+        cancelledInvoiceCardTotal=cancelled_breakdown.card,
+        cancelledInvoiceOtherTotal=cancelled_breakdown.other,
+        cancelledInvoiceCashSalesTotal=cancelled_invoice_cash_sales_total,
+        cancelledInvoiceCreditTotal=cancelled_breakdown.credit,
+        cancelledInvoiceTotal=cancelled_invoice_total,
+        cancelledInvoiceCount=cancelled_breakdown.count,
         receiptCashTotal=receipt_breakdown.cash,
         receiptTransferTotal=receipt_breakdown.transfer,
         receiptCardTotal=receipt_breakdown.card,
         receiptOtherTotal=receipt_breakdown.other,
         receiptTotal=receipt_total,
         receiptCount=receipt_breakdown.count,
+        cancelledReceiptTotal=cancelled_receipt_total,
+        cancelledReceiptCount=cancelled_receipt_count,
         devolutionTotal=devolution_total,
         devolutionCount=devolution_count,
         creditNoteTotal=credit_note_total,

@@ -27,6 +27,16 @@ class BaseShift(BaseModel):
     invoiceTotal: int = 0
     invoiceCount: int = 0
 
+    # --- Consolidado de Facturas Anuladas ---
+    cancelledInvoiceCashTotal: int = 0
+    cancelledInvoiceTransferTotal: int = 0
+    cancelledInvoiceCardTotal: int = 0
+    cancelledInvoiceOtherTotal: int = 0
+    cancelledInvoiceCashSalesTotal: int = 0
+    cancelledInvoiceCreditTotal: int = 0
+    cancelledInvoiceTotal: int = 0
+    cancelledInvoiceCount: int = 0
+
     # --- Consolidado de Recibos / Abonos (al cerrar) ---
     receiptCashTotal: int = 0
     receiptTransferTotal: int = 0
@@ -34,6 +44,8 @@ class BaseShift(BaseModel):
     receiptOtherTotal: int = 0
     receiptTotal: int = 0
     receiptCount: int = 0
+    cancelledReceiptTotal: int = 0
+    cancelledReceiptCount: int = 0
 
     # --- Consolidado de Devoluciones y Notas de Crédito ---
     devolutionTotal: int = 0
