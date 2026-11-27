@@ -41,7 +41,9 @@ async def process_devolution(
                 )
                 if resolved_type != "item":
                     continue
-                quantity_to_add = abs(item.quantity)
+                quantity_to_add = abs(item.quantity + item.bonQuantity)
+                if quantity_to_add == 0:
+                    continue
 
                 updated_account_data = (
                     await prd_account_col.update_product_account_balance_data(
@@ -85,6 +87,7 @@ async def process_devolution(
                     devolution_id=devolution.id,
                     status=new_status,
                     session=session,
+                    original_invoice_payment_type=devolution.originalInvoicePaymentType,
                 )
             )
 
@@ -123,7 +126,9 @@ async def process_anon_devolution(
                 )
                 if resolved_type != "item":
                     continue
-                quantity_to_add = abs(item.quantity)
+                quantity_to_add = abs(item.quantity + item.bonQuantity)
+                if quantity_to_add == 0:
+                    continue
 
                 updated_account_data = (
                     await prd_account_col.update_product_account_balance_data(
@@ -167,6 +172,7 @@ async def process_anon_devolution(
                     devolution_id=devolution.id,
                     status="confirmed",
                     session=session,
+                    original_invoice_payment_type=devolution.originalInvoicePaymentType,
                 )
             )
             confirmed_devolution = DevolutionInDb.model_validate(

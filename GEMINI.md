@@ -860,3 +860,28 @@ Soporte de `priceUnitFactor` y migración de escalas continuas (`Libra`, `Litro`
    - Corregido fallback de `hold_sales_repository.py`, `orders_controller.py`, `adjustment_requests_repository.py`, `bi/repository.py` y `product_accounts_collection.py` (`get_total_current_stock` con `$floor(... + 0.5)`).
 4. **Guard de inmutabilidad (`product_type_lifecycle.py`):** Bloquea el cambio de `priceUnitFactor` si hay stock, promesa o transacciones, excepto durante la transición `item -> service/nonInventory` (que ya valida stock 0).
 5. **Tests:** `test/test_price_unit_factor.py` + verificación con `ruff check`, `ty check` y `pytest`.
+
+---
+
+## Fecha: 2026-11-27
+### Objetivo
+Eliminar la restricción que obligaba a usar Notas de Crédito para devoluciones de facturas a crédito, permitiendo devoluciones directas en facturas a crédito sin abonos (`amountPaid == 0` y `status == "open"`) y manteniendo el comportamiento habitual en contado, sin afectar el efectivo de turnos/reportes y validando el tope acumulado entre Devoluciones y Notas de Crédito.
+
+### Resumen de Implementación
+1. **Modelo (`devolution_model.py`):** Agregado `originalInvoicePaymentType: str | None = None` en `BaseDevolution` y `UpdateDevolution`.
+2. **Validación en creación y confirmación (`devolution_register.py`, `devolutions_controller.py`, `process_devolution.py`):**
+   - `DevolutionRegister.create_devolution` valida la factura y fija `originalInvoicePaymentType = invoice.paymentType`.
+   - En facturas `credit`, se permiten devoluciones siempre que `amountPaid == 0` y `status == "open"`; se rechazan con `InvalidOperation` si tienen abonos o están pagadas (`partiallyPaid` / `paid`). Facturas de contado continúan permitiéndose sin restricciones de pago.
+3. **Cruce acumulado (`process_credit_note.py` y `devolution_register.py`):** Agregado `sum_previously_returned_from_devolutions` (con soporte `invoiceItemIndex` y fallback determinista legacy) sumado en `_recalculate_devolution_items` y en `_validate_returned_quantities`.
+4. **Turnos, Reporte Diario y Cobranza Compuesta (`devolutions_collection.py`, `shift_totals.py`, `shift_arqueo.py`, `composite_controller.py`):**
+   - `get_totals_by_status_by_shift` y `fetch_confirmed_devolutions_total` filtran `originalInvoicePaymentType != "credit"`.
+   - `is_document_counted` y `_to_arqueo_document` exponen `paymentMethod = originalInvoicePaymentType` y marcan `counted = False` en devoluciones de crédito.
+   - `CompositeController.get_client_pending_invoices` filtra devoluciones vinculadas a las facturas pendientes.
+5. **Verificación:** `ruff check`, `ty check` y `pytest test/test_credit_note_vs_devolution.py test/test_credit_note_policy.py test/test_shifts.py` (`45 passed`) e `import main` OK.
+6. **Correcciones de Auditoría (`C1`, `C4`, `A1–A4`):**
+   - **A1 (`process_devolution.py`):** Reingreso de `abs(item.quantity + item.bonQuantity)` al confirmar devoluciones (clientes y anónimas).
+   - **C1 / A3 (`process_receipt.py`, `devolutions_collection.py`, `credit_notes_collection.py`):** Validación transaccional estricta de `appliedDevolutions` (existencia, sin duplicados, `status == "confirmed"`, `clientId`, `originalInvoicePaymentType in ("credit", None)`, `0 < amountApplied <= total`) y rechazo de facturas con devoluciones `open`.
+   - **A4 (`reverse_receipt.py`):** Corregido `status="available"` → `status="confirmed"` al revertir recibos.
+   - **C1 / C4 (`composite_controller.py`):** `get_client_pending_invoices` consulta devoluciones sin restringir por `branchId` activo y suma solo `confirmed` en `summary.totalDevolutions`.
+   - **A2 (`report_manager.py`, `daily_report_maker.py`, `reports_controller.py`):** `totalReceiptCash` usa `totalReceipts` (efectivo real) en lugar de `totalAppliedInvoices`.
+   - **Verificación ampliada:** `ruff check`, `ty check` y `pytest` (`69 passed` incluyendo `test_devolution_credit_audit_fixes.py`).

@@ -88,10 +88,10 @@ class CreditNotesCollection(BaseMongoCollection):
         return result
 
     async def fetch_credit_note_by_id(
-        self, credit_note_id: str
+        self, credit_note_id: str, session: Any = None
     ) -> dict[str, Any] | None:
         collection = self._collection
-        result = await collection.find_one({"id": credit_note_id})
+        result = await collection.find_one({"id": credit_note_id}, session=session)
         return result
 
     async def fetch_credit_note_by_doc_number(

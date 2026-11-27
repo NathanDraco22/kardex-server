@@ -1,8 +1,13 @@
 import asyncio
-from typing import Callable, Coroutine, List, Tuple
+from typing import Any, Callable, Coroutine, List, Tuple
 from pymongo.errors import OperationFailure
 
+from kardex.core.credit_note_register.process_credit_note import (
+    sum_previously_returned_from_devolutions,
+    sum_previously_returned_quantities,
+)
 from kardex.repos.v1.devolutions import (
+    CreateDevolution,
     DevolutionInDb,
     DevolutionsRepository,
 )
@@ -11,6 +16,10 @@ from kardex.repos.v1.invoices import InvoicesRepository
 from kardex.repos.v1.product_accounts import ProductAccountInDb
 from kardex.repos.v1.branches import BranchesRepository
 from kardex.repos.v1.products import ProductsRepository
+from kardex.services.mongo_collections.v1 import (
+    CreditNotesCollection,
+    DevolutionsCollection,
+)
 from kardex.core.default_values import SALE_CLIENT_ID
 from kardex.core.shift_register.validate_shift_link import validate_shift_link
 from kardex.tools import InvalidOperation, BranchNotFound, ClientNotFound, ProductNotFound
@@ -27,6 +36,8 @@ class DevolutionRegister:
         products_repo: ProductsRepository,
         clients_repo: ClientsRepository,
         invoices_repo: InvoicesRepository,
+        credit_notes_col: Any = None,
+        devolutions_col: Any = None,
     ) -> None:
         """
         Inicializa la clase con sus dependencias (Inyección de Dependencias).
@@ -36,6 +47,8 @@ class DevolutionRegister:
         self.products_repo = products_repo
         self.clients_repo = clients_repo
         self.invoices_repo = invoices_repo
+        self._credit_notes_col = credit_notes_col
+        self._devolutions_col = devolutions_col
 
     async def _register_transaction(
         self,
@@ -58,10 +71,25 @@ class DevolutionRegister:
                     await asyncio.sleep(0.3)
                 else:
                     raise InvalidOperation(f"Database error: {e}")
+            except InvalidOperation:
+                raise
             except Exception as e:
                 raise InvalidOperation(f"An unexpected error occurred: {e}")
 
         raise InvalidOperation("Server is too busy, please try again later")
+
+    async def create_devolution(self, body: CreateDevolution) -> DevolutionInDb:
+        """Valida y crea una nueva devolución en estado open."""
+        await validate_shift_link(body.shiftId, body.branchId)
+        payment_type = await self._validate_invoice_and_items(
+            branch_id=body.branchId,
+            client_id=body.clientId,
+            original_invoice_id=body.originalInvoiceId,
+            returned_items=body.returnedItems,
+        )
+        if payment_type is not None:
+            body.originalInvoicePaymentType = payment_type
+        return await self.devolutions_repo.create_devolution(body)
 
     async def confirm_devolution(self, devolution_id: str) -> DevolutionInDb:
         """Procesa una devolución para un cliente específico."""
@@ -89,42 +117,147 @@ class DevolutionRegister:
 
         return await self._register_transaction(devolution, process_anon_devolution)
 
-    async def _validate_document(self, doc: DevolutionInDb):
-        """Valida los datos relacionados antes de la transacción."""
-        branch = await self.branches_repo.get_branch_by_id(doc.branchId)
+    async def _validate_returned_quantities(
+        self,
+        *,
+        invoice: Any,
+        returned_items: list[Any],
+        exclude_devolution_id: str | None = None,
+    ) -> None:
+        sale_items = getattr(invoice, "saleItems", None)
+        if not sale_items:
+            return
+
+        devolutions_col = self._devolutions_col or DevolutionsCollection.get_instance()
+        credit_notes_col = self._credit_notes_col or CreditNotesCollection.get_instance()
+
+        prev_devs = await devolutions_col.fetch_devolutions_by_invoice_id(
+            invoice.id, None
+        )
+        prev_cns = await credit_notes_col.fetch_credit_notes_by_invoice_id(invoice.id)
+
+        remaining_by_index = [
+            max(
+                0,
+                int(line.quantity)
+                - sum_previously_returned_quantities(prev_cns, idx, line.product.id)
+                - sum_previously_returned_from_devolutions(
+                    sale_items,
+                    prev_devs,
+                    idx,
+                    exclude_devolution_id=exclude_devolution_id,
+                ),
+            )
+            for idx, line in enumerate(sale_items)
+        ]
+
+        for item in returned_items:
+            qty = abs(int(getattr(item, "quantity", 0) or 0))
+            if qty <= 0:
+                raise InvalidOperation("La cantidad a devolver debe ser mayor a 0.")
+
+            idx = getattr(item, "invoiceItemIndex", None)
+            if idx is not None:
+                if idx < 0 or idx >= len(sale_items):
+                    raise InvalidOperation(
+                        f"invoiceItemIndex {idx} está fuera de rango para la factura."
+                    )
+                if item.product.id != sale_items[idx].product.id:
+                    raise InvalidOperation(
+                        f"El producto {item.product.id} no coincide con la línea {idx} de la factura."
+                    )
+                if qty > remaining_by_index[idx]:
+                    raise InvalidOperation(
+                        "La cantidad a devolver supera el saldo disponible de productos en la factura."
+                    )
+                remaining_by_index[idx] -= qty
+            else:
+                matching_indices = [
+                    i for i, line in enumerate(sale_items) if line.product.id == item.product.id
+                ]
+                if not matching_indices:
+                    raise InvalidOperation(
+                        f"El producto {item.product.name} no pertenece a la factura original."
+                    )
+                qty_left = qty
+                for i in matching_indices:
+                    if qty_left <= 0:
+                        break
+                    take = min(qty_left, remaining_by_index[i])
+                    remaining_by_index[i] -= take
+                    qty_left -= take
+                if qty_left > 0:
+                    raise InvalidOperation(
+                        "La cantidad a devolver supera el saldo disponible de productos en la factura."
+                    )
+
+    async def _validate_invoice_and_items(
+        self,
+        *,
+        branch_id: str,
+        client_id: str,
+        original_invoice_id: str,
+        returned_items: list[Any],
+        exclude_devolution_id: str | None = None,
+    ) -> str | None:
+        branch = await self.branches_repo.get_branch_by_id(branch_id)
         if branch is None:
-            raise BranchNotFound("BRANCH_NOT_FOUND", branch_id=doc.branchId)
+            raise BranchNotFound("BRANCH_NOT_FOUND", branch_id=branch_id)
 
-        # Valida el cliente solo si no es la venta anónima
-        if doc.clientId != SALE_CLIENT_ID:
-            client = await self.clients_repo.get_client_by_id(doc.clientId)
+        if client_id != SALE_CLIENT_ID:
+            client = await self.clients_repo.get_client_by_id(client_id)
             if client is None:
-                raise ClientNotFound("CLIENT_NOT_FOUND", client_id=doc.clientId)
+                raise ClientNotFound("CLIENT_NOT_FOUND", client_id=client_id)
 
-        if doc.originalInvoiceId:
-            invoice = await self.invoices_repo.get_invoice_by_id(doc.originalInvoiceId)
-            if invoice is None:
-                raise InvalidOperation(
-                    f"Original invoice {doc.originalInvoiceId} not found."
-                )
-            if invoice.status == "cancelled":
-                raise InvalidOperation(
-                    "Cannot create a devolution for a cancelled invoice."
-                )
-            if invoice.paymentType == "credit":
-                raise InvalidOperation(
-                    "Devolutions only apply to cash invoices. "
-                    "Use credit notes for credit invoices."
-                )
-            if invoice.invoiceDiscount > 0:
-                raise InvalidOperation(
-                    "No se permiten devoluciones por producto en facturas con descuento global."
-                )
+        if not returned_items:
+            raise InvalidOperation("La devolución debe incluir al menos un producto.")
 
-        product_ids = list(set(item.product.id for item in doc.returnedItems))
+        product_ids = list(set(item.product.id for item in returned_items))
         products = await self.products_repo.get_product_by_ids(product_ids)
         if len(products) != len(product_ids):
             raise ProductNotFound("PRODUCT_NOT_FOUND")
+
+        if not original_invoice_id:
+            return None
+
+        invoice = await self.invoices_repo.get_invoice_by_id(original_invoice_id)
+        if invoice is None:
+            raise InvalidOperation(
+                f"Original invoice {original_invoice_id} not found."
+            )
+        if invoice.status == "cancelled":
+            raise InvalidOperation(
+                "Cannot create a devolution for a cancelled invoice."
+            )
+        if getattr(invoice, "invoiceDiscount", 0) > 0:
+            raise InvalidOperation(
+                "No se permiten devoluciones por producto en facturas con descuento global."
+            )
+        if invoice.paymentType == "credit":
+            if invoice.amountPaid > 0 or invoice.status in ("partiallyPaid", "paid"):
+                raise InvalidOperation(
+                    "No se permiten devoluciones sobre facturas a crédito con abonos o pagadas."
+                )
+
+        await self._validate_returned_quantities(
+            invoice=invoice,
+            returned_items=returned_items,
+            exclude_devolution_id=exclude_devolution_id,
+        )
+
+        return invoice.paymentType
+
+    async def _validate_document(self, doc: DevolutionInDb):
+        """Valida los datos relacionados antes de la transacción."""
+        payment_type = await self._validate_invoice_and_items(
+            branch_id=doc.branchId,
+            client_id=doc.clientId,
+            original_invoice_id=doc.originalInvoiceId,
+            returned_items=doc.returnedItems,
+            exclude_devolution_id=doc.id,
+        )
+        if doc.originalInvoicePaymentType is None and payment_type is not None:
+            doc.originalInvoicePaymentType = payment_type
 
         if doc.status != "open":
             raise InvalidOperation("Devolution is not open.")

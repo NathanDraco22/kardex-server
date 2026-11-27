@@ -94,7 +94,9 @@ def totals_from_shift_document(shift: Mapping[str, Any]) -> ShiftTotals:
     )
 
 
-def is_document_counted(collection: str, status: str | None) -> bool:
+def is_document_counted(
+    collection: str, status: str | None, payment_type: str | None = None
+) -> bool:
     """Indica si un documento entra en el consolidado del turno.
 
     Usa las mismas reglas que `aggregate_shift_totals` y las constantes de
@@ -110,7 +112,7 @@ def is_document_counted(collection: str, status: str | None) -> bool:
         return status not in INVOICE_NON_COUNTED_STATUSES
 
     if collection == COLLECTION_DEVOLUTIONS:
-        return status in CONFIRMED_DEVOLUTION_STATUSES
+        return status in CONFIRMED_DEVOLUTION_STATUSES and payment_type != "credit"
 
     if collection == COLLECTION_CREDIT_NOTES:
         return status in COUNTABLE_CREDIT_NOTE_STATUSES

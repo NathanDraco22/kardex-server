@@ -263,3 +263,33 @@ async def test_arqueo_without_documents_skips_every_listing(monkeypatch) -> None
     assert result.receipts == []
     assert result.devolutions == []
     assert result.creditNotes == []
+
+
+def test_credit_devolution_is_not_counted_in_shift_arqueo() -> None:
+    assert (
+        is_document_counted(
+            COLLECTION_DEVOLUTIONS, "confirmed", payment_type="credit"
+        )
+        is False
+    )
+    assert (
+        is_document_counted(COLLECTION_DEVOLUTIONS, "confirmed", payment_type="cash")
+        is True
+    )
+    assert is_document_counted(COLLECTION_DEVOLUTIONS, "confirmed") is True
+
+    doc = shift_arqueo._to_arqueo_document(
+        COLLECTION_DEVOLUTIONS,
+        {
+            "id": "dev-1",
+            "docNumber": "DEV-001",
+            "total": 10_000,
+            "status": "confirmed",
+            "originalInvoiceDocNumber": "FAC-001",
+            "originalInvoicePaymentType": "credit",
+            "clientInfo": {"name": "Cliente"},
+            "createdAt": 1_760_000_000_000,
+        },
+    )
+    assert doc.paymentMethod == "credit"
+    assert doc.counted is False

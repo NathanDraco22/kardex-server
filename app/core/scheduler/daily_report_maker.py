@@ -71,7 +71,7 @@ class DailyReportMaker:
             receipt_count = 0
 
             if current_receipt_summary:
-                total_receipt_cash = current_receipt_summary.totalAppliedInvoices
+                total_receipt_cash = current_receipt_summary.totalReceipts
                 total_receipt_devolutions = (
                     current_receipt_summary.totalAppliedDevolutions
                 )
