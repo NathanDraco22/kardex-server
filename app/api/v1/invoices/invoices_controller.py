@@ -7,6 +7,7 @@ from kardex.repos.v1.invoices import (
     InvoicesRepository,
     InvoicesDataSource,
     InvoiceTotals,
+    ProductSalesSummary,
     ProductSalesTotal,
 )
 from responses.v1 import ListResponse
@@ -46,6 +47,13 @@ class InvoicesController:
             product_id, query_params
         )
         return ListResponse(count=len(invoices), data=invoices)
+
+    async def get_product_sales_summary(
+        self, product_id: str, query_params: InvoiceFilterParams
+    ) -> ProductSalesSummary:
+        return await self.invoices_repo.get_product_sales_summary(
+            product_id, query_params
+        )
 
     async def get_all_product_sales(
         self, query_params: InvoiceFilterParams

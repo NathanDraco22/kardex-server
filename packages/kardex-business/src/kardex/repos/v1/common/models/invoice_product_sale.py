@@ -7,3 +7,11 @@ class ProductSalesTotal(BaseModel):
     totalQuantity: int
     totalBonQuantity: int
     total: int
+
+
+class ProductSalesSummary(BaseModel):
+    productId: str
+    totalQuantity: int
+    totalBonQuantity: int
+    total: int
+    invoiceCount: int

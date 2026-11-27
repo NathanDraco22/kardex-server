@@ -59,18 +59,86 @@ class InvoicesCollection(BaseMongoCollection):
 
         result = build_query(date_field, **kargs)
         result.query["saleItems.product.id"] = product_id
+        if "status" not in result.query:
+            result.query["status"] = {"$ne": "cancelled"}
+
+        cursor_date = kargs.get("cursorDate")
+        cursor_id = kargs.get("cursorId")
+        if cursor_date is not None and cursor_id:
+            result.query["$or"] = [
+                {date_field: {"$lt": cursor_date}},
+                {date_field: cursor_date, "id": {"$lt": cursor_id}},
+            ]
 
         cursor = (
             collection.find(result.query)
             .skip(result.offset)
             .limit(result.limit)
-            .sort(date_field, -1)
+            .sort([(date_field, -1), ("id", -1)])
         )
 
         result_list = await cursor.to_list(length=None)
         await cursor.close()
 
         return result_list
+
+    async def fetch_product_sales_summary(
+        self, product_id: str, **kargs
+    ) -> dict[str, Any]:
+        collection = self._collection
+
+        date_field = "paidAt" if kargs.get("byPaidAt") else "createdAt"
+
+        result = build_query(date_field, **kargs)
+        result.query["saleItems.product.id"] = product_id
+        if "status" not in result.query:
+            result.query["status"] = {"$ne": "cancelled"}
+
+        pipeline = [
+            {"$match": result.query},
+            {"$unwind": "$saleItems"},
+            {"$match": {"saleItems.product.id": product_id}},
+            {
+                "$group": {
+                    "_id": None,
+                    "invoiceIds": {"$addToSet": "$id"},
+                    "totalQuantity": {"$sum": "$saleItems.quantity"},
+                    "totalBonQuantity": {"$sum": "$saleItems.bonQuantity"},
+                    "total": {"$sum": "$saleItems.total"},
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "invoiceCount": {"$size": "$invoiceIds"},
+                    "totalQuantity": 1,
+                    "totalBonQuantity": 1,
+                    "total": 1,
+                }
+            },
+        ]
+
+        cursor = await collection.aggregate(pipeline)
+        summary = await cursor.to_list(length=None)
+        await cursor.close()
+
+        if summary:
+            data = summary[0]
+            return {
+                "productId": product_id,
+                "totalQuantity": data.get("totalQuantity", 0),
+                "totalBonQuantity": data.get("totalBonQuantity", 0),
+                "total": data.get("total", 0),
+                "invoiceCount": data.get("invoiceCount", 0),
+            }
+
+        return {
+            "productId": product_id,
+            "totalQuantity": 0,
+            "totalBonQuantity": 0,
+            "total": 0,
+            "invoiceCount": 0,
+        }
 
     async def fetch_all_product_sales(self, **kargs) -> list[dict[str, Any]]:
         collection = self._collection
@@ -603,6 +671,7 @@ class InvoicesCollection(BaseMongoCollection):
                 IndexModel([("saleItems.product.id", 1)]),
                 IndexModel([("branchId", 1), ("saleItems.product.id", 1)]),
                 IndexModel([("branchId", 1), ("createdAt", -1)]),
+                IndexModel([("branchId", 1), ("createdAt", -1), ("id", -1)]),
                 IndexModel([("createdAt", -1)]),
                 IndexModel([("paidAt", -1)]),
                 IndexModel([("createdBy.id", 1)]),

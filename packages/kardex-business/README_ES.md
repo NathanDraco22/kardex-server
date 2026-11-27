@@ -524,12 +524,13 @@ Cada repositorio vive en `src/kardex/repos/v1/{entidad}/` con la estructura:
 
 **Propósito**: Capa de datos de facturación. El repositorio más rico con agregación, streaming, totales, desglose por tipo de pago, ventas por producto, historial, resúmenes de portafolio e informes de facturas pendientes por sucursal. El **create** lo maneja `core/invoice_register/`. `update_invoice_by_id` es un stub pendiente.
 
-**Modelos**: `InvoiceInDb`, `CreateInvoice`, `UpdateInvoice`, `InvoiceTotals`, `BranchPortfolioSummary`, `PendingInvoiceTotalsByBranch`, `ProductSalesTotal`
+**Modelos**: `InvoiceInDb`, `CreateInvoice`, `UpdateInvoice`, `InvoiceTotals`, `BranchPortfolioSummary`, `PendingInvoiceTotalsByBranch`, `ProductSalesTotal`, `ProductSalesSummary`
 
 | Método | CRUD | Descripción |
 |---|---|---|
 | `get_all_invoices(params: InvoiceFilterParams) -> list[InvoiceInDb]` | READ | Obtiene facturas con paginación y filtros. |
-| `get_all_invoices_by_product(product_id, params) -> list[InvoiceInDb]` | READ | Obtiene facturas que contienen un producto específico. |
+| `get_all_invoices_by_product(product_id, params) -> list[InvoiceInDb]` | READ | Obtiene facturas que contienen un producto específico (excluye anuladas por defecto). |
+| `get_product_sales_summary(product_id, params) -> ProductSalesSummary` | READ `Σ` | Resumen de facturas, cantidades y monto vendido de un producto. |
 | `get_all_product_sales(params: InvoiceFilterParams) -> list[ProductSalesTotal]` | READ `Σ` | Ventas agregadas por producto desde facturas. |
 | `get_all_invoices_stream(params: InvoiceFilterParams) -> AsyncGenerator[InvoiceInDb, None]` | READ `△` | Streaming de facturas vía generador asíncrono. |
 | `get_totals_from_invoices(params: InvoiceFilterParams) -> InvoiceTotals` | READ `Σ` | Totales agregados de facturación (monto, impuesto, descuentos). |

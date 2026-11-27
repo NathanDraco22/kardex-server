@@ -3,7 +3,10 @@ from kardex.repos.v1.common.models.history_params import HistoryClientParams
 from .data.invoices_datasource import InvoicesDataSource
 from .models.invoice_model import UpdateInvoice, InvoiceInDb
 from .models.invoice_totals_model import InvoiceTotals
-from kardex.repos.v1.common.models.invoice_product_sale import ProductSalesTotal
+from kardex.repos.v1.common.models.invoice_product_sale import (
+    ProductSalesSummary,
+    ProductSalesTotal,
+)
 from kardex.repos.v1.invoices.models.invoice_summary import BranchPortfolioSummary
 from kardex.repos.v1.invoices.models.pending_invoice_total import PendingInvoiceTotalsByBranch
 from kardex.repos.v1.common.filter_params import InvoiceFilterParams, TotalsFilterParams
@@ -34,6 +37,14 @@ class InvoicesRepository:
         )
         models = [InvoiceInDb.model_validate(result) for result in results]
         return models
+
+    async def get_product_sales_summary(
+        self, product_id: str, params: InvoiceFilterParams
+    ) -> ProductSalesSummary:
+        result = await self.invoices_ds.get_product_sales_summary(
+            product_id, **params.model_dump(exclude_unset=True)
+        )
+        return ProductSalesSummary.model_validate(result)
 
     async def get_all_product_sales(self, params: InvoiceFilterParams) -> list[ProductSalesTotal]:
         results = await self.invoices_ds.get_all_product_sales(

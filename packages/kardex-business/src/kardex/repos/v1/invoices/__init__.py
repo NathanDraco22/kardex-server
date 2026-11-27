@@ -1,7 +1,10 @@
 from .data.invoices_datasource import InvoicesDataSource
 from .models.invoice_model import CreateInvoice, UpdateInvoice, InvoiceInDb
 from .models.invoice_totals_model import InvoiceTotals
-from ..common.models.invoice_product_sale import ProductSalesTotal
+from ..common.models.invoice_product_sale import (
+    ProductSalesSummary,
+    ProductSalesTotal,
+)
 from .invoices_repository import InvoicesRepository
 from .models.invoice_summary import BranchPortfolioSummary
 from .models.pending_invoice_total import PendingInvoiceTotalsByBranch
@@ -13,6 +16,7 @@ __all__ = [
     "InvoiceInDb",
     "InvoicesRepository",
     "InvoiceTotals",
+    "ProductSalesSummary",
     "ProductSalesTotal",
     "BranchPortfolioSummary",
     "PendingInvoiceTotalsByBranch",

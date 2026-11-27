@@ -15,6 +15,8 @@ class InvoiceFilterParams(BaseFilterParams):
     status: InvoiceStatus | None = None
     createdBy: str | None = None
     shiftId: str | None = None
+    cursorDate: int | None = None
+    cursorId: str | None = None
 
 class AdjustFilterParams(BaseFilterParams):
     branchId: str | None = None

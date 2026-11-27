@@ -4,6 +4,7 @@ from kardex.repos.v1.invoices import (
     UpdateInvoice,
     InvoiceInDb,
     InvoiceTotals,
+    ProductSalesSummary,
     ProductSalesTotal,
 )
 
@@ -72,6 +73,14 @@ async def get_invoices_by_product(
     query_params: InvoiceFilterParams = Depends(),
 ) -> ListResponse[InvoiceInDb]:
     return await invoices_controller.get_invoices_by_product(product_id, query_params)
+
+
+@invoices_router.get("/byProduct/{product_id}/totals")
+async def get_product_sales_summary(
+    product_id: str,
+    query_params: InvoiceFilterParams = Depends(),
+) -> ProductSalesSummary:
+    return await invoices_controller.get_product_sales_summary(product_id, query_params)
 
 
 @invoices_router.get("/{invoice_id}")

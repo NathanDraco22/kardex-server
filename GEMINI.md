@@ -1,5 +1,18 @@
 # Contexto de Conversación - Code Review Transfer Optimization
 
+## Fecha: 2026-11-27 (Ventas de un Producto)
+### Objetivo
+Extender la consulta de facturas por producto para alimentar la pantalla **“Ventas de un Producto”** con filtros de fecha, cliente y usuario, resumen de totales y exclusión de facturas anuladas.
+
+### Resumen Técnico
+- **Colección `Invoices`:** `fetch_all_invoices_by_product` agrega `status: {"$ne": "cancelled"}` cuando no se envía estado; nueva `fetch_product_sales_summary` con `$unwind`, `$match` de `saleItems.product.id` y `$group` (`invoiceCount` vía `$addToSet`, `totalQuantity`, `totalBonQuantity`, `total`).
+- **Modelo `ProductSalesSummary`:** nuevo modelo Pydantic camelCase exportado desde `repos/v1/invoices/__init__.py`.
+- **Endpoint:** `GET /api/v1/invoices/byProduct/{product_id}/totals` en datasource, repositorio, controller y router, reutilizando `InvoiceFilterParams`.
+- **Test:** `test/test_invoices_by_product.py` valida filtros, exclusión de anuladas, pipeline de agregación, respuesta en ceros y paginación por cursor.
+- **Correcciones de auditoría:** `InvoiceFilterParams` incorpora `cursorDate`/`cursorId`; `fetch_all_invoices_by_product` ordena por `(createdAt, id)` descendente y aplica `$or` para cursor; índice compuesto `branchId + createdAt + id`; pruebas de cursor.
+- **Verificación:** `ruff check`, `ty check` y suite completa (`192 passed`).
+- **Sin sincronización a `lite`:** cambio pendiente de sincronización explícita por decisión del usuario.
+
 ## Fecha: 2026-11-27 (Tipado de tests)
 ### Objetivo
 Eliminar los 35 diagnósticos de `ty check` en `test/` sin excluir los tests del chequeo de tipos.
