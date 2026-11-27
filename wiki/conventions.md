@@ -107,6 +107,17 @@ class ProductsRepository:
         return cls._instance
 ```
 
+### 4.1 Políticas de dominio (`Policy Object`)
+
+- Viven en `core/policies/` (transversales) o en `core/<dominio>/<nombre>_policy.py`.
+- Son puras: sin FastAPI, Mongo, `AppSettingsTool`, `session` ni IO.
+- Reciben modelos de dominio y devuelven `bool`, `Enum`, `@dataclass(frozen=True)` o `T | None`.
+- El orquestador consulta repositorios, aplica la policy y traduce el rechazo a `InvalidOperation`.
+- `settings=None` debe producir defaults conservadores.
+- Se testean con tablas de decisión y sin base de datos.
+
+Ejemplos: `AppSettingsPolicy`, `ConvertedOrderShiftPolicy` y `ReceiptPaymentPolicy`.
+
 ---
 
 ## 5. Excepciones

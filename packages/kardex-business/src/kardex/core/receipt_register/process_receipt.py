@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, cast
 from kardex.services.mongo_collections.v1 import (
     ReceiptsCollection,
     InvoicesCollection,
@@ -16,8 +16,8 @@ from kardex.tools.app_settings_tool import AppSettingsTool
 from kardex.services import MongoService
 
 from kardex.core.counter_manager.counter_manager import CounterManager
-from kardex.core.receipt_register.validate_receipt_payment import (
-    validate_receipt_payment,
+from kardex.core.receipt_register.receipt_payment_policy import (
+    ReceiptPaymentPolicy,
 )
 
 
@@ -41,7 +41,9 @@ async def process_receipt(
         if create_receipt.paymentDetail is not None
         else None
     )
-    validate_receipt_payment(create_receipt, settings)
+    payment_decision = ReceiptPaymentPolicy(settings).evaluate(create_receipt)
+    if not payment_decision.allowed:
+        raise InvalidOperation(cast(str, payment_decision.reason))
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():

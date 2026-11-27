@@ -1,5 +1,6 @@
 from typing import Any
 
+from kardex.core.policies import AppSettingsPolicy
 from kardex.repos.v1.receipts import ReceiptInDb
 from kardex.services.mongo_collections.v1 import (
     InvoicesCollection,
@@ -28,7 +29,7 @@ async def validate_receipt_cancellable(
         )
         if shift_data is not None and shift_data.get("status") != "open":
             settings = await AppSettingsTool().get_current_app_settings()
-            if not settings.allowCancellationsOutsideShift:
+            if not AppSettingsPolicy(settings).allows_cancellations_outside_shift:
                 raise InvalidOperation(
                     "No se puede anular un recibo perteneciente a un turno ya cerrado."
                 )

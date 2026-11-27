@@ -978,3 +978,24 @@ Rechazar recibos con pagos incoherentes (método, moneda, monto recibido o cambi
 4. **Tests:** nuevo `test/test_receipt_payment_validation.py` con 16 casos (efectivo primario/secundario, moneda secundaria deshabilitada, tasa inválida, tarjeta/transferencia, cambio incorrecto, moneda inválida, total cero, montos negativos y recibos legacy).
 5. **Verificación:** `ruff check` y `ty check` filtrados sin issues; `pytest -q` **188 passed**.
 6. **Sin commit.** La sincronización `main` → `lite` queda pendiente para el lote final por decisión del usuario.
+
+---
+
+## Fecha: 2026-11-27 — Lote 1: Policy Object para AppSettings y pagos de recibos
+### Objetivo
+Extraer reglas de configuración y de validación de pagos de recibos a objetos de política puros, sin IO ni dependencias HTTP, preservando exactamente el comportamiento y los mensajes existentes.
+
+### Resumen de Implementación
+1. **Nuevo paquete `core/policies/`:** `AppSettingsPolicy` interpreta `AppSettingInDb | None` sin consultar Mongo ni usar `AppSettingsTool`; expone `converted_order_shift_policy`, `round_up_invoice_totals` y `allows_cancellations_outside_shift`. Con `settings=None` aplica defaults conservadores (`NEVER`, `False`, `False`).
+2. **`ConvertedOrderShiftPolicy(str, Enum)`:** valores `NEVER`, `OPTIONAL`, `REQUIRED`; propiedades `links_to_shift` (OPTIONAL/REQUIRED) y `requires_open_shift` (solo REQUIRED). Centraliza la tabla de verdad de `useShifts` / `chargeConvertedOrdersToShift` / `requireShiftForConvertedOrders`.
+3. **`ReceiptPaymentPolicy` (`core/receipt_register/receipt_payment_policy.py`):** `evaluate(receipt)` devuelve `ReceiptPaymentDecision(allowed, reason)` replicando el orden y los mensajes de `validate_receipt_payment` (total y montos negativos, referencia bancaria, `paymentDetail` solo en efectivo, settings ausente, monedas permitidas, moneda secundaria habilitada y tasa válida, monto recibido con redondeo mitad hacia arriba y cambio exacto). `_round_half_up` queda como helper privado.
+4. **Integraciones:** `OrdersController` usa `converted_order_shift_policy` y conserva el HTTP 400 cuando falta `shiftId`; `InvoiceRegister` usa `round_up_invoice_totals`; `process_receipt` evalúa la policy y solo consulta settings cuando hay `paymentDetail`. `validate_receipt_payment` queda como wrapper delgado que lanza `InvalidOperation`.
+5. **Tests:** `test/test_app_settings_policy.py` cubre las 8 combinaciones de turnos, las propiedades derivadas, redondeo, anulaciones fuera de turno y `settings=None`. `test/test_receipt_payment_policy.py` cubre la API de decisión para los casos permitidos y cada motivo de rechazo, incluido el redondeo mitad hacia arriba.
+6. **Verificación:** `ruff check` OK; `ty check` OK; `pytest` dirigido a policies, validación de recibos y cancelaciones **80 passed**; suite completa **234 passed**. Sin levantar servicios ni tocar Mongo.
+7. **Correcciones post-revisión:**
+   - `AppSettingInDb` y `CreateReceipt` se importan solo bajo `TYPE_CHECKING` con `from __future__ import annotations`, evitando cargar módulos Mongo al importar las policies.
+   - `allows_cancellations_outside_shift` ahora lo consumen `validate_invoice_cancellable` y `validate_receipt_cancellable`; se eliminó la lectura directa de la bandera.
+   - `ReceiptPaymentDecision.__post_init__` exige `reason` no vacío cuando `allowed=False`; los consumidores usan `cast(str, decision.reason)` y se eliminó el fallback redundante.
+   - Tests extra: referencia bancaria solo-espacios, wrapper con `settings=None` + `paymentDetail`, y decisión denegada con `None`, `""` y `"   "`.
+   - Wiki actualizada: `wiki/modules/app_settings.md` sección 7 y `wiki/conventions.md` sección 4.1; se aclara que la policy lanza `InvalidOperation` y el mapeo HTTP vive en `app/regis_exception_handlers.py`.
+8. **Sin commit.** Cambios locales en la rama `main`.

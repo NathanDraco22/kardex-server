@@ -130,7 +130,7 @@ Aplica al endpoint `POST /api/v1/orders/make-invoice/{order_id}`, usado tanto pa
 - **Valores por defecto:** las tres banderas son `false`.
 - **Precedencia:** `requireShiftForConvertedOrders` solo tiene efecto cuando `useShifts` y `chargeConvertedOrdersToShift` están activos.
 - **Implementación frontend:** `ShiftGuard.ensureShiftReady` y `ShiftCubit` en las pantallas de facturación de órdenes (`current_orders`) y cotizaciones (`current_proforma`).
-- **Implementación backend:** `OrdersController.convert_order_to_invoice` aplica la regla; `InvoiceRegister`/`validate_shift_link` validan que el turno exista, esté `open` y sea de la misma sucursal.
+- **Implementación backend:** `AppSettingsPolicy.converted_order_shift_policy` centraliza la tabla de verdad (`NEVER`/`OPTIONAL`/`REQUIRED`); `OrdersController.convert_order_to_invoice` la consume y `InvoiceRegister`/`validate_shift_link` validan que el turno exista, esté `open` y sea de la misma sucursal.
 - **Alcance:** esta excepción aplica solo a la conversión de órdenes y cotizaciones. La facturación directa desde terminal de venta mantiene su propia validación de turno.
 
 ---
@@ -138,7 +138,7 @@ Aplica al endpoint `POST /api/v1/orders/make-invoice/{order_id}`, usado tanto pa
 ## 5. Anulación de facturas y recibos fuera de turno
 
 - **Bandera:** `allowCancellationsOutsideShift` (`False` por defecto).
-- **Efecto:** cuando está activa, `validate_invoice_cancellable` y `validate_receipt_cancellable` omiten únicamente el bloqueo por turno cerrado. La validación se ejecuta tanto al **crear** la solicitud como al **aprobar** la anulación.
+- **Efecto:** cuando está activa, `AppSettingsPolicy.allows_cancellations_outside_shift` permite que `validate_invoice_cancellable` y `validate_receipt_cancellable` omitan únicamente el bloqueo por turno cerrado. La validación se ejecuta tanto al **crear** la solicitud como al **aprobar** la anulación.
 - **Alcance:** las demás reglas siguen vigentes: factura no anulada/borrador, sin abonos en facturas a crédito, sin devoluciones activas, sin notas de crédito activas y facturas aplicadas válidas en recibos.
 - **Arqueos cerrados:** los turnos cerrados usan sus totales almacenados (`resolve_totals_source`), por lo que la anulación no recalcula el cierre histórico. La anulación sí actualiza el estado del documento y los reportes calculados en vivo para su fecha.
 - **Efectivo:** la anulación no registra un movimiento de caja ni un reembolso. El efectivo físico debe gestionarse fuera del sistema o mediante el flujo operativo que defina el negocio.
@@ -156,5 +156,16 @@ Aplica al endpoint `POST /api/v1/orders/make-invoice/{order_id}`, usado tanto pa
   - el total de la factura queda en un número entero y se mantiene `subtotal - descuentos = total`.
 - **Sin línea de redondeo:** el ajuste queda integrado en los subtotales y descuentos; no se agrega un campo ni una línea visual.
 - **Alcance:** solo facturas nuevas. Aplica a facturación directa, anónima y conversión de órdenes/cotizaciones a factura. Las órdenes y cotizaciones conservan sus importes exactos; las facturas existentes no se recalculan.
-- **Implementación:** `InvoiceRegister` lee `AppSettingsTool` y pasa `round_up` a `process_invoice` / `process_anon_invoice`; `normalize_invoice_discounts` aplica la regla. En el frontend, `InvoiceRounding` configura el comportamiento en `CommercialProductResult`, los controladores de facturación y `CreateInvoice.ensureCostAndTotal`; las conversiones usan `projectedInvoiceTotal` para el diálogo de pago.
+- **Implementación:** `InvoiceRegister` usa `AppSettingsPolicy.round_up_invoice_totals` y pasa `round_up` a `process_invoice` / `process_anon_invoice`; `normalize_invoice_discounts` aplica la regla. En el frontend, `InvoiceRounding` configura el comportamiento en `CommercialProductResult`, los controladores de facturación y `CreateInvoice.ensureCostAndTotal`; las conversiones usan `projectedInvoiceTotal` para el diálogo de pago.
 - **Cálculo por línea:** el precio unitario no se redondea; solo el subtotal de la línea. Una línea de `C$10.12` pasa a `C$11.00` y un descuento de `C$1.01` pasa a `C$1.00`.
+
+---
+
+## 7. Capa de políticas (`Policy Object`)
+
+- **`core/policies/app_settings_policy.py`:** interpreta `AppSettingInDb | None` sin IO ni Mongo. Expone `converted_order_shift_policy`, `round_up_invoice_totals` y `allows_cancellations_outside_shift`.
+- **`core/receipt_register/receipt_payment_policy.py`:** `ReceiptPaymentPolicy.evaluate(receipt)` devuelve `ReceiptPaymentDecision(allowed, reason)`; `validate_receipt_payment` queda como wrapper que lanza `InvalidOperation`.
+- **Contrato de decisión:** `ReceiptPaymentDecision` exige `reason` no vacío cuando `allowed=False`.
+- **Regla de retorno:** `bool` para binarios, `Enum` para varias salidas, `@dataclass(frozen=True)` para decisiones con datos y `T | None` para resultados opcionales.
+- **Pureza:** una policy no importa FastAPI, Mongo, `AppSettingsTool`, `session` ni hace IO. El orquestador consulta repositorios y traduce la decisión a `InvalidOperation`; el mapeo a HTTP vive en `app/regis_exception_handlers.py`.
+- **`settings=None`:** las policies aplican defaults conservadores; nunca asumen configuración cargada.

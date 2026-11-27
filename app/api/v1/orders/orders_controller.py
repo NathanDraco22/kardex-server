@@ -9,6 +9,7 @@ from kardex.repos.v1.common.models.invoice_product_sale import ProductSalesTotal
 from kardex.core.inventory import calculate_line_amount
 from kardex.core.order_register.order_register import OrderRegister
 from kardex.core.invoice_register.invoice_register import InvoiceRegister
+from kardex.core.policies import AppSettingsPolicy
 from kardex.core.order_register.cancel_order import cancel_order
 from kardex.core.counter_manager.counter_manager import CounterManager
 from kardex.repos.v1.orders import (
@@ -119,18 +120,13 @@ class OrdersController:
                 )
 
         settings = await self.app_settings_tool.get_current_app_settings()
-        should_charge_to_shift = bool(
-            settings and settings.useShifts and settings.chargeConvertedOrdersToShift
-        )
+        shift_policy = AppSettingsPolicy(settings).converted_order_shift_policy
         target_shift_id: str | None = (
-            ((shift_id or "").strip() or None) if should_charge_to_shift else None
+            ((shift_id or "").strip() or None)
+            if shift_policy.links_to_shift
+            else None
         )
-        if (
-            should_charge_to_shift
-            and settings is not None
-            and settings.requireShiftForConvertedOrders
-            and target_shift_id is None
-        ):
+        if shift_policy.requires_open_shift and target_shift_id is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="An open shift is required to invoice this order.",

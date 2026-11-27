@@ -13,6 +13,7 @@ from pymongo.errors import OperationFailure
 
 
 from kardex.core.default_values import SALE_CLIENT_ID
+from kardex.core.policies import AppSettingsPolicy
 from kardex.core.shift_register.validate_shift_link import validate_shift_link
 from kardex.tools import InsufficientBalanceError, DocumentAlreadyExists, BranchNotFound, InvalidOperation
 
@@ -51,7 +52,7 @@ class InvoiceRegister:
         await self._validate_document(create_invoice)
 
         settings = await self.app_settings_tool.get_current_app_settings()
-        round_up = bool(settings.roundUpInvoiceTotals)
+        round_up = AppSettingsPolicy(settings).round_up_invoice_totals
 
         max_retries = 3
         for _ in range(max_retries):

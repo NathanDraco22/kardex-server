@@ -256,3 +256,17 @@ def test_negative_amounts_are_rejected():
 
     with pytest.raises(InvalidOperation, match="total del recibo"):
         validate_receipt_payment(_receipt(total=-1), _settings())
+
+
+def test_payment_detail_without_settings_is_rejected():
+    receipt = _receipt(
+        paymentDetail=PaymentDetail(
+            paidCurrency="NIO",
+            tenderedAmount=1000,
+            exchangeRate=1.0,
+            changeAmount=0,
+        )
+    )
+
+    with pytest.raises(InvalidOperation, match="configuración de moneda"):
+        validate_receipt_payment(receipt, None)
