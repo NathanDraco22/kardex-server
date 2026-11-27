@@ -21,12 +21,26 @@ from kardex.repos.v1.orders import (
 
 from responses.v1 import ListResponse
 from kardex.repos.v1.common.filter_params import OrderFilterParams
-from kardex.repos.v1.common.models import ProductStockDemand
+from kardex.repos.v1.common.models import (
+    PaymentDetail,
+    PaymentType,
+    ProductStockDemand,
+    UserInfo,
+)
+from kardex.repos.v1.users import UsersRepository, UsersDataSource
+from kardex.tools.app_settings_tool import AppSettingsTool
 
 
 class OrdersController:
-    def __init__(self, orders_repo: OrdersRepository) -> None:
+    def __init__(
+        self,
+        orders_repo: OrdersRepository,
+        users_repo: UsersRepository | None = None,
+        app_settings_tool: AppSettingsTool | None = None,
+    ) -> None:
         self.orders_repo = orders_repo
+        self.users_repo = users_repo or UsersRepository(UsersDataSource())
+        self.app_settings_tool = app_settings_tool or AppSettingsTool()
         self.order_register = OrderRegister()
         self.invoice_register = InvoiceRegister()
 
@@ -50,7 +64,14 @@ class OrdersController:
         return res
 
     async def convert_order_to_invoice(
-        self, order_id: str
+        self,
+        order_id: str,
+        invoiced_by_user_id: str | None = None,
+        invoiced_by_username: str | None = None,
+        shift_id: str | None = None,
+        payment_type: PaymentType | None = None,
+        bank_reference: str | None = None,
+        payment_detail: PaymentDetail | None = None,
     ) -> tuple[InvoiceInDb, OrderInDb]:
         order = await self.orders_repo.get_order_by_id(order_id)
 
@@ -84,6 +105,47 @@ class OrdersController:
             for item in order.saleItems
         )
 
+        invoiced_by: UserInfo | None = None
+        if invoiced_by_user_id:
+            auth_user = await self.users_repo.get_user_by_id(invoiced_by_user_id)
+            resolved_name = (
+                (auth_user.username if auth_user is not None else "")
+                or (invoiced_by_username or "")
+            )
+            if resolved_name.strip():
+                invoiced_by = UserInfo(
+                    id=invoiced_by_user_id,
+                    name=resolved_name.strip(),
+                )
+
+        settings = await self.app_settings_tool.get_current_app_settings()
+        should_charge_to_shift = bool(
+            settings and settings.useShifts and settings.chargeConvertedOrdersToShift
+        )
+        target_shift_id: str | None = (
+            ((shift_id or "").strip() or None) if should_charge_to_shift else None
+        )
+        if (
+            should_charge_to_shift
+            and settings is not None
+            and settings.requireShiftForConvertedOrders
+            and target_shift_id is None
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="An open shift is required to invoice this order.",
+            )
+
+        effective_payment_type: PaymentType = payment_type or order.paymentType
+        effective_bank_reference = (
+            (bank_reference or "").strip()
+            if effective_payment_type != "credit"
+            else ""
+        )
+        effective_payment_detail = (
+            payment_detail if effective_payment_type != "credit" else None
+        )
+
         create_invoice = CreateInvoice(
             branchId=order.branchId,
             clientId=order.clientId,
@@ -99,10 +161,14 @@ class OrdersController:
             description=order.description,
             amountPaid=order.amountPaid,
             totalCost=order_total_cost,
-            paymentType=order.paymentType,
+            paymentType=effective_payment_type,
+            bankReference=effective_bank_reference,
+            paymentDetail=effective_payment_detail,
             status=new_invoice_status,
             total=order.total,
             createdBy=order.createdBy,
+            invoicedBy=invoiced_by,
+            shiftId=target_shift_id,
         )
 
         res, _ = await self.invoice_register.regis_invoice(create_invoice)

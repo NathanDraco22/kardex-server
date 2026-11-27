@@ -11,7 +11,7 @@ from kardex.repos.v1.invoices import InvoiceInDb
 from kardex.repos.v1.receipts import CreateReceipt, ReceiptInDb
 from kardex.repos.v1.client_transactions import ClientTransactionInDb
 from kardex.repos.v1.clients import ClientInDb
-from kardex.tools import UuidTool, TimeTools
+from kardex.tools import InvalidOperation, UuidTool, TimeTools
 from kardex.services import MongoService
 
 from kardex.core.counter_manager.counter_manager import CounterManager
@@ -49,23 +49,79 @@ async def process_receipt(
                 )
 
             if total_funds != total_applied:
-                raise Exception(
+                raise InvalidOperation(
                     f"Discrepancy Error: Total Funds ({total_funds}) "
                     f"does not match Total Applied to Invoices ({total_applied})."
                 )
 
-            # Validar que cada nota de crédito esté aprobada
+            # Validar que cada nota de crédito esté aprobada y pertenezca al cliente
+            seen_cn_ids: set[str] = set()
             for applied_credit_note in create_receipt.appliedCreditNotes:
+                if applied_credit_note.creditNoteId in seen_cn_ids:
+                    raise InvalidOperation(
+                        f"Nota de crédito duplicada en el recibo: {applied_credit_note.creditNoteId}."
+                    )
+                seen_cn_ids.add(applied_credit_note.creditNoteId)
+
                 cn_data = await credit_note_col.fetch_credit_note_by_id(
-                    applied_credit_note.creditNoteId
+                    applied_credit_note.creditNoteId, session=session
                 )
                 if not cn_data:
-                    raise Exception(
+                    raise InvalidOperation(
                         f"Nota de crédito {applied_credit_note.creditNoteId} no encontrada."
                     )
                 if cn_data.get("status") not in ("approved", "confirmed"):
-                    raise Exception(
+                    raise InvalidOperation(
                         f"La nota de crédito #{cn_data.get('docNumber', '')} no está aprobada (estado: {cn_data.get('status')})."
+                    )
+                if cn_data.get("clientId") != create_receipt.clientId:
+                    raise InvalidOperation(
+                        f"La nota de crédito #{cn_data.get('docNumber', '')} pertenece a otro cliente."
+                    )
+                cn_amount = int(cn_data.get("amount") or 0)
+                if (
+                    applied_credit_note.amountApplied <= 0
+                    or applied_credit_note.amountApplied > cn_amount
+                ):
+                    raise InvalidOperation(
+                        f"El monto aplicado ({applied_credit_note.amountApplied}) de la nota de crédito #{cn_data.get('docNumber', '')} es inválido (total: {cn_amount})."
+                    )
+
+            # Validar cada devolución aplicada
+            seen_devolution_ids: set[str] = set()
+            for applied_devolution in create_receipt.appliedDevolutions:
+                if applied_devolution.devolutionId in seen_devolution_ids:
+                    raise InvalidOperation(
+                        f"Devolución duplicada en el recibo: {applied_devolution.devolutionId}."
+                    )
+                seen_devolution_ids.add(applied_devolution.devolutionId)
+
+                dev_data = await devolution_col.fetch_devolution_by_id(
+                    applied_devolution.devolutionId, session=session
+                )
+                if not dev_data:
+                    raise InvalidOperation(
+                        f"Devolución {applied_devolution.devolutionId} no encontrada."
+                    )
+                if dev_data.get("status") != "confirmed":
+                    raise InvalidOperation(
+                        f"La devolución #{dev_data.get('docNumber', '')} no está confirmada (estado: {dev_data.get('status')})."
+                    )
+                if dev_data.get("clientId") != create_receipt.clientId:
+                    raise InvalidOperation(
+                        f"La devolución #{dev_data.get('docNumber', '')} pertenece a otro cliente."
+                    )
+                if dev_data.get("originalInvoicePaymentType") not in ("credit", None):
+                    raise InvalidOperation(
+                        f"La devolución #{dev_data.get('docNumber', '')} proviene de una factura de contado y no puede aplicarse en recibos."
+                    )
+                dev_total = int(dev_data.get("total") or 0)
+                if (
+                    applied_devolution.amountApplied <= 0
+                    or applied_devolution.amountApplied > dev_total
+                ):
+                    raise InvalidOperation(
+                        f"El monto aplicado ({applied_devolution.amountApplied}) de la devolución #{dev_data.get('docNumber', '')} es inválido (total: {dev_total})."
                     )
 
             # 2. Crear el documento de recibo
@@ -87,16 +143,24 @@ async def process_receipt(
                 )
 
                 if current_invoice_data is None:
-                    raise Exception(f"Invoice {applied_invoice.invoiceId} not found")
+                    raise InvalidOperation(f"Invoice {applied_invoice.invoiceId} not found")
 
                 current_invoice = InvoiceInDb.model_validate(current_invoice_data)
+
+                invoice_devs = await devolution_col.fetch_devolutions_by_invoice_id(
+                    applied_invoice.invoiceId, None, session=session
+                )
+                if any(d.get("status") == "open" for d in invoice_devs):
+                    raise InvalidOperation(
+                        f"La factura #{current_invoice.docNumber} tiene una devolución pendiente de confirmar."
+                    )
 
                 total_amount = current_invoice.total
                 amount_paid_so_far = current_invoice.amountPaid
                 pending_balance = total_amount - amount_paid_so_far
 
                 if applied_invoice.amountApplied > pending_balance:
-                    raise Exception(
+                    raise InvalidOperation(
                         f"Overpayment Error: Payment of {applied_invoice.amountApplied} "
                         f"exceeds pending balance of {pending_balance} "
                         f"for Invoice {current_invoice.docNumber}"

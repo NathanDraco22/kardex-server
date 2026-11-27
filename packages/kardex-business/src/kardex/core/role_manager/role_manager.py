@@ -35,6 +35,8 @@ class CommercialSubModules:
     PROCESS_DEVOLUTION = "processDevolution"
     CREATE_CREDIT_NOTE = "createCreditNote"
     CREDIT_NOTE_HISTORY = "creditNoteHistory"
+    APPROVE_INVOICE_CANCELLATION = "approveInvoiceCancellation"
+    APPROVE_RECEIPT_CANCELLATION = "approveReceiptCancellation"
 
 
 default_roles = [
@@ -121,6 +123,8 @@ default_roles = [
             CommercialSubModules.PROCESS_DEVOLUTION,
             CommercialSubModules.CREATE_CREDIT_NOTE,
             CommercialSubModules.CREDIT_NOTE_HISTORY,
+            CommercialSubModules.APPROVE_INVOICE_CANCELLATION,
+            CommercialSubModules.APPROVE_RECEIPT_CANCELLATION,
             Modules.SUPPLIERS,
             Modules.CLIENTS,
             Modules.PRODUCTS,
@@ -224,6 +228,16 @@ class RoleManager:
                             key=CommercialSubModules.CREDIT_NOTE_HISTORY,
                             name="Historial de Notas de Crédito",
                             description="Consultar, aprobar o rechazar notas de crédito",
+                        ),
+                        SubModuleItem(
+                            key=CommercialSubModules.APPROVE_INVOICE_CANCELLATION,
+                            name="Aprobar Anulaciones de Factura",
+                            description="Aprobar o rechazar solicitudes de anulación de facturas",
+                        ),
+                        SubModuleItem(
+                            key=CommercialSubModules.APPROVE_RECEIPT_CANCELLATION,
+                            name="Aprobar Anulaciones de Recibo",
+                            description="Aprobar o rechazar solicitudes de anulación de recibos",
                         ),
                     ],
                 ),

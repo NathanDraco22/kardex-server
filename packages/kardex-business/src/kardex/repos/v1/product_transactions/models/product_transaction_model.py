@@ -14,6 +14,7 @@ TransactionSubType = Literal[
     "adjustment",
     "loss",
     "credit_note",
+    "invoice_cancellation",
 ]
 
 

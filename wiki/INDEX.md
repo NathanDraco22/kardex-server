@@ -4,6 +4,11 @@ Punto de entrada de la wiki del backend. **Lee esto antes de explorar el código
 
 > Si llegaste aquí desde [`../AGENTS.md`](../AGENTS.md): estás en el lugar correcto. Sigue con la sección que corresponda a tu tarea.
 
+> [!IMPORTANT]
+> **Prioridad al crear módulos nuevos:**
+> 1. **Usa Onion CLI** (`onion crud-mongo`, `onion crud` o `onion repo-mongo`) en lugar de crear el boilerplate manualmente; luego mueve/adapta la capa de dominio a `packages/kardex-business`.
+> 2. **Nunca llames `Collection.get_instance()` en `__init__`** de DataSources, Repositories o Controllers (import-time falla antes del `lifespan` de `MongoService`). Resuelve la colección de forma perezosa (`@property` o dentro de cada método) y verifica `import main` antes de cerrar. Ver [`conventions.md`](./conventions.md).
+
 ---
 
 ## 1. Qué es este proyecto

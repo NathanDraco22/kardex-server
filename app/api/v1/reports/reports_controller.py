@@ -110,7 +110,7 @@ class ReportsController:
                     creditSales=inv.creditSales if inv else 0,
                     cashSales=inv.cashSales if inv else 0,
                     totalInvoices=inv.totalInvoices if inv else 0,
-                    totalReceiptCash=rec.totalAppliedInvoices if rec else 0,
+                    totalReceiptCash=rec.totalReceipts if rec else 0,
                     totalReceiptDevolutions=rec.totalAppliedDevolutions if rec else 0,
                     totalReceipts=rec.totalReceipts if rec else 0,
                     receiptCount=rec.receiptCount if rec else 0,

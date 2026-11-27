@@ -67,7 +67,7 @@ async def reverse_receipt(
             for applied_devolution in receipt.appliedDevolutions:
                 await devolution_col.update_devolution_status_by_id(
                     devolution_id=applied_devolution.devolutionId,
-                    status="available",
+                    status="confirmed",
                     session=session,
                 )
 

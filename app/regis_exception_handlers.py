@@ -17,6 +17,8 @@ from kardex.tools.kardex_exceptions import (
     ShiftNotFound,
     CashMovementNotFound,
     ShiftNotOpen,
+    InvoiceCancellationRequestNotFound,
+    ReceiptCancellationRequestNotFound,
 )
 
 
@@ -84,6 +86,8 @@ _exception_handlers = {
     ShiftNotFound: handle_not_found,
     CashMovementNotFound: handle_not_found,
     ShiftNotOpen: handle_bad_request,
+    InvoiceCancellationRequestNotFound: handle_not_found,
+    ReceiptCancellationRequestNotFound: handle_not_found,
 }
 
 

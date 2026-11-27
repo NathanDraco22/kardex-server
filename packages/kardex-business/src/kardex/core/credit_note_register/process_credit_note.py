@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping, Sequence
 
 from kardex.repos.v1.credit_notes import CreateCreditNote, CreditNoteInDb
 from kardex.repos.v1.invoices import InvoiceInDb
 from kardex.services.mongo_collections.v1 import (
     CreditNotesCollection,
+    DevolutionsCollection,
     InvoicesCollection,
 )
 from kardex.core.counter_manager.counter_manager import CounterManager
@@ -110,6 +111,79 @@ def sum_previously_returned_quantities(
     return total
 
 
+def sum_previously_returned_from_devolutions(
+    invoice_sale_items: Sequence[Any],
+    devolutions: Iterable[Mapping[str, Any]],
+    invoice_item_index: int,
+    *,
+    exclude_devolution_id: str | None = None,
+) -> int:
+    """Suma lo ya devuelto por linea de factura en devoluciones no canceladas.
+
+    Soporta items con `invoiceItemIndex` explicito y asignacion determinista
+    por `product.id` para devoluciones legacy sin `invoiceItemIndex`.
+    """
+    if invoice_item_index < 0 or invoice_item_index >= len(invoice_sale_items):
+        return 0
+
+    attributed = [0] * len(invoice_sale_items)
+    active_devs = [
+        dev
+        for dev in devolutions
+        if dev.get("status") != "cancelled"
+        and (exclude_devolution_id is None or dev.get("id") != exclude_devolution_id)
+    ]
+
+    # Pasada 1: items con invoiceItemIndex explicito
+    legacy_items: list[Mapping[str, Any]] = []
+    for dev in active_devs:
+        for item in dev.get("returnedItems") or []:
+            idx = item.get("invoiceItemIndex")
+            if idx is not None and 0 <= idx < len(invoice_sale_items):
+                pid = (item.get("product") or {}).get("id")
+                if pid == invoice_sale_items[idx].product.id:
+                    attributed[idx] += abs(int(item.get("quantity") or 0))
+            else:
+                legacy_items.append(item)
+
+    # Pasada 2: items legacy sin invoiceItemIndex
+    for item in legacy_items:
+        pid = (item.get("product") or {}).get("id")
+        qty_left = abs(int(item.get("quantity") or 0))
+        if qty_left <= 0 or not pid:
+            continue
+
+        item_factor = max(int(item.get("conversionFactor") or 1), 1)
+        exact_matches: list[int] = []
+        fallback_matches: list[int] = []
+        for i, line in enumerate(invoice_sale_items):
+            if line.product.id != pid:
+                continue
+            line_factor = max(int(getattr(line, "conversionFactor", 1) or 1), 1)
+            if line_factor == item_factor:
+                exact_matches.append(i)
+            else:
+                fallback_matches.append(i)
+
+        ordered_matches = exact_matches + fallback_matches
+        if not ordered_matches:
+            continue
+
+        for i in ordered_matches:
+            if qty_left <= 0:
+                break
+            capacity = max(0, int(invoice_sale_items[i].quantity) - attributed[i])
+            take = min(qty_left, capacity)
+            if take > 0:
+                attributed[i] += take
+                qty_left -= take
+
+        if qty_left > 0:
+            attributed[ordered_matches[0]] += qty_left
+
+    return attributed[invoice_item_index]
+
+
 async def _recalculate_devolution_items(
     create_credit_note: CreateCreditNote,
     session: Any,
@@ -140,6 +214,10 @@ async def _recalculate_devolution_items(
 
     previous_credit_notes = await credit_notes_col.fetch_credit_notes_by_invoice_id(
         invoice_id, session=session
+    )
+    devolutions_col = DevolutionsCollection.get_instance()
+    previous_devolutions = await devolutions_col.fetch_devolutions_by_invoice_id(
+        invoice_id, None, session=session
     )
 
     seen_indices: set[int] = set()
@@ -177,8 +255,13 @@ async def _recalculate_devolution_items(
                 f"{index} (expected {invoice_factor})."
             )
 
-        previously_returned = sum_previously_returned_quantities(
-            previous_credit_notes, index, invoice_item.product.id
+        previously_returned = (
+            sum_previously_returned_quantities(
+                previous_credit_notes, index, invoice_item.product.id
+            )
+            + sum_previously_returned_from_devolutions(
+                invoice.saleItems, previous_devolutions, index
+            )
         )
 
         amounts = validate_devolution_line(

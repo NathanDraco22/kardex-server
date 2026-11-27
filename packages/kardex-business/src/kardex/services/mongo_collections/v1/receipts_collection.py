@@ -69,6 +69,8 @@ class ReceiptsCollection(BaseMongoCollection):
             del query["startDate"]
             del query["endDate"]
 
+        query.setdefault("isDeleted", {"$ne": True})
+
         cursor = await collection.aggregate(
             [
                 {"$match": query},
@@ -118,6 +120,8 @@ class ReceiptsCollection(BaseMongoCollection):
         if user_id:
             query["createdBy.id"] = user_id
 
+        query.setdefault("isDeleted", {"$ne": True})
+
         cursor = await collection.aggregate(
             [
                 {"$match": query},
@@ -160,6 +164,7 @@ class ReceiptsCollection(BaseMongoCollection):
 
         query = kwargs
         query["createdAt"] = {"$gte": start_date, "$lte": end_date}
+        query.setdefault("isDeleted", {"$ne": True})
 
         pipeline = [
             {"$match": query},
@@ -266,6 +271,52 @@ class ReceiptsCollection(BaseMongoCollection):
         await collection.insert_one(receipt, session=session)
         return receipt
 
+    async def get_receipt_by_id_with_session(
+        self,
+        receipt_id: str,
+        session: Any,
+    ) -> dict[str, Any] | None:
+        collection = self._collection
+        return await collection.find_one({"id": receipt_id}, session=session)
+
+    async def mark_receipt_cancelled_with_session(
+        self,
+        receipt_id: str,
+        update_data: dict[str, Any],
+        session: Any,
+    ) -> dict[str, Any] | None:
+        collection = self._collection
+        return await collection.find_one_and_update(
+            {"id": receipt_id},
+            {"$set": update_data},
+            return_document=ReturnDocument.AFTER,
+            session=session,
+        )
+
+    async def get_cancelled_totals_by_shift(
+        self, shift_id: str
+    ) -> dict[str, int]:
+        collection = self._collection
+        pipeline = [
+            {"$match": {"shiftId": shift_id, "isDeleted": True}},
+            {
+                "$group": {
+                    "_id": None,
+                    "total": {"$sum": "$total"},
+                    "count": {"$sum": 1},
+                }
+            },
+        ]
+        cursor = await collection.aggregate(pipeline)
+        results = await cursor.to_list(length=None)
+        await cursor.close()
+        if not results:
+            return {"total": 0, "count": 0}
+        return {
+            "total": int(results[0].get("total") or 0),
+            "count": int(results[0].get("count") or 0),
+        }
+
     async def fetch_receipt_history(self, **kwargs) -> list[dict[str, Any]]:
         collection = self._collection
 
@@ -309,7 +360,7 @@ class ReceiptsCollection(BaseMongoCollection):
         collection = self._collection
 
         pipeline = [
-            {"$match": {"shiftId": shift_id, "isDeleted": {"$ne": True}}},
+            {"$match": {"shiftId": shift_id}},
             {"$sort": {"createdAt": 1}},
             {"$limit": limit + 1},
             {
@@ -322,6 +373,8 @@ class ReceiptsCollection(BaseMongoCollection):
                     "bankReference": 1,
                     "clientInfo.name": 1,
                     "createdAt": 1,
+                    "isDeleted": 1,
+                    "cancellationReason": 1,
                 }
             },
         ]

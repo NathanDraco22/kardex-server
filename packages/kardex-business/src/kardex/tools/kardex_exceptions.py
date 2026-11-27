@@ -88,3 +88,15 @@ class ShiftNotOpen(KardexException):
     def __init__(self, message: str, shift_id: str | None = None):
         self.shift_id = shift_id
         super().__init__(message)
+
+
+class InvoiceCancellationRequestNotFound(KardexException):
+    def __init__(self, message: str, request_id: str | None = None):
+        self.request_id = request_id
+        super().__init__(message)
+
+
+class ReceiptCancellationRequestNotFound(KardexException):
+    def __init__(self, message: str, request_id: str | None = None):
+        self.request_id = request_id
+        super().__init__(message)

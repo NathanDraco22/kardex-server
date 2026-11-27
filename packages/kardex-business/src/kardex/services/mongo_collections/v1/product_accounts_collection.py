@@ -757,54 +757,70 @@ class ProductAccountsCollection(BaseMongoCollection):
                         },
                         "lastCost": last_cost,
                         "averageCost": {
-                            "$convert": {
-                                "input": {
-                                    "$round": [
+                            "$cond": {
+                                "if": {
+                                    "$gt": [
                                         {
-                                            "$divide": [
+                                            "$add": [
+                                                {"$ifNull": ["$currentStock", 0]},
+                                                add_to_current_stock,
+                                            ]
+                                        },
+                                        0,
+                                    ]
+                                },
+                                "then": {
+                                    "$convert": {
+                                        "input": {
+                                            "$round": [
                                                 {
-                                                    "$add": [
+                                                    "$divide": [
                                                         {
-                                                            "$multiply": [
+                                                            "$add": [
+                                                                {
+                                                                    "$multiply": [
+                                                                        {
+                                                                            "$ifNull": [
+                                                                                "$currentStock",
+                                                                                0,
+                                                                            ]
+                                                                        },
+                                                                        {
+                                                                            "$ifNull": [
+                                                                                "$averageCost",
+                                                                                0,
+                                                                            ]
+                                                                        },
+                                                                    ]
+                                                                },
+                                                                {
+                                                                    "$multiply": [
+                                                                        add_to_current_stock,
+                                                                        last_cost,
+                                                                    ]
+                                                                },
+                                                            ]
+                                                        },
+                                                        {
+                                                            "$add": [
                                                                 {
                                                                     "$ifNull": [
                                                                         "$currentStock",
                                                                         0,
                                                                     ]
                                                                 },
-                                                                {
-                                                                    "$ifNull": [
-                                                                        "$averageCost",
-                                                                        0,
-                                                                    ]
-                                                                },
-                                                            ]
-                                                        },
-                                                        {
-                                                            "$multiply": [
                                                                 add_to_current_stock,
-                                                                last_cost,
                                                             ]
                                                         },
                                                     ]
                                                 },
-                                                {
-                                                    "$add": [
-                                                        {
-                                                            "$ifNull": [
-                                                                "$currentStock",
-                                                                0,
-                                                            ]
-                                                        },
-                                                        add_to_current_stock,
-                                                    ]
-                                                },
+                                                0,
                                             ]
                                         },
-                                        0,
-                                    ]
+                                        "to": "long",
+                                    }
                                 },
-                                "to": "long",
+                                "else": {"$ifNull": ["$averageCost", 0]},
                             }
                         },
                         "updatedAt": update_at,

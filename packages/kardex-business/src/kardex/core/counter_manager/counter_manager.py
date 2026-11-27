@@ -115,3 +115,21 @@ class CounterManager:
         )
         formatted = str(res.value).zfill(4)
         return formatted
+
+    async def next_invoice_cancellation_request_number(
+        self, session: Any = None
+    ) -> str:
+        res = await self.counters_repository.increment_counter(
+            "invoiceCancellationRequestNumber", session
+        )
+        formatted = str(res.value).zfill(4)
+        return formatted
+
+    async def next_receipt_cancellation_request_number(
+        self, session: Any = None
+    ) -> str:
+        res = await self.counters_repository.increment_counter(
+            "receiptCancellationRequestNumber", session
+        )
+        formatted = str(res.value).zfill(4)
+        return formatted

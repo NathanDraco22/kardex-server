@@ -19,6 +19,9 @@ from .expiration_logs_collection import ExpirationLogsCollection
 from .expense_categories_collection import ExpenseCategoriesCollection
 from .expenses_collection import ExpensesCollection
 from .integrations_collection import IntegrationsCollection
+from .invoice_cancellation_requests_collection import (
+    InvoiceCancellationRequestsCollection,
+)
 from .invoices_collection import InvoicesCollection
 from .orders_collection import OrdersCollection
 from .product_accounts_collection import ProductAccountsCollection
@@ -28,6 +31,9 @@ from .product_sale_profiles_collection import ProductSaleProfilesCollection
 from .product_stats_collection import ProductStatsCollection
 from .product_transactions_collection import ProductTransactionsCollection
 from .products_collection import ProductsCollection
+from .receipt_cancellation_requests_collection import (
+    ReceiptCancellationRequestsCollection,
+)
 from .receipts_collection import ReceiptsCollection
 from .shift_cash_movements_collection import ShiftCashMovementsCollection
 from .shifts_collection import ShiftsCollection
@@ -65,6 +71,7 @@ __all__ = [
     "ExpenseCategoriesCollection",
     "ExpensesCollection",
     "IntegrationsCollection",
+    "InvoiceCancellationRequestsCollection",
     "InvoicesCollection",
     "OrdersCollection",
     "ProductAccountsCollection",
@@ -74,6 +81,7 @@ __all__ = [
     "ProductStatsCollection",
     "ProductTransactionsCollection",
     "ProductsCollection",
+    "ReceiptCancellationRequestsCollection",
     "ReceiptsCollection",
     "ShiftCashMovementsCollection",
     "ShiftsCollection",

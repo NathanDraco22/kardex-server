@@ -1,5 +1,27 @@
 # Contexto de Conversación - Code Review Transfer Optimization
 
+## Fecha: 2026-11-26
+### Objetivo
+Implementar **Solicitudes de Anulación de Factura** (`invoice_cancellation_requests`), integración con **Turnos** (sección *"Facturas Anuladas"*) y permiso granular `approveInvoiceCancellation`.
+
+### Resumen Técnico
+- **Nuevo módulo `invoice_cancellation_requests`:** colección `InvoiceCancellationRequests` (índice único parcial `ux_pending_cancellation_per_invoice`), modelos, `FilterParams`, datasource, repositorio, core atómico (`validate_invoice_cancellable`, `create_cancellation_request`, `approve_cancellation_request`, `reject_cancellation_request`, `cancel_cancellation_request`) y router `/api/v1/invoice-cancellation-requests`.
+- **Reglas de negocio:** facturas de contado reingresan stock (`quantity + bonQuantity`) + Kárdex (`invoice_cancellation`); facturas a crédito sin abonos (`status == "open"`, `amountPaid == 0`) reingresan stock y revierten saldo en `ClientFinanceEngine`; bloquea facturas con abonos, devoluciones/NC activas o turno cerrado.
+- **Roles:** agregado `CommercialSubModules.APPROVE_INVOICE_CANCELLATION = "approveInvoiceCancellation"` en `role_manager.py` (por defecto en `Supervisor` y `Admin` vía `all`; control aplicado en frontend).
+- **Turnos y consultas:** agregados 8 campos `cancelledInvoice*` en `ShiftTotals`/`BaseShift`/`ShiftArqueoTotals` sin doble resta en `expectedCash`; corregido `fetch_pending_to_paid_invoices` y excluidas facturas `cancelled` por defecto en totales y ventas por producto.
+- **Verificación:** `ruff check`, `ty check` y `pytest test/test_invoice_cancellation_requests.py test/test_shifts.py` (`22 passed`).
+
+## Fecha: 2026-11-26 (Parte 2)
+### Objetivo
+Agregar banderas `useInvoiceCancellations` y `useReceiptCancellations` (`false` por defecto) en `AppSettings` e implementar **Solicitudes de Anulación de Recibos** (`receipt_cancellation_requests`).
+
+### Resumen Técnico
+- **`AppSettings` y Roles:** agregados `useInvoiceCancellations: bool = False`, `useReceiptCancellations: bool = False` en `app_setting_model.py`; y `CommercialSubModules.APPROVE_RECEIPT_CANCELLATION = "approveReceiptCancellation"` en `role_manager.py` (asignado por defecto a `Supervisor` y `Admin` vía `all`).
+- **Nuevo módulo `receipt_cancellation_requests`:** colección `ReceiptCancellationRequests` (índice único parcial `ux_pending_cancellation_per_receipt`), modelos, `FilterParams`, datasource, repository, core atómico (`validate_receipt_cancellable`, `create_receipt_cancellation_request`, `approve_receipt_cancellation_request`, `reject_receipt_cancellation_request`, `cancel_receipt_cancellation_request`) y router `/api/v1/receipt-cancellation-requests`.
+- **Reglas de negocio de recibos:** permite anular recibos aunque hayan dejado la factura en estado `paid` (restando `amountApplied` en la factura), revierte devoluciones/NC aplicadas y restaura la deuda del cliente siempre que el turno siga `open`.
+- **Turnos:** agregados `cancelledReceiptTotal` y `cancelledReceiptCount` en `ShiftTotals`/`BaseShift`/`ShiftArqueoTotals`.
+- **Verificación:** `ruff check`, `ty check` y `pytest test/test_receipt_cancellation_requests.py test/test_invoice_cancellation_requests.py test/test_shifts.py` (`29 passed`).
+
 ## Fecha: 2026-02-02
 ### Objetivo
 Optimización de `app\core\transfer_manager\transfer_manager.py` y `app\core\transfer_manager\process_out_transfer.py`.
@@ -855,3 +877,28 @@ Soporte de `priceUnitFactor` y migración de escalas continuas (`Libra`, `Litro`
    - Corregido fallback de `hold_sales_repository.py`, `orders_controller.py`, `adjustment_requests_repository.py`, `bi/repository.py` y `product_accounts_collection.py` (`get_total_current_stock` con `$floor(... + 0.5)`).
 4. **Guard de inmutabilidad (`product_type_lifecycle.py`):** Bloquea el cambio de `priceUnitFactor` si hay stock, promesa o transacciones, excepto durante la transición `item -> service/nonInventory` (que ya valida stock 0).
 5. **Tests:** `test/test_price_unit_factor.py` + verificación con `ruff check`, `ty check` y `pytest`.
+
+---
+
+## Fecha: 2026-11-27
+### Objetivo
+Eliminar la restricción que obligaba a usar Notas de Crédito para devoluciones de facturas a crédito, permitiendo devoluciones directas en facturas a crédito sin abonos (`amountPaid == 0` y `status == "open"`) y manteniendo el comportamiento habitual en contado, sin afectar el efectivo de turnos/reportes y validando el tope acumulado entre Devoluciones y Notas de Crédito.
+
+### Resumen de Implementación
+1. **Modelo (`devolution_model.py`):** Agregado `originalInvoicePaymentType: str | None = None` en `BaseDevolution` y `UpdateDevolution`.
+2. **Validación en creación y confirmación (`devolution_register.py`, `devolutions_controller.py`, `process_devolution.py`):**
+   - `DevolutionRegister.create_devolution` valida la factura y fija `originalInvoicePaymentType = invoice.paymentType`.
+   - En facturas `credit`, se permiten devoluciones siempre que `amountPaid == 0` y `status == "open"`; se rechazan con `InvalidOperation` si tienen abonos o están pagadas (`partiallyPaid` / `paid`). Facturas de contado continúan permitiéndose sin restricciones de pago.
+3. **Cruce acumulado (`process_credit_note.py` y `devolution_register.py`):** Agregado `sum_previously_returned_from_devolutions` (con soporte `invoiceItemIndex` y fallback determinista legacy) sumado en `_recalculate_devolution_items` y en `_validate_returned_quantities`.
+4. **Turnos, Reporte Diario y Cobranza Compuesta (`devolutions_collection.py`, `shift_totals.py`, `shift_arqueo.py`, `composite_controller.py`):**
+   - `get_totals_by_status_by_shift` y `fetch_confirmed_devolutions_total` filtran `originalInvoicePaymentType != "credit"`.
+   - `is_document_counted` y `_to_arqueo_document` exponen `paymentMethod = originalInvoicePaymentType` y marcan `counted = False` en devoluciones de crédito.
+   - `CompositeController.get_client_pending_invoices` filtra devoluciones vinculadas a las facturas pendientes.
+5. **Verificación:** `ruff check`, `ty check` y `pytest test/test_credit_note_vs_devolution.py test/test_credit_note_policy.py test/test_shifts.py` (`45 passed`) e `import main` OK.
+6. **Correcciones de Auditoría (`C1`, `C4`, `A1–A4`):**
+   - **A1 (`process_devolution.py`):** Reingreso de `abs(item.quantity + item.bonQuantity)` al confirmar devoluciones (clientes y anónimas).
+   - **C1 / A3 (`process_receipt.py`, `devolutions_collection.py`, `credit_notes_collection.py`):** Validación transaccional estricta de `appliedDevolutions` (existencia, sin duplicados, `status == "confirmed"`, `clientId`, `originalInvoicePaymentType in ("credit", None)`, `0 < amountApplied <= total`) y rechazo de facturas con devoluciones `open`.
+   - **A4 (`reverse_receipt.py`):** Corregido `status="available"` → `status="confirmed"` al revertir recibos.
+   - **C1 / C4 (`composite_controller.py`):** `get_client_pending_invoices` consulta devoluciones sin restringir por `branchId` activo y suma solo `confirmed` en `summary.totalDevolutions`.
+   - **A2 (`report_manager.py`, `daily_report_maker.py`, `reports_controller.py`):** `totalReceiptCash` usa `totalReceipts` (efectivo real) en lugar de `totalAppliedInvoices`.
+   - **Verificación ampliada:** `ruff check`, `ty check` y `pytest` (`69 passed` incluyendo `test_devolution_credit_audit_fixes.py`).

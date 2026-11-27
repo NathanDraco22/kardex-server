@@ -43,6 +43,10 @@ class BaseReceipt(BaseModel):
     total: int
     createdBy: UserInfo
     shiftId: str | None = None
+    cancelledAt: int | None = None
+    cancelledBy: UserInfo | None = None
+    cancellationReason: str | None = None
+    cancellationRequestId: str | None = None
 
 
 class CreateReceipt(BaseReceipt):

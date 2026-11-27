@@ -4,6 +4,31 @@ Reglas que se aplican a **todo cambio** en el backend. Si una tarea requiere rom
 
 ---
 
+## 0. Prioridad — Generación con Onion CLI e inicialización perezosa
+
+> [!IMPORTANT]
+> 1. **Usa Onion CLI para módulos nuevos:** genera la estructura base con `onion crud-mongo <entidad> --version 1` (o `onion crud` / `onion repo-mongo`) según [`../AGENTS.md`](../AGENTS.md), evitando crear el boilerplate manualmente.
+> 2. **Prohibido resolver `Collection.get_instance()` en `__init__`:** los routers y controladores se instancian al importar `app/api/v1/router.py`, **antes** de que el `lifespan` de FastAPI ejecute `MongoService().init_service()`. Llamar `*.get_instance()` en `__init__` provoca `AttributeError: 'MongoService' object has no attribute 'client'` al arrancar el servidor.
+> 3. **Verifica el arranque antes de cerrar:** ejecuta `.venv\Scripts\python.exe -c "import main; print('OK')"` (con `PYTHONPATH=app`).
+
+```python
+# Incorrecto (falla en import-time antes del lifespan)
+class MyDataSource:
+    def __init__(self, collection: MyCollection | None = None) -> None:
+        self._collection = collection or MyCollection.get_instance()
+
+# Correcto (resolución perezosa en tiempo de petición)
+class MyDataSource:
+    def __init__(self, collection: MyCollection | None = None) -> None:
+        self._collection = collection
+
+    @property
+    def collection(self) -> MyCollection:
+        return self._collection or MyCollection.get_instance()
+```
+
+---
+
 ## 1. Nombrado
 
 | Elemento | Convención | Ejemplo |

@@ -17,6 +17,7 @@ class BaseDevolution(BaseModel):
     docNumber: str = ""
     originalInvoiceId: str = ""
     originalInvoiceDocNumber: str = ""
+    originalInvoicePaymentType: str | None = None
     returnedItems: list[SaleItem]
     description: str
     status: DevolutionStatus = "open"
@@ -32,7 +33,7 @@ class CreateDevolution(BaseDevolution):
 
 class UpdateDevolution(BaseModel):
     status: DevolutionStatus | None = None
-    pass
+    originalInvoicePaymentType: str | None = None
 
 
 class DevolutionInDb(BaseDevolution):

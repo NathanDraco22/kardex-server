@@ -30,9 +30,11 @@ real de `services/mongo_collections/v1/`.
 | Módulo | Prefix | Repo | Colección | Proceso | Guard | Doc |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `invoices` | `/invoices` | `invoices` | `Invoices` | `invoice_register` | JWT | — |
+| `invoice_cancellation_requests` | `/invoice-cancellation-requests` | `invoice_cancellation_requests` | `InvoiceCancellationRequests` | `invoice_cancellation_register` | JWT | — |
 | `orders` | `/orders` | `orders` | `Orders` | `order_register` | JWT | — |
 | `hold_sales` | `/hold-sales` | `hold_sales` | `HoldSales` | — | JWT | — |
 | `receipts` | `/receipts` | `receipts` | `Receipts` | `receipt_register` | JWT | — |
+| `receipt_cancellation_requests` | `/receipt-cancellation-requests` | `receipt_cancellation_requests` | `ReceiptCancellationRequests` | `receipt_cancellation_register` | JWT | — |
 | `devolutions` | `/devolutions` | `devolutions` | `Devolutions` | `devolution_register` | JWT | — |
 | `credit_notes` | `/credit-notes` | `credit_notes` | `CreditNotes` | `credit_note_register` | JWT | [credit_notes.md](./credit_notes.md) |
 | `invoice_devolutions` | `/invoice-devolutions` | — (`invoices` + `devolutions`) | `Invoices` / `Devolutions` | — | JWT | — |

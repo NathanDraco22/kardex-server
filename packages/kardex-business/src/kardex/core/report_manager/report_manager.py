@@ -165,7 +165,7 @@ class ReportManager:
                 current_result.totalReceiptDevolutions += (
                     receipt_model.totalAppliedDevolutions
                 )
-                current_result.totalReceiptCash += receipt_model.totalAppliedInvoices
+                current_result.totalReceiptCash += receipt_model.totalReceipts
                 current_result.totalReceipts += receipt_model.totalReceipts
                 current_result.receiptCount += receipt_model.receiptCount
                 current_result.receiptResults.append((branch_id, receipt_model))

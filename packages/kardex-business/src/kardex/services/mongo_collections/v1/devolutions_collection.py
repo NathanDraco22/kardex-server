@@ -41,7 +41,7 @@ class DevolutionsCollection(BaseMongoCollection):
         return result
 
     async def fetch_devolutions_by_invoice_id(
-        self, invoice_id: str, client_id: str | None
+        self, invoice_id: str, client_id: str | None, session: Any = None
     ) -> list[dict[str, Any]]:
         collection = self._collection
         query = {"originalInvoiceId": invoice_id}
@@ -49,13 +49,15 @@ class DevolutionsCollection(BaseMongoCollection):
         if client_id is not None:
             query["clientId"] = client_id
 
-        cursor = collection.find(query)
+        cursor = collection.find(query, session=session)
         result = await cursor.to_list(length=None)
         return result
 
-    async def fetch_devolution_by_id(self, devolution_id: str) -> dict[str, Any] | None:
+    async def fetch_devolution_by_id(
+        self, devolution_id: str, session: Any = None
+    ) -> dict[str, Any] | None:
         collection = self._collection
-        result = await collection.find_one({"id": devolution_id})
+        result = await collection.find_one({"id": devolution_id}, session=session)
         return result
 
     async def fetch_devolution_by_doc_number(
@@ -93,7 +95,12 @@ class DevolutionsCollection(BaseMongoCollection):
         collection = self._collection
 
         pipeline = [
-            {"$match": {"shiftId": shift_id}},
+            {
+                "$match": {
+                    "shiftId": shift_id,
+                    "originalInvoicePaymentType": {"$ne": "credit"},
+                }
+            },
             {
                 "$group": {
                     "_id": "$status",
@@ -127,6 +134,7 @@ class DevolutionsCollection(BaseMongoCollection):
                     "status": 1,
                     "clientInfo.name": 1,
                     "originalInvoiceDocNumber": 1,
+                    "originalInvoicePaymentType": 1,
                     "createdAt": 1,
                 }
             },
@@ -160,18 +168,23 @@ class DevolutionsCollection(BaseMongoCollection):
         return devolution
 
     async def update_devolution_status_by_id(
-        self, devolution_id: str, status: str, session: Any
+        self,
+        devolution_id: str,
+        status: str,
+        session: Any,
+        original_invoice_payment_type: str | None = None,
     ) -> dict[str, Any] | None:
         collection = self._collection
+        update_fields: dict[str, Any] = {
+            "status": status,
+            "updatedAt": TimeTools.get_now_in_milliseconds(),
+        }
+        if original_invoice_payment_type is not None:
+            update_fields["originalInvoicePaymentType"] = original_invoice_payment_type
 
         result = await collection.find_one_and_update(
             {"id": devolution_id},
-            {
-                "$set": {
-                    "status": status,
-                    "updatedAt": TimeTools.get_now_in_milliseconds(),
-                }
-            },
+            {"$set": update_fields},
             return_document=ReturnDocument.AFTER,
             session=session,
         )
@@ -208,6 +221,7 @@ class DevolutionsCollection(BaseMongoCollection):
             {
                 "$match": {
                     "status": "confirmed",
+                    "originalInvoicePaymentType": {"$ne": "credit"},
                     "createdAt": {"$gte": start_date, "$lte": end_date},
                 }
             },
