@@ -11,19 +11,21 @@ class ReceiptCancellationRequestsDataSource:
         self,
         collection: ReceiptCancellationRequestsCollection | None = None,
     ) -> None:
-        self._collection = (
-            collection or ReceiptCancellationRequestsCollection.get_instance()
-        )
+        self._collection = collection
+
+    @property
+    def collection(self) -> ReceiptCancellationRequestsCollection:
+        return self._collection or ReceiptCancellationRequestsCollection.get_instance()
 
     async def get_all_requests(
         self, params: ReceiptCancellationRequestFilterParams
     ) -> list[dict[str, Any]]:
-        return await self._collection.fetch_all_requests(
+        return await self.collection.fetch_all_requests(
             **params.model_dump(exclude_none=True)
         )
 
     async def count_pending_requests(self, branch_id: str | None = None) -> int:
-        return await self._collection.count_pending_requests(branch_id)
+        return await self.collection.count_pending_requests(branch_id)
 
     async def get_request_by_id(self, request_id: str) -> dict[str, Any] | None:
-        return await self._collection.fetch_request_by_id(request_id)
+        return await self.collection.fetch_request_by_id(request_id)
