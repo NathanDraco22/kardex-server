@@ -11,8 +11,9 @@ from kardex.core.receipt_register import process_receipt as proc_rec_mod
 from kardex.core.receipt_register import reverse_receipt as rev_rec_mod
 from kardex.core.report_manager.report_manager import ReportManager
 from kardex.repos.v1.common.models import ClientInfo, ProductItem, SaleItem, UserInfo
-from kardex.repos.v1.devolutions import DevolutionInDb
-from kardex.repos.v1.invoices import InvoiceInDb
+from kardex.repos.v1.credit_notes import CreditNotesRepository
+from kardex.repos.v1.devolutions import DevolutionInDb, DevolutionsRepository
+from kardex.repos.v1.invoices import InvoiceInDb, InvoicesRepository
 from kardex.repos.v1.receipts import (
     AppliedDevolution,
     AppliedInvoice,
@@ -20,6 +21,7 @@ from kardex.repos.v1.receipts import (
     ReceiptInDb,
 )
 from kardex.tools import InvalidOperation
+from test.mock_helpers import fake
 
 
 class _FakeTx:
@@ -151,8 +153,12 @@ def test_process_devolution_reenters_quantity_plus_bon_quantity(monkeypatch):
 
     confirmed = asyncio.run(proc_dev_mod.process_devolution(dev))
     assert confirmed.status == "confirmed"
-    assert update_stock_mock.await_args.kwargs["add_to_current_stock"] == 7
-    created_txs = tx_mock.await_args.args[0]
+    update_stock_call = update_stock_mock.await_args
+    assert update_stock_call is not None
+    assert update_stock_call.kwargs["add_to_current_stock"] == 7
+    tx_call = tx_mock.await_args
+    assert tx_call is not None
+    created_txs = tx_call.args[0]
     assert created_txs[0]["quantity"] == 7
 
 
@@ -368,7 +374,9 @@ def test_reverse_receipt_restores_devolution_to_confirmed(monkeypatch):
     )
 
     asyncio.run(rev_rec_mod.reverse_receipt(receipt))
-    assert update_dev_mock.await_args.kwargs["status"] == "confirmed"
+    update_dev_call = update_dev_mock.await_args
+    assert update_dev_call is not None
+    assert update_dev_call.kwargs["status"] == "confirmed"
 
 
 def test_composite_fetches_all_branches_and_counts_only_confirmed_devolutions():
@@ -397,11 +405,18 @@ def test_composite_fetches_all_branches_and_counts_only_confirmed_devolutions():
         createdAt=1000,
     )
     controller = CompositeController(
-        invoices_repo=SimpleNamespace(
-            get_pending_to_paid_invoices=AsyncMock(return_value=[pending_invoice])
+        invoices_repo=fake(
+            InvoicesRepository,
+            get_pending_to_paid_invoices=AsyncMock(return_value=[pending_invoice]),
         ),
-        devolutions_repo=SimpleNamespace(get_all_active_devolutions=_fake_get_active_devs),
-        credit_notes_repo=SimpleNamespace(get_credit_notes_by_client_id=AsyncMock(return_value=[])),
+        devolutions_repo=fake(
+            DevolutionsRepository,
+            get_all_active_devolutions=_fake_get_active_devs,
+        ),
+        credit_notes_repo=fake(
+            CreditNotesRepository,
+            get_credit_notes_by_client_id=AsyncMock(return_value=[]),
+        ),
     )
 
     res = asyncio.run(controller.get_client_pending_invoices("client-1", "branch-B"))

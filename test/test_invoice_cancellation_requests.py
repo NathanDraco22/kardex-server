@@ -8,6 +8,7 @@ from kardex.core.invoice_cancellation_register import (
     cancel_cancellation_request,
     create_cancellation_request,
     reject_cancellation_request,
+    validate_invoice_cancellable,
 )
 from kardex.core.role_manager.role_manager import CommercialSubModules, RoleManager
 from kardex.core.shift_register.shift_totals import (
@@ -18,6 +19,7 @@ from kardex.repos.v1.common.models import ClientInfo, ProductItem, SaleItem, Use
 from kardex.repos.v1.invoice_cancellation_requests import (
     CreateInvoiceCancellationRequest,
 )
+from kardex.repos.v1.invoices import InvoiceInDb
 from kardex.services.mongo_collections.v1.invoices_collection import InvoicesCollection
 from kardex.tools import InvalidOperation
 
@@ -157,6 +159,81 @@ async def test_create_cancellation_request_success():
 
 
 @pytest.mark.asyncio
+async def test_create_cancellation_request_allows_closed_shift_when_setting_enabled():
+    inv = _invoice_dict(shift_id="shift-closed")
+    invoices_col = MagicMock()
+    invoices_col.fetch_invoice_by_id = AsyncMock(return_value=inv)
+
+    requests_col = MagicMock()
+    requests_col.fetch_pending_by_invoice_id = AsyncMock(return_value=None)
+    requests_col.create_request = AsyncMock(return_value=None)
+
+    shifts_col = MagicMock()
+    shifts_col.fetch_shift_by_id = AsyncMock(
+        return_value={"id": "shift-closed", "status": "closed"}
+    )
+
+    devolutions_col = MagicMock()
+    devolutions_col.fetch_devolutions_by_invoice_id = AsyncMock(return_value=[])
+
+    credit_notes_col = MagicMock()
+    credit_notes_col.fetch_credit_notes_by_invoice_id = AsyncMock(return_value=[])
+
+    counter_mgr = MagicMock()
+    counter_mgr.next_invoice_cancellation_request_number = AsyncMock(
+        return_value="0001"
+    )
+
+    with (
+        patch(
+            "kardex.core.invoice_cancellation_register.create_cancellation_request.InvoicesCollection.get_instance",
+            return_value=invoices_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.create_cancellation_request.InvoiceCancellationRequestsCollection.get_instance",
+            return_value=requests_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.ShiftsCollection.get_instance",
+            return_value=shifts_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.DevolutionsCollection.get_instance",
+            return_value=devolutions_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.CreditNotesCollection.get_instance",
+            return_value=credit_notes_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.AppSettingsTool",
+            return_value=SimpleNamespace(
+                get_current_app_settings=AsyncMock(
+                    return_value=SimpleNamespace(
+                        allowCancellationsOutsideShift=True
+                    )
+                )
+            ),
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.create_cancellation_request.CounterManager",
+            return_value=counter_mgr,
+        ),
+    ):
+        result = await create_cancellation_request(
+            CreateInvoiceCancellationRequest(
+                invoiceId="inv-1",
+                reason="Error en cobro",
+                requestedBy=_user(),
+            )
+        )
+
+    assert result.status == "pending"
+    assert result.invoiceDocNumber == "F-0001"
+    requests_col.create_request.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_rejects_credit_invoice_with_payments_or_closed_shift():
     credit_paid = _invoice_dict(
         payment_type="credit", status="partiallyPaid", amount_paid=500
@@ -201,6 +278,16 @@ async def test_rejects_credit_invoice_with_payments_or_closed_shift():
         patch(
             "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.ShiftsCollection.get_instance",
             return_value=shifts_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.AppSettingsTool",
+            return_value=SimpleNamespace(
+                get_current_app_settings=AsyncMock(
+                    return_value=SimpleNamespace(
+                        allowCancellationsOutsideShift=False
+                    )
+                )
+            ),
         ),
     ):
         with pytest.raises(InvalidOperation, match="turno ya cerrado"):
@@ -261,6 +348,89 @@ async def test_rejects_credit_invoice_with_payments_or_closed_shift():
                     requestedBy=_user(),
                 )
             )
+
+
+@pytest.mark.asyncio
+async def test_validate_invoice_cancellable_allows_closed_shift_when_setting_enabled():
+    invoice = InvoiceInDb.model_validate(_invoice_dict(shift_id="shift-1"))
+
+    shifts_col = MagicMock()
+    shifts_col.fetch_shift_by_id = AsyncMock(
+        return_value={"id": "shift-1", "status": "closed"}
+    )
+    devolutions_col = MagicMock()
+    devolutions_col.fetch_devolutions_by_invoice_id = AsyncMock(return_value=[])
+    credit_notes_col = MagicMock()
+    credit_notes_col.fetch_credit_notes_by_invoice_id = AsyncMock(return_value=[])
+
+    with (
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.ShiftsCollection.get_instance",
+            return_value=shifts_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.DevolutionsCollection.get_instance",
+            return_value=devolutions_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.CreditNotesCollection.get_instance",
+            return_value=credit_notes_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.AppSettingsTool",
+            return_value=SimpleNamespace(
+                get_current_app_settings=AsyncMock(
+                    return_value=SimpleNamespace(
+                        allowCancellationsOutsideShift=True
+                    )
+                )
+            ),
+        ),
+    ):
+        await validate_invoice_cancellable(invoice)
+
+
+@pytest.mark.asyncio
+async def test_validate_invoice_cancellable_blocks_active_devolutions_when_setting_enabled():
+    invoice = InvoiceInDb.model_validate(_invoice_dict(shift_id="shift-1"))
+
+    shifts_col = MagicMock()
+    shifts_col.fetch_shift_by_id = AsyncMock(
+        return_value={"id": "shift-1", "status": "closed"}
+    )
+    devolutions_col = MagicMock()
+    devolutions_col.fetch_devolutions_by_invoice_id = AsyncMock(
+        return_value=[{"id": "dev-1", "status": "applied"}]
+    )
+    credit_notes_col = MagicMock()
+    credit_notes_col.fetch_credit_notes_by_invoice_id = AsyncMock(return_value=[])
+
+    with (
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.ShiftsCollection.get_instance",
+            return_value=shifts_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.DevolutionsCollection.get_instance",
+            return_value=devolutions_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.CreditNotesCollection.get_instance",
+            return_value=credit_notes_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.AppSettingsTool",
+            return_value=SimpleNamespace(
+                get_current_app_settings=AsyncMock(
+                    return_value=SimpleNamespace(
+                        allowCancellationsOutsideShift=True
+                    )
+                )
+            ),
+        ),
+    ):
+        with pytest.raises(InvalidOperation, match="devoluciones"):
+            await validate_invoice_cancellable(invoice)
 
 
 @pytest.mark.asyncio
@@ -383,6 +553,133 @@ async def test_approve_cash_invoice_returns_stock_and_marks_cancelled():
     )
     assert tx_payload["subtype"] == "invoice_cancellation"
     assert tx_payload["type"] == "entry"
+    invoices_col.update_invoice_by_id_with_session.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_approve_cash_invoice_closed_shift_when_setting_enabled():
+    inv = _invoice_dict(shift_id="shift-closed")
+    req_doc = {
+        "id": "req-1",
+        "docNumber": "0001",
+        "branchId": "b-1",
+        "invoiceId": "inv-1",
+        "invoiceDocNumber": "F-0001",
+        "invoiceTotal": 2000,
+        "invoicePaymentType": "cash",
+        "invoiceStatus": "paid",
+        "invoiceShiftId": "shift-closed",
+        "clientId": "c-1",
+        "clientInfo": _client_info().model_dump(),
+        "reason": "Error de digitación",
+        "requestedBy": _user().model_dump(),
+        "status": "approved",
+        "createdAt": 1700000000000,
+        "reviewedBy": _user("sup-1", "Supervisor").model_dump(),
+        "reviewedAt": 1700000005000,
+    }
+
+    requests_col = MagicMock()
+    requests_col.transition_request_status = AsyncMock(return_value=req_doc)
+
+    invoices_col = MagicMock()
+    invoices_col.fetch_invoice_by_id_with_session = AsyncMock(return_value=inv)
+    invoices_col.update_invoice_by_id_with_session = AsyncMock(return_value=inv)
+
+    prd_account_col = MagicMock()
+    prd_account_col.update_product_account_balance_data = AsyncMock(
+        return_value={
+            "id": "pa-1",
+            "productId": "p-1",
+            "branchId": "b-1",
+            "currentStock": 13,
+            "promiseStock": 0,
+            "averageCost": 500,
+            "lastCost": 500,
+            "createdAt": 1700000000000,
+        }
+    )
+
+    prd_tx_col = MagicMock()
+    prd_tx_col.create_many_product_transactions_with_session = AsyncMock(
+        return_value=None
+    )
+
+    shifts_col = MagicMock()
+    shifts_col.fetch_shift_by_id = AsyncMock(
+        return_value={"id": "shift-closed", "status": "closed"}
+    )
+    devolutions_col = MagicMock()
+    devolutions_col.fetch_devolutions_by_invoice_id = AsyncMock(return_value=[])
+    credit_notes_col = MagicMock()
+    credit_notes_col.fetch_credit_notes_by_invoice_id = AsyncMock(return_value=[])
+
+    with (
+        patch(
+            "kardex.core.invoice_cancellation_register.approve_cancellation_request.MongoService",
+            return_value=SimpleNamespace(client=_mock_mongo_client()),
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.approve_cancellation_request.InvoiceCancellationRequestsCollection.get_instance",
+            return_value=requests_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.approve_cancellation_request.InvoicesCollection.get_instance",
+            return_value=invoices_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.approve_cancellation_request.ProductAccountsCollection.get_instance",
+            return_value=prd_account_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.approve_cancellation_request.ProductTransactionsCollection.get_instance",
+            return_value=prd_tx_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.approve_cancellation_request.ClientsCollection.get_instance",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.approve_cancellation_request.ClientTransactionsCollection.get_instance",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.approve_cancellation_request.fetch_product_types_map",
+            AsyncMock(return_value={"p-1": "item"}),
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.ShiftsCollection.get_instance",
+            return_value=shifts_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.DevolutionsCollection.get_instance",
+            return_value=devolutions_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.CreditNotesCollection.get_instance",
+            return_value=credit_notes_col,
+        ),
+        patch(
+            "kardex.core.invoice_cancellation_register.validate_invoice_cancellable.AppSettingsTool",
+            return_value=SimpleNamespace(
+                get_current_app_settings=AsyncMock(
+                    return_value=SimpleNamespace(
+                        allowCancellationsOutsideShift=True
+                    )
+                )
+            ),
+        ),
+    ):
+        res = await approve_cancellation_request(
+            request_id="req-1",
+            reviewed_by=_user("sup-1", "Supervisor"),
+            review_notes="Aprobado fuera de turno",
+        )
+
+    assert res.status == "approved"
+    prd_account_col.update_product_account_balance_data.assert_awaited_once()
+    call_kwargs = prd_account_col.update_product_account_balance_data.call_args.kwargs
+    assert call_kwargs["add_to_current_stock"] == 3
     invoices_col.update_invoice_by_id_with_session.assert_awaited_once()
 
 

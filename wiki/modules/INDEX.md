@@ -176,7 +176,7 @@ real de `services/mongo_collections/v1/`.
 | `users` | `/users` | `users` | `Users` | `security` | JWT | — |
 | `user_roles` | `/user-roles` | `user_roles` | `UserRoles` | `role_manager` | ⚠ | — |
 | `api_keys` | `/api-keys` | `api_keys` | `ApiKeys` | — | JWT | — |
-| `app_settings` | `/app-settings` | `app_settings` | `AppSettings` | `default_values` | ⚠ | [app_settings.md](./app_settings.md) |
+| `app_settings` | `/app-settings` | `app_settings` | `AppSettings` | `default_values` | JWT + settings | [app_settings.md](./app_settings.md) |
 | `core_settings` | `/core-settings` | `core_settings` | `CoreSettings` | — | **Super** | — |
 | `integrations` | `/integrations` | `integrations` | `Integrations` | — | ⚠ | — |
 | `imports` | `/imports` | — (escribe en otros repos) | `Products` / `Clients` / `Suppliers` / `ProductAccounts` | `imports` | JWT | — |
@@ -187,13 +187,13 @@ real de `services/mongo_collections/v1/`.
 - `POST /users`, `GET /users/active?branchId=...`, `PATCH /users/{id}`.
 - `POST /user-roles`, `PATCH /user-roles/{id}`.
 - `POST /api-keys`, `PATCH /api-keys/{id}/toggle`, `DELETE /api-keys/{id}`.
-- `GET /app-settings/current`, `PATCH /app-settings/{id}`.
+- `GET /app-settings/current` (público de arranque); `POST /app-settings`, `GET /app-settings`, `GET /app-settings/{id}`, `PATCH /app-settings/{id}` y `DELETE /app-settings/{id}` exigen JWT + módulo `settings`/Admin/root.
 - `POST /imports/preview?type=...`, `POST /imports/init-inventory`, `/imports/inventory`, `/imports/clients`, `/imports/suppliers`.
 - `POST /integrations/telegram/test`.
 
 **Notas de dominio**
 
-- `GET /app-settings/current` es la lectura canónica de parámetros globales; se cachea en `AppSettingsTool`.
+- `GET /app-settings/current` es la lectura canónica de parámetros globales y permanece público para el arranque de la app; se cachea en `AppSettingsTool`. El resto de endpoints de `app_settings` usa `require_settings_access`.
 - `auths/login` debe ser público por diseño; no lo "arregles" agregando JWT al router.
 - Las importaciones de inventario usan la sucursal virtual `0000-<branchId>` para el inventario inicial.
 - `core_settings` exige super-token: es configuración de plataforma, no de negocio.

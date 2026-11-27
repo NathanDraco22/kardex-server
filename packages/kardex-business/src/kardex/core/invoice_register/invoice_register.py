@@ -25,20 +25,22 @@ from .process_invoice import (
     process_invoice,
     process_anon_invoice,
 )
+from kardex.tools.app_settings_tool import AppSettingsTool
 
 invoice_mutex = asyncio.Lock()
 
 
 class InvoiceRegister:
-    def __init__(self) -> None:
+    def __init__(self, app_settings_tool: AppSettingsTool | None = None) -> None:
         self.invoices_repo = InvoicesRepository(InvoicesDataSource())
         self.branches_repo = BranchesRepository(BranchesDataSource())
         self.products_repo = ProductsRepository(ProductsDataSource())
+        self.app_settings_tool = app_settings_tool or AppSettingsTool()
 
     async def _register_transaction(
         self,
         create_invoice: CreateInvoice,
-        process_function: Callable[[CreateInvoice], Coroutine],
+        process_function: Callable[..., Coroutine],
     ):
         invoice = await self.invoices_repo.get_invoice_by_doc_number(
             create_invoice.docNumber
@@ -48,10 +50,13 @@ class InvoiceRegister:
 
         await self._validate_document(create_invoice)
 
+        settings = await self.app_settings_tool.get_current_app_settings()
+        round_up = bool(settings.roundUpInvoiceTotals)
+
         max_retries = 3
         for _ in range(max_retries):
             try:
-                return await process_function(create_invoice)
+                return await process_function(create_invoice, round_up=round_up)
             except InsufficientBalanceError as e:
                 raise InsufficientBalanceError(f"INSUFFICIENT_STOCK: {e}")
             except OperationFailure as _:

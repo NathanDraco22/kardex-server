@@ -256,6 +256,7 @@ def test_credit_note_model_accepts_audit_fields():
         rejectedAt=987654321,
         rejectionReason="No procede la garantía",
     )
+    assert credit_note.approvedBy is not None
     assert credit_note.approvedBy.name == "Aprobador"
     assert credit_note.rejectionReason == "No procede la garantía"
 

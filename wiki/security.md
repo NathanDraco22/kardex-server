@@ -86,7 +86,6 @@ Al día de hoy, estos módulos **no** declaran `dependencies=[Depends(...)]` en 
 | Módulo | Observación |
 | :--- | :--- |
 | `auths` | Esperado: el login debe ser público. Revisa el resto de endpoints. |
-| `app_settings` | Configuración global; verifica si debe ser pública o protegida. |
 | `products` | CRUD de productos sin guard de router. |
 | `product_categories` | CRUD de categorías sin guard de router. |
 | `product_prices` | Matriz de precios sin guard de router. |
@@ -101,6 +100,8 @@ Al día de hoy, estos módulos **no** declaran `dependencies=[Depends(...)]` en 
 | `integrations` | Integraciones (Telegram) sin guard de router. |
 
 > ⚠️ Esto se verificó a nivel de `APIRouter`. **No implica que los endpoints sean públicos intencionalmente.** Antes de consumir o exponer uno, revisa el endpoint concreto y confirma con el equipo. Si vas a modificar uno de estos módulos, considera añadir `auth_middleware` como parte del cambio (salvo `auths/login`).
+>
+> **Excepción reciente:** `app_settings` ya no está en la lista. `GET /app-settings/current` sigue siendo público para el arranque de la app (login, tema y logo), pero `POST`, `GET` de listado/por id, `PATCH` y `DELETE` exigen `require_settings_access` (autenticación + módulo `settings`/rol Admin).
 
 ---
 

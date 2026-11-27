@@ -8,6 +8,7 @@ from kardex.core.receipt_cancellation_register import (
     cancel_receipt_cancellation_request,
     create_receipt_cancellation_request,
     reject_receipt_cancellation_request,
+    validate_receipt_cancellable,
 )
 from kardex.core.role_manager.role_manager import CommercialSubModules, RoleManager
 from kardex.core.shift_register.shift_totals import (
@@ -22,6 +23,7 @@ from kardex.repos.v1.common.models import ClientInfo, UserInfo
 from kardex.repos.v1.receipt_cancellation_requests import (
     CreateReceiptCancellationRequest,
 )
+from kardex.repos.v1.receipts import ReceiptInDb
 from kardex.tools import InvalidOperation
 
 
@@ -83,10 +85,17 @@ def test_app_settings_cancellation_flags_default_false():
     settings = BaseAppSetting()
     assert settings.useInvoiceCancellations is False
     assert settings.useReceiptCancellations is False
+    assert settings.allowCancellationsOutsideShift is False
 
-    upd = UpdateAppSetting(useReceiptCancellations=True)
-    dumped = upd.model_dump(exclude_unset=True)
-    assert dumped == {"useReceiptCancellations": True}
+    upd_receipt = UpdateAppSetting(useReceiptCancellations=True)
+    assert upd_receipt.model_dump(exclude_unset=True) == {
+        "useReceiptCancellations": True
+    }
+
+    upd_outside = UpdateAppSetting(allowCancellationsOutsideShift=True)
+    assert upd_outside.model_dump(exclude_unset=True) == {
+        "allowCancellationsOutsideShift": True
+    }
 
 
 def test_role_manager_assigns_approve_receipt_cancellation_to_supervisor():
@@ -197,6 +206,16 @@ async def test_rejects_deleted_receipt_or_closed_shift():
             "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.ShiftsCollection.get_instance",
             return_value=shifts_col,
         ),
+        patch(
+            "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.AppSettingsTool",
+            return_value=SimpleNamespace(
+                get_current_app_settings=AsyncMock(
+                    return_value=SimpleNamespace(
+                        allowCancellationsOutsideShift=False
+                    )
+                )
+            ),
+        ),
     ):
         with pytest.raises(InvalidOperation, match="turno ya cerrado"):
             await create_receipt_cancellation_request(
@@ -230,6 +249,79 @@ async def test_rejects_deleted_receipt_or_closed_shift():
                     requestedBy=_user(),
                 )
             )
+
+
+@pytest.mark.asyncio
+async def test_validate_receipt_cancellable_allows_closed_shift_when_setting_enabled():
+    receipt = ReceiptInDb.model_validate(_receipt_dict(shift_id="shift-closed"))
+
+    shifts_col = MagicMock()
+    shifts_col.fetch_shift_by_id = AsyncMock(
+        return_value={"id": "shift-closed", "status": "closed"}
+    )
+    invoices_col = MagicMock()
+    invoices_col.fetch_invoice_by_id_with_session = AsyncMock(
+        return_value={"id": "inv-1", "status": "paid"}
+    )
+
+    with (
+        patch(
+            "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.ShiftsCollection.get_instance",
+            return_value=shifts_col,
+        ),
+        patch(
+            "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.InvoicesCollection.get_instance",
+            return_value=invoices_col,
+        ),
+        patch(
+            "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.AppSettingsTool",
+            return_value=SimpleNamespace(
+                get_current_app_settings=AsyncMock(
+                    return_value=SimpleNamespace(
+                        allowCancellationsOutsideShift=True
+                    )
+                )
+            ),
+        ),
+    ):
+        await validate_receipt_cancellable(receipt)
+
+
+@pytest.mark.asyncio
+async def test_validate_receipt_cancellable_blocks_cancelled_invoice_when_setting_enabled():
+    receipt = ReceiptInDb.model_validate(_receipt_dict(shift_id="shift-closed"))
+
+    shifts_col = MagicMock()
+    shifts_col.fetch_shift_by_id = AsyncMock(
+        return_value={"id": "shift-closed", "status": "closed"}
+    )
+    invoices_col = MagicMock()
+    invoices_col.fetch_invoice_by_id_with_session = AsyncMock(
+        return_value={"id": "inv-1", "status": "cancelled"}
+    )
+
+    with (
+        patch(
+            "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.ShiftsCollection.get_instance",
+            return_value=shifts_col,
+        ),
+        patch(
+            "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.InvoicesCollection.get_instance",
+            return_value=invoices_col,
+        ),
+        patch(
+            "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.AppSettingsTool",
+            return_value=SimpleNamespace(
+                get_current_app_settings=AsyncMock(
+                    return_value=SimpleNamespace(
+                        allowCancellationsOutsideShift=True
+                    )
+                )
+            ),
+        ),
+    ):
+        with pytest.raises(InvalidOperation, match="no permite revertir"):
+            await validate_receipt_cancellable(receipt)
 
 
 @pytest.mark.asyncio
@@ -324,6 +416,117 @@ async def test_approve_receipt_cancellation_reverses_paid_invoice_and_balance():
             request_id="rreq-1",
             reviewed_by=_user("sup-1", "Supervisor"),
             review_notes="Aprobado",
+        )
+
+    assert res.status == "approved"
+    invoices_col.subtract_from_amount_paid.assert_awaited_once()
+    clients_col.add_to_client_balance.assert_awaited_once()
+    client_tx_col.create_client_transaction_with_session.assert_awaited_once()
+    receipts_col.mark_receipt_cancelled_with_session.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_approve_receipt_cancellation_closed_shift_when_setting_enabled():
+    rec = _receipt_dict(total=1500, shift_id="shift-closed")
+    req_doc = {
+        "id": "rreq-1",
+        "docNumber": "0001",
+        "branchId": "b-1",
+        "receiptId": "rec-1",
+        "receiptDocNumber": "R-0001",
+        "receiptTotal": 1500,
+        "receiptPaymentMethod": "cash",
+        "receiptShiftId": "shift-closed",
+        "clientId": "c-1",
+        "clientInfo": _client_info().model_dump(),
+        "reason": "Error en abono",
+        "requestedBy": _user().model_dump(),
+        "status": "approved",
+        "createdAt": 1700000000000,
+    }
+
+    requests_col = MagicMock()
+    requests_col.transition_request_status = AsyncMock(return_value=req_doc)
+
+    receipts_col = MagicMock()
+    receipts_col.get_receipt_by_id_with_session = AsyncMock(return_value=rec)
+    receipts_col.mark_receipt_cancelled_with_session = AsyncMock(return_value=rec)
+
+    invoices_col = MagicMock()
+    invoices_col.fetch_invoice_by_id_with_session = AsyncMock(
+        return_value={"id": "inv-1", "status": "paid"}
+    )
+    invoices_col.subtract_from_amount_paid = AsyncMock(return_value=None)
+
+    clients_col = MagicMock()
+    clients_col.add_to_client_balance = AsyncMock(
+        return_value={
+            "id": "c-1",
+            "name": "Cliente Crédito",
+            "phone": "",
+            "address": "",
+            "balance": 1500,
+            "creditLimit": 10000,
+            "createdAt": 1700000000000,
+        }
+    )
+
+    client_tx_col = MagicMock()
+    client_tx_col.create_client_transaction_with_session = AsyncMock(return_value=None)
+
+    shifts_col = MagicMock()
+    shifts_col.fetch_shift_by_id = AsyncMock(
+        return_value={"id": "shift-closed", "status": "closed"}
+    )
+
+    with (
+        patch(
+            "kardex.core.receipt_cancellation_register.approve_cancellation_request.MongoService",
+            return_value=SimpleNamespace(client=_mock_mongo_client()),
+        ),
+        patch(
+            "kardex.core.receipt_cancellation_register.approve_cancellation_request.ReceiptCancellationRequestsCollection.get_instance",
+            return_value=requests_col,
+        ),
+        patch(
+            "kardex.core.receipt_cancellation_register.approve_cancellation_request.ReceiptsCollection.get_instance",
+            return_value=receipts_col,
+        ),
+        patch(
+            "kardex.core.receipt_cancellation_register.approve_cancellation_request.InvoicesCollection.get_instance",
+            return_value=invoices_col,
+        ),
+        patch(
+            "kardex.core.receipt_cancellation_register.approve_cancellation_request.ClientsCollection.get_instance",
+            return_value=clients_col,
+        ),
+        patch(
+            "kardex.core.receipt_cancellation_register.approve_cancellation_request.ClientTransactionsCollection.get_instance",
+            return_value=client_tx_col,
+        ),
+        patch(
+            "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.InvoicesCollection.get_instance",
+            return_value=invoices_col,
+        ),
+        patch(
+            "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.ShiftsCollection.get_instance",
+            return_value=shifts_col,
+        ),
+        patch(
+            "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.AppSettingsTool",
+            return_value=SimpleNamespace(
+                get_current_app_settings=AsyncMock(
+                    return_value=SimpleNamespace(
+                        allowCancellationsOutsideShift=True
+                    )
+                )
+            ),
+        ),
+    ):
+        res = await approve_receipt_cancellation_request(
+            request_id="rreq-1",
+            reviewed_by=_user("sup-1", "Supervisor"),
+            review_notes="Aprobado fuera de turno",
         )
 
     assert res.status == "approved"

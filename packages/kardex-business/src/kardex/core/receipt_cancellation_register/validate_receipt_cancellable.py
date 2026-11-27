@@ -6,6 +6,7 @@ from kardex.services.mongo_collections.v1 import (
     ShiftsCollection,
 )
 from kardex.tools import InvalidOperation
+from kardex.tools.app_settings_tool import AppSettingsTool
 
 
 async def validate_receipt_cancellable(
@@ -26,9 +27,11 @@ async def validate_receipt_cancellable(
             receipt.shiftId, session=session
         )
         if shift_data is not None and shift_data.get("status") != "open":
-            raise InvalidOperation(
-                "No se puede anular un recibo perteneciente a un turno ya cerrado."
-            )
+            settings = await AppSettingsTool().get_current_app_settings()
+            if not settings.allowCancellationsOutsideShift:
+                raise InvalidOperation(
+                    "No se puede anular un recibo perteneciente a un turno ya cerrado."
+                )
 
     invoices_col = InvoicesCollection.get_instance()
     for applied_invoice in receipt.appliedInvoices:

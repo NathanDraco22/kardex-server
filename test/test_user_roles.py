@@ -44,9 +44,21 @@ def test_modules_catalog_contains_expected_modules_and_commercial_submodules():
 
     commercial = next(m for m in catalog.modules if m.key == Modules.COMMERCIAL)
     sub_keys = {s.key for s in commercial.submodules}
-    assert CommercialSubModules.CREATE_INVOICE in sub_keys
-    assert CommercialSubModules.CREDIT_NOTE_HISTORY in sub_keys
-    assert len(commercial.submodules) == 11
+    assert sub_keys == {
+        CommercialSubModules.ORDERS,
+        CommercialSubModules.CREATE_ORDER,
+        CommercialSubModules.CREATE_INVOICE,
+        CommercialSubModules.PENDING_INVOICES,
+        CommercialSubModules.INVOICE_HISTORY,
+        CommercialSubModules.PRICE_SETTING,
+        CommercialSubModules.CREATE_DEVOLUTION,
+        CommercialSubModules.DEVOLUTION_HISTORY,
+        CommercialSubModules.PROCESS_DEVOLUTION,
+        CommercialSubModules.CREATE_CREDIT_NOTE,
+        CommercialSubModules.CREDIT_NOTE_HISTORY,
+        CommercialSubModules.APPROVE_INVOICE_CANCELLATION,
+        CommercialSubModules.APPROVE_RECEIPT_CANCELLATION,
+    }
 
 
 @pytest.mark.asyncio

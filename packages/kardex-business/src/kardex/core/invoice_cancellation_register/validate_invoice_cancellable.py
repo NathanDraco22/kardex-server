@@ -7,6 +7,7 @@ from kardex.services.mongo_collections.v1 import (
     ShiftsCollection,
 )
 from kardex.tools import InvalidOperation
+from kardex.tools.app_settings_tool import AppSettingsTool
 
 ACTIVE_DEVOLUTION_STATUSES = {"open", "confirmed", "applied"}
 ACTIVE_CREDIT_NOTE_STATUSES = {
@@ -40,9 +41,11 @@ async def validate_invoice_cancellable(
             invoice.shiftId, session=session
         )
         if shift_data is not None and shift_data.get("status") != "open":
-            raise InvalidOperation(
-                "No se puede anular una factura perteneciente a un turno ya cerrado."
-            )
+            settings = await AppSettingsTool().get_current_app_settings()
+            if not settings.allowCancellationsOutsideShift:
+                raise InvalidOperation(
+                    "No se puede anular una factura perteneciente a un turno ya cerrado."
+                )
 
     devolutions = await DevolutionsCollection.get_instance().fetch_devolutions_by_invoice_id(
         invoice_id=invoice.id,

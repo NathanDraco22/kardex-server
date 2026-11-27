@@ -174,6 +174,7 @@ async def get_all_products(query_params: ProductFilterParams = Depends()) -> Lis
 - Framework: `pytest` + `pytest-asyncio`.
 - `test/__init__.py` agrega `app/` al `sys.path`; ejecuta desde la raíz del server.
 - Prioriza tests de reglas de negocio (procesos de `core/`) sobre tests de endpoints.
+- Los dobles de prueba para dependencias tipadas se crean con `fake(Tipo, metodo=AsyncMock(...))` de `test/mock_helpers.py`, para mantener `ty check` limpio.
 - `test/test_demo.py` está vacío: no lo uses como referencia.
 
 ```powershell

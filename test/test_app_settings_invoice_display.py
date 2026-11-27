@@ -5,6 +5,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.api.v1.orders.orders_controller import OrdersController
+from kardex.core.invoice_register.invoice_register import InvoiceRegister
 from kardex.repos.v1.app_settings.models.app_setting_model import (
     AppSettingInDb,
     CreateAppSetting,
@@ -12,7 +13,11 @@ from kardex.repos.v1.app_settings.models.app_setting_model import (
 )
 from kardex.repos.v1.common.models import ClientInfo, PaymentDetail, UserInfo
 from kardex.repos.v1.invoices.models.invoice_model import InvoiceInDb
+from kardex.repos.v1.orders import OrdersRepository
 from kardex.repos.v1.orders.models.order_model import OrderInDb
+from kardex.repos.v1.users import UsersRepository
+from kardex.tools.app_settings_tool import AppSettingsTool
+from test.mock_helpers import fake
 
 
 def test_create_app_setting_invoice_display_defaults_false():
@@ -107,10 +112,12 @@ async def test_convert_order_to_invoice_sets_invoiced_by_and_preserves_created_b
         createdAt=1700000001000,
     )
 
-    orders_repo = SimpleNamespace(
+    orders_repo = fake(
+        OrdersRepository,
         get_order_by_id=AsyncMock(side_effect=[order, completed_order]),
     )
-    users_repo = SimpleNamespace(
+    users_repo = fake(
+        UsersRepository,
         get_user_by_id=AsyncMock(
             return_value=SimpleNamespace(username="María Cajera")
         ),
@@ -118,12 +125,13 @@ async def test_convert_order_to_invoice_sets_invoiced_by_and_preserves_created_b
     controller = OrdersController(
         orders_repo=orders_repo,
         users_repo=users_repo,
-        app_settings_tool=SimpleNamespace(
-            get_current_app_settings=AsyncMock(return_value=CreateAppSetting())
+        app_settings_tool=fake(
+            AppSettingsTool,
+            get_current_app_settings=AsyncMock(return_value=CreateAppSetting()),
         ),
     )
     regis_mock = AsyncMock(return_value=(created_invoice, None))
-    controller.invoice_register = SimpleNamespace(regis_invoice=regis_mock)
+    controller.invoice_register = fake(InvoiceRegister, regis_invoice=regis_mock)
 
     res_invoice, res_order = await controller.convert_order_to_invoice(
         "ord-1",
@@ -179,26 +187,29 @@ async def test_convert_order_to_invoice_links_shift_when_setting_enabled():
         createdAt=1700000001000,
     )
 
-    orders_repo = SimpleNamespace(
+    orders_repo = fake(
+        OrdersRepository,
         get_order_by_id=AsyncMock(side_effect=[order, completed_order]),
     )
-    users_repo = SimpleNamespace(
+    users_repo = fake(
+        UsersRepository,
         get_user_by_id=AsyncMock(return_value=SimpleNamespace(username="maria")),
     )
     controller = OrdersController(
         orders_repo=orders_repo,
         users_repo=users_repo,
-        app_settings_tool=SimpleNamespace(
+        app_settings_tool=fake(
+            AppSettingsTool,
             get_current_app_settings=AsyncMock(
                 return_value=CreateAppSetting(
                     useShifts=True,
                     chargeConvertedOrdersToShift=True,
                 )
-            )
+            ),
         ),
     )
     regis_mock = AsyncMock(return_value=(created_invoice, None))
-    controller.invoice_register = SimpleNamespace(regis_invoice=regis_mock)
+    controller.invoice_register = fake(InvoiceRegister, regis_invoice=regis_mock)
 
     await controller.convert_order_to_invoice(
         "ord-2",
@@ -245,20 +256,24 @@ async def test_convert_order_to_invoice_allows_no_shift_when_user_has_no_active_
     )
     regis_mock = AsyncMock(return_value=(created_invoice, None))
     controller = OrdersController(
-        orders_repo=SimpleNamespace(
-            get_order_by_id=AsyncMock(side_effect=[order, completed_order])
+        orders_repo=fake(
+            OrdersRepository,
+            get_order_by_id=AsyncMock(side_effect=[order, completed_order]),
         ),
-        users_repo=SimpleNamespace(get_user_by_id=AsyncMock(return_value=None)),
-        app_settings_tool=SimpleNamespace(
+        users_repo=fake(
+            UsersRepository, get_user_by_id=AsyncMock(return_value=None)
+        ),
+        app_settings_tool=fake(
+            AppSettingsTool,
             get_current_app_settings=AsyncMock(
                 return_value=CreateAppSetting(
                     useShifts=True,
                     chargeConvertedOrdersToShift=True,
                 )
-            )
+            ),
         ),
     )
-    controller.invoice_register = SimpleNamespace(regis_invoice=regis_mock)
+    controller.invoice_register = fake(InvoiceRegister, regis_invoice=regis_mock)
 
     res_invoice, _ = await controller.convert_order_to_invoice("ord-3", shift_id=None)
 
@@ -284,16 +299,22 @@ async def test_convert_order_to_invoice_requires_shift_when_forced():
         createdAt=1700000000000,
     )
     controller = OrdersController(
-        orders_repo=SimpleNamespace(get_order_by_id=AsyncMock(return_value=order)),
-        users_repo=SimpleNamespace(get_user_by_id=AsyncMock(return_value=None)),
-        app_settings_tool=SimpleNamespace(
+        orders_repo=fake(
+            OrdersRepository,
+            get_order_by_id=AsyncMock(return_value=order),
+        ),
+        users_repo=fake(
+            UsersRepository, get_user_by_id=AsyncMock(return_value=None)
+        ),
+        app_settings_tool=fake(
+            AppSettingsTool,
             get_current_app_settings=AsyncMock(
                 return_value=CreateAppSetting(
                     useShifts=True,
                     chargeConvertedOrdersToShift=True,
                     requireShiftForConvertedOrders=True,
                 )
-            )
+            ),
         ),
     )
 
@@ -346,15 +367,19 @@ async def test_convert_order_to_invoice_applies_payment_type_reference_and_detai
 
     regis_mock = AsyncMock(return_value=(created_invoice, None))
     controller = OrdersController(
-        orders_repo=SimpleNamespace(
-            get_order_by_id=AsyncMock(side_effect=[order, completed_order])
+        orders_repo=fake(
+            OrdersRepository,
+            get_order_by_id=AsyncMock(side_effect=[order, completed_order]),
         ),
-        users_repo=SimpleNamespace(get_user_by_id=AsyncMock(return_value=None)),
-        app_settings_tool=SimpleNamespace(
-            get_current_app_settings=AsyncMock(return_value=CreateAppSetting())
+        users_repo=fake(
+            UsersRepository, get_user_by_id=AsyncMock(return_value=None)
+        ),
+        app_settings_tool=fake(
+            AppSettingsTool,
+            get_current_app_settings=AsyncMock(return_value=CreateAppSetting()),
         ),
     )
-    controller.invoice_register = SimpleNamespace(regis_invoice=regis_mock)
+    controller.invoice_register = fake(InvoiceRegister, regis_invoice=regis_mock)
 
     await controller.convert_order_to_invoice(
         "ord-4",
@@ -369,8 +394,9 @@ async def test_convert_order_to_invoice_applies_payment_type_reference_and_detai
 
     # Cuando se convierte a crédito, limpia bankReference y paymentDetail
     regis_mock.reset_mock()
-    controller.orders_repo = SimpleNamespace(
-        get_order_by_id=AsyncMock(side_effect=[order, completed_order])
+    controller.orders_repo = fake(
+        OrdersRepository,
+        get_order_by_id=AsyncMock(side_effect=[order, completed_order]),
     )
     await controller.convert_order_to_invoice(
         "ord-4",

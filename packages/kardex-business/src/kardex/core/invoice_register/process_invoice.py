@@ -127,8 +127,30 @@ async def _prepare_and_execute_invoice_inventory(
     return accounts_dict
 
 
-def normalize_invoice_discounts(create_invoice: CreateInvoice) -> None:
-    """Valida y normaliza los subtotales y descuentos por ítem y el descuento global de la factura."""
+def _round_up_whole_unit(value: int) -> int:
+    """Redondea centavos hacia arriba al siguiente entero de la moneda."""
+    if value <= 0:
+        return 0
+    return ((value + 99) // 100) * 100
+
+
+def _round_down_whole_unit(value: int) -> int:
+    """Redondea centavos hacia abajo al entero anterior de la moneda."""
+    if value <= 0:
+        return 0
+    return (value // 100) * 100
+
+
+def normalize_invoice_discounts(
+    create_invoice: CreateInvoice, *, round_up: bool = False
+) -> None:
+    """Valida y normaliza los subtotales y descuentos por ítem y el descuento global de la factura.
+
+    Con `round_up=True` los subtotales de línea se redondean hacia arriba y los
+    descuentos hacia abajo para que subtotal, descuentos y total queden en
+    unidades enteras de la moneda, manteniendo la igualdad
+    ``subtotal - descuentos = total``.
+    """
     for item in create_invoice.saleItems:
         if item.price > 0 and item.quantity > 0:
             item.subTotal = calculate_line_amount(
@@ -138,6 +160,8 @@ def normalize_invoice_discounts(create_invoice: CreateInvoice) -> None:
             )
         else:
             item.subTotal = max(0, item.subTotal)
+        if round_up:
+            item.subTotal = _round_up_whole_unit(item.subTotal)
         if item.discountType == "percentage":
             pct = max(0, min(100, item.discountPercentage))
             item.discountPercentage = pct
@@ -158,6 +182,9 @@ def normalize_invoice_discounts(create_invoice: CreateInvoice) -> None:
             else:
                 item.discountPercentage = 0
                 item.totalDiscount = 0
+        item.totalDiscount = max(0, min(item.subTotal, item.totalDiscount))
+        if round_up:
+            item.totalDiscount = _round_down_whole_unit(item.totalDiscount)
         item.total = max(0, item.subTotal - item.totalDiscount)
 
     items_net_total = sum(item.total for item in create_invoice.saleItems)
@@ -169,8 +196,14 @@ def normalize_invoice_discounts(create_invoice: CreateInvoice) -> None:
         pct = max(0, min(100, create_invoice.discountValue))
         create_invoice.discountValue = pct
         create_invoice.invoiceDiscount = round(items_net_total * pct / 100)
+        if round_up:
+            create_invoice.invoiceDiscount = _round_down_whole_unit(
+                create_invoice.invoiceDiscount
+            )
     elif create_invoice.discountType == "amount":
         amt = max(0, min(items_net_total, create_invoice.discountValue))
+        if round_up:
+            amt = _round_down_whole_unit(amt)
         create_invoice.discountValue = amt
         create_invoice.invoiceDiscount = amt
     else:
@@ -182,7 +215,7 @@ def normalize_invoice_discounts(create_invoice: CreateInvoice) -> None:
 
 
 async def process_invoice(
-    create_invoice: CreateInvoice,
+    create_invoice: CreateInvoice, *, round_up: bool = False
 ) -> tuple[InvoiceInDb, ClientInDb]:
     mongo_client = MongoService().client
 
@@ -216,7 +249,7 @@ async def process_invoice(
                 is_order_fulfillment=is_order_fulfillment,
             )
 
-            normalize_invoice_discounts(create_invoice)
+            normalize_invoice_discounts(create_invoice, round_up=round_up)
 
             if create_invoice.status == "draft":
                 create_invoice.status = "open"
@@ -300,7 +333,7 @@ async def process_invoice(
 
 
 async def process_anon_invoice(
-    create_invoice: CreateInvoice,
+    create_invoice: CreateInvoice, *, round_up: bool = False
 ) -> tuple[InvoiceInDb, list[ProductAccountInDb]]:
     """
     Procesa una factura anónima (venta de mostrador) utilizando el motor de inventario unificado.
@@ -320,8 +353,6 @@ async def process_anon_invoice(
                     session=session
                 )
 
-            normalize_invoice_discounts(create_invoice)
-
             accounts_dict = await _prepare_and_execute_invoice_inventory(
                 create_invoice=create_invoice,
                 invoice_id=new_invoice_doc_id,
@@ -330,6 +361,8 @@ async def process_anon_invoice(
                 prd_transaction_col=prd_transaction_col,
                 is_order_fulfillment=False,
             )
+
+            normalize_invoice_discounts(create_invoice, round_up=round_up)
 
             # 6. GUARDAR LA FACTURA
             new_invoice_data = create_invoice.model_dump()

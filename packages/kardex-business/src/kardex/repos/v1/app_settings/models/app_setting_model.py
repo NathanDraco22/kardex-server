@@ -29,7 +29,9 @@ class BaseAppSetting(BaseModel):
     requireShiftForConvertedOrders: bool = False
     useInvoiceCancellations: bool = False
     useReceiptCancellations: bool = False
+    allowCancellationsOutsideShift: bool = False
     useDiscounts: bool = False
+    roundUpInvoiceTotals: bool = False
     taxIdLabel: str = Field(default="RUC", min_length=1, max_length=32)
 
 
@@ -61,7 +63,9 @@ class UpdateAppSetting(BaseModel):
     requireShiftForConvertedOrders: bool | None = None
     useInvoiceCancellations: bool | None = None
     useReceiptCancellations: bool | None = None
+    allowCancellationsOutsideShift: bool | None = None
     useDiscounts: bool | None = None
+    roundUpInvoiceTotals: bool | None = None
     taxIdLabel: str | None = Field(default=None, min_length=1, max_length=32)
 
 

@@ -12,9 +12,18 @@ from kardex.core.default_values import SALE_CLIENT_ID
 from kardex.core.devolution_register.devolution_register import DevolutionRegister
 from kardex.core.report_manager.report_manager import ReportManager
 from kardex.repos.v1.common.models import ClientInfo, ProductItem, SaleItem, UserInfo
+from kardex.repos.v1.branches import BranchesRepository
+from kardex.repos.v1.clients import ClientsRepository
 from kardex.repos.v1.credit_notes import CreateCreditNote
-from kardex.repos.v1.devolutions import CreateDevolution, DevolutionInDb
+from kardex.repos.v1.devolutions import (
+    CreateDevolution,
+    DevolutionInDb,
+    DevolutionsRepository,
+)
+from kardex.repos.v1.invoices import InvoicesRepository
+from kardex.repos.v1.products import ProductsRepository
 from kardex.tools import InvalidOperation
+from test.mock_helpers import fake
 
 
 def _sample_item() -> SaleItem:
@@ -69,9 +78,18 @@ def _sample_devolution(
 
 
 def _make_credit_note_register(invoice) -> CreditNoteRegister:
-    branches_repo = SimpleNamespace(get_branch_by_id=AsyncMock(return_value=SimpleNamespace(id="branch-1")))
-    clients_repo = SimpleNamespace(get_client_by_id=AsyncMock(return_value=SimpleNamespace(id="client-1")))
-    invoices_repo = SimpleNamespace(get_invoice_by_id=AsyncMock(return_value=invoice))
+    branches_repo = fake(
+        BranchesRepository,
+        get_branch_by_id=AsyncMock(return_value=SimpleNamespace(id="branch-1")),
+    )
+    clients_repo = fake(
+        ClientsRepository,
+        get_client_by_id=AsyncMock(return_value=SimpleNamespace(id="client-1")),
+    )
+    invoices_repo = fake(
+        InvoicesRepository,
+        get_invoice_by_id=AsyncMock(return_value=invoice),
+    )
     return CreditNoteRegister(
         branches_repo=branches_repo,
         clients_repo=clients_repo,
@@ -85,19 +103,32 @@ def _make_devolution_register(
     prev_devolutions=None,
     prev_credit_notes=None,
 ) -> DevolutionRegister:
-    devolutions_repo = SimpleNamespace(
+    devolutions_repo = fake(
+        DevolutionsRepository,
         create_devolution=AsyncMock(
             side_effect=lambda body: DevolutionInDb(
                 **body.model_dump(),
                 id="dev-created",
                 createdAt=1000,
             )
-        )
+        ),
     )
-    branches_repo = SimpleNamespace(get_branch_by_id=AsyncMock(return_value=SimpleNamespace(id="branch-1")))
-    products_repo = SimpleNamespace(get_product_by_ids=AsyncMock(return_value=[SimpleNamespace(id="prod-1")]))
-    clients_repo = SimpleNamespace(get_client_by_id=AsyncMock(return_value=SimpleNamespace(id="client-1")))
-    invoices_repo = SimpleNamespace(get_invoice_by_id=AsyncMock(return_value=invoice))
+    branches_repo = fake(
+        BranchesRepository,
+        get_branch_by_id=AsyncMock(return_value=SimpleNamespace(id="branch-1")),
+    )
+    products_repo = fake(
+        ProductsRepository,
+        get_product_by_ids=AsyncMock(return_value=[SimpleNamespace(id="prod-1")]),
+    )
+    clients_repo = fake(
+        ClientsRepository,
+        get_client_by_id=AsyncMock(return_value=SimpleNamespace(id="client-1")),
+    )
+    invoices_repo = fake(
+        InvoicesRepository,
+        get_invoice_by_id=AsyncMock(return_value=invoice),
+    )
     devolutions_col = SimpleNamespace(
         fetch_devolutions_by_invoice_id=AsyncMock(return_value=prev_devolutions or [])
     )

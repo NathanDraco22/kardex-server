@@ -1,5 +1,16 @@
 # Contexto de Conversación - Code Review Transfer Optimization
 
+## Fecha: 2026-11-27 (Tipado de tests)
+### Objetivo
+Eliminar los 35 diagnósticos de `ty check` en `test/` sin excluir los tests del chequeo de tipos.
+
+### Resumen Técnico
+- **Nuevo helper `test/mock_helpers.py`:** `fake(Tipo, **atributos)` envuelve `SimpleNamespace` con `typing.cast` para crear dobles de prueba tipados.
+- **Tests refactorizados:** `test_app_settings_invoice_display.py`, `test_credit_note_vs_devolution.py` y `test_devolution_credit_audit_fixes.py` usan `fake(...)` en los 31 mocks que no eran asignables a sus tipos nominales.
+- **Narrowing:** `test_credit_note_policy.py` valida `approvedBy` y `test_devolution_credit_audit_fixes.py` valida `await_args` antes de accederlos.
+- **Test desactualizado corregido:** `test_user_roles.py` ahora compara el conjunto completo de 13 submódulos comerciales (incluye `approveInvoiceCancellation` y `approveReceiptCancellation`) en vez de un conteo fijo de 11.
+- **Verificación:** `ty check` y `ruff check` limpios en el código de aplicación; 48 pruebas de los archivos afectados y suite completa (`172 passed`) en verde.
+
 ## Fecha: 2026-11-27
 ### Objetivo
 Documentar las reglas de negocio de conversión de órdenes/cotizaciones a factura con turnos (`useShifts`, `chargeConvertedOrdersToShift`, `requireShiftForConvertedOrders`).
@@ -894,3 +905,49 @@ Eliminar la restricción que obligaba a usar Notas de Crédito para devoluciones
    - **C1 / C4 (`composite_controller.py`):** `get_client_pending_invoices` consulta devoluciones sin restringir por `branchId` activo y suma solo `confirmed` en `summary.totalDevolutions`.
    - **A2 (`report_manager.py`, `daily_report_maker.py`, `reports_controller.py`):** `totalReceiptCash` usa `totalReceipts` (efectivo real) en lugar de `totalAppliedInvoices`.
    - **Verificación ampliada:** `ruff check`, `ty check` y `pytest` (`69 passed` incluyendo `test_devolution_credit_audit_fixes.py`).
+
+---
+
+## Fecha: 2026-11-27
+### Objetivo
+Agregar la opción global `allowCancellationsOutsideShift` para permitir crear y aprobar solicitudes de anulación de facturas y recibos pertenecientes a turnos ya cerrados, sin relajar las demás validaciones de anulación.
+
+### Resumen de Implementación
+1. **AppSettings (`app_setting_model.py`):** `allowCancellationsOutsideShift: bool = False` en `BaseAppSetting` y `bool | None = None` en `UpdateAppSetting`.
+2. **Validadores (`validate_invoice_cancellable.py`, `validate_receipt_cancellable.py`):** al detectar un turno cerrado se consulta `AppSettingsTool`; si la bandera está activa no se lanza `InvalidOperation`. El resto de reglas (estado, abonos, devoluciones, notas de crédito y facturas aplicadas) permanece intacto.
+3. **Alcance:** aplica a la creación y a la aprobación de solicitudes. Los arqueos de turnos cerrados conservan sus totales almacenados.
+4. **Tests:** nuevos casos con turno cerrado y bandera activa; los rechazos existentes se mockean con la bandera en `False`.
+5. **Documentación:** `wiki/modules/app_settings.md` actualizado con el campo y la regla de negocio.
+6. **Verificación:** `ruff check` OK; `pytest` de anulaciones 17/17. La suite completa queda en 156 passed y 1 fallo preexistente en `test_user_roles.py` (el catálogo comercial espera 11 submodules y hoy hay 13). `ty check` solo reporta diagnósticos preexistentes en archivos de test.
+
+---
+
+## Fecha: 2026-11-27 — Correcciones de auditoría
+### Objetivo
+Aplicar las correcciones aprobadas tras la revisión de la opción `allowCancellationsOutsideShift`.
+
+### Resumen de Implementación
+1. **C1 (aprobado):** nuevo `require_settings_access` en `app_middleware` (autenticación + módulo `settings`/rol Admin). Se aplica a `POST`, listado, consulta por id, `PATCH` y `DELETE` de `/app-settings`; `GET /app-settings/current` queda público para el arranque de la app. El frontend protege `/settings` con sesión + `Modules.settings`.
+2. **M4 (aprobado):** tests de creación y aprobación con turno cerrado/bandera activa para facturas y recibos, más casos negativos con devoluciones activas y facturas anuladas.
+3. **B1 (aprobado):** se restauró la aserción de `useReceiptCancellations` junto a la nueva bandera; el widget test del switch quedó en el frontend.
+4. **B3 (aprobado):** documentación y subtítulo del switch advierten sobre reportes vivos y reembolso de efectivo.
+5. **M2:** se resolvió en el frontend con PATCH parcial de solo campos modificados.
+6. **Verificación:** `ruff check` OK; `pytest` de anulaciones y accesos de settings 27/27; `flutter analyze` sin issues y widget test del switch aprobado.
+7. **N2 (aprobado):** `wiki/modules/INDEX.md` actualizado con el guard `JWT + settings` y la excepción pública de `GET /app-settings/current`.
+8. **Deuda pendiente por decisión del usuario:** N1 (redirect web en `AuthInitial/AuthLoading`), N3 (cobertura del widget test), N4 (creación de recibo con turno cerrado), N5 (tests de integración de rutas) y N6 (semántica Admin/root backend vs frontend).
+
+---
+
+## Fecha: 2026-11-27 — Redondeo hacia arriba en facturas
+### Objetivo
+Agregar la opción global `roundUpInvoiceTotals` (`False` por defecto) para redondear hacia arriba los subtotales de línea y ajustar los descuentos hacia abajo, dejando el total de la factura en unidades enteras.
+
+### Resumen de Implementación
+1. **AppSettings (`app_setting_model.py`):** `roundUpInvoiceTotals: bool = False` en `BaseAppSetting` y `bool | None = None` en `UpdateAppSetting`.
+2. **Normalización (`process_invoice.py`):** `normalize_invoice_discounts(..., round_up=False)` redondea el subtotal de cada línea hacia arriba y los descuentos de línea/global hacia abajo; el total queda entero y se mantiene `subtotal - descuentos = total`. No se agrega un campo de redondeo.
+3. **Registro de facturas (`invoice_register.py`):** `InvoiceRegister` lee `AppSettingsTool` y pasa `round_up` a `process_invoice`/`process_anon_invoice`. Aplica a facturas directas, anónimas y conversiones; no a órdenes ni cotizaciones.
+4. **Tests:** `test_invoice_discounts.py` agrega casos de subtotal redondeado, descuentos de línea/global redondeados hacia abajo y default `False`.
+5. **Documentación:** `wiki/modules/app_settings.md` actualizado con el campo y la sección de redondeo.
+6. **Correcciones de auditoría aprobadas (M2):** `process_anon_invoice` ahora normaliza después de `_prepare_and_execute_invoice_inventory`, garantizando que `priceUnitFactor` ya esté resuelto al calcular subtotales y redondeos.
+7. **Deuda pendiente:** B1/B2/B3 y cobertura adicional documentadas en `../deuda_tecnica_pendiente.md`.
+8. **Verificación:** `ruff check` OK; `pytest` de descuentos y anulaciones aprobado; `ty check` filtrado a archivos modificados sin diagnósticos.

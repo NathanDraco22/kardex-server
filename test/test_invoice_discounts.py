@@ -58,6 +58,66 @@ def test_app_setting_use_discounts_defaults_false() -> None:
     assert setting.useDiscounts is False
 
 
+def test_app_setting_round_up_invoice_totals_defaults_false() -> None:
+    setting = BaseAppSetting()
+    assert setting.roundUpInvoiceTotals is False
+
+
+def test_normalize_rounds_up_line_subtotal() -> None:
+    item = _make_sale_item(sub_total=1012)
+    inv = _make_invoice([item])
+
+    normalize_invoice_discounts(inv, round_up=True)
+
+    assert item.subTotal == 1100
+    assert item.totalDiscount == 0
+    assert item.total == 1100
+    assert inv.invoiceDiscount == 0
+    assert inv.total == 1100
+
+
+def test_normalize_rounds_down_item_discount_to_whole_unit() -> None:
+    item = _make_sale_item(
+        sub_total=1012,
+        discount_type="percentage",
+        discount_percentage=10,
+    )
+    inv = _make_invoice([item], discount_type="percentage", discount_value=10)
+
+    normalize_invoice_discounts(inv, round_up=True)
+
+    # Subtotal 10.12 -> 11.00; 10% = 1.10 -> 1.00; total línea = 10.00
+    assert item.subTotal == 1100
+    assert item.totalDiscount == 100
+    assert item.total == 1000
+    # 10% de 10.00 = 1.00; total factura = 9.00
+    assert inv.invoiceDiscount == 100
+    assert inv.total == 900
+
+
+def test_normalize_rounds_down_invoice_discount_to_whole_unit() -> None:
+    item = _make_sale_item(sub_total=1012)
+    inv = _make_invoice([item], discount_type="percentage", discount_value=15)
+
+    normalize_invoice_discounts(inv, round_up=True)
+
+    # Subtotal 10.12 -> 11.00; 15% = 1.65 -> 1.00; total = 10.00
+    assert inv.invoiceDiscount == 100
+    assert inv.total == 1000
+
+
+def test_normalize_rounds_down_amount_invoice_discount() -> None:
+    item = _make_sale_item(sub_total=1012)
+    inv = _make_invoice([item], discount_type="amount", discount_value=1050)
+
+    normalize_invoice_discounts(inv, round_up=True)
+
+    assert item.subTotal == 1100
+    assert inv.invoiceDiscount == 1000
+    assert inv.discountValue == 1000
+    assert inv.total == 100
+
+
 def test_normalize_item_percentage_and_amount_discounts() -> None:
     item_pct = _make_sale_item(
         sub_total=10000,
