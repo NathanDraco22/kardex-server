@@ -12,9 +12,13 @@ from kardex.repos.v1.receipts import CreateReceipt, ReceiptInDb
 from kardex.repos.v1.client_transactions import ClientTransactionInDb
 from kardex.repos.v1.clients import ClientInDb
 from kardex.tools import InvalidOperation, UuidTool, TimeTools
+from kardex.tools.app_settings_tool import AppSettingsTool
 from kardex.services import MongoService
 
 from kardex.core.counter_manager.counter_manager import CounterManager
+from kardex.core.receipt_register.validate_receipt_payment import (
+    validate_receipt_payment,
+)
 
 
 async def process_receipt(
@@ -31,6 +35,13 @@ async def process_receipt(
     credit_note_col = CreditNotesCollection.get_instance()
     client_transaction_col = ClientTransactionsCollection.get_instance()
     client_account_col = ClientsCollection.get_instance()
+
+    settings = (
+        await AppSettingsTool().get_current_app_settings()
+        if create_receipt.paymentDetail is not None
+        else None
+    )
+    validate_receipt_payment(create_receipt, settings)
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():

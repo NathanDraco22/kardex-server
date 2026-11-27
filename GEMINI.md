@@ -951,3 +951,17 @@ Agregar la opción global `roundUpInvoiceTotals` (`False` por defecto) para redo
 6. **Correcciones de auditoría aprobadas (M2):** `process_anon_invoice` ahora normaliza después de `_prepare_and_execute_invoice_inventory`, garantizando que `priceUnitFactor` ya esté resuelto al calcular subtotales y redondeos.
 7. **Deuda pendiente:** B1/B2/B3 y cobertura adicional documentadas en `../deuda_tecnica_pendiente.md`.
 8. **Verificación:** `ruff check` OK; `pytest` de descuentos y anulaciones aprobado; `ty check` filtrado a archivos modificados sin diagnósticos.
+
+---
+
+## Fecha: 2026-11-27 — Validación de pagos en recibos
+### Objetivo
+Rechazar recibos con pagos incoherentes (método, moneda, monto recibido o cambio) antes de persistirlos, para proteger el arqueo y el comprobante impreso.
+
+### Resumen de Implementación
+1. **Nueva validación (`core/receipt_register/validate_receipt_payment.py`):** rechaza total negativo y montos aplicados negativos; exige referencia bancaria para tarjeta/transferencia; si hay `paymentDetail`, exige efectivo, total mayor que cero, moneda primaria o secundaria habilitada, tasa configurada válida, monto recibido convertido mayor o igual al total y cambio exacto. La conversión usa redondeo mitad hacia arriba para coincidir con Dart.
+2. **Integración (`process_receipt.py`):** la validación se ejecuta antes de abrir la transacción. `AppSettingsTool` solo se consulta cuando hay `paymentDetail`, manteniendo la compatibilidad con recibos legacy y con tests que no inicializan Mongo.
+3. **Compatibilidad:** los recibos en efectivo sin `paymentDetail` siguen permitidos; los pagos con tarjeta/transferencia sin referencia ahora se rechazan; la moneda secundaria requiere `allowSecondaryCurrencyPayment` y una tasa válida.
+4. **Tests:** nuevo `test/test_receipt_payment_validation.py` con 16 casos (efectivo primario/secundario, moneda secundaria deshabilitada, tasa inválida, tarjeta/transferencia, cambio incorrecto, moneda inválida, total cero, montos negativos y recibos legacy).
+5. **Verificación:** `ruff check` y `ty check` filtrados sin issues; `pytest -q` **188 passed**.
+6. **Sin commit.** La sincronización `main` → `lite` queda pendiente para el lote final por decisión del usuario.
