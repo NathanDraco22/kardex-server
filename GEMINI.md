@@ -10,6 +10,7 @@ Centralizar todas las policies del dominio bajo `core/policies/<dominio>/`, con 
 - **Imports:** las policies importan decisiones y settings desde su módulo específico para evitar ciclos; los orquestadores (`credit_note_register`, `devolution_register`, `validate_*_cancellable`, `process_invoice`, `process_receipt`, `validate_receipt_payment` y las acciones de notas de crédito) y los tests usan el barrel.
 - **Tests:** imports actualizados en las siete suites de policies y nuevo `test/test_policies_public_api.py` que valida `__all__` y la exposición de las 12 clases.
 - **Wiki:** `conventions.md` §4.1, `modules/app_settings.md` §7, `modules/credit_notes.md`, `modules/devolutions.md` y `modules/receipts.md` actualizados con la nueva ubicación.
+- **Convención transversal:** se fijó en el `AGENTS.md` del workspace, la wiki del frontend, estas wikis y el OKF que las policies viven en `core/policies/<dominio>/` en ambos stacks.
 
 ### Verificación
 - `ruff check packages/kardex-business/src/kardex/ app/ test/`: 3 errores E402 preexistentes en `test/test_user_roles.py` (archivo no modificado); el resto limpio.

@@ -110,6 +110,7 @@ class ProductsRepository:
 ### 4.1 Políticas de dominio (`Policy Object`)
 
 - Viven en `core/policies/<dominio>/<nombre>_policy.py`; las decisiones compartidas van en `core/policies/decisions/`.
+- **Ubicación obligatoria en ambos stacks:** no se crean policies fuera de `core/policies/`. El frontend replica la estructura en `packages/kardex_business/lib/src/core/policies/<dominio>/<nombre>_policy.dart`.
 - Son puras: sin FastAPI, Mongo, `AppSettingsTool`, `session` ni IO.
 - Reciben modelos de dominio y devuelven `bool`, `Enum`, `@dataclass(frozen=True)` o `T | None`.
 - El orquestador consulta repositorios, aplica la policy y traduce el rechazo a `InvalidOperation`.
