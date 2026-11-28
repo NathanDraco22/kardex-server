@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from kardex.core.credit_note_register.credit_note_policy import CreditNotePolicy
+from kardex.core.policies import CreditNotePolicy
 from kardex.core.default_values import SALE_CLIENT_ID
 from kardex.repos.v1.common.models import ClientInfo, ProductItem, SaleItem, UserInfo
 from kardex.repos.v1.credit_notes import CreateCreditNote, CreditNoteInDb

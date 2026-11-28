@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 
 from kardex.core.default_values import SALE_CLIENT_ID
-from kardex.core.devolution_register.devolution_policy import DevolutionPolicy
+from kardex.core.policies import DevolutionPolicy
 from kardex.repos.v1.common.models import ClientInfo, ProductItem, SaleItem, UserInfo
 from kardex.repos.v1.devolutions import DevolutionInDb
 from kardex.repos.v1.invoices import InvoiceInDb

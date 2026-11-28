@@ -26,7 +26,7 @@ from kardex.services.mongo_collections.v1 import (
     OrdersCollection,
 )
 
-from .invoice_rounding_policy import InvoiceRoundingPolicy
+from kardex.core.policies import InvoiceRoundingPolicy
 
 
 async def _prepare_and_execute_invoice_inventory(

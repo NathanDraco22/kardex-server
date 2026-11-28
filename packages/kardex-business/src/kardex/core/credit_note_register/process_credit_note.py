@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Sequence, cast
 
-from kardex.core.credit_note_register.credit_note_policy import CreditNotePolicy
+from kardex.core.policies import CreditNotePolicy
 from kardex.repos.v1.credit_notes import CreateCreditNote, CreditNoteInDb
 from kardex.repos.v1.invoices import InvoiceInDb
 from kardex.services.mongo_collections.v1 import (

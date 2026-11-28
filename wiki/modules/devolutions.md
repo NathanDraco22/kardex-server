@@ -18,10 +18,11 @@ kardex-server/
     │   └── devolutions_repository.py
     ├── services/mongo_collections/v1/
     │   └── devolutions_collection.py    # Colección Devolutions
-    └── core/devolution_register/
-        ├── devolution_register.py       # Validaciones y confirmación
-        ├── devolution_policy.py         # Reglas puras de cabecera y estados
-        └── process_devolution.py        # Transacciones atómicas (registrado y anónimo)
+    ├── core/devolution_register/
+    │   ├── devolution_register.py       # Validaciones y confirmación
+    │   └── process_devolution.py        # Transacciones atómicas (registrado y anónimo)
+    └── core/policies/devolutions/
+        └── devolution_policy.py         # Reglas puras de cabecera y estados
 ```
 
 ---
@@ -48,7 +49,7 @@ Confirmar una devolución de cliente registrado exige el endpoint normal; el cli
 
 ## 3. Capa de Políticas (Policy Object)
 
-`DevolutionPolicy` vive en `core/devolution_register/devolution_policy.py` y es pura: sin FastAPI, Mongo, `AppSettingsTool`, `session` ni IO. `DevolutionRegister` resuelve la sucursal, el cliente, los productos y la factura, consulta la policy y traduce cada rechazo con `_ensure_allowed` a `InvalidOperation(reason)`.
+`DevolutionPolicy` vive en `core/policies/devolutions/devolution_policy.py` y es pura: sin FastAPI, Mongo, `AppSettingsTool`, `session` ni IO. `DevolutionRegister` resuelve la sucursal, el cliente, los productos y la factura, consulta la policy y traduce cada rechazo con `_ensure_allowed` a `InvalidOperation(reason)`.
 
 | Método de `DevolutionPolicy` | Regla evaluada | Motivo de rechazo |
 | :--- | :--- | :--- |

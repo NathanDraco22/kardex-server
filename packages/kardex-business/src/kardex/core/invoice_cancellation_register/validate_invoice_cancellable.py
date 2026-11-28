@@ -1,6 +1,6 @@
 from typing import Any, cast
 
-from kardex.core.policies import CancellationDecision
+from kardex.core.policies import CancellationDecision, InvoiceCancellationPolicy
 from kardex.repos.v1.invoices import InvoiceInDb
 from kardex.services.mongo_collections.v1 import (
     CreditNotesCollection,
@@ -9,8 +9,6 @@ from kardex.services.mongo_collections.v1 import (
 )
 from kardex.tools import InvalidOperation
 from kardex.tools.app_settings_tool import AppSettingsTool
-
-from .invoice_cancellation_policy import InvoiceCancellationPolicy
 
 
 def _ensure_allowed(decision: CancellationDecision) -> None:

@@ -18,12 +18,14 @@ kardex-server/
     │   └── receipts_repository.py         # Repositorio de negocio
     ├── services/mongo_collections/v1/
     │   └── receipts_collection.py         # Colección Receipts
-    └── core/receipt_register/
-        ├── receipt_register.py            # Validación de sucursal, cliente y turno
+    ├── core/receipt_register/
+    │   ├── receipt_register.py            # Validación de sucursal, cliente y turno
+    │   ├── process_receipt.py             # Transacción atómica de registro
+    │   └── reverse_receipt.py             # Reversión al eliminar un recibo
+    └── core/policies/receipts/
         ├── receipt_payment_policy.py      # Coherencia del pago y del detalle en efectivo
         ├── receipt_application_policy.py  # Reglas puras de aplicación de fondos
-        ├── process_receipt.py             # Transacción atómica de registro
-        └── reverse_receipt.py             # Reversión al eliminar un recibo
+        └── receipt_cancellation_policy.py # Reglas puras de anulación de recibos
 ```
 
 ---
@@ -43,7 +45,7 @@ Las validaciones de `ReceiptApplicationPolicy` se traducen a `InvalidOperation(r
 
 ## 3. Capa de Políticas (Policy Object)
 
-`ReceiptApplicationPolicy` vive en `core/receipt_register/receipt_application_policy.py` y es pura: sin FastAPI, Mongo, `AppSettingsTool`, `session` ni IO. Recibe modelos de dominio o documentos ya resueltos por el orquestador.
+`ReceiptApplicationPolicy` vive en `core/policies/receipts/receipt_application_policy.py` y es pura: sin FastAPI, Mongo, `AppSettingsTool`, `session` ni IO. Recibe modelos de dominio o documentos ya resueltos por el orquestador.
 
 | Método de `ReceiptApplicationPolicy` | Regla evaluada | Motivo de rechazo |
 | :--- | :--- | :--- |
@@ -54,7 +56,7 @@ Las validaciones de `ReceiptApplicationPolicy` se traducen a `InvalidOperation(r
 | `applied_devolution_decision(applied, devolution, *, client_id)` | La devolución existe, está `confirmed`, pertenece al cliente, proviene de factura a crédito y el monto aplicado es válido. | `"Devolución ... no encontrada."`, `"La devolución #... no está confirmada (estado: ...)."`, `"La devolución #... pertenece a otro cliente."`, `"La devolución #... proviene de una factura de contado y no puede aplicarse en recibos."`, `"El monto aplicado (...) de la devolución #... es inválido (total: ...)."` |
 | `applied_invoice_decision(applied, invoice, *, has_open_devolution=False)` | La factura existe, no tiene devoluciones abiertas y el pago no supera el saldo pendiente (`total - amountPaid`). | `"Invoice ... not found"`, `"La factura #... tiene una devolución pendiente de confirmar."`, `"Overpayment Error: Payment of ... exceeds pending balance of ... for Invoice ..."` |
 
-La validación de coherencia del pago (efectivo, moneda secundaria, referencia bancaria) permanece en `ReceiptPaymentPolicy`.
+La validación de coherencia del pago (efectivo, moneda secundaria, referencia bancaria) permanece en `ReceiptPaymentPolicy`, ubicada en `core/policies/receipts/receipt_payment_policy.py`; la anulación de recibos vive en `core/policies/receipts/receipt_cancellation_policy.py`.
 
 ---
 

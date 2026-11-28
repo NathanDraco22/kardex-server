@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-from kardex.core.policies.policy_decision import PolicyDecision
+from kardex.core.policies.decisions.policy_decision import PolicyDecision
 
 if TYPE_CHECKING:
     from kardex.repos.v1.devolutions import DevolutionInDb

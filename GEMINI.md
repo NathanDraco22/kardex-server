@@ -1,5 +1,22 @@
 # Contexto de Conversación - Code Review Transfer Optimization
 
+## Fecha: 2026-11-27 (Lote 5 — Reorganización de policies en subcarpetas)
+### Objetivo
+Centralizar todas las policies del dominio bajo `core/policies/<dominio>/`, con subcarpetas por dominio y un barrel público que reexporte policies y decisiones, sin cambiar comportamiento ni lógica.
+
+### Resumen Técnico
+- **Movimientos:** `AppSettingsPolicy` a `core/policies/app_settings/`; `CreditNotePolicy` a `core/policies/credit_notes/`; `DevolutionPolicy` a `core/policies/devolutions/`; `InvoiceCancellationPolicy` e `InvoiceRoundingPolicy` a `core/policies/invoices/`; `ReceiptApplicationPolicy`, `ReceiptCancellationPolicy` y `ReceiptPaymentPolicy` a `core/policies/receipts/`; `PolicyDecision` y `CancellationDecision` a `core/policies/decisions/`. Todos con `git mv`.
+- **Barrel:** `core/policies/__init__.py` importa `decisions` primero y reexporta las 12 clases públicas; cada subcarpeta tiene su propio `__init__.py`.
+- **Imports:** las policies importan decisiones y settings desde su módulo específico para evitar ciclos; los orquestadores (`credit_note_register`, `devolution_register`, `validate_*_cancellable`, `process_invoice`, `process_receipt`, `validate_receipt_payment` y las acciones de notas de crédito) y los tests usan el barrel.
+- **Tests:** imports actualizados en las siete suites de policies y nuevo `test/test_policies_public_api.py` que valida `__all__` y la exposición de las 12 clases.
+- **Wiki:** `conventions.md` §4.1, `modules/app_settings.md` §7, `modules/credit_notes.md`, `modules/devolutions.md` y `modules/receipts.md` actualizados con la nueva ubicación.
+
+### Verificación
+- `ruff check packages/kardex-business/src/kardex/ app/ test/`: 3 errores E402 preexistentes en `test/test_user_roles.py` (archivo no modificado); el resto limpio.
+- `ty check`: limpio.
+- `pytest -q`: `461 passed` (incluye el nuevo smoke test; warning preexistente de `pytest-asyncio` sobre `asyncio_default_fixture_loop_scope`).
+- Búsqueda de imports viejos en `packages`, `app` y `test`: sin resultados.
+
 ## Fecha: 2026-11-27 (Lote 4 — Policy Object en aplicación de recibos)
 ### Objetivo
 Extraer a una policy pura las reglas de aplicación de fondos de `process_receipt` (cuadratura, duplicados, notas de crédito, devoluciones y facturas), preservando exactamente el comportamiento, el orden de validación, los cortes tempranos y los mensajes de error existentes.

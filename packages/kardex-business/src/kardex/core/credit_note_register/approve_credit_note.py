@@ -1,6 +1,6 @@
 from typing import List, cast
 
-from kardex.core.credit_note_register.credit_note_policy import CreditNotePolicy
+from kardex.core.policies import CreditNotePolicy
 from kardex.core.inventory import fetch_product_types_map
 from kardex.repos.v1.common.models import UserInfo
 from kardex.repos.v1.credit_notes import CreditNoteInDb

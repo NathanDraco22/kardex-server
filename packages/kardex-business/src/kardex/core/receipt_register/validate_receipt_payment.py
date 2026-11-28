@@ -4,7 +4,7 @@ from kardex.repos.v1.app_settings import AppSettingInDb
 from kardex.repos.v1.receipts import CreateReceipt
 from kardex.tools import InvalidOperation
 
-from .receipt_payment_policy import ReceiptPaymentPolicy
+from kardex.core.policies import ReceiptPaymentPolicy
 
 
 def validate_receipt_payment(

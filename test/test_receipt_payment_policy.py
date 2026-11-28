@@ -2,10 +2,7 @@ from typing import Any
 
 import pytest
 
-from kardex.core.receipt_register.receipt_payment_policy import (
-    ReceiptPaymentDecision,
-    ReceiptPaymentPolicy,
-)
+from kardex.core.policies import ReceiptPaymentDecision, ReceiptPaymentPolicy
 from kardex.repos.v1.app_settings import AppSettingInDb
 from kardex.repos.v1.app_settings.models.app_setting_model import CurrencyCode
 from kardex.repos.v1.common.models import ClientInfo, PaymentDetail, UserInfo

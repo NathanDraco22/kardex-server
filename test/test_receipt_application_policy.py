@@ -2,9 +2,7 @@ from typing import Any
 
 import pytest
 
-from kardex.core.receipt_register.receipt_application_policy import (
-    ReceiptApplicationPolicy,
-)
+from kardex.core.policies import ReceiptApplicationPolicy
 from kardex.repos.v1.common.models import ClientInfo, UserInfo
 from kardex.repos.v1.invoices import InvoiceInDb
 from kardex.repos.v1.receipts import (

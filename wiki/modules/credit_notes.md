@@ -23,10 +23,11 @@ kardex-server/
     │   └── credit_notes_collection.py   # Colección MongoDB (CreditNotes)
     ├── repos/v1/common/filter_params/
     │   └── credit_note_filter_params.py # Parámetros de consulta y paginación
-    └── core/credit_note_register/
-        ├── credit_note_register.py      # Orquestación de las validaciones previas
-        ├── credit_note_policy.py        # Reglas puras de cabecera, estados y transiciones
-        └── process_credit_note.py       # Transacción atómica en MongoDB
+    ├── core/credit_note_register/
+    │   ├── credit_note_register.py      # Orquestación de las validaciones previas
+    │   └── process_credit_note.py       # Transacción atómica en MongoDB
+    └── core/policies/credit_notes/
+        └── credit_note_policy.py        # Reglas puras de cabecera, estados y transiciones
 ```
 
 ---
@@ -210,7 +211,7 @@ Todos los endpoints requieren autenticación mediante JWT (`auth_middleware`):
 ## 10. Capa de políticas (Policy Object)
 
 Las reglas de **cabecera, estados y transiciones** viven en
-`core/credit_note_register/credit_note_policy.py`, sin FastAPI, Mongo,
+`core/policies/credit_notes/credit_note_policy.py`, sin FastAPI, Mongo,
 `AppSettingsTool`, `session` ni IO. `CreditNoteRegister` resuelve las consultas
 y traduce los rechazos con `_ensure_allowed` a `InvalidOperation(reason)`.
 `approve_credit_note` y `reject_credit_note` también lanzan `InvalidOperation`,

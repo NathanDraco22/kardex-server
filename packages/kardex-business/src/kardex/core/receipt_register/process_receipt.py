@@ -16,11 +16,9 @@ from kardex.tools.app_settings_tool import AppSettingsTool
 from kardex.services import MongoService
 
 from kardex.core.counter_manager.counter_manager import CounterManager
-from kardex.core.policies.policy_decision import PolicyDecision
-from kardex.core.receipt_register.receipt_application_policy import (
+from kardex.core.policies import (
+    PolicyDecision,
     ReceiptApplicationPolicy,
-)
-from kardex.core.receipt_register.receipt_payment_policy import (
     ReceiptPaymentPolicy,
 )
 

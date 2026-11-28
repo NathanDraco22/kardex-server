@@ -165,11 +165,11 @@ Aplica al endpoint `POST /api/v1/orders/make-invoice/{order_id}`, usado tanto pa
 
 ## 7. Capa de políticas (`Policy Object`)
 
-- **`core/policies/app_settings_policy.py`:** interpreta `AppSettingInDb | None` sin IO ni Mongo. Expone `converted_order_shift_policy`, `round_up_invoice_totals` y `allows_cancellations_outside_shift`.
-- **`core/receipt_register/receipt_payment_policy.py`:** `ReceiptPaymentPolicy.evaluate(receipt)` devuelve `ReceiptPaymentDecision(allowed, reason)`; `validate_receipt_payment` queda como wrapper que lanza `InvalidOperation`.
-- **`core/invoice_cancellation_register/invoice_cancellation_policy.py`:** `InvoiceCancellationPolicy.header_decision`, `shift_decision`, `devolutions_decision` y `credit_notes_decision` evalúan la anulación de facturas sin IO. Las constantes `ACTIVE_DEVOLUTION_STATUSES` y `ACTIVE_CREDIT_NOTE_STATUSES` viven aquí.
-- **`core/receipt_cancellation_register/receipt_cancellation_policy.py`:** `ReceiptCancellationPolicy.header_decision`, `shift_decision` y `applied_invoice_decision` cubren anulación de recibos y facturas aplicadas.
-- **`core/policies/cancellation_decision.py`:** `CancellationDecision(allowed, reason)` es la decisión compartida por ambas policies de anulación; el barrel `core/policies/__init__.py` la exporta sin reexportar las policies de anulación para evitar ciclos.
+- **`core/policies/app_settings/app_settings_policy.py`:** interpreta `AppSettingInDb | None` sin IO ni Mongo. Expone `converted_order_shift_policy`, `round_up_invoice_totals` y `allows_cancellations_outside_shift`.
+- **`core/policies/receipts/receipt_payment_policy.py`:** `ReceiptPaymentPolicy.evaluate(receipt)` devuelve `ReceiptPaymentDecision(allowed, reason)`; `validate_receipt_payment` queda como wrapper que lanza `InvalidOperation`.
+- **`core/policies/invoices/invoice_cancellation_policy.py`:** `InvoiceCancellationPolicy.header_decision`, `shift_decision`, `devolutions_decision` y `credit_notes_decision` evalúan la anulación de facturas sin IO. Las constantes `ACTIVE_DEVOLUTION_STATUSES` y `ACTIVE_CREDIT_NOTE_STATUSES` viven aquí.
+- **`core/policies/receipts/receipt_cancellation_policy.py`:** `ReceiptCancellationPolicy.header_decision`, `shift_decision` y `applied_invoice_decision` cubren anulación de recibos y facturas aplicadas.
+- **`core/policies/decisions/cancellation_decision.py`:** `CancellationDecision(allowed, reason)` es la decisión compartida por ambas policies de anulación; el barrel `core/policies/__init__.py` reexporta todas las policies y decisiones. Las policies internas importan las decisiones desde su módulo específico (por ejemplo, `kardex.core.policies.decisions.cancellation_decision`) para evitar ciclos.
 - **Contrato de decisión:** `ReceiptPaymentDecision` y `CancellationDecision` exigen `reason` no vacío cuando `allowed=False`.
 - **Regla de retorno:** `bool` para binarios, `Enum` para varias salidas, `@dataclass(frozen=True)` para decisiones con datos y `T | None` para resultados opcionales.
 - **Pureza:** una policy no importa FastAPI, Mongo, `AppSettingsTool`, `session` ni hace IO. El orquestador consulta repositorios y traduce la decisión a `InvalidOperation`; el mapeo a HTTP vive en `app/regis_exception_handlers.py`.

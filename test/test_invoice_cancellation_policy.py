@@ -2,10 +2,7 @@ from typing import Any
 
 import pytest
 
-from kardex.core.invoice_cancellation_register.invoice_cancellation_policy import (
-    InvoiceCancellationPolicy,
-)
-from kardex.core.policies import CancellationDecision
+from kardex.core.policies import CancellationDecision, InvoiceCancellationPolicy
 from kardex.repos.v1.app_settings import AppSettingInDb
 from kardex.repos.v1.common.models import (
     ClientInfo,

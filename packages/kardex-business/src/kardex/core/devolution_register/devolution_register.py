@@ -7,7 +7,7 @@ from kardex.core.credit_note_register.process_credit_note import (
     sum_previously_returned_from_devolutions,
     sum_previously_returned_quantities,
 )
-from kardex.core.policies import PolicyDecision
+from kardex.core.policies import DevolutionPolicy, PolicyDecision
 from kardex.repos.v1.devolutions import (
     CreateDevolution,
     DevolutionInDb,
@@ -27,7 +27,6 @@ from kardex.core.shift_register.validate_shift_link import validate_shift_link
 from kardex.tools import InvalidOperation, BranchNotFound, ClientNotFound, ProductNotFound
 
 
-from .devolution_policy import DevolutionPolicy
 from .process_devolution import process_devolution, process_anon_devolution
 
 

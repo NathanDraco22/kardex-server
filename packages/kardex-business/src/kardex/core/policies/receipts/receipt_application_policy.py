@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, AbstractSet, Any
 
-from kardex.core.policies.policy_decision import PolicyDecision
+from kardex.core.policies.decisions.policy_decision import PolicyDecision
 
 if TYPE_CHECKING:
     from kardex.repos.v1.invoices import InvoiceInDb

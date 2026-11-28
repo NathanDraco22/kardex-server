@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from kardex.core.policies.policy_decision import PolicyDecision
+from kardex.core.policies.decisions.policy_decision import PolicyDecision
 
 if TYPE_CHECKING:
     from kardex.repos.v1.credit_notes import CreateCreditNote, CreditNoteInDb

@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
-from kardex.core.policies.app_settings_policy import AppSettingsPolicy
-from kardex.core.policies.cancellation_decision import CancellationDecision
+from kardex.core.policies.app_settings.app_settings_policy import AppSettingsPolicy
+from kardex.core.policies.decisions.cancellation_decision import CancellationDecision
 
 if TYPE_CHECKING:
     from kardex.repos.v1.app_settings import AppSettingInDb

@@ -3,7 +3,7 @@ from typing import cast
 
 from pymongo.errors import DuplicateKeyError, OperationFailure
 
-from kardex.core.policies import PolicyDecision
+from kardex.core.policies import CreditNotePolicy, PolicyDecision
 from kardex.repos.v1.credit_notes import CreateCreditNote, CreditNoteInDb
 from kardex.repos.v1.clients import ClientsRepository
 from kardex.repos.v1.invoices import InvoicesRepository
@@ -12,7 +12,6 @@ from kardex.services.mongo_collections.v1 import CreditNotesCollection
 from kardex.core.default_values import SALE_CLIENT_ID
 from kardex.tools import InvalidOperation, BranchNotFound, ClientNotFound
 
-from .credit_note_policy import CreditNotePolicy
 from .process_credit_note import process_credit_note
 
 

@@ -109,7 +109,7 @@ class ProductsRepository:
 
 ### 4.1 Políticas de dominio (`Policy Object`)
 
-- Viven en `core/policies/` (transversales) o en `core/<dominio>/<nombre>_policy.py`.
+- Viven en `core/policies/<dominio>/<nombre>_policy.py`; las decisiones compartidas van en `core/policies/decisions/`.
 - Son puras: sin FastAPI, Mongo, `AppSettingsTool`, `session` ni IO.
 - Reciben modelos de dominio y devuelven `bool`, `Enum`, `@dataclass(frozen=True)` o `T | None`.
 - El orquestador consulta repositorios, aplica la policy y traduce el rechazo a `InvalidOperation`.

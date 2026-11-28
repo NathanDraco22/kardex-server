@@ -1,6 +1,6 @@
 from typing import cast
 
-from kardex.core.credit_note_register.credit_note_policy import CreditNotePolicy
+from kardex.core.policies import CreditNotePolicy
 from kardex.repos.v1.common.models import UserInfo
 from kardex.repos.v1.credit_notes import CreditNoteInDb
 from kardex.services.mongo_collections.v1 import CreditNotesCollection

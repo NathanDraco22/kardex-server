@@ -1,6 +1,6 @@
 import pytest
 
-from kardex.core.invoice_register.invoice_rounding_policy import InvoiceRoundingPolicy
+from kardex.core.policies import InvoiceRoundingPolicy
 
 
 @pytest.mark.parametrize(
