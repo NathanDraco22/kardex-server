@@ -117,7 +117,7 @@ class ProductsRepository:
 - Se testean con tablas de decisión y sin base de datos.
 - Las decisiones compartidas como `PolicyDecision(allowed, reason)` o `CancellationDecision(allowed, reason)` exigen un `reason` no vacío cuando `allowed=False`.
 
-Ejemplos: `AppSettingsPolicy`, `ConvertedOrderShiftPolicy`, `ReceiptPaymentPolicy`, `InvoiceCancellationPolicy`, `ReceiptCancellationPolicy`, `CreditNotePolicy`, `DevolutionPolicy`, `InvoiceRoundingPolicy`, `PolicyDecision` y `CancellationDecision`.
+Ejemplos: `AppSettingsPolicy`, `ConvertedOrderShiftPolicy`, `ReceiptPaymentPolicy`, `ReceiptApplicationPolicy`, `InvoiceCancellationPolicy`, `ReceiptCancellationPolicy`, `CreditNotePolicy`, `DevolutionPolicy`, `InvoiceRoundingPolicy`, `PolicyDecision` y `CancellationDecision`.
 
 ---
 

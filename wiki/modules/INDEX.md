@@ -33,7 +33,7 @@ real de `services/mongo_collections/v1/`.
 | `invoice_cancellation_requests` | `/invoice-cancellation-requests` | `invoice_cancellation_requests` | `InvoiceCancellationRequests` | `invoice_cancellation_register` | JWT | — |
 | `orders` | `/orders` | `orders` | `Orders` | `order_register` | JWT | — |
 | `hold_sales` | `/hold-sales` | `hold_sales` | `HoldSales` | — | JWT | — |
-| `receipts` | `/receipts` | `receipts` | `Receipts` | `receipt_register` | JWT | — |
+| `receipts` | `/receipts` | `receipts` | `Receipts` | `receipt_register` | JWT | [receipts.md](./receipts.md) |
 | `receipt_cancellation_requests` | `/receipt-cancellation-requests` | `receipt_cancellation_requests` | `ReceiptCancellationRequests` | `receipt_cancellation_register` | JWT | — |
 | `devolutions` | `/devolutions` | `devolutions` | `Devolutions` | `devolution_register` | JWT | [devolutions.md](./devolutions.md) |
 | `credit_notes` | `/credit-notes` | `credit_notes` | `CreditNotes` | `credit_note_register` | JWT | [credit_notes.md](./credit_notes.md) |

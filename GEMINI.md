@@ -1,5 +1,23 @@
 # Contexto de Conversación - Code Review Transfer Optimization
 
+## Fecha: 2026-11-27 (Lote 4 — Policy Object en aplicación de recibos)
+### Objetivo
+Extraer a una policy pura las reglas de aplicación de fondos de `process_receipt` (cuadratura, duplicados, notas de crédito, devoluciones y facturas), preservando exactamente el comportamiento, el orden de validación, los cortes tempranos y los mensajes de error existentes.
+
+### Resumen Técnico
+- **`ReceiptApplicationPolicy`:** nueva policy sin argumentos de constructor en `core/receipt_register/receipt_application_policy.py` con `funds_decision`, `credit_note_duplicate_decision`, `applied_credit_note_decision`, `devolution_duplicate_decision`, `applied_devolution_decision` y `applied_invoice_decision`. Es pura: sin FastAPI, Mongo, `AppSettingsTool`, `session` ni IO; los modelos se importan solo bajo `TYPE_CHECKING`.
+- **`process_receipt.py`:** sustituye únicamente la lógica de decisión por llamadas a la policy y un helper `_ensure_allowed` que traduce el rechazo a `InvalidOperation`. Se mantienen el orden (fondos → notas de crédito → devoluciones → facturas), las consultas async, las escrituras, los estados y los movimientos financieros. Para facturas se conserva `pending_balance = total - amountPaid` (no `totalRemaining`).
+- **Wiki:** nueva ficha `wiki/modules/receipts.md`, enlace desde la fila `receipts` de `wiki/modules/INDEX.md` y `ReceiptApplicationPolicy` agregada a los ejemplos de `wiki/conventions.md` §4.1.
+- **Tests:** nuevo `test_receipt_application_policy.py` con tablas de decisión completas y nuevo `test_receipt_application_integration.py` con cortes tempranos, precedencia entre bloques y camino feliz mixto (pago + devolución + nota de crédito). Los documentos vacíos (`{}`) se tratan como no encontrados, igual que el `if not cn_data`/`if not dev_data` original.
+
+### Revisión
+- Revisor independiente: **APROBADO CON MENORES**. Se agregó el test de camino feliz con verificación de orden de escrituras y movimientos, el caso de factura inexistente, casos de precedencia entre reglas y bloques, bordes de claves ausentes, set de duplicados intacto y `amountApplied=0` con saldo pendiente positivo; también se precisó la wiki sobre `ReceiptPaymentPolicy`.
+
+### Verificación
+- `ruff check` sobre `receipt_register` y los tests nuevos: limpio.
+- `ty check`: limpio.
+- `pytest -q`: `460 passed` (único warning preexistente de `pytest-asyncio` sobre `asyncio_default_fixture_loop_scope`).
+
 ## Fecha: 2026-11-27 (Lote 3 — Policy Object en notas de crédito y devoluciones)
 ### Objetivo
 Extraer a policies puras las reglas de cabecera, estados y transiciones de notas de crédito y devoluciones, además del redondeo de importes de factura, preservando exactamente el comportamiento y el orden de validación existentes.
