@@ -325,6 +325,71 @@ async def test_validate_receipt_cancellable_blocks_cancelled_invoice_when_settin
 
 
 @pytest.mark.asyncio
+async def test_validate_receipt_cancellable_treats_shift_without_status_as_closed():
+    receipt = ReceiptInDb.model_validate(_receipt_dict(shift_id="shift-closed"))
+    session = object()
+
+    shifts_col = MagicMock()
+    shifts_col.fetch_shift_by_id = AsyncMock(return_value={"id": "shift-closed"})
+    invoices_col = MagicMock()
+    invoices_col.fetch_invoice_by_id_with_session = AsyncMock(
+        return_value={"id": "inv-1", "status": "paid"}
+    )
+
+    with (
+        patch(
+            "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.ShiftsCollection.get_instance",
+            return_value=shifts_col,
+        ),
+        patch(
+            "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.InvoicesCollection.get_instance",
+            return_value=invoices_col,
+        ),
+        patch(
+            "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.AppSettingsTool",
+            return_value=SimpleNamespace(
+                get_current_app_settings=AsyncMock(
+                    return_value=SimpleNamespace(
+                        allowCancellationsOutsideShift=False
+                    )
+                )
+            ),
+        ),
+    ):
+        with pytest.raises(InvalidOperation, match="turno ya cerrado"):
+            await validate_receipt_cancellable(receipt, session=session)
+
+    shift_call = shifts_col.fetch_shift_by_id.await_args
+    assert shift_call is not None
+    assert shift_call.kwargs["session"] is session
+    invoices_col.fetch_invoice_by_id_with_session.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_validate_receipt_cancellable_propagates_session_to_invoice_lookup():
+    receipt = ReceiptInDb.model_validate(_receipt_dict())
+    session = object()
+
+    invoices_col = MagicMock()
+    invoices_col.fetch_invoice_by_id_with_session = AsyncMock(
+        return_value={"id": "inv-1", "status": "paid"}
+    )
+
+    with patch(
+        "kardex.core.receipt_cancellation_register.validate_receipt_cancellable.InvoicesCollection.get_instance",
+        return_value=invoices_col,
+    ):
+        await validate_receipt_cancellable(receipt, session=session)
+
+    invoice_call = invoices_col.fetch_invoice_by_id_with_session.await_args
+    assert invoice_call is not None
+    assert invoice_call.kwargs == {
+        "invoice_id": "inv-1",
+        "session": session,
+    }
+
+
+@pytest.mark.asyncio
 async def test_approve_receipt_cancellation_reverses_paid_invoice_and_balance():
     rec = _receipt_dict(total=1500, shift_id="shift-open")
     req_doc = {

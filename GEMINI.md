@@ -999,3 +999,20 @@ Extraer reglas de configuración y de validación de pagos de recibos a objetos 
    - Tests extra: referencia bancaria solo-espacios, wrapper con `settings=None` + `paymentDetail`, y decisión denegada con `None`, `""` y `"   "`.
    - Wiki actualizada: `wiki/modules/app_settings.md` sección 7 y `wiki/conventions.md` sección 4.1; se aclara que la policy lanza `InvalidOperation` y el mapeo HTTP vive en `app/regis_exception_handlers.py`.
 8. **Sin commit.** Cambios locales en la rama `main`.
+
+---
+
+## Fecha: 2026-11-27 — Lote 2: Policy Object para anulación de facturas y recibos
+### Objetivo
+Extraer las reglas de anulación de facturas y recibos a policies puras, reutilizando `CancellationDecision` como contrato común y preservando exactamente el orden de validaciones, las consultas async, los cortes tempranos y los mensajes existentes.
+
+### Resumen de Implementación
+1. **`core/policies/cancellation_decision.py`:** nuevo `CancellationDecision(allowed, reason)`; un rechazo exige `reason` no vacío (`ValueError` en caso contrario). El barrel `core/policies/__init__.py` lo exporta, pero no reexporta las policies de anulación para evitar ciclos.
+2. **`InvoiceCancellationPolicy` (`core/invoice_cancellation_register/invoice_cancellation_policy.py`):** etapas `header_decision` (anulada, borrador, crédito con abonos/pagada), `shift_decision` (turno `open` o ausente permitido; cerrado solo con `allowCancellationsOutsideShift`), `devolutions_decision` y `credit_notes_decision`. Las constantes `ACTIVE_DEVOLUTION_STATUSES` y `ACTIVE_CREDIT_NOTE_STATUSES` se movieron aquí.
+3. **`ReceiptCancellationPolicy` (`core/receipt_cancellation_register/receipt_cancellation_policy.py`):** `header_decision` (recibo eliminado, devoluciones/notas aplicadas), `shift_decision` y `applied_invoice_decision` (factura inexistente o en `cancelled`/`draft`).
+4. **Orquestadores:** `validate_invoice_cancellable` y `validate_receipt_cancellable` conservan las mismas consultas y su orden; solo consultan `AppSettingsTool` cuando el turno existe y no está `open`, y traducen la primera decisión denegada a `InvalidOperation` mediante `_ensure_allowed`. Se mantienen los imports `ShiftsCollection`, `DevolutionsCollection`, `CreditNotesCollection`, `InvoicesCollection` y `AppSettingsTool` en sus módulos para los parches de los tests existentes.
+5. **Tests:** nuevos `test/test_invoice_cancellation_policy.py` y `test/test_receipt_cancellation_policy.py` con tablas de decisión sin base de datos: estados de cabecera, turnos abiertos/cerrados/ausentes, devoluciones y notas en cada estado activo e inerte, facturas aplicadas y la invariante de `CancellationDecision`.
+6. **Documentación:** `wiki/conventions.md` sección 4.1 y `wiki/modules/app_settings.md` secciones 5 y 7 actualizadas con las nuevas policies y el contrato de decisión.
+7. **Revisión:** revisor independiente **APROBADO CON MENORES**. Se agregaron casos de crédito parcial y efectivo con abonos, tests de regresión para turno sin `status`, aserciones de `session`/`client_id=None`, aserción estricta de `reason` en decisiones permitidas y precisión en la wiki sobre las etapas de recibos.
+8. **Verificación:** `ruff check` sin errores en los archivos del lote; `ty check` OK; `pytest` dirigido **76 passed**; suite completa **288 passed**. Sin levantar servicios ni tocar Mongo. Se detectaron 3 errores E402 preexistentes en `test/test_user_roles.py`, ajenos a este lote.
+9. **Sin commit.** Cambios locales en la rama `main`.

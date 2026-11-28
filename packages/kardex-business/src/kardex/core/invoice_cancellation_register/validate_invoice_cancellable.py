@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Any, cast
 
-from kardex.core.policies import AppSettingsPolicy
+from kardex.core.policies import CancellationDecision
 from kardex.repos.v1.invoices import InvoiceInDb
 from kardex.services.mongo_collections.v1 import (
     CreditNotesCollection,
@@ -10,14 +10,13 @@ from kardex.services.mongo_collections.v1 import (
 from kardex.tools import InvalidOperation
 from kardex.tools.app_settings_tool import AppSettingsTool
 
-ACTIVE_DEVOLUTION_STATUSES = {"open", "confirmed", "applied"}
-ACTIVE_CREDIT_NOTE_STATUSES = {
-    "emitted",
-    "open",
-    "approved",
-    "confirmed",
-    "applied",
-}
+from .invoice_cancellation_policy import InvoiceCancellationPolicy
+
+
+def _ensure_allowed(decision: CancellationDecision) -> None:
+    if decision.allowed:
+        return
+    raise InvalidOperation(cast(str, decision.reason))
 
 
 async def validate_invoice_cancellable(
@@ -25,17 +24,9 @@ async def validate_invoice_cancellable(
     session: Any = None,
 ) -> None:
     """Valida que una factura cumpla todas las reglas de negocio para ser anulada."""
-    if invoice.status == "cancelled":
-        raise InvalidOperation("La factura ya se encuentra anulada.")
+    policy = InvoiceCancellationPolicy(invoice)
 
-    if invoice.status == "draft":
-        raise InvalidOperation("No se puede anular una factura en borrador.")
-
-    if invoice.paymentType == "credit":
-        if invoice.status != "open" or invoice.amountPaid > 0:
-            raise InvalidOperation(
-                "No se puede anular una factura a crédito que ya tiene abonos o está pagada."
-            )
+    _ensure_allowed(policy.header_decision())
 
     if invoice.shiftId:
         shift_data = await ShiftsCollection.get_instance().fetch_shift_by_id(
@@ -43,20 +34,20 @@ async def validate_invoice_cancellable(
         )
         if shift_data is not None and shift_data.get("status") != "open":
             settings = await AppSettingsTool().get_current_app_settings()
-            if not AppSettingsPolicy(settings).allows_cancellations_outside_shift:
-                raise InvalidOperation(
-                    "No se puede anular una factura perteneciente a un turno ya cerrado."
+            # Un turno sin `status` se trataba como cerrado en el validador original.
+            _ensure_allowed(
+                policy.shift_decision(
+                    settings,
+                    shift_status=shift_data.get("status") or "closed",
                 )
+            )
 
     devolutions = await DevolutionsCollection.get_instance().fetch_devolutions_by_invoice_id(
         invoice_id=invoice.id,
         client_id=None,
         session=session,
     )
-    if any(dev.get("status") in ACTIVE_DEVOLUTION_STATUSES for dev in devolutions):
-        raise InvalidOperation(
-            "No se puede anular una factura que tiene devoluciones activas o confirmadas."
-        )
+    _ensure_allowed(policy.devolutions_decision(devolutions))
 
     credit_notes = (
         await CreditNotesCollection.get_instance().fetch_credit_notes_by_invoice_id(
@@ -64,7 +55,4 @@ async def validate_invoice_cancellable(
             session=session,
         )
     )
-    if any(cn.get("status") in ACTIVE_CREDIT_NOTE_STATUSES for cn in credit_notes):
-        raise InvalidOperation(
-            "No se puede anular una factura que tiene notas de crédito activas o aplicadas."
-        )
+    _ensure_allowed(policy.credit_notes_decision(credit_notes))
