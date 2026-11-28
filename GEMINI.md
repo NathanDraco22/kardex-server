@@ -1,5 +1,19 @@
 # Contexto de Conversación - Code Review Transfer Optimization
 
+## Fecha: 2026-11-27 (Bandera de dinero recibido en abonos)
+### Objetivo
+Permitir que la app capture por separado el monto a abonar y el dinero recibido en el abono rápido, manteniendo el comportamiento histórico por defecto para los clientes existentes.
+
+### Resumen Técnico
+- **Setting:** `useAbonoReceivedAmount` (bool, `False` por defecto) en `BaseAppSetting` y `UpdateAppSetting`; los documentos legacy sin el campo se normalizan a `False`. No requiere migración.
+- **Validación:** sin cambios en `ReceiptPaymentPolicy`; el backend sigue validando que el dinero recibido cubra el total del recibo y que el cambio coincida.
+- **Tests:** nuevo `test/test_app_settings_abono_received.py` con default, documento legacy, PATCH parcial y serialización.
+
+### Verificación
+- `ruff check`: limpio.
+- `ty check`: limpio.
+- `pytest -q`: `465 passed` (warning preexistente de `pytest-asyncio`).
+
 ## Fecha: 2026-11-27 (Lote 5 — Reorganización de policies en subcarpetas)
 ### Objetivo
 Centralizar todas las policies del dominio bajo `core/policies/<dominio>/`, con subcarpetas por dominio y un barrel público que reexporte policies y decisiones, sin cambiar comportamiento ni lógica.

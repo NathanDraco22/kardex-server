@@ -21,6 +21,7 @@ class BaseAppSetting(BaseModel):
     exchangeRate: float = Field(default=0.0, ge=0)
     showInvoiceTotalInSecondaryCurrency: bool = False
     allowSecondaryCurrencyPayment: bool = False
+    useAbonoReceivedAmount: bool = False
     showInvoiceItemsSummary: bool = False
     showInvoiceOrderCreator: bool = False
     companyLogoUrl: str | None = None
@@ -55,6 +56,7 @@ class UpdateAppSetting(BaseModel):
     exchangeRate: float | None = Field(default=None, ge=0)
     showInvoiceTotalInSecondaryCurrency: bool | None = None
     allowSecondaryCurrencyPayment: bool | None = None
+    useAbonoReceivedAmount: bool | None = None
     showInvoiceItemsSummary: bool | None = None
     showInvoiceOrderCreator: bool | None = None
     companyLogoUrl: str | None = None
