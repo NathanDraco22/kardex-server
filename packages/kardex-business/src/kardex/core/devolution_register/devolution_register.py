@@ -1,11 +1,13 @@
 import asyncio
-from typing import Any, Callable, Coroutine, List, Tuple
+from typing import Any, Callable, Coroutine, List, Tuple, cast
+
 from pymongo.errors import OperationFailure
 
 from kardex.core.credit_note_register.process_credit_note import (
     sum_previously_returned_from_devolutions,
     sum_previously_returned_quantities,
 )
+from kardex.core.policies import PolicyDecision
 from kardex.repos.v1.devolutions import (
     CreateDevolution,
     DevolutionInDb,
@@ -25,7 +27,14 @@ from kardex.core.shift_register.validate_shift_link import validate_shift_link
 from kardex.tools import InvalidOperation, BranchNotFound, ClientNotFound, ProductNotFound
 
 
+from .devolution_policy import DevolutionPolicy
 from .process_devolution import process_devolution, process_anon_devolution
+
+
+def _ensure_allowed(decision: PolicyDecision) -> None:
+    if decision.allowed:
+        return
+    raise InvalidOperation(cast(str, decision.reason))
 
 
 class DevolutionRegister:
@@ -98,8 +107,11 @@ class DevolutionRegister:
         if devolution is None:
             raise InvalidOperation("Devolution not found")
 
-        if devolution.clientId == SALE_CLIENT_ID:
-            raise InvalidOperation("Use the anonymous devolution endpoint for this client.")
+        _ensure_allowed(
+            DevolutionPolicy().confirmation_client_decision(
+                devolution, anonymous=False, sale_client_id=SALE_CLIENT_ID
+            )
+        )
 
         return await self._register_transaction(devolution, process_devolution)
 
@@ -112,8 +124,11 @@ class DevolutionRegister:
         if devolution is None:
             raise InvalidOperation("Devolution not found")
 
-        if devolution.clientId != SALE_CLIENT_ID:
-            raise InvalidOperation("Invalid client ID for anonymous devolution.")
+        _ensure_allowed(
+            DevolutionPolicy().confirmation_client_decision(
+                devolution, anonymous=True, sale_client_id=SALE_CLIENT_ID
+            )
+        )
 
         return await self._register_transaction(devolution, process_anon_devolution)
 
@@ -209,8 +224,9 @@ class DevolutionRegister:
             if client is None:
                 raise ClientNotFound("CLIENT_NOT_FOUND", client_id=client_id)
 
-        if not returned_items:
-            raise InvalidOperation("La devolución debe incluir al menos un producto.")
+        policy = DevolutionPolicy()
+
+        _ensure_allowed(policy.items_decision(returned_items))
 
         product_ids = list(set(item.product.id for item in returned_items))
         products = await self.products_repo.get_product_by_ids(product_ids)
@@ -225,19 +241,7 @@ class DevolutionRegister:
             raise InvalidOperation(
                 f"Original invoice {original_invoice_id} not found."
             )
-        if invoice.status == "cancelled":
-            raise InvalidOperation(
-                "Cannot create a devolution for a cancelled invoice."
-            )
-        if getattr(invoice, "invoiceDiscount", 0) > 0:
-            raise InvalidOperation(
-                "No se permiten devoluciones por producto en facturas con descuento global."
-            )
-        if invoice.paymentType == "credit":
-            if invoice.amountPaid > 0 or invoice.status in ("partiallyPaid", "paid"):
-                raise InvalidOperation(
-                    "No se permiten devoluciones sobre facturas a crédito con abonos o pagadas."
-                )
+        _ensure_allowed(policy.invoice_decision(invoice))
 
         await self._validate_returned_quantities(
             invoice=invoice,
@@ -259,8 +263,7 @@ class DevolutionRegister:
         if doc.originalInvoicePaymentType is None and payment_type is not None:
             doc.originalInvoicePaymentType = payment_type
 
-        if doc.status != "open":
-            raise InvalidOperation("Devolution is not open.")
+        _ensure_allowed(DevolutionPolicy().status_decision(doc))
 
         # La validacion estricta del turno ocurre al crear la devolucion.
         # Al confirmar se tolera un turno ya cerrado para no dejar devoluciones

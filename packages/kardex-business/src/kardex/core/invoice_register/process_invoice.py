@@ -26,6 +26,8 @@ from kardex.services.mongo_collections.v1 import (
     OrdersCollection,
 )
 
+from .invoice_rounding_policy import InvoiceRoundingPolicy
+
 
 async def _prepare_and_execute_invoice_inventory(
     create_invoice: CreateInvoice,
@@ -127,20 +129,6 @@ async def _prepare_and_execute_invoice_inventory(
     return accounts_dict
 
 
-def _round_up_whole_unit(value: int) -> int:
-    """Redondea centavos hacia arriba al siguiente entero de la moneda."""
-    if value <= 0:
-        return 0
-    return ((value + 99) // 100) * 100
-
-
-def _round_down_whole_unit(value: int) -> int:
-    """Redondea centavos hacia abajo al entero anterior de la moneda."""
-    if value <= 0:
-        return 0
-    return (value // 100) * 100
-
-
 def normalize_invoice_discounts(
     create_invoice: CreateInvoice, *, round_up: bool = False
 ) -> None:
@@ -151,6 +139,7 @@ def normalize_invoice_discounts(
     unidades enteras de la moneda, manteniendo la igualdad
     ``subtotal - descuentos = total``.
     """
+    rounding = InvoiceRoundingPolicy(round_up)
     for item in create_invoice.saleItems:
         if item.price > 0 and item.quantity > 0:
             item.subTotal = calculate_line_amount(
@@ -160,8 +149,7 @@ def normalize_invoice_discounts(
             )
         else:
             item.subTotal = max(0, item.subTotal)
-        if round_up:
-            item.subTotal = _round_up_whole_unit(item.subTotal)
+        item.subTotal = rounding.line_subtotal(item.subTotal)
         if item.discountType == "percentage":
             pct = max(0, min(100, item.discountPercentage))
             item.discountPercentage = pct
@@ -183,8 +171,7 @@ def normalize_invoice_discounts(
                 item.discountPercentage = 0
                 item.totalDiscount = 0
         item.totalDiscount = max(0, min(item.subTotal, item.totalDiscount))
-        if round_up:
-            item.totalDiscount = _round_down_whole_unit(item.totalDiscount)
+        item.totalDiscount = rounding.line_discount(item.totalDiscount)
         item.total = max(0, item.subTotal - item.totalDiscount)
 
     items_net_total = sum(item.total for item in create_invoice.saleItems)
@@ -196,14 +183,12 @@ def normalize_invoice_discounts(
         pct = max(0, min(100, create_invoice.discountValue))
         create_invoice.discountValue = pct
         create_invoice.invoiceDiscount = round(items_net_total * pct / 100)
-        if round_up:
-            create_invoice.invoiceDiscount = _round_down_whole_unit(
-                create_invoice.invoiceDiscount
-            )
+        create_invoice.invoiceDiscount = rounding.invoice_discount(
+            create_invoice.invoiceDiscount
+        )
     elif create_invoice.discountType == "amount":
         amt = max(0, min(items_net_total, create_invoice.discountValue))
-        if round_up:
-            amt = _round_down_whole_unit(amt)
+        amt = rounding.invoice_discount(amt)
         create_invoice.discountValue = amt
         create_invoice.invoiceDiscount = amt
     else:

@@ -1,6 +1,9 @@
 import asyncio
+from typing import cast
+
 from pymongo.errors import DuplicateKeyError, OperationFailure
 
+from kardex.core.policies import PolicyDecision
 from kardex.repos.v1.credit_notes import CreateCreditNote, CreditNoteInDb
 from kardex.repos.v1.clients import ClientsRepository
 from kardex.repos.v1.invoices import InvoicesRepository
@@ -9,7 +12,14 @@ from kardex.services.mongo_collections.v1 import CreditNotesCollection
 from kardex.core.default_values import SALE_CLIENT_ID
 from kardex.tools import InvalidOperation, BranchNotFound, ClientNotFound
 
+from .credit_note_policy import CreditNotePolicy
 from .process_credit_note import process_credit_note
+
+
+def _ensure_allowed(decision: PolicyDecision) -> None:
+    if decision.allowed:
+        return
+    raise InvalidOperation(cast(str, decision.reason))
 
 
 class CreditNoteRegister:
@@ -77,18 +87,13 @@ class CreditNoteRegister:
         if branch is None:
             raise BranchNotFound("BRANCH_NOT_FOUND", branch_id=doc.branchId)
 
+        policy = CreditNotePolicy()
+
         # 2. Validar cliente (requerido para tipo 'amount')
         if doc.type == "amount":
-            if doc.clientId == SALE_CLIENT_ID:
-                raise InvalidOperation(
-                    "Credit notes by amount require a registered client."
-                )
-            if doc.amount <= 0:
-                raise InvalidOperation("Credit note amount must be greater than 0.")
-            if not doc.description.strip():
-                raise InvalidOperation(
-                    "A detailed reason/description is required for credit notes by amount."
-                )
+            _ensure_allowed(
+                policy.amount_request_decision(doc, sale_client_id=SALE_CLIENT_ID)
+            )
 
         if doc.clientId != SALE_CLIENT_ID:
             client = await self.clients_repo.get_client_by_id(doc.clientId)
@@ -97,27 +102,13 @@ class CreditNoteRegister:
 
         # 3. Validar tipo 'devolution'
         if doc.type == "devolution":
-            if not doc.originalInvoiceId:
-                raise InvalidOperation(
-                    "Devolution credit notes require an original invoice."
-                )
+            _ensure_allowed(policy.devolution_request_decision(doc))
             invoice = await self.invoices_repo.get_invoice_by_id(doc.originalInvoiceId)
             if invoice is None:
                 raise InvalidOperation(
                     f"Original invoice {doc.originalInvoiceId} not found."
                 )
-            if invoice.status == "cancelled":
-                raise InvalidOperation(
-                    "Cannot create a credit note for a cancelled invoice."
-                )
-            if invoice.paymentType != "credit":
-                raise InvalidOperation(
-                    "Credit notes by devolution only apply to credit invoices. "
-                    "Use devolutions for cash invoices."
-                )
-            if not doc.returnedItems:
-                raise InvalidOperation(
-                    "Devolution credit notes must include returned items."
-                )
+            _ensure_allowed(policy.devolution_invoice_decision(invoice))
+            _ensure_allowed(policy.devolution_items_decision(doc))
             # El monto de una devolución se recalcula en process_credit_note
             # desde la factura; no se confía en el valor enviado por el cliente.

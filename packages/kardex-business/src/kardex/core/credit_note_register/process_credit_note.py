@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Sequence, cast
 
+from kardex.core.credit_note_register.credit_note_policy import CreditNotePolicy
 from kardex.repos.v1.credit_notes import CreateCreditNote, CreditNoteInDb
 from kardex.repos.v1.invoices import InvoiceInDb
 from kardex.services.mongo_collections.v1 import (
@@ -188,7 +189,12 @@ async def _recalculate_devolution_items(
     create_credit_note: CreateCreditNote,
     session: Any,
 ) -> None:
-    """Valida y recalcula los items devueltos dentro de la transaccion del insert."""
+    """Valida y recalcula los items devueltos dentro de la transaccion del insert.
+
+    Revalida la cabecera de forma defensiva dentro de la transaccion; el camino
+    publico ya aplico `CreditNotePolicy` antes de llegar aqui. La regla de
+    `invoiceDiscount` solo se aplica en este punto.
+    """
     invoices_col = InvoicesCollection.get_instance()
     credit_notes_col = CreditNotesCollection.get_instance()
 
@@ -288,8 +294,9 @@ async def _recalculate_devolution_items(
 
         total_amount += amounts.total
 
-    if total_amount <= 0:
-        raise InvalidOperation("Credit note total must be greater than 0.")
+    decision = CreditNotePolicy().recalculated_total_decision(total_amount)
+    if not decision.allowed:
+        raise InvalidOperation(cast(str, decision.reason))
 
     create_credit_note.amount = total_amount
 

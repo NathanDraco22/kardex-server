@@ -1,3 +1,6 @@
+from typing import cast
+
+from kardex.core.credit_note_register.credit_note_policy import CreditNotePolicy
 from kardex.core.inventory import fetch_product_types_map
 from kardex.repos.v1.credit_notes import CreditNoteInDb
 from kardex.services.mongo_collections.v1 import (
@@ -29,10 +32,9 @@ async def reverse_credit_note(credit_note_id: str) -> CreditNoteInDb:
 
     credit_note = CreditNoteInDb.model_validate(raw_credit_note)
 
-    if credit_note.status == "applied":
-        raise ValueError(
-            "No se puede eliminar una nota de crédito que ya fue aplicada en un recibo de pago."
-        )
+    decision = CreditNotePolicy().reversal_decision(credit_note)
+    if not decision.allowed:
+        raise ValueError(cast(str, decision.reason))
 
     async with mongo_client.start_session() as session:
         async with await session.start_transaction():

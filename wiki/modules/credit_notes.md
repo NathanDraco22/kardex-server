@@ -24,7 +24,8 @@ kardex-server/
     ├── repos/v1/common/filter_params/
     │   └── credit_note_filter_params.py # Parámetros de consulta y paginación
     └── core/credit_note_register/
-        ├── credit_note_register.py      # Validaciones previas de negocio
+        ├── credit_note_register.py      # Orquestación de las validaciones previas
+        ├── credit_note_policy.py        # Reglas puras de cabecera, estados y transiciones
         └── process_credit_note.py       # Transacción atómica en MongoDB
 ```
 
@@ -37,14 +38,14 @@ La nota de crédito soporta dos tipos de operación:
 1. **Por Devolución (`CreditNoteType.devolution`)**:
    - Vinculada obligatoriamente a una factura original mediante `originalInvoiceId` y `originalInvoiceDocNumber`.
    - Especifica la lista de productos retornados (`returnedItems: list[SaleItem]`).
-   - **Efecto en Inventario:** Incrementa automáticamente el stock disponible en la sucursal emisora y genera un movimiento formal en el Kárdex (`ProductTransaction` con `subtype="credit_note"` y `type="entry"`).
-   - **Estado Inicial:** Nace en estado `confirmed`. Si la factura de origen fue a crédito, el monto queda disponible como saldo a favor para aplicarse en el siguiente pago/recibo del cliente.
+   - **Efecto en Inventario:** Al aprobarse, incrementa el stock disponible en la sucursal emisora y genera un movimiento formal en el Kárdex (`ProductTransaction` con `subtype="credit_note"` y `type="entry"`).
+   - **Estado Inicial:** Nace en estado `emitted`; al aprobarse pasa a `approved`. Si la factura de origen fue a crédito, el monto queda disponible como saldo a favor para aplicarse en el siguiente pago/recibo del cliente.
 
 2. **Por Monto (`CreditNoteType.amount`)**:
    - Asociada directamente a un cliente registrado (`clientId` y `clientInfo`).
    - Requiere un motivo detallado obligatorio (`description`).
    - No afecta inventario físico ni genera movimientos de Kárdex.
-   - Nace en estado `confirmed` para amortizar deudas del cliente en el módulo de cobranza.
+   - Nace en estado `emitted`; al aprobarse pasa a `approved` para amortizar deudas del cliente en el módulo de cobranza.
 
 ---
 
@@ -118,7 +119,6 @@ class ApproveCreditNote(BaseModel):
 class RejectCreditNote(BaseModel):
     rejectedBy: UserInfo
     reason: str = ""
-```
 
 class UpdateCreditNote(BaseModel):
     status: CreditNoteStatus | None = None
@@ -138,11 +138,10 @@ class CreditNoteInDb(BaseCreditNote):
 
 La emisión de notas de crédito se ejecuta dentro de una sesión transaccional de MongoDB (`client.start_session()`):
 
-1. **Generación de Folio Consecutivo:** Obtiene el siguiente folio único por sucursal mediante `CounterManager.next_credit_note_number()`.
-2. **Reingreso de Inventario (Devolución):**
-   - Para cada producto en `returnedItems`, incrementa su stock físico (`stock += qty`) en la colección `Products`.
-   - Inserta un registro en `ProductTransactions` con `subtype="credit_note"`, tipo `entry`, referenciando el folio de la nota.
-3. **Persistencia de la Nota:** Inserta el documento en `CreditNotes` en estado `confirmed`.
+1. **Verificación de idempotencia:** si llega `idempotencyKey` y ya existe una nota para la sucursal, devuelve la existente.
+2. **Validación y recálculo de devoluciones:** para `type="devolution"`, valida y recalcula los ítems contra la factura original y las notas/devoluciones previas. No toca inventario ni Kárdex.
+3. **Generación de Folio Consecutivo:** Obtiene el siguiente folio único por sucursal mediante `CounterManager.next_credit_note_number()` si no viene especificado.
+4. **Persistencia de la Nota:** Inserta el documento en `CreditNotes` en estado `emitted`. El reingreso de stock ocurre al aprobar (`approve_credit_note.py`).
 
 ---
 
@@ -151,13 +150,13 @@ La emisión de notas de crédito se ejecuta dentro de una sesión transaccional 
 Cuando un cliente con compras a crédito realiza un pago o abono:
 
 1. El payload de `CreateReceipt` incluye `appliedCreditNotes: list[AppliedCreditNote]`.
-2. `process_receipt.py` valida la existencia y estado `confirmed` de cada nota de crédito.
+2. `process_receipt.py` valida la existencia y que el estado sea `approved` o `confirmed` (compatibilidad legacy).
 3. Suma el monto de las notas de crédito al total de fondos aplicados a las facturas pendientes (`total_funds = cash + devolutions + credit_notes`).
 4. Amortiza las facturas pendientes reduciendo `amountPaid` y `totalRemaining`.
 5. Por cada nota de crédito aplicada:
    - Modifica el estado de la nota a `applied`, registrando `appliedReceiptId`, `appliedReceiptDocNumber` y `appliedAt`.
    - Emite una transacción de cliente (`ClientTransactionInDb`) con `subtype="credit_note"`, debitando el saldo pendiente del cliente.
-6. **Reversión (`reverse_receipt.py`):** Si un recibo es revertido/anulado, las notas de crédito aplicadas retornan a su estado `confirmed`, y la deuda del cliente se restablece atómicamente.
+6. **Reversión (`reverse_receipt.py`):** Si un recibo es revertido/anulado, las notas de crédito aplicadas retornan a su estado `approved`, y la deuda del cliente se restablece atómicamente.
 
 ---
 
@@ -165,8 +164,9 @@ Cuando un cliente con compras a crédito realiza un pago o abono:
 
 Si una nota de crédito fue emitida por error o cancelada antes de ser aplicada en un recibo oficial:
 
-1. **Restricción de Estado:** Solo se permite eliminar notas con estado diferente a `applied` (`open`, `confirmed` o `cancelled`). Si la nota ya fue aplicada, la operación es rechazada con un error HTTP 400 impidiendo inconsistencias contables en recibos emitidos.
+1. **Restricción de Estado:** Solo se permite eliminar notas con cualquier estado distinto de `applied` (`emitted`, `open`, `approved`, `confirmed`, `rejected` o `cancelled`). Si la nota ya fue aplicada, la operación es rechazada con un error HTTP 400 impidiendo inconsistencias contables en recibos emitidos.
 2. **Reversión de Inventario (Devolución):**
+   - Solo se revierte stock si el estado era `approved` o `confirmed` y el tipo es `devolution`.
    - Para notas de tipo `devolution`, se inicia una sesión atómica de MongoDB (`client.start_session()`).
    - Se deduce el stock físico en `Products` correspondiente a cada `returnedItem` (`stock -= qty`), revirtiendo el reingreso previo.
    - Se eliminan de `ProductTransactions` todos los movimientos asociados al documento (`documentId == credit_note.id` o `documentDocNumber == credit_note.docNumber`).
@@ -204,3 +204,33 @@ Todos los endpoints requieren autenticación mediante JWT (`auth_middleware`):
 | `GET` | `/api/v1/credit-notes/doc/{doc_number}` | Búsqueda por folio consecutivo | `CreditNoteInDb` |
 | `GET` | `/api/v1/credit-notes/{id}` | Búsqueda por identificador UUID | `CreditNoteInDb` |
 | `DELETE` | `/api/v1/credit-notes/{id}` | Elimina la nota y revierte stock solo si estaba aprobada | `CreditNoteInDb` |
+
+---
+
+## 10. Capa de políticas (Policy Object)
+
+Las reglas de **cabecera, estados y transiciones** viven en
+`core/credit_note_register/credit_note_policy.py`, sin FastAPI, Mongo,
+`AppSettingsTool`, `session` ni IO. `CreditNoteRegister` resuelve las consultas
+y traduce los rechazos con `_ensure_allowed` a `InvalidOperation(reason)`.
+`approve_credit_note` y `reject_credit_note` también lanzan `InvalidOperation`,
+mientras `reverse_credit_note` conserva `ValueError`, como antes.
+
+Los algoritmos de prorrateo y asignación de cantidades
+(`calculate_returned_line_amounts`, `validate_devolution_line`,
+`sum_previously_returned_quantities`, `sum_previously_returned_from_devolutions`
+y `DevolutionRegister._validate_returned_quantities`) permanecen en sus
+orquestadores.
+
+| Método de `CreditNotePolicy` | Regla evaluada | Motivo de rechazo |
+| :--- | :--- | :--- |
+| `amount_request_decision(doc, *, sale_client_id)` | Cliente registrado, monto > 0 y descripción no vacía para notas por monto. | `"Credit notes by amount require a registered client."`, `"Credit note amount must be greater than 0."`, `"A detailed reason/description is required for credit notes by amount."` |
+| `devolution_request_decision(doc)` | La devolución referencia una factura original. | `"Devolution credit notes require an original invoice."` |
+| `devolution_invoice_decision(invoice)` | La factura no está anulada y es a crédito. | `"Cannot create a credit note for a cancelled invoice."`, `"Credit notes by devolution only apply to credit invoices. Use devolutions for cash invoices."` |
+| `devolution_items_decision(doc)` | La devolución incluye productos retornados. | `"Devolution credit notes must include returned items."` |
+| `approval_decision(credit_note)` | Solo se aprueba desde `emitted`. | `"Solo se pueden aprobar notas de crédito en estado emitida. Estado actual: <status>."` |
+| `rejection_decision(credit_note)` | Solo se rechaza desde `emitted`. | `"Solo se pueden rechazar notas de crédito en estado emitida. Estado actual: <status>."` |
+| `reversal_decision(credit_note)` | No se elimina una nota `applied`. | `"No se puede eliminar una nota de crédito que ya fue aplicada en un recibo de pago."` |
+| `recalculated_total_decision(total)` | El total recalculado de una devolución es > 0. | `"Credit note total must be greater than 0."` |
+
+Todas las decisiones permitidas devuelven `PolicyDecision(allowed=True)`.

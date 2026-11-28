@@ -1,5 +1,6 @@
-from typing import List
+from typing import List, cast
 
+from kardex.core.credit_note_register.credit_note_policy import CreditNotePolicy
 from kardex.core.inventory import fetch_product_types_map
 from kardex.repos.v1.common.models import UserInfo
 from kardex.repos.v1.credit_notes import CreditNoteInDb
@@ -37,10 +38,9 @@ async def approve_credit_note(
 
     credit_note = CreditNoteInDb.model_validate(raw)
 
-    if credit_note.status != "emitted":
-        raise InvalidOperation(
-            f"Solo se pueden aprobar notas de crédito en estado emitida. Estado actual: {credit_note.status}."
-        )
+    decision = CreditNotePolicy().approval_decision(credit_note)
+    if not decision.allowed:
+        raise InvalidOperation(cast(str, decision.reason))
 
     now_in_milliseconds = TimeTools.get_now_in_milliseconds()
 

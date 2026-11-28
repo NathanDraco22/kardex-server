@@ -35,7 +35,7 @@ real de `services/mongo_collections/v1/`.
 | `hold_sales` | `/hold-sales` | `hold_sales` | `HoldSales` | — | JWT | — |
 | `receipts` | `/receipts` | `receipts` | `Receipts` | `receipt_register` | JWT | — |
 | `receipt_cancellation_requests` | `/receipt-cancellation-requests` | `receipt_cancellation_requests` | `ReceiptCancellationRequests` | `receipt_cancellation_register` | JWT | — |
-| `devolutions` | `/devolutions` | `devolutions` | `Devolutions` | `devolution_register` | JWT | — |
+| `devolutions` | `/devolutions` | `devolutions` | `Devolutions` | `devolution_register` | JWT | [devolutions.md](./devolutions.md) |
 | `credit_notes` | `/credit-notes` | `credit_notes` | `CreditNotes` | `credit_note_register` | JWT | [credit_notes.md](./credit_notes.md) |
 | `invoice_devolutions` | `/invoice-devolutions` | — (`invoices` + `devolutions`) | `Invoices` / `Devolutions` | — | JWT | — |
 | `composite` | `/composite` | — (`invoices` + `devolutions` + `credit_notes`) | — (agrega) | — | JWT | [composite.md](./composite.md) |

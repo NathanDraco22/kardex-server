@@ -1,5 +1,25 @@
 # Contexto de Conversación - Code Review Transfer Optimization
 
+## Fecha: 2026-11-27 (Lote 3 — Policy Object en notas de crédito y devoluciones)
+### Objetivo
+Extraer a policies puras las reglas de cabecera, estados y transiciones de notas de crédito y devoluciones, además del redondeo de importes de factura, preservando exactamente el comportamiento y el orden de validación existentes.
+
+### Resumen Técnico
+- **`PolicyDecision`:** nueva decisión genérica `allowed`/`reason` en `core/policies/policy_decision.py`; un rechazo sin motivo lanza `ValueError`. Exportada desde `core/policies/__init__.py`.
+- **`CreditNotePolicy`:** métodos `amount_request_decision`, `devolution_request_decision`, `devolution_invoice_decision`, `devolution_items_decision`, `approval_decision`, `rejection_decision`, `reversal_decision` y `recalculated_total_decision`. Integrada en `credit_note_register.py`, `approve_credit_note.py`, `reject_credit_note.py`, `reverse_credit_note.py` y `process_credit_note.py`; los rechazos se traducen a `InvalidOperation` (o `ValueError` en la reversión, como antes).
+- **`DevolutionPolicy`:** métodos `items_decision`, `invoice_decision`, `confirmation_client_decision` y `status_decision`. Integrada en `devolution_register.py` con el mismo orden de validaciones y cortes tempranos.
+- **`InvoiceRoundingPolicy`:** encapsula `_round_up_whole_unit` y `_round_down_whole_unit`; `normalize_invoice_discounts` la usa para subtotales, descuentos de línea y descuento global. Se conservaron los parámetros `round_up` y los algoritmos de prorrateo/cantidades sin cambios.
+- **Wiki:** sección de políticas en `wiki/modules/credit_notes.md`, nueva ficha `wiki/modules/devolutions.md`, enlace desde `wiki/modules/INDEX.md` y ejemplos actualizados en `wiki/conventions.md` §4.1.
+- **Tests:** nuevos `test_policy_decision.py`, `test_credit_note_decision_policy.py`, `test_devolution_decision_policy.py` y `test_invoice_rounding_policy.py` con tablas de decisión y modelos reales.
+
+### Revisión
+- Revisor independiente: **APROBADO CON MENORES**. Se agregaron casos de precedencia entre reglas, se usó la constante real `SALE_CLIENT_ID` en los tests, se eliminó la propiedad muerta `enabled` de `InvoiceRoundingPolicy` y se precisaron las fichas de notas de crédito y devoluciones.
+
+### Verificación
+- `ruff check` sobre las policies, registros de notas de crédito/devoluciones/invoice_register y tests nuevos: limpio.
+- `ty check`: limpio.
+- `pytest -q`: `402 passed` (único warning preexistente de `pytest-asyncio` sobre `asyncio_default_fixture_loop_scope`).
+
 ## Fecha: 2026-11-27 (Ventas de un Producto)
 ### Objetivo
 Extender la consulta de facturas por producto para alimentar la pantalla **“Ventas de un Producto”** con filtros de fecha, cliente y usuario, resumen de totales y exclusión de facturas anuladas.

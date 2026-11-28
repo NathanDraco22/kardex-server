@@ -1,3 +1,6 @@
+from typing import cast
+
+from kardex.core.credit_note_register.credit_note_policy import CreditNotePolicy
 from kardex.repos.v1.common.models import UserInfo
 from kardex.repos.v1.credit_notes import CreditNoteInDb
 from kardex.services.mongo_collections.v1 import CreditNotesCollection
@@ -23,10 +26,9 @@ async def reject_credit_note(
 
     credit_note = CreditNoteInDb.model_validate(raw)
 
-    if credit_note.status != "emitted":
-        raise InvalidOperation(
-            f"Solo se pueden rechazar notas de crédito en estado emitida. Estado actual: {credit_note.status}."
-        )
+    decision = CreditNotePolicy().rejection_decision(credit_note)
+    if not decision.allowed:
+        raise InvalidOperation(cast(str, decision.reason))
 
     now_in_milliseconds = TimeTools.get_now_in_milliseconds()
 
